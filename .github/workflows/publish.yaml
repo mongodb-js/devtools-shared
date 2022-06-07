@@ -28,5 +28,6 @@ jobs:
       # NOTE we should add --no-verify-access with an automation token
       run: |
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+        git update-index --assume-unchanged .npmrc
         npx lerna publish from-package --no-changelog --no-push --exact --no-git-tag-version --force-publish --yes
 
