@@ -2,13 +2,13 @@
 
 Returns info about the host os
 
-``` js
+```js
 const info = await getOsInfo();
 ```
 
 Example output:
 
-``` js
+```js
 {
   os_type: 'Darwin',
   os_version: 'Darwin Kernel Version 21.4.0: Fri Mar 18 00:45:05 PDT 2022; root:xnu-8020.101.4~15/RELEASE_X86_64',
