@@ -11,9 +11,6 @@ on:
     branches:
       - main
 
-env:
-  MAIN_BRANCH_NAME: remotes/origin/main
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   check-and-test:
@@ -32,6 +29,15 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Sets env vars
+        if: github.event_name == 'pull_request'
+        run: echo "SINCE_REF=remotes/origin/main" >> $GITHUB_ENV
+
+      # On main we run all the checks with changes since the last commit
+      - name: Sets env vars (main)
+        if: github.event_name != 'pull_request'
+        run: echo "SINCE_REF=HEAD~1" >> $GITHUB_ENV
+
       - name: Install Deps Ubuntu
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
@@ -54,20 +60,25 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci
           # Dependencies are included when installing as npm workspaces will
           # hoist every package in the repo and it's important that the
           # dependencies of packages we are planning to test are also prepared
-          npx lerna run bootstrap --stream --since ${MAIN_BRANCH_NAME} --include-dependencies
+          npm run bootstrap-ci -- --stream --since ${SINCE_REF} --include-dependencies
+        shell: bash
+
+      - name: Info
+        run: |
+          echo "Packages changed since: ${SINCE_REF}"
+          npx lerna@4.0.0 ls --since ${SINCE_REF}
         shell: bash
 
       - name: Run Checks
         # We exclude dependents when running eslint and depchecks because
         # linting and dependency checking is relevant only for packages where
         # the source code was changed
-        run: npm run check-ci -- --stream --since ${MAIN_BRANCH_NAME} --exclude-dependents
+        run: npm run check-ci -- --stream --since ${SINCE_REF} --exclude-dependents
         shell: bash
 
       - name: Run Tests
-        run: npm run test-ci -- --stream --since ${MAIN_BRANCH_NAME}
+        run: npm run test-ci
         shell: bash
