@@ -24,13 +24,15 @@
     "depcheck": "depcheck",
     "check": "npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "reformat": "npm run prettier -- --write ."
+    "reformat": "npm run prettier -- --write .",
+    "test": "mocha '**/*.spec.js'"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.3",
     "@mongodb-js/prettier-config-compass": "^0.5.0",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
+    "mocha": "^8.4.0",
     "prettier": "2.3.2"
   },
   "dependencies": {
