@@ -69,7 +69,7 @@ jobs:
       - name: Info
         run: |
           echo "Packages changed since: ${SINCE_REF}"
-          npx lerna@4.0.0 ls --since ${SINCE_REF}
+          npx lerna@4.0.0 ls --all --since ${SINCE_REF}
         shell: bash
 
       - name: Run Checks
