@@ -1,0 +1,4 @@
+{
+  "packages": ["packages/*", "configs/*", "scripts"],
+  "version": "independent"
+}

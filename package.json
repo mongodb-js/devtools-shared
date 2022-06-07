@@ -1,0 +1,43 @@
+{
+  "name": "devtools-shared",
+  "version": "1.0.0",
+  "description": "Shared dependencies of Compass, the MongoDB extension for VSCode and MongoSH",
+  "private": true,
+  "license": "SSPL",
+  "keywords": [],
+  "author": {
+    "name": "MongoDB Inc",
+    "email": "compass@mongodb.com"
+  },
+  "engines": {
+    "node": ">=14.17.5",
+    "npm": ">=7.16.0"
+  },
+  "workspaces": ["packages/*", "configs/*", "scripts"],
+  "scripts": {
+    "bootstrap-ci": "npm ci && lerna run bootstrap",
+    "bootstrap": "npm install && lerna run bootstrap --stream",
+    "check-ci": "lerna run check",
+    "check": "lerna run check --stream",
+    "compile-changed": "lerna run compile --stream --since origin/HEAD",
+    "create-workspace": "node ./scripts/create-workspace.js",
+    "depalign": "node scripts/depalign.js",
+    "depcheck": "depcheck",
+    "precheck-ci": "npm run depcheck",
+    "precheck": "npm run depcheck",
+    "predepcheck": "npm run depalign",
+    "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
+    "reformat": "lerna run reformat --stream --no-bail",
+    "test-changed": "lerna run test --stream --concurrency 1 --since origin/HEAD",
+    "test-ci": "lerna run test-ci --concurrency 1",
+    "test": "lerna run test --concurrency 1 --stream",
+    "update-authors": "node scripts/generate-authors.js",
+    "update-third-party-notices": "node scripts/gather-licenses.js packages/compass/ > THIRD-PARTY-NOTICES.md",
+    "where": "node ./scripts/monorepo/where.js"
+  },
+  "devDependencies": {
+    "@babel/core": "7.16.0",
+    "@babel/parser": "7.16.0",
+    "lerna": "^4.0.0"
+  }
+}

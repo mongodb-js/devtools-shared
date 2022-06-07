@@ -1,0 +1,6 @@
+ignores:
+  # TODO: To work around https://github.com/depcheck/depcheck/issues/688 we keep
+  # some babel dependencies at the root to guarantee that their version is not
+  # bumped higher than the version that breaks depcheck package
+  - '@babel/core'
+  - '@babel/parser'
