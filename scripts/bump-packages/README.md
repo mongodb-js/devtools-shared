@@ -22,7 +22,7 @@ The command performs the following steps:
 
 - Calculate the _"conventional bump"_ according to commits in the package since the _"last bump commit"_
 - Align all the dependencies previously bumped during the traversal of the list and calculate the _"dependencies bump"_.
-- Bump the package version with the maximum increment between the _"conventional bump"_ and the _"dependencies bump"_.
+- Bump the package version with the maximum increment between the _"conventional bump"_ and the _"dependencies bump"_ (eg: between `patch` and `minor` take `minor`).
 
 ### Conventional Bump
 
