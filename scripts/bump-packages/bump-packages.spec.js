@@ -7,6 +7,13 @@ const assert = require('assert');
 const MAIN_BRANCH = 'main';
 
 describe('bump-packages', function () {
+  before(function () {
+    // we don't need to test on win since this task runs on ubuntu
+    if (process.platform === 'win32') {
+      this.skip();
+    }
+  });
+
   this.timeout(20000);
   let tempDir;
   let remote;
