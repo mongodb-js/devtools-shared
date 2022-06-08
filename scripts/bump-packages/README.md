@@ -20,7 +20,7 @@ The command performs the following steps:
 2. Gets a list of all the packages in the monorepo sorted in topological order of dependencies, eg: `{ "name": "pkg1", "dependencies": {"pkg2": "1.0.0"}` -> `["pkg2", "pkg1"]`
 3. For each package in the list:
 
-- Calculate the _"conventional bump"_ according to commits in the package since the _"last bump commit"_
+- Calculate the _"conventional bump"_ according to commits in the package since the _"last bump commit"_.
 - Align all the dependencies previously bumped during the traversal of the list and calculate the _"dependencies bump"_.
 - Bump the package version with the maximum increment between the _"conventional bump"_ and the _"dependencies bump"_ (eg: between `patch` and `minor` take `minor`).
 
