@@ -40,6 +40,7 @@
     "chalk": "^4.1.1",
     "find-up": "^5.0.0",
     "git-log-parser": "^1.2.0",
+    "lerna": "^4.0.0",
     "minimist": "^1.2.5",
     "ora": "^5.4.0",
     "pacote": "^11.3.5",
