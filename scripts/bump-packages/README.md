@@ -16,17 +16,16 @@ node scripts/bump-packages/bump-packages.js
 
 The command performs the following steps:
 
-1. Find the _"last bump commit"_ in the branch, the one which subject starts with `chore(ci): bump packages`
+1. Find the **"last bump commit"** in the branch, the one which subject starts with `chore(ci): bump packages`
 2. Gets a list of all the packages in the monorepo sorted in topological order of dependencies, eg: `{ "name": "pkg1", "dependencies": {"pkg2": "1.0.0"}` -> `["pkg2", "pkg1"]`
 3. For each package in the list:
-
-- Calculate the _"conventional bump"_ according to commits in the package since the _"last bump commit"_.
-- Align all the dependencies previously bumped during the traversal of the list and calculate the _"dependencies bump"_.
-- Bump the package version with the maximum increment between the _"conventional bump"_ and the _"dependencies bump"_ (eg: between `patch` and `minor` take `minor`).
+- Calculate the **"conventional bump"** according to commits in the package since the **"last bump commit"**.
+- Align all the dependencies previously bumped during the traversal of the list and calculate the **"dependencies bump"**.
+- Bump the package version with the maximum increment between the **"conventional bump"** and the **"dependencies bump"** (eg: between `patch` and `minor` take `minor`).
 
 ### Conventional Bump
 
-The "conventional bump" calculate a bump based on [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to the package as follows:
+The **"conventional bump"** is calculated based on the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) in the package commit history as follows:
 
 - if any commit on a package has subject or body containing `BREAKING CHANGE` or `BREAKING CHANGES` or has a `!` after the type/scope in the subject (ie. `feat!: ...` or `feat(somescope)!: ...`) then the package will be bumped to the next **major** version.
 
