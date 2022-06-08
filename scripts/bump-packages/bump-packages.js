@@ -5,6 +5,8 @@ const assert = require('assert');
 
 const gitLogParser = require('git-log-parser');
 const semver = require('semver');
+const maxIncrement = require('./max-increment');
+const getConventionalBump = require('./get-conventional-bump');
 
 const LAST_BUMP_COMMIT_MESSAGE = 'chore(ci): bump packages';
 
@@ -32,14 +34,22 @@ async function main() {
   });
 }
 
-main(...process.argv.slice(2));
+main(...process.argv.slice(2)).catch((e) => {
+  console.debug(e);
+  process.exit(1);
+});
 
 function getPackages(cwd) {
-  const { stdout } = childProcess.spawnSync(
-    'npx',
-    ['lerna', 'list', '--toposort', '--all', '--json'],
+  const lernaCliPath = require.resolve('lerna/cli.js');
+  const { stdout, status, output } = childProcess.spawnSync(
+    'node',
+    [lernaCliPath, 'list', '--toposort', '--all', '--json'],
     { cwd }
   );
+
+  if (status !== 0) {
+    throw new Error(output);
+  }
 
   return JSON.parse(stdout);
 }
@@ -57,18 +67,8 @@ async function getCommits({ path, range }) {
   });
 }
 
-function maxIncrement(inc1, inc2) {
-  if (inc1 && inc2) {
-    return semver.gt(semver.inc('1.0.0', inc1), semver.inc('1.0.0', inc2))
-      ? inc1
-      : inc2;
-  }
-
-  // return the first defined or undefined in neither are set
-  return inc1 || inc2;
-}
-
 function updateDeps(packageJson, newVersions) {
+  console.debug(`[${packageJson.name}]`, 'updateDeps', newVersions);
   const newPackageJson = { ...packageJson };
 
   let inc;
@@ -79,35 +79,70 @@ function updateDeps(packageJson, newVersions) {
     'peerDependencies',
     'optionalDependencies',
   ]) {
-    const section = newPackageJson[sectionName];
-    if (!section) {
+    const dependenciesSection = newPackageJson[sectionName];
+    if (!dependenciesSection) {
       continue;
     }
 
-    for (const [depName, { version, inc: depInc }] of Object.entries(
+    for (const [depName, { version, bump: depInc }] of Object.entries(
       newVersions
     )) {
-      if (!section[depName]) {
+      if (!dependenciesSection[depName]) {
+        console.debug(
+          `[${packageJson.name}]`,
+          'updateDeps',
+          sectionName,
+          depName,
+          'skipping'
+        );
         continue;
       }
 
-      section[depName] = version;
+      console.debug(
+        `[${packageJson.name}]`,
+        'updateDeps',
+        sectionName,
+        depName,
+        '->',
+        version
+      );
+
+      dependenciesSection[depName] = version;
 
       // we increment the package version based on the bump on dependencies:
       // if a devDependency was bumped, regardless of the increment we increment of a
       // patch, otherwise we replicate the increment of the dependency. We always keep
       // the biggest increase.
 
+      const oldInc = inc;
+
       inc =
-        section === 'devDependencies'
+        sectionName === 'devDependencies'
           ? maxIncrement('patch', inc)
           : maxIncrement(depInc, inc);
+
+      console.debug(
+        `[${packageJson.name}]`,
+        'inc',
+        sectionName === 'devDependencies',
+        {
+          depInc,
+          oldInc,
+          newInc: inc,
+        }
+      );
     }
   }
 
   if (inc) {
     newPackageJson.version = semver.inc(packageJson.version, inc);
   }
+
+  console.debug(
+    `[${packageJson.name}]`,
+    'new package json',
+    JSON.stringify(newPackageJson)
+  );
 
   return newPackageJson;
 }
@@ -131,29 +166,8 @@ async function bumpVersionBasedOnCommits(packagePath, oldVersion, options) {
 
   let inc = 'patch';
 
-  // calculate bump as follows:
-  // if any commit subject or body contains
-  //    BREAKING CHANGE or BREAKING CHANGES
-  // -> then is a major bump
-  // if subject starts with feat or fix
-  // -> then is a minor bump
-  // everything else is a patch.
-  //
-  for (const { subject, body } of commits) {
-    if (
-      /\bBREAKING CHANGES?\b/.test(subject) ||
-      /\bBREAKING CHANGES?\b/.test(body)
-    ) {
-      inc = 'major';
-      break;
-    }
-
-    if (/^(feat|fix)[:(]/.test(subject)) {
-      inc = maxIncrement(inc, 'minor');
-      continue;
-    }
-
-    inc = maxIncrement(inc, 'patch');
+  for (const commit of commits) {
+    inc = maxIncrement(inc, getConventionalBump(commit));
   }
 
   const newVersion = semver.inc(oldVersion, inc);

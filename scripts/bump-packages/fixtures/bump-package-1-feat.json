@@ -1,0 +1,147 @@
+{
+  "package1": {
+    "version": "1.1.0",
+    "name": "package1"
+  },
+  "package2": {
+    "version": "1.0.1",
+    "name": "package2",
+    "devDependencies": {
+      "package1": "1.1.0"
+    }
+  },
+  "package3": {
+    "version": "1.0.1",
+    "name": "package3",
+    "private": true,
+    "devDependencies": {
+      "package1": "1.1.0"
+    }
+  },
+  "package4": {
+    "version": "1.0.1",
+    "name": "package4",
+    "dependencies": {
+      "package3": "1.0.1"
+    }
+  },
+  "package5": {
+    "version": "1.1.0",
+    "name": "package5",
+    "dependencies": {
+      "package1": "1.1.0"
+    }
+  },
+  "package6": {
+    "version": "1.0.1",
+    "name": "package6",
+    "devDependencies": {
+      "package5": "1.1.0"
+    }
+  },
+  "lock": {
+    "name": "test-repo",
+    "version": "1.0.0",
+    "lockfileVersion": 2,
+    "requires": true,
+    "packages": {
+      "": {
+        "name": "test-repo",
+        "version": "1.0.0",
+        "workspaces": ["packages/*"]
+      },
+      "node_modules/package1": {
+        "resolved": "packages/package1",
+        "link": true
+      },
+      "node_modules/package2": {
+        "resolved": "packages/package2",
+        "link": true
+      },
+      "node_modules/package3": {
+        "resolved": "packages/package3",
+        "link": true
+      },
+      "node_modules/package4": {
+        "resolved": "packages/package4",
+        "link": true
+      },
+      "node_modules/package5": {
+        "resolved": "packages/package5",
+        "link": true
+      },
+      "node_modules/package6": {
+        "resolved": "packages/package6",
+        "link": true
+      },
+      "packages/package1": {
+        "version": "1.1.0"
+      },
+      "packages/package2": {
+        "version": "1.0.1",
+        "devDependencies": {
+          "package1": "1.1.0"
+        }
+      },
+      "packages/package3": {
+        "version": "1.0.1",
+        "devDependencies": {
+          "package1": "1.1.0"
+        }
+      },
+      "packages/package4": {
+        "version": "1.0.1",
+        "dependencies": {
+          "package3": "1.0.1"
+        }
+      },
+      "packages/package5": {
+        "version": "1.1.0",
+        "dependencies": {
+          "package1": "1.1.0"
+        }
+      },
+      "packages/package6": {
+        "version": "1.0.1",
+        "devDependencies": {
+          "package5": "1.1.0"
+        }
+      }
+    },
+    "dependencies": {
+      "package1": {
+        "version": "file:packages/package1"
+      },
+      "package2": {
+        "version": "file:packages/package2",
+        "requires": {
+          "package1": "1.1.0"
+        }
+      },
+      "package3": {
+        "version": "file:packages/package3",
+        "requires": {
+          "package1": "1.1.0"
+        }
+      },
+      "package4": {
+        "version": "file:packages/package4",
+        "requires": {
+          "package3": "1.0.1"
+        }
+      },
+      "package5": {
+        "version": "file:packages/package5",
+        "requires": {
+          "package1": "1.1.0"
+        }
+      },
+      "package6": {
+        "version": "file:packages/package6",
+        "requires": {
+          "package5": "1.1.0"
+        }
+      }
+    }
+  }
+}
