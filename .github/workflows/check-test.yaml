@@ -68,8 +68,9 @@ jobs:
 
       - name: Info
         run: |
+          LERNA_VERSION=$(npm ls lerna --json | jq -r .dependencies.lerna.version)
           echo "Packages changed since: ${SINCE_REF}"
-          npx lerna@4.0.0 ls --all --since ${SINCE_REF}
+          npx lerna@${LERNA_VERSION} ls --all --since ${SINCE_REF}
         shell: bash
 
       - name: Run Checks
