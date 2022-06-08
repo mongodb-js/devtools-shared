@@ -6,6 +6,7 @@ const assert = require('assert');
 const gitLogParser = require('git-log-parser');
 const semver = require('semver');
 const maxIncrement = require('./max-increment');
+const getConventionalBump = require('./get-conventional-bump');
 
 const LAST_BUMP_COMMIT_MESSAGE = 'chore(ci): bump packages';
 
@@ -164,29 +165,8 @@ async function bumpVersionBasedOnCommits(packagePath, oldVersion, options) {
 
   let inc = 'patch';
 
-  // calculate bump as follows:
-  // if any commit subject or body contains
-  //    BREAKING CHANGE or BREAKING CHANGES
-  // -> then is a major bump
-  // if subject starts with feat or fix
-  // -> then is a minor bump
-  // everything else is a patch.
-  //
-  for (const { subject, body } of commits) {
-    if (
-      /\bBREAKING CHANGES?\b/.test(subject) ||
-      /\bBREAKING CHANGES?\b/.test(body)
-    ) {
-      inc = 'major';
-      break;
-    }
-
-    if (/^(feat|fix)[:(]/.test(subject)) {
-      inc = maxIncrement(inc, 'minor');
-      continue;
-    }
-
-    inc = maxIncrement(inc, 'patch');
+  for (const commit of commits) {
+    inc = maxIncrement(inc, getConventionalBump(commit));
   }
 
   const newVersion = semver.inc(oldVersion, inc);
