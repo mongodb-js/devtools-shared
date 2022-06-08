@@ -80,5 +80,5 @@ jobs:
         shell: bash
 
       - name: Run Tests
-        run: npm run test-ci
+        run: npm run test-ci -- --stream --since ${SINCE_REF}
         shell: bash

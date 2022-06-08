@@ -25,6 +25,7 @@
     "check": "npm run lint && npm run depcheck",
     "check-ci": "npm run check",
     "reformat": "npm run prettier -- --write .",
+    "test-ci": "npm run test",
     "test": "mocha '**/*.spec.js'"
   },
   "devDependencies": {
