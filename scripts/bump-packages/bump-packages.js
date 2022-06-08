@@ -40,9 +40,10 @@ main(...process.argv.slice(2)).catch((e) => {
 });
 
 function getPackages(cwd) {
+  const lernaCliPath = require.resolve('lerna/cli.js');
   const { stdout, status, output } = childProcess.spawnSync(
-    'npx',
-    ['lerna@4.0.0', 'list', '--toposort', '--all', '--json'],
+    'node',
+    [lernaCliPath, 'list', '--toposort', '--all', '--json'],
     { cwd }
   );
 
