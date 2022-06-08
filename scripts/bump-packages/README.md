@@ -19,6 +19,7 @@ The command performs the following steps:
 1. Find the **"last bump commit"** in the branch, the one which subject starts with `chore(ci): bump packages`
 2. Gets a list of all the packages in the monorepo sorted in topological order of dependencies, eg: `{ "name": "pkg1", "dependencies": {"pkg2": "1.0.0"}` -> `["pkg2", "pkg1"]`
 3. For each package in the list:
+
 - Calculate the **"conventional bump"** according to commits in the package since the **"last bump commit"**.
 - Align all the dependencies previously bumped during the traversal of the list and calculate the **"dependencies bump"**.
 - Bump the package version with the maximum increment between the **"conventional bump"** and the **"dependencies bump"** (eg: between `patch` and `minor` take `minor`).
