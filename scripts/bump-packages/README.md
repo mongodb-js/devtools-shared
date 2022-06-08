@@ -21,7 +21,7 @@ The command performs the following steps:
 3. For each package in the list:
 
 - Calculate the _"conventional bump"_ according to commits in the package since the _"last bump commit"_
-- Aligns all the dependencies previously bumped during the traversal of the list and calculate the _"dependencies bump"_.
+- Align all the dependencies previously bumped during the traversal of the list and calculate the _"dependencies bump"_.
 - Bump the package version with the maximum increment between the _"conventional bump"_ and the _"dependencies bump"_.
 
 ### Conventional Bump
