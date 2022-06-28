@@ -18,23 +18,21 @@ async function getLinuxInfo(): Promise<{
     const releaseFile = '/etc/os-release';
     const etcRelease = await fs.readFile(releaseFile, 'utf-8');
 
-    const releaseKv = etcRelease
+    const osReleaseEntries = etcRelease
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
-      .map((l) => l.split('='));
+      .map((l) => l.split('='))
+      .map(([k, v]) => [
+        k,
+        (v || '').replace(/^["']/, '').replace(/["']$/, ''),
+      ]);
 
-    // todo: use Object.fromEntries
-    const distId = releaseKv
-      .find(([k]) => k === 'ID')?.[1]
-      .replace(/["']/g, '');
-    const distVer = releaseKv
-      .find(([k]) => k === 'VERSION_ID')?.[1]
-      .replace(/["']/g, '');
+    const osReleaseKv = Object.fromEntries(osReleaseEntries);
 
     return {
-      os_linux_dist: distId || 'unknown',
-      os_linux_release: distVer || 'unknown',
+      os_linux_dist: osReleaseKv.ID || 'unknown',
+      os_linux_release: osReleaseKv.VERSION_ID || 'unknown',
     };
   } catch (e) {
     // couldn't read /etc/os-release
