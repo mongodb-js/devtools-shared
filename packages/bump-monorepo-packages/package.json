@@ -9,7 +9,7 @@
     "access": "public"
   },
   "bin": {
-    "bump-monorepo-packages": "packages/bump-monorepo-packages/src/bump-packages.js"
+    "bump-monorepo-packages": "./src/bump-packages.js"
   },
   "bugs": {
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
