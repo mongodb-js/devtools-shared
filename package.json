@@ -26,7 +26,11 @@
     "precheck-ci": "npm run depcheck",
     "precheck": "npm run depcheck",
     "predepcheck": "npm run depalign",
+<<<<<<< HEAD
     "bump-packages": "node scripts/src/bump-packages/bump-packages.js",
+=======
+    "bump-packages": "bump-monorepo-packages",
+>>>>>>> feat: distribute bump-packages script
     "publish-packages": "lerna publish from-package --no-verify-access --no-changelog --no-push --exact --no-git-tag-version --force-publish --yes",
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",
