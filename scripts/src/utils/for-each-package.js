@@ -1,16 +1,6 @@
 const path = require('path');
-const { runInDir } = require('../run-in-dir');
-
-const ROOT = path.resolve(__dirname, '..', '..');
-
-const LERNA_BIN = path.resolve(
-  __dirname,
-  '..',
-  '..',
-  'node_modules',
-  '.bin',
-  'lerna'
-);
+const { MONOREPO_ROOT: ROOT, LERNA_BIN } = require('./constants');
+const { runInDir } = require('./run-in-dir');
 
 async function forEachPackage(fn) {
   let interrupted = false;

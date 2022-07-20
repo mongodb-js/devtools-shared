@@ -10,6 +10,10 @@ const { getHighestRange } = require('./semver-helpers');
 const { runInDir } = require('./run-in-dir');
 const { updatePackageJson } = require('./monorepo/update-package-json');
 const { withProgress } = require('./monorepo/with-progress');
+const {
+  SSPL_LICENSE_CONTENT,
+  APACHE2_LICENSE_CONTENT,
+} = require('./utils/licenses');
 
 function packageNameToDir(pkgName) {
   return pkgName ? pkgName.replace(/^@mongodb-js\//, '') : pkgName;
@@ -52,10 +56,11 @@ async function main(argv) {
   let {
     name = workspaceNameFromArgs,
     description = '',
-    isPlugin = false,
     isConfig = false,
     isPublic = true,
     isReact = true,
+    isTypescript = true,
+    license = 'Apache-2.0',
     dependants = [],
     depType,
   } = await prompts(
@@ -83,17 +88,7 @@ async function main(argv) {
         message: 'Provide a one-line description of the workspace',
       },
       {
-        type: 'confirm',
-        name: 'isPlugin',
-        message: 'Are you creating a new Compass plugin?',
-        initial: true,
-      },
-      {
-        type(_, { name, description, isPlugin }) {
-          if (isPlugin) {
-            return null;
-          }
-
+        type(_, { name, description }) {
           const regex = /\bconfig\b/i;
           return regex.test(name) || regex.test(description) ? 'confirm' : null;
         },
@@ -103,37 +98,25 @@ async function main(argv) {
         initial: true,
       },
       {
-        type(_, { isPlugin }) {
-          if (isPlugin) {
-            return null;
-          }
-
-          return 'confirm';
-        },
+        type: 'confirm',
         name: 'isPublic',
         message: 'Is it a public package?',
         initial: true,
       },
       {
-        type(_, { isPlugin }) {
-          if (isPlugin) {
-            return null;
-          }
-
-          return 'confirm';
-        },
+        type: 'confirm',
+        name: 'isTypescript',
+        message: 'Will the package use Typescript?',
+        initial: true,
+      },
+      {
+        type: 'confirm',
         name: 'isReact',
         message: 'Will the package use React?',
         initial: true,
       },
       {
-        type(_, { isPlugin }) {
-          if (isPlugin) {
-            return null;
-          }
-
-          return 'autocompleteMultiselect';
-        },
+        type: 'autocompleteMultiselect',
         name: 'dependants',
         message: 'Will any of the packages in the monorepo depend on this one?',
         choices: Array.from(workspacesMeta.values())
@@ -148,6 +131,15 @@ async function main(argv) {
  · Enter to complete the answer
 `,
         initial: [],
+      },
+      {
+        type: 'select',
+        name: 'license',
+        message: 'Which type of license will it use?',
+        choices: [
+          { title: 'Apache-2.0', value: 'Apache-2.0' },
+          { title: 'SSPL', value: 'SSPL' },
+        ],
       },
       {
         type(prev) {
@@ -172,16 +164,6 @@ async function main(argv) {
     return;
   }
 
-  if (isPlugin) {
-    isReact = true;
-    dependants = [
-      Array.from(workspacesMeta.values()).find(
-        (ws) => ws.name === 'mongodb-compass'
-      ).location,
-    ];
-    depType = 'devDependencies';
-  }
-
   console.log();
 
   const pkgJson = {
@@ -203,54 +185,38 @@ async function main(argv) {
       url: 'https://github.com/mongodb-js/compass.git',
     },
     files: ['dist'],
-    license: 'SSPL',
+    license: license,
     main: 'dist/index.js',
-    'compass:main': 'src/index.ts',
     exports: {
       require: './dist/index.js',
-      ...(isPlugin
-        ? { browser: './dist/browser.js' }
-        : { import: './dist/.esm-wrapper.mjs' }),
+      import: './dist/.esm-wrapper.mjs',
     },
-    'compass:exports': {
-      '.': './src/index.ts',
-    },
-    ...(!isPlugin && { types: './dist/index.d.ts' }),
+    ...(isTypescript ? { types: './dist/index.d.ts' } : {}),
     scripts: {
-      // Plugins are bundled by webpack from source and tested with ts-node
-      // runtime processor, no need to bootstrap them
-      ...(!isPlugin && {
-        bootstrap: 'npm run compile',
-      }),
+      bootstrap: 'npm run compile',
       prepublishOnly: 'npm run compile',
-      // For normal packages we are just compiling code with typescript, for
-      // plugins (but only for them) we are using webpack to create independent
-      // plugin packages
-      compile:
-        'tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
-      ...(isPlugin && {
-        compile: 'npm run webpack -- --mode production',
-        prewebpack: 'rimraf ./dist',
-        webpack: 'webpack-compass',
-        start: 'npm run webpack serve -- --mode development',
-        analyze: 'npm run webpack -- --mode production --analyze',
-      }),
-      typecheck: 'tsc --noEmit',
+      ...(isTypescript
+        ? {
+            compile:
+              'tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
+            typecheck: 'tsc --noEmit',
+          }
+        : {
+            compile: 'gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
+          }),
       eslint: 'eslint',
       prettier: 'prettier',
       lint: 'npm run eslint . && npm run prettier -- --check .',
       depcheck: 'depcheck',
-      check: 'npm run typecheck && npm run lint && npm run depcheck',
+      check: isTypescript
+        ? 'npm run typecheck && npm run lint && npm run depcheck'
+        : 'npm run lint && npm run depcheck',
       'check-ci': 'npm run check',
       test: 'mocha',
-      ...(isPlugin && {
-        'test-electron': 'xvfb-maybe electron-mocha --no-sandbox',
-      }),
       'test-cov':
         'nyc -x "**/*.spec.*" --reporter=lcov --reporter=text --reporter=html npm run test',
       'test-watch': 'npm run test -- --watch',
       'test-ci': 'npm run test-cov',
-      ...(isPlugin && { 'test-ci-electron': 'npm run test-electron' }),
       reformat: 'npm run prettier -- --write .',
     },
     ...(isReact && { peerDependencies: { react: '*', 'react-dom': '*' } }),
@@ -260,10 +226,14 @@ async function main(argv) {
       '@mongodb-js/mocha-config-compass': '*',
       '@mongodb-js/prettier-config-compass': '*',
       '@mongodb-js/tsconfig-compass': '*',
-      '@types/chai': '*',
-      '@types/mocha': '*',
-      '@types/node': '*',
-      '@types/sinon-chai': '*',
+      ...(isTypescript
+        ? {
+            '@types/chai': '*',
+            '@types/mocha': '*',
+            '@types/node': '*',
+            '@types/sinon-chai': '*',
+          }
+        : {}),
       chai: '*',
       depcheck: '*',
       eslint: '*',
@@ -274,20 +244,16 @@ async function main(argv) {
       ...(isReact && {
         '@testing-library/react': '*',
         '@testing-library/user-event': '*',
-        '@types/chai-dom': '*',
-        '@types/react': '*',
-        '@types/react-dom': '*',
+        ...(isTypescript
+          ? {
+              '@types/chai-dom': '*',
+              '@types/react': '*',
+              '@types/react-dom': '*',
+            }
+          : {}),
       }),
-      ...(!isPlugin && {
-        typescript: '*',
-        'gen-esm-wrapper': '*',
-      }),
-      ...(isPlugin && {
-        '@mongodb-js/webpack-config-compass': '*',
-        'hadron-app-registry': '*',
-        rimraf: '*',
-        'xvfb-maybe': '*',
-      }),
+      ...(isTypescript ? { typescript: '*' } : {}),
+      'gen-esm-wrapper': '*',
     },
   };
 
@@ -356,7 +322,8 @@ async function main(argv) {
   );
 
   const eslintrcPath = path.join(packagePath, '.eslintrc.js');
-  const eslintrcContent = `
+  const eslintrcContent = isTypescript
+    ? `
 module.exports = {
   root: true,
   extends: ['@mongodb-js/eslint-config-devtools'],
@@ -364,61 +331,25 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig-lint.json'],
   },
+};`
+    : `module.exports = {
+  root: true,
+  extends: ['@mongodb-js/eslint-config-devtools']
 };`;
 
   const eslintIgnorePath = path.join(packagePath, '.eslintignore');
   const eslintIgnoreContent = '.nyc-output\ndist\n';
-
   const mocharcPath = path.join(packagePath, '.mocharc.js');
   const mocharcContent = `module.exports = require('${
-    isPlugin
-      ? '@mongodb-js/mocha-config-compass/compass-plugin'
-      : isReact
+    isReact
       ? '@mongodb-js/mocha-config-compass/react'
       : '@mongodb-js/mocha-config-compass'
   }');`;
 
-  const webpackConfigPath = path.join(packagePath, 'webpack.config.js');
-  const webpackConfigContent = `
-const { compassPluginConfig } = require('@mongodb-js/webpack-config-compass');
-module.exports = compassPluginConfig;
-`;
-
   const indexSrcDir = path.join(packagePath, 'src');
-
   const indexSrcPath = path.join(indexSrcDir, 'index.ts');
-  const indexSrcContent = isPlugin
-    ? `
-import type AppRegistry from "hadron-app-registry";
-
-function activate(appRegistry: AppRegistry): void {
-  // Register plugin stores, roles, and components
-}
-
-function deactivate(appRegistry: AppRegistry): void {
-  // Unregister plugin stores, roles, and components
-}
-
-export { activate, deactivate };
-export { default as metadata } from '../package.json';
-`
-    : '';
-
   const indexSpecPath = path.join(indexSrcDir, 'index.spec.ts');
-  const indexSpecContent = isPlugin
-    ? `
-import { expect } from 'chai';
-import * as CompassPlugin from './index';
-
-describe('Compass Plugin', function() {
-  it('exports activate, deactivate, and metadata', function() {
-    expect(CompassPlugin).to.have.property('activate');
-    expect(CompassPlugin).to.have.property('deactivate');
-    expect(CompassPlugin).to.have.property('metadata');
-  });
-});
-`
-    : '';
+  const licensePath = path.join(packagePath, 'LICENSE');
 
   await withProgress('Generating package source', async () => {
     await fs.mkdir(packagePath, { recursive: true });
@@ -426,17 +357,24 @@ describe('Compass Plugin', function() {
     await fs.writeFile(depcheckrcPath, depcheckrcContent);
     await fs.writeFile(prettierrcPath, prettierrcContent);
     await fs.writeFile(prettierIgnorePath, prettierIgnoreContent);
-    await fs.writeFile(tsconfigPath, tsconfigContent);
-    await fs.writeFile(tsconfigLintPath, tsconfigLintContent);
+    if (isTypescript) {
+      await fs.writeFile(tsconfigPath, tsconfigContent);
+      await fs.writeFile(tsconfigLintPath, tsconfigLintContent);
+    }
     await fs.writeFile(eslintrcPath, eslintrcContent);
     await fs.writeFile(eslintIgnorePath, eslintIgnoreContent);
     await fs.writeFile(mocharcPath, mocharcContent);
-    if (isPlugin) {
-      await fs.writeFile(webpackConfigPath, webpackConfigContent);
-    }
     await fs.mkdir(indexSrcDir, { recursive: true });
-    await fs.writeFile(indexSrcPath, indexSrcContent);
-    await fs.writeFile(indexSpecPath, indexSpecContent);
+    await fs.writeFile(indexSrcPath, '');
+    await fs.writeFile(indexSpecPath, '');
+    await fs.writeFile(
+      licensePath,
+      license === 'SSPL'
+        ? SSPL_LICENSE_CONTENT
+        : license === 'Apache-2.0'
+        ? APACHE2_LICENSE_CONTENT
+        : ''
+    );
   });
 
   if (dependants.length > 0) {
