@@ -33,7 +33,7 @@
     "test-changed": "lerna run test --stream --concurrency 1 --since origin/HEAD",
     "test-ci": "lerna run test-ci --concurrency 1",
     "test": "lerna run test --concurrency 1 --stream",
-    "where": "node ./scripts/src/monorepo/where.js"
+    "where": "node ./scripts/src/where.js"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",
