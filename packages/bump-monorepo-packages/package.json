@@ -26,15 +26,6 @@
   ],
   "license": "SSPL",
   "main": "dist/index.js",
-  "compass:main": "src/index.ts",
-  "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
-  },
-  "compass:exports": {
-    ".": "./src/index.ts"
-  },
-  "types": "./dist/index.d.ts",
   "scripts": {
     "eslint": "eslint",
     "prettier": "prettier",
