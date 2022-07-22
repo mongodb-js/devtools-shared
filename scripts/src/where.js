@@ -18,7 +18,7 @@ const path = require('path');
 const util = require('util');
 const { runInContext, createContext } = require('vm');
 const { execFileSync } = require('child_process');
-const { forEachPackage } = require('./monorepo/for-each-package');
+const { forEachPackage } = require('./utils/for-each-package');
 
 let [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;

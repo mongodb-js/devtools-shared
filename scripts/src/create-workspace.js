@@ -5,11 +5,11 @@ const pacote = require('pacote');
 const {
   collectWorkspacesDependencies,
   collectWorkspacesMeta,
-} = require('./workspace-dependencies');
-const { getHighestRange } = require('./semver-helpers');
-const { runInDir } = require('./run-in-dir');
-const { updatePackageJson } = require('./monorepo/update-package-json');
-const { withProgress } = require('./monorepo/with-progress');
+} = require('./utils/workspace-dependencies');
+const { getHighestRange } = require('./utils/semver-helpers');
+const { runInDir } = require('./utils/run-in-dir');
+const { updatePackageJson } = require('./utils/update-package-json');
+const { withProgress } = require('./utils/with-progress');
 const {
   SSPL_LICENSE_CONTENT,
   APACHE2_LICENSE_CONTENT,
