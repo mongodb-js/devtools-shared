@@ -59,7 +59,6 @@ async function main(argv) {
     isConfig = false,
     isPublic = true,
     isReact = true,
-    isTypescript = true,
     license = 'Apache-2.0',
     dependants = [],
     depType,
@@ -101,12 +100,6 @@ async function main(argv) {
         type: 'confirm',
         name: 'isPublic',
         message: 'Is it a public package?',
-        initial: true,
-      },
-      {
-        type: 'confirm',
-        name: 'isTypescript',
-        message: 'Will the package use Typescript?',
         initial: true,
       },
       {
@@ -191,26 +184,18 @@ async function main(argv) {
       require: './dist/index.js',
       import: './dist/.esm-wrapper.mjs',
     },
-    ...(isTypescript ? { types: './dist/index.d.ts' } : {}),
+    types: './dist/index.d.ts',
     scripts: {
       bootstrap: 'npm run compile',
       prepublishOnly: 'npm run compile',
-      ...(isTypescript
-        ? {
-            compile:
-              'tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
-            typecheck: 'tsc --noEmit',
-          }
-        : {
-            compile: 'gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
-          }),
+      compile:
+        'tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs',
+      typecheck: 'tsc --noEmit',
       eslint: 'eslint',
       prettier: 'prettier',
       lint: 'npm run eslint . && npm run prettier -- --check .',
       depcheck: 'depcheck',
-      check: isTypescript
-        ? 'npm run typecheck && npm run lint && npm run depcheck'
-        : 'npm run lint && npm run depcheck',
+      check: 'npm run typecheck && npm run lint && npm run depcheck',
       'check-ci': 'npm run check',
       test: 'mocha',
       'test-cov':
@@ -226,14 +211,10 @@ async function main(argv) {
       '@mongodb-js/mocha-config-compass': '*',
       '@mongodb-js/prettier-config-compass': '*',
       '@mongodb-js/tsconfig-compass': '*',
-      ...(isTypescript
-        ? {
-            '@types/chai': '*',
-            '@types/mocha': '*',
-            '@types/node': '*',
-            '@types/sinon-chai': '*',
-          }
-        : {}),
+      '@types/chai': '*',
+      '@types/mocha': '*',
+      '@types/node': '*',
+      '@types/sinon-chai': '*',
       chai: '*',
       depcheck: '*',
       eslint: '*',
@@ -244,15 +225,11 @@ async function main(argv) {
       ...(isReact && {
         '@testing-library/react': '*',
         '@testing-library/user-event': '*',
-        ...(isTypescript
-          ? {
-              '@types/chai-dom': '*',
-              '@types/react': '*',
-              '@types/react-dom': '*',
-            }
-          : {}),
+        '@types/chai-dom': '*',
+        '@types/react': '*',
+        '@types/react-dom': '*',
       }),
-      ...(isTypescript ? { typescript: '*' } : {}),
+      typescript: '*',
       'gen-esm-wrapper': '*',
     },
   };
@@ -302,6 +279,7 @@ async function main(argv) {
       }.json`,
       compilerOptions: {
         outDir: 'dist',
+        allowJs: true,
       },
       include: ['src/**/*'],
       exclude: ['./src/**/*.spec.*'],
@@ -322,8 +300,7 @@ async function main(argv) {
   );
 
   const eslintrcPath = path.join(packagePath, '.eslintrc.js');
-  const eslintrcContent = isTypescript
-    ? `
+  const eslintrcContent = `
 module.exports = {
   root: true,
   extends: ['@mongodb-js/eslint-config-devtools'],
@@ -331,10 +308,6 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig-lint.json'],
   },
-};`
-    : `module.exports = {
-  root: true,
-  extends: ['@mongodb-js/eslint-config-devtools']
 };`;
 
   const eslintIgnorePath = path.join(packagePath, '.eslintignore');
@@ -357,10 +330,8 @@ module.exports = {
     await fs.writeFile(depcheckrcPath, depcheckrcContent);
     await fs.writeFile(prettierrcPath, prettierrcContent);
     await fs.writeFile(prettierIgnorePath, prettierIgnoreContent);
-    if (isTypescript) {
-      await fs.writeFile(tsconfigPath, tsconfigContent);
-      await fs.writeFile(tsconfigLintPath, tsconfigLintContent);
-    }
+    await fs.writeFile(tsconfigPath, tsconfigContent);
+    await fs.writeFile(tsconfigLintPath, tsconfigLintContent);
     await fs.writeFile(eslintrcPath, eslintrcContent);
     await fs.writeFile(eslintIgnorePath, eslintIgnoreContent);
     await fs.writeFile(mocharcPath, mocharcContent);
