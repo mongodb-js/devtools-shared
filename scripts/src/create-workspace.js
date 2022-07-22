@@ -66,8 +66,8 @@ async function main(argv) {
       {
         type: workspaceNameFromArgs ? null : 'text',
         name: 'name',
-        message: 'Provide a name for the new workspace',
-        hint: '(this name will be part of the package name)',
+        message: 'Provide a name for the new workspace (package name)',
+        hint: '(this name willProduction be part of the package name)',
         validate(value) {
           if (!value) {
             return 'Workspace name is required';
@@ -119,15 +119,6 @@ async function main(argv) {
         initial: [],
       },
       {
-        type: 'select',
-        name: 'license',
-        message: 'Which type of license will it use?',
-        choices: [
-          { title: 'Apache-2.0', value: 'Apache-2.0' },
-          { title: 'SSPL', value: 'SSPL' },
-        ],
-      },
-      {
         type(prev) {
           return prev.length > 0 ? 'select' : null;
         },
@@ -136,6 +127,15 @@ async function main(argv) {
         choices: [
           { title: 'Production', value: 'dependencies' },
           { title: 'Development', value: 'devDependencies' },
+        ],
+      },
+      {
+        type: 'select',
+        name: 'license',
+        message: 'Which type of license will it use?',
+        choices: [
+          { title: 'Apache-2.0', value: 'Apache-2.0' },
+          { title: 'SSPL', value: 'SSPL' },
         ],
       },
     ],
