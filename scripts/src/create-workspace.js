@@ -58,7 +58,6 @@ async function main(argv) {
     description = '',
     isConfig = false,
     isPublic = true,
-    isReact = true,
     license = 'Apache-2.0',
     dependants = [],
     depType,
@@ -100,12 +99,6 @@ async function main(argv) {
         type: 'confirm',
         name: 'isPublic',
         message: 'Is it a public package?',
-        initial: true,
-      },
-      {
-        type: 'confirm',
-        name: 'isReact',
-        message: 'Will the package use React?',
         initial: true,
       },
       {
@@ -204,8 +197,6 @@ async function main(argv) {
       'test-ci': 'npm run test-cov',
       reformat: 'npm run prettier -- --write .',
     },
-    ...(isReact && { peerDependencies: { react: '*', 'react-dom': '*' } }),
-    ...(isReact && { dependencies: { react: '*', 'react-dom': '*' } }),
     devDependencies: {
       '@mongodb-js/eslint-config-devtools': '*',
       '@mongodb-js/mocha-config-compass': '*',
@@ -222,13 +213,6 @@ async function main(argv) {
       nyc: '*',
       prettier: '*',
       sinon: '*',
-      ...(isReact && {
-        '@testing-library/react': '*',
-        '@testing-library/user-event': '*',
-        '@types/chai-dom': '*',
-        '@types/react': '*',
-        '@types/react-dom': '*',
-      }),
       typescript: '*',
       'gen-esm-wrapper': '*',
     },
@@ -256,9 +240,6 @@ async function main(argv) {
     '@types/sinon-chai',
     'sinon',
   ]
-    .concat(
-      isReact ? ['@types/chai-dom', '@types/react', '@types/react-dom'] : []
-    )
     .map((dep) => ` - '${dep}'`)
     .join('\n');
   const depcheckrcContent = `ignores:\n${ignores}\nignore-patterns:\n - 'dist'\n`;
@@ -274,9 +255,7 @@ async function main(argv) {
   const tsconfigPath = path.join(packagePath, 'tsconfig.json');
   const tsconfigContent = JSON.stringify(
     {
-      extends: `@mongodb-js/tsconfig-compass/tsconfig.${
-        isReact ? 'react' : 'common'
-      }.json`,
+      extends: '@mongodb-js/tsconfig-compass/tsconfig.common.json',
       compilerOptions: {
         outDir: 'dist',
         allowJs: true,
@@ -313,11 +292,7 @@ module.exports = {
   const eslintIgnorePath = path.join(packagePath, '.eslintignore');
   const eslintIgnoreContent = '.nyc-output\ndist\n';
   const mocharcPath = path.join(packagePath, '.mocharc.js');
-  const mocharcContent = `module.exports = require('${
-    isReact
-      ? '@mongodb-js/mocha-config-compass/react'
-      : '@mongodb-js/mocha-config-compass'
-  }');`;
+  const mocharcContent = `module.exports = require('@mongodb-js/mocha-config-compass');`;
 
   const indexSrcDir = path.join(packagePath, 'src');
   const indexSrcPath = path.join(indexSrcDir, 'index.ts');
