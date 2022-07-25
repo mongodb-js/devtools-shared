@@ -66,7 +66,7 @@ async function main(argv) {
         type: workspaceNameFromArgs ? null : 'text',
         name: 'name',
         message: 'Provide a name for the new workspace (package name)',
-        hint: '(this name willProduction be part of the package name)',
+        hint: '(this name will be part of the package name)',
         validate(value) {
           if (!value) {
             return 'Workspace name is required';
