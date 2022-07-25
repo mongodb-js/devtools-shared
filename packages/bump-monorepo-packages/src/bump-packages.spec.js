@@ -14,7 +14,7 @@ describe('bump-packages', function () {
     }
   });
 
-  this.timeout(20000);
+  this.timeout(60000);
   let tempDir;
   let remote;
   let repoPath;

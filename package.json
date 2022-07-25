@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Shared dependencies of Compass, the MongoDB extension for VSCode and MongoSH",
   "private": true,
-  "license": "SSPL",
   "keywords": [],
   "author": {
     "name": "MongoDB Inc",
@@ -26,7 +25,7 @@
     "precheck-ci": "npm run depcheck",
     "precheck": "npm run depcheck",
     "predepcheck": "npm run depalign",
-    "bump-packages": "node scripts/src/bump-packages/bump-packages.js",
+    "bump-packages": "bump-monorepo-packages",
     "publish-packages": "lerna publish from-package --no-verify-access --no-changelog --no-push --exact --no-git-tag-version --force-publish --yes",
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
@@ -5,10 +7,12 @@ const assert = require('assert');
 
 const gitLogParser = require('git-log-parser');
 const semver = require('semver');
+
 const maxIncrement = require('./max-increment');
 const getConventionalBump = require('./get-conventional-bump');
 
-const LAST_BUMP_COMMIT_MESSAGE = 'chore(ci): bump packages';
+const LAST_BUMP_COMMIT_MESSAGE =
+  process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
 
 async function main() {
   if (!fs.existsSync('./package.json') || !fs.existsSync('.git')) {
@@ -34,7 +38,7 @@ async function main() {
   });
 }
 
-main(...process.argv.slice(2)).catch((e) => {
+main().catch((e) => {
   console.debug(e);
   process.exit(1);
 });
@@ -48,10 +52,10 @@ function getPackages(cwd) {
   );
 
   if (status !== 0) {
-    throw new Error(output);
+    throw new Error((output || '').toString());
   }
 
-  return JSON.parse(stdout);
+  return JSON.parse(stdout.toString());
 }
 
 async function getCommits({ path, range }) {

@@ -14,6 +14,7 @@ const {
   SSPL_LICENSE_CONTENT,
   APACHE2_LICENSE_CONTENT,
 } = require('./utils/licenses');
+const { MONOREPO_ROOT } = require('./utils/constants');
 
 function packageNameToDir(pkgName) {
   return pkgName ? pkgName.replace(/^@mongodb-js\//, '') : pkgName;
@@ -216,8 +217,7 @@ async function main(argv) {
   sortDepsByName(pkgJson);
 
   const packagePath = path.resolve(
-    __dirname,
-    '..',
+    MONOREPO_ROOT,
     isConfig ? 'configs' : 'packages',
     packageNameToDir(name)
   );
