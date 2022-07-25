@@ -24,7 +24,7 @@
   "files": [
     "dist"
   ],
-  "license": "SSPL",
+  "license": "Apache-2.0",
   "main": "dist/index.js",
   "scripts": {
     "eslint": "eslint",
