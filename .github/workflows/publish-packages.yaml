@@ -8,20 +8,28 @@ on:
 
 jobs:
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: "${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.head_commit.message, 'chore(ci): bump packages') }}"
     runs-on: ubuntu-latest
 
     steps:
-    - name: "Checkout"
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        # don't checkout a detatched HEAD
+        ref: ${{ github.head_ref }}
+
+        # this is important so git log can pick up on
+        # the whole history to generate the list of AUTHORS
+        fetch-depth: '0'
+
+    - name: Setup git
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
 
     - name: "Use NodeJS 14"
       uses: actions/setup-node@v2
       with:
         node-version: '14'
-
 
     - name: Install npm@7
       run: npm install -g npm@7
@@ -38,4 +46,12 @@ jobs:
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
         git update-index --assume-unchanged .npmrc
         npm run publish-packages
+
+    - name: "Publish tags"
+      run: |
+        npx lerna list -a --since HEAD~1 --json | \
+          jq '{tag: (.[].name + "@" + .[].version)}' | \
+          jq -r .tag | \
+          xargs -i sh -c "git tag -a {} -m {} || true"
+        git push --follow-tags
 

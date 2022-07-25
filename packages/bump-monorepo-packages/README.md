@@ -12,6 +12,8 @@ Run this in CI in order to update the packages `package.json` and the root `pack
 node scripts/bump-packages/bump-packages.js
 ```
 
+The "bump packages" commit message can be overriden by setting the `LAST_BUMP_COMMIT_MESSAGE` env var. By default is: `chore(ci): bump packages`.
+
 ## What it does
 
 The command performs the following steps:

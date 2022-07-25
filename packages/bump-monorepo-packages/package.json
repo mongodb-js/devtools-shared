@@ -1,22 +1,31 @@
 {
-  "name": "scripts",
-  "description": "MongoDB DevTools repo scripts",
+  "name": "@mongodb-js/bump-monorepo-packages",
+  "description": "Compute and writes conventional bumps for monorepo packages",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
   },
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "bump-monorepo-packages": "./src/bump-packages.js"
+  },
   "bugs": {
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/compass",
-  "version": "0.1.16",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/compass.git"
   },
+  "files": [
+    "dist"
+  ],
   "license": "SSPL",
+  "main": "dist/index.js",
   "scripts": {
     "eslint": "eslint",
     "prettier": "prettier",
@@ -24,21 +33,29 @@
     "depcheck": "depcheck",
     "check": "npm run lint && npm run depcheck",
     "check-ci": "npm run check",
+    "test": "mocha",
+    "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
+    "test-watch": "npm run test -- --watch",
+    "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.3",
+    "@mongodb-js/mocha-config-compass": "^0.10.0",
     "@mongodb-js/prettier-config-compass": "^0.5.0",
+    "@mongodb-js/tsconfig-compass": "^0.6.0",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
+    "@types/sinon-chai": "^3.2.5",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
     "prettier": "2.3.2"
   },
   "dependencies": {
-    "chalk": "^4.1.1",
-    "minimist": "^1.2.5",
-    "ora": "^5.4.0",
-    "pacote": "^11.3.5",
-    "prompts": "^2.4.1",
-    "semver": "^7.3.5"
+    "git-log-parser": "^1.2.0",
+    "lerna": "^4.0.0",
+    "semver": "^7.3.7"
   }
 }
