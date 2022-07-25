@@ -1,9 +1,6 @@
 const path = require('path');
+const { MONOREPO_ROOT: ROOT_DIR, LERNA_BIN } = require('./constants');
 const { runInDir } = require('./run-in-dir');
-
-const ROOT_DIR = path.resolve(__dirname, '..');
-
-const LERNA_BIN = path.join(ROOT_DIR, 'node_modules', '.bin', 'lerna');
 
 async function collectWorkspacesMeta() {
   const workspaces = JSON.parse(

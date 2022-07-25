@@ -2,16 +2,16 @@ const path = require('path');
 const { promises: fs } = require('fs');
 const chalk = require('chalk');
 const pacote = require('pacote');
-const { runInDir } = require('./run-in-dir');
-const { forEachPackage } = require('./monorepo/for-each-package');
-const { updatePackageJson } = require('./monorepo/update-package-json');
-const { withProgress } = require('./monorepo/with-progress');
+const { runInDir } = require('./utils/run-in-dir');
+const { forEachPackage } = require('./utils/for-each-package');
+const { updatePackageJson } = require('./utils/update-package-json');
+const { withProgress } = require('./utils/with-progress');
 const {
   collectWorkspacesMeta,
   collectWorkspacesDependencies,
   DepTypes,
-} = require('./workspace-dependencies');
-const { calculateReplacements, intersects } = require('./semver-helpers');
+} = require('./utils/workspace-dependencies');
+const { calculateReplacements, intersects } = require('./utils/semver-helpers');
 
 const DEPENDENCY_GROUPS = [
   'peerDependencies',
