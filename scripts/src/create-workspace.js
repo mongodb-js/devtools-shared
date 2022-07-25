@@ -57,7 +57,6 @@ async function main(argv) {
     name = workspaceNameFromArgs,
     description = '',
     isConfig = false,
-    isPublic = true,
     license = 'Apache-2.0',
     dependants = [],
     depType,
@@ -93,12 +92,6 @@ async function main(argv) {
         name: 'isConfig',
         message: 'Is it a shared configuration package?',
         hint: '(answering yes will create the package in the ./configs/<package-name> directory)',
-        initial: true,
-      },
-      {
-        type: 'confirm',
-        name: 'isPublic',
-        message: 'Is it a public package?',
         initial: true,
       },
       {
@@ -159,7 +152,7 @@ async function main(argv) {
       name: 'MongoDB Inc',
       email: 'compass@mongodb.com',
     },
-    ...(isPublic ? { publishConfig: { access: 'public' } } : { private: true }),
+    publishConfig: { access: 'public' },
     bugs: {
       url: 'https://jira.mongodb.org/projects/COMPASS/issues',
       email: 'compass@mongodb.com',
