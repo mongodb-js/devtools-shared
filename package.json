@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Shared dependencies of Compass, the MongoDB extension for VSCode and MongoSH",
   "private": true,
-  "license": "SSPL",
   "keywords": [],
   "author": {
     "name": "MongoDB Inc",
