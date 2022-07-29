@@ -9,7 +9,13 @@ on:
 
 jobs:
   publish:
-    if: "${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.head_commit.message, 'chore(ci): bump packages') }}"
+    if: |
+      github.event.workflow_dispatch || (
+        github.event.workflow_run.conclusion === 'success' &&
+        startsWith(
+          github.event.workflow_run.head_commit.message, 'chore(ci): bump packages'
+        ))
+
     runs-on: ubuntu-latest
 
     steps:
@@ -18,8 +24,7 @@ jobs:
         # don't checkout a detatched HEAD
         ref: ${{ github.head_ref }}
 
-        # this is important so git log can pick up on
-        # the whole history to generate the list of AUTHORS
+        # this is important so git log has the whole history
         fetch-depth: '0'
 
     - name: Setup git
