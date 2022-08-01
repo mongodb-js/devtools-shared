@@ -38,9 +38,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/compass.git"
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
-  "homepage": "https://github.com/mongodb-js/compass",
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
   "publishConfig": {
     "access": "public"
   }
