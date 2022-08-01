@@ -6,7 +6,7 @@ on:
     branches: [main]
     types:
       - completed
-  
+
 jobs:
   publish:
     if: |
@@ -55,8 +55,7 @@ jobs:
     - name: "Publish tags"
       run: |
         npx lerna list -a --json | \
-          jq '{tag: (.[].name + "@" + .[].version)}' | \
-          jq -r .tag | \
-          xargs -i sh -c "git tag -a {} -m {} || true"
+          jq -r '.[] | .name + "@" + .version' | \
+          xargs -I "sh -c 'git tag -a {} -m {} || echo {} already present'"
         git push --follow-tags
 
