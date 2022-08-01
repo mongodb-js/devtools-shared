@@ -1,26 +1,37 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
+const { promises: fs } = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
 const assert = require('assert');
+const { promisify } = require('util');
+const execFile = promisify(childProcess.execFile);
 
 const gitLogParser = require('git-log-parser');
 const semver = require('semver');
 
 const maxIncrement = require('./max-increment');
 const getConventionalBump = require('./get-conventional-bump');
+const { PassThrough } = require('stream');
 
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
 
 async function main() {
-  if (!fs.existsSync('./package.json') || !fs.existsSync('.git')) {
-    throw new Error('this command can only be run from the root of a monorepo');
+  try {
+    await fs.stat('./package.json');
+    await fs.stat('.git');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new Error(
+        'this command can only be run from the root of a monorepo'
+      );
+    }
+    throw err;
   }
 
   const monorepoRootPath = process.cwd();
-  const packages = getPackages(monorepoRootPath);
+  const packages = await getPackages(monorepoRootPath);
 
   const newVersions = [];
   const range = await getRangeFromLastBump();
@@ -33,7 +44,7 @@ async function main() {
     );
   }
 
-  childProcess.spawnSync('npm', ['install', '--package-lock-only'], {
+  await execFile('npm', ['install', '--package-lock-only'], {
     stdio: 'inherit',
   });
 }
@@ -43,32 +54,29 @@ main().catch((e) => {
   process.exit(1);
 });
 
-function getPackages(cwd) {
+async function getPackages(cwd) {
   const lernaCliPath = require.resolve('lerna/cli.js');
-  const { stdout, status, output } = childProcess.spawnSync(
+  const { stdout } = await execFile(
     'node',
     [lernaCliPath, 'list', '--toposort', '--all', '--json'],
-    { cwd }
+    { cwd, encoding: 'utf8' }
   );
 
-  if (status !== 0) {
-    throw new Error((output || '').toString());
-  }
-
-  return JSON.parse(stdout.toString());
+  return JSON.parse(stdout);
 }
 
 async function getCommits({ path, range }) {
-  return new Promise((resolve) => {
-    const stream = gitLogParser.parse({
+  const commits = [];
+  // PassThrough because gitLogParser returns a legacy stream
+  const stream = gitLogParser
+    .parse({
       _: [range, path].filter(Boolean),
-    });
-
-    const commits = [];
-
-    stream.on('data', (commit) => commits.push(commit));
-    stream.on('end', () => resolve(commits));
-  });
+    })
+    .pipe(new PassThrough({ objectMode: true }));
+  for await (const commit of stream) {
+    commits.push(commit);
+  }
+  return commits;
 }
 
 function updateDeps(packageJson, newVersions) {
@@ -219,7 +227,7 @@ async function getRangeFromLastBump() {
 async function processPackage(packagePath, newVersions, options) {
   const packageJsonPath = path.join(packagePath, 'package.json');
 
-  const origPackageJsonString = fs.readFileSync(packageJsonPath, 'utf-8');
+  const origPackageJsonString = await fs.readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(origPackageJsonString);
 
   const packageJsonAfterDepBump = updateDeps(packageJson, newVersions);
@@ -251,7 +259,7 @@ async function processPackage(packagePath, newVersions, options) {
     const trailingSpaces =
       (trailingSpacesMatch && trailingSpacesMatch[1]) || '';
 
-    fs.writeFileSync(
+    await fs.writeFile(
       packageJsonPath,
       JSON.stringify(newPackageJson, null, 2) + trailingSpaces,
       'utf-8'

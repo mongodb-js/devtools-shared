@@ -27,6 +27,11 @@ describe('getConventionalBump', function () {
     );
 
     assert.equal(
+      getConventionalBump({ subject: 'fix: msg', body: '' }),
+      'patch'
+    );
+
+    assert.equal(
       getConventionalBump({ subject: 'feat(scope): msg', body: '' }),
       'minor'
     );

@@ -6,7 +6,7 @@
  *    BREAKING CHANGE or BREAKING CHANGES or
  *    subject has ! after the scope (ie. feat! or feat(..)!:)
  * -> then is a major bump
- * if subject starts with feat or fix
+ * if subject starts with feat
  * -> then is a minor bump
  * everything else is a patch.
  *
@@ -24,7 +24,7 @@ function getConventionalBump(commit) {
     return 'major';
   }
 
-  if (/^(feat|fix)[:(]/.test(subject)) {
+  if (/^(feat)[:(]/.test(subject)) {
     return 'minor';
   }
 
