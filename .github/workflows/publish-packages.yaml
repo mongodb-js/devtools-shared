@@ -6,15 +6,14 @@ on:
     branches: [main]
     types:
       - completed
-
+  
 jobs:
   publish:
     if: |
-      github.event.workflow_dispatch || (
-        github.event.workflow_run.conclusion == 'success' &&
-        startsWith(
-          github.event.workflow_run.head_commit.message, 'chore(ci): bump packages'
-        ))
+      github.event_name == 'workflow_dispatch' || (
+        startsWith(github.event.workflow_run.head_commit.message, 'chore(ci): bump packages') &&
+        github.event.workflow_run.conclusion == 'success'
+      )
 
     runs-on: ubuntu-latest
 
