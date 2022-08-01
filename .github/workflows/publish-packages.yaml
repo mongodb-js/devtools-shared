@@ -54,7 +54,7 @@ jobs:
 
     - name: "Publish tags"
       run: |
-        npx lerna list -a --since HEAD~1 --json | \
+        npx lerna list -a --json | \
           jq '{tag: (.[].name + "@" + .[].version)}' | \
           jq -r .tag | \
           xargs -i sh -c "git tag -a {} -m {} || true"
