@@ -158,11 +158,11 @@ async function main(argv) {
       url: 'https://jira.mongodb.org/projects/COMPASS/issues',
       email: 'compass@mongodb.com',
     },
-    homepage: 'https://github.com/mongodb-js/compass',
+    homepage: 'https://github.com/mongodb-js/devtools-shared',
     version: '0.1.0',
     repository: {
       type: 'git',
-      url: 'https://github.com/mongodb-js/compass.git',
+      url: 'https://github.com/mongodb-js/devtools-shared.git',
     },
     files: ['dist'],
     license: license,
