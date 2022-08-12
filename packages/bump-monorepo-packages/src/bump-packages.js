@@ -131,7 +131,20 @@ function updateDeps(packageJson, newVersions) {
         version
       );
 
-      dependenciesSection[depName] = version;
+      const oldDepRange = dependenciesSection[depName];
+
+      // we try to preserve some of the ranges specified in the
+      // original package.json as that may be useful for external dependants.
+      // The default for ranges we can't recognize is a caret range.
+      const newDepRange = /^\d\.\d\.\d/.exec(oldDepRange)
+        ? version
+        : oldDepRange === '*'
+        ? '*'
+        : oldDepRange.startsWith('~')
+        ? `~${version}`
+        : `^${version}`;
+
+      dependenciesSection[depName] = newDepRange;
 
       // we increment the package version based on the bump on dependencies:
       // if a devDependency was bumped, regardless of the increment we increment of a

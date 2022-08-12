@@ -304,4 +304,49 @@ describe('bump-packages', function () {
       process.env.SKIP_BUMP_PACKAGES = skipBkp;
     }
   });
+
+  it('preserves caret ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '^1.0.0' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(
+      manifests,
+      require('./fixtures/preserve-caret.json')
+    );
+  });
+
+  it('preserves tilde ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '~1.0.0' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(
+      manifests,
+      require('./fixtures/preserve-tilde.json')
+    );
+  });
+
+  it('preserves star ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '*' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(manifests, require('./fixtures/preserve-star.json'));
+  });
 });
