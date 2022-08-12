@@ -17,6 +17,18 @@ const { PassThrough } = require('stream');
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
 
+function shouldSkipPackage(packageName) {
+  const skippedPackages = (process.env.SKIP_BUMP_PACKAGES || '').split(',');
+  const shouldSkip = skippedPackages.includes(packageName);
+
+  console.log('Should skip', packageName, {
+    packages: skippedPackages,
+    shouldSkip,
+  });
+
+  return shouldSkip;
+}
+
 async function main() {
   try {
     await fs.stat('./package.json');
@@ -81,7 +93,7 @@ async function getCommits({ path, range }) {
 
 function updateDeps(packageJson, newVersions) {
   console.debug(`[${packageJson.name}]`, 'updateDeps', newVersions);
-  const newPackageJson = { ...packageJson };
+  const newPackageJson = JSON.parse(JSON.stringify(packageJson));
 
   let inc;
 
@@ -119,7 +131,20 @@ function updateDeps(packageJson, newVersions) {
         version
       );
 
-      dependenciesSection[depName] = version;
+      const oldDepRange = dependenciesSection[depName];
+
+      // we try to preserve some of the ranges specified in the
+      // original package.json as that may be useful for external dependants.
+      // The default for ranges we can't recognize is a caret range.
+      const newDepRange = /^\d\.\d\.\d/.exec(oldDepRange)
+        ? version
+        : oldDepRange === '*'
+        ? '*'
+        : oldDepRange.startsWith('~')
+        ? `~${version}`
+        : `^${version}`;
+
+      dependenciesSection[depName] = newDepRange;
 
       // we increment the package version based on the bump on dependencies:
       // if a devDependency was bumped, regardless of the increment we increment of a
@@ -232,24 +257,27 @@ async function processPackage(packagePath, newVersions, options) {
 
   const packageJsonAfterDepBump = updateDeps(packageJson, newVersions);
 
-  const conventionalVersion = await bumpVersionBasedOnCommits(
-    packagePath,
-    packageJson.version,
-    options
-  );
+  let newVersion = packageJson.version;
 
-  const newVersion = semver.gt(
-    conventionalVersion,
-    packageJsonAfterDepBump.version
-  )
-    ? conventionalVersion
-    : packageJsonAfterDepBump.version;
+  // if the package is in the skip list we still update its dependencies
+  // but we keep its version to the old one
+  if (!shouldSkipPackage(packageJson.name)) {
+    const conventionalVersion = await bumpVersionBasedOnCommits(
+      packagePath,
+      packageJson.version,
+      options
+    );
 
-  if (semver.gt(newVersion, packageJson.version)) {
-    newVersions[packageJson.name] = {
-      version: newVersion,
-      bump: semver.diff(newVersion, packageJson.version),
-    };
+    newVersion = semver.gt(conventionalVersion, packageJsonAfterDepBump.version)
+      ? conventionalVersion
+      : packageJsonAfterDepBump.version;
+
+    if (semver.gt(newVersion, packageJson.version)) {
+      newVersions[packageJson.name] = {
+        version: newVersion,
+        bump: semver.diff(newVersion, packageJson.version),
+      };
+    }
   }
 
   const newPackageJson = { ...packageJsonAfterDepBump, version: newVersion };

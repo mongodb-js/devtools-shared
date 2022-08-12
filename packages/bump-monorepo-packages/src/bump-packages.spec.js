@@ -268,4 +268,85 @@ describe('bump-packages', function () {
       require('./fixtures/bump-package-1-breaking.json')
     );
   });
+
+  it('skips bumping packages listed in SKIP_BUMP_PACKAGES', function () {
+    const skipBkp = process.env.SKIP_BUMP_PACKAGES;
+    try {
+      process.env.SKIP_BUMP_PACKAGES = 'package6';
+      makeBumpCommit();
+      commitPackageChange('package5', 'chore: some change');
+      commitPackageChange('package6', 'chore: some change');
+      runBumpVersion();
+      const manifests = readAllManifests();
+      assert.deepStrictEqual(
+        manifests,
+        require('./fixtures/skip-packages.json')
+      );
+    } finally {
+      process.env.SKIP_BUMP_PACKAGES = skipBkp;
+    }
+  });
+
+  it('skips bumping packages listed in SKIP_BUMP_PACKAGES, keeps other bumps', function () {
+    const skipBkp = process.env.SKIP_BUMP_PACKAGES;
+    try {
+      process.env.SKIP_BUMP_PACKAGES = 'package5';
+      makeBumpCommit();
+      commitPackageChange('package5', 'chore: some change');
+      commitPackageChange('package6', 'chore: some change');
+      runBumpVersion();
+      const manifests = readAllManifests();
+      assert.deepStrictEqual(
+        manifests,
+        require('./fixtures/skip-packages-keep-unskipped.json')
+      );
+    } finally {
+      process.env.SKIP_BUMP_PACKAGES = skipBkp;
+    }
+  });
+
+  it('preserves caret ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '^1.0.0' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(
+      manifests,
+      require('./fixtures/preserve-caret.json')
+    );
+  });
+
+  it('preserves tilde ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '~1.0.0' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(
+      manifests,
+      require('./fixtures/preserve-tilde.json')
+    );
+  });
+
+  it('preserves star ranges', function () {
+    addPackage({
+      name: 'package7',
+      devDependencies: { package6: '*' },
+    });
+
+    makeBumpCommit();
+    commitPackageChange('package6', 'chore: some change');
+    runBumpVersion();
+    const manifests = readAllManifests();
+    assert.deepStrictEqual(manifests, require('./fixtures/preserve-star.json'));
+  });
 });
