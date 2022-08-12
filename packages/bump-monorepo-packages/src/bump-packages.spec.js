@@ -274,6 +274,7 @@ describe('bump-packages', function () {
     try {
       process.env.SKIP_BUMP_PACKAGES = 'package6';
       makeBumpCommit();
+      commitPackageChange('package5', 'chore: some change');
       commitPackageChange('package6', 'chore: some change');
       runBumpVersion();
       const manifests = readAllManifests();

@@ -93,7 +93,7 @@ async function getCommits({ path, range }) {
 
 function updateDeps(packageJson, newVersions) {
   console.debug(`[${packageJson.name}]`, 'updateDeps', newVersions);
-  const newPackageJson = { ...packageJson };
+  const newPackageJson = JSON.parse(JSON.stringify(packageJson));
 
   let inc;
 
