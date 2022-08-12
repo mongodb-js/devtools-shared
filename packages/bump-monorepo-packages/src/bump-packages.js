@@ -17,6 +17,18 @@ const { PassThrough } = require('stream');
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
 
+function shouldSkipPackage(packageName) {
+  const skippedPackages = (process.env.SKIP_BUMP_PACKAGES || '').split(',');
+  const shouldSkip = skippedPackages.includes(packageName);
+
+  console.log('Should skip', packageName, {
+    packages: skippedPackages,
+    shouldSkip,
+  });
+
+  return shouldSkip;
+}
+
 async function main() {
   try {
     await fs.stat('./package.json');
@@ -232,24 +244,27 @@ async function processPackage(packagePath, newVersions, options) {
 
   const packageJsonAfterDepBump = updateDeps(packageJson, newVersions);
 
-  const conventionalVersion = await bumpVersionBasedOnCommits(
-    packagePath,
-    packageJson.version,
-    options
-  );
+  let newVersion = packageJson.version;
 
-  const newVersion = semver.gt(
-    conventionalVersion,
-    packageJsonAfterDepBump.version
-  )
-    ? conventionalVersion
-    : packageJsonAfterDepBump.version;
+  // if the package is in the skip list we still update its dependencies
+  // but we keep its version to the old one
+  if (!shouldSkipPackage(packageJson.name)) {
+    const conventionalVersion = await bumpVersionBasedOnCommits(
+      packagePath,
+      packageJson.version,
+      options
+    );
 
-  if (semver.gt(newVersion, packageJson.version)) {
-    newVersions[packageJson.name] = {
-      version: newVersion,
-      bump: semver.diff(newVersion, packageJson.version),
-    };
+    newVersion = semver.gt(conventionalVersion, packageJsonAfterDepBump.version)
+      ? conventionalVersion
+      : packageJsonAfterDepBump.version;
+
+    if (semver.gt(newVersion, packageJson.version)) {
+      newVersions[packageJson.name] = {
+        version: newVersion,
+        bump: semver.diff(newVersion, packageJson.version),
+      };
+    }
   }
 
   const newPackageJson = { ...packageJsonAfterDepBump, version: newVersion };

@@ -14,6 +14,8 @@ node scripts/bump-packages/bump-packages.js
 
 The "bump packages" commit message can be overriden by setting the `LAST_BUMP_COMMIT_MESSAGE` env var. By default is: `chore(ci): bump packages`.
 
+Packages can be excluded from the automatic version bump by adding them to the `SKIP_BUMP_PACKAGES` env var. For example: `export SKIP_BUMP_PACKAGES="package1,package2"`. This can be used in case some of the packages are versioned manually.
+
 ## What it does
 
 The command performs the following steps:
