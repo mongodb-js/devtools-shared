@@ -1,3 +1,4 @@
+import type { ENVS } from './env';
 import { ATLAS, ADL, ON_PREM } from './env';
 
 import {
@@ -6,6 +7,24 @@ import {
   ANY_COLLECTION_NAMESPACE,
   COLLECTION,
 } from './ns';
+
+type StageOperator = {
+  readonly name: string;
+  readonly value: string;
+  readonly label: string;
+  readonly outputStage: boolean;
+  readonly fullScan: boolean;
+  readonly firstStage: boolean;
+  readonly score: number;
+  readonly env: readonly typeof ENVS[number][];
+  readonly meta: 'stage';
+  readonly version: `${number}.${number}.${number}`;
+  readonly apiVersions: readonly number[];
+  readonly namespaces: readonly typeof ANY_NAMESPACE[number][];
+  readonly description: string;
+  readonly comment: string;
+  readonly snippet: string;
+};
 
 /**
  * The stage operators.
@@ -987,6 +1006,13 @@ const STAGE_OPERATORS = [
 }`,
   },
 ] as const;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+(function assertStageOperatorsSceme(_operators: readonly StageOperator[]) {
+  // This will fail on compile time if stage operators are not matching the type
+  // scheme while allowing us to export their types as const allowing for a
+  // stricter type definitions in the user code
+})(STAGE_OPERATORS);
 
 /**
  * The list of stage operator names.
