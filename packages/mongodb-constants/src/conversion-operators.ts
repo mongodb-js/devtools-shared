@@ -1,0 +1,103 @@
+/**
+ * The conversion operators.
+ */
+const CONVERSION_OPERATORS = [
+  {
+    name: '$convert',
+    value: '$convert',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$ltrim',
+    value: '$ltrim',
+    firstStage: false,
+    score: 1,
+    meta: 'accumulator',
+    version: '3.7.2',
+  },
+  {
+    name: '$rtrim',
+    value: '$rtrim',
+    firstStage: false,
+    score: 1,
+    meta: 'accumulator',
+    version: '3.7.2',
+  },
+  {
+    name: '$toBool',
+    value: '$toBool',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toDate',
+    value: '$toDate',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toDecimal',
+    value: '$toDecimal',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toDouble',
+    value: '$toDouble',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toInt',
+    value: '$toInt',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toLong',
+    value: '$toLong',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toObjectId',
+    value: '$toObjectId',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$toString',
+    value: '$toString',
+    firstStage: false,
+    score: 1,
+    meta: 'conv',
+    version: '3.7.2',
+  },
+  {
+    name: '$trim',
+    value: '$trim',
+    firstStage: false,
+    score: 1,
+    meta: 'accumulator',
+    version: '3.7.2',
+  },
+] as const;
+
+export { CONVERSION_OPERATORS };
