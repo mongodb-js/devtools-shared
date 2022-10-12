@@ -5,7 +5,6 @@ const ACCUMULATORS = [
   {
     name: '$accumulator',
     value: '$accumulator',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '4.4.0',
@@ -13,7 +12,6 @@ const ACCUMULATORS = [
   {
     name: '$addToSet',
     value: '$addToSet',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -21,7 +19,6 @@ const ACCUMULATORS = [
   {
     name: '$avg',
     value: '$avg',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -30,7 +27,6 @@ const ACCUMULATORS = [
   {
     name: '$bottom',
     value: '$bottom',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:bottom-n',
     version: '5.2.0',
@@ -38,7 +34,6 @@ const ACCUMULATORS = [
   {
     name: '$bottomN',
     value: '$bottomN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:bottom-n',
     version: '5.2.0',
@@ -46,7 +41,6 @@ const ACCUMULATORS = [
   {
     name: '$covariancePop',
     value: '$covariancePop',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -54,7 +48,6 @@ const ACCUMULATORS = [
   {
     name: '$covarianceSamp',
     value: '$covarianceSamp',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -62,7 +55,6 @@ const ACCUMULATORS = [
   {
     name: '$count',
     value: '$count',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '5.0.0',
@@ -70,7 +62,6 @@ const ACCUMULATORS = [
   {
     name: '$derivative',
     value: '$derivative',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -78,7 +69,6 @@ const ACCUMULATORS = [
   {
     name: '$denseRank',
     value: '$denseRank',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -86,7 +76,6 @@ const ACCUMULATORS = [
   {
     name: '$documentNumber',
     value: '$documentNumber',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -94,7 +83,6 @@ const ACCUMULATORS = [
   {
     name: '$expMovingAvg',
     value: '$expMovingAvg',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -102,7 +90,6 @@ const ACCUMULATORS = [
   {
     name: '$first',
     value: '$first',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -110,7 +97,6 @@ const ACCUMULATORS = [
   {
     name: '$firstN',
     value: '$firstN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '5.1.0',
@@ -118,7 +104,6 @@ const ACCUMULATORS = [
   {
     name: '$integral',
     value: '$integral',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -126,7 +111,6 @@ const ACCUMULATORS = [
   {
     name: '$last',
     value: '$last',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -134,7 +118,6 @@ const ACCUMULATORS = [
   {
     name: '$lastN',
     value: '$lastN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '5.2.0',
@@ -142,7 +125,6 @@ const ACCUMULATORS = [
   {
     name: '$max',
     value: '$max',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -151,7 +133,6 @@ const ACCUMULATORS = [
   {
     name: '$maxN',
     value: '$maxN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '5.2.0',
@@ -159,7 +140,6 @@ const ACCUMULATORS = [
   {
     name: '$min',
     value: '$min',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -168,7 +148,6 @@ const ACCUMULATORS = [
   {
     name: '$minN',
     value: '$minN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '5.2.0',
@@ -176,7 +155,6 @@ const ACCUMULATORS = [
   {
     name: '$push',
     value: '$push',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -184,7 +162,6 @@ const ACCUMULATORS = [
   {
     name: '$rank',
     value: '$rank',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -192,7 +169,6 @@ const ACCUMULATORS = [
   {
     name: '$stdDevPop',
     value: '$stdDevPop',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '3.2.0',
@@ -201,7 +177,6 @@ const ACCUMULATORS = [
   {
     name: '$stdDevSamp',
     value: '$stdDevSamp',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '3.2.0',
@@ -210,7 +185,6 @@ const ACCUMULATORS = [
   {
     name: '$shift',
     value: '$shift',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.0.0',
@@ -218,7 +192,6 @@ const ACCUMULATORS = [
   {
     name: '$sum',
     value: '$sum',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '2.2.0',
@@ -227,7 +200,6 @@ const ACCUMULATORS = [
   {
     name: '$top',
     value: '$top',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:top-n',
     version: '5.2.0',
@@ -235,7 +207,6 @@ const ACCUMULATORS = [
   {
     name: '$topN',
     value: '$topN',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:top-n',
     version: '5.2.0',
@@ -243,7 +214,6 @@ const ACCUMULATORS = [
   {
     name: '$locf',
     value: '$locf',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.3.0',
@@ -251,7 +221,6 @@ const ACCUMULATORS = [
   {
     name: '$linearFill',
     value: '$linearFill',
-    firstStage: false,
     score: 1,
     meta: 'accumulator:window',
     version: '5.3.0',

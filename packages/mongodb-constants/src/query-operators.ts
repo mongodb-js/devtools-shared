@@ -5,7 +5,6 @@ const QUERY_OPERATORS = [
   {
     name: '$all',
     value: '$all',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -13,7 +12,6 @@ const QUERY_OPERATORS = [
   {
     name: '$and',
     value: '$and',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -21,7 +19,6 @@ const QUERY_OPERATORS = [
   {
     name: '$bitsAllClear',
     value: '$bitsAllClear',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.2.0',
@@ -29,7 +26,6 @@ const QUERY_OPERATORS = [
   {
     name: '$bitsAllSet',
     value: '$bitsAllSet',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.2.0',
@@ -37,7 +33,6 @@ const QUERY_OPERATORS = [
   {
     name: '$bitsAnyClear',
     value: '$bitsAnyClear',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.2.0',
@@ -45,7 +40,6 @@ const QUERY_OPERATORS = [
   {
     name: '$bitsAnySet',
     value: '$bitsAnySet',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.2.0',
@@ -53,7 +47,6 @@ const QUERY_OPERATORS = [
   {
     name: '$comment',
     value: '$comment',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.2.0',
@@ -61,7 +54,6 @@ const QUERY_OPERATORS = [
   {
     name: '$elemMatch',
     value: '$elemMatch',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -69,7 +61,6 @@ const QUERY_OPERATORS = [
   {
     name: '$eq',
     value: '$eq',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -77,7 +68,6 @@ const QUERY_OPERATORS = [
   {
     name: '$exists',
     value: '$exists',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -85,7 +75,6 @@ const QUERY_OPERATORS = [
   {
     name: '$expr',
     value: '$expr',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.6.0',
@@ -93,7 +82,6 @@ const QUERY_OPERATORS = [
   {
     name: '$geoIntersects',
     value: '$geoIntersects',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -101,7 +89,6 @@ const QUERY_OPERATORS = [
   {
     name: '$geoWithin',
     value: '$geoWithin',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -109,7 +96,6 @@ const QUERY_OPERATORS = [
   {
     name: '$gt',
     value: '$gt',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -117,7 +103,6 @@ const QUERY_OPERATORS = [
   {
     name: '$gte',
     value: '$gte',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -125,7 +110,6 @@ const QUERY_OPERATORS = [
   {
     name: '$in',
     value: '$in',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -133,7 +117,6 @@ const QUERY_OPERATORS = [
   {
     name: '$jsonSchema',
     value: '$jsonSchema',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '3.6.0',
@@ -141,7 +124,6 @@ const QUERY_OPERATORS = [
   {
     name: '$lt',
     value: '$lt',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -149,7 +131,6 @@ const QUERY_OPERATORS = [
   {
     name: '$lte',
     value: '$lte',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -157,7 +138,6 @@ const QUERY_OPERATORS = [
   {
     name: '$mod',
     value: '$mod',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -165,7 +145,6 @@ const QUERY_OPERATORS = [
   {
     name: '$ne',
     value: '$ne',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -173,7 +152,6 @@ const QUERY_OPERATORS = [
   {
     name: '$near',
     value: '$near',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -181,7 +159,6 @@ const QUERY_OPERATORS = [
   {
     name: '$nearSphere',
     value: '$nearSphere',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -189,7 +166,6 @@ const QUERY_OPERATORS = [
   {
     name: '$nin',
     value: '$nin',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -197,7 +173,6 @@ const QUERY_OPERATORS = [
   {
     name: '$not',
     value: '$not',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -205,7 +180,6 @@ const QUERY_OPERATORS = [
   {
     name: '$nor',
     value: '$nor',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -213,7 +187,6 @@ const QUERY_OPERATORS = [
   {
     name: '$or',
     value: '$or',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -221,7 +194,6 @@ const QUERY_OPERATORS = [
   {
     name: '$regex',
     value: '$regex',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -229,7 +201,6 @@ const QUERY_OPERATORS = [
   {
     name: '$size',
     value: '$size',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -237,7 +208,6 @@ const QUERY_OPERATORS = [
   {
     name: '$slice',
     value: '$slice',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -245,7 +215,6 @@ const QUERY_OPERATORS = [
   {
     name: '$text',
     value: '$text',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -253,7 +222,6 @@ const QUERY_OPERATORS = [
   {
     name: '$type',
     value: '$type',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
@@ -261,7 +229,6 @@ const QUERY_OPERATORS = [
   {
     name: '$where',
     value: '$where',
-    firstStage: false,
     score: 1,
     meta: 'query',
     version: '2.2.0',
