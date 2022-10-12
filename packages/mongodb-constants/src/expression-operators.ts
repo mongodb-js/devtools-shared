@@ -5,7 +5,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$abs',
     value: '$abs',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -13,7 +12,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$accumulator',
     value: '$accumulator',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '4.4.0',
@@ -21,7 +19,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$add',
     value: '$add',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '2.2.0',
@@ -29,7 +26,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$allElementsTrue',
     value: '$allElementsTrue',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -37,7 +33,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$and',
     value: '$and',
-    firstStage: false,
     score: 1,
     meta: 'expr:bool',
     version: '2.2.0',
@@ -45,7 +40,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$anyElementTrue',
     value: '$anyElementTrue',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -53,7 +47,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$arrayElemAt',
     value: '$arrayElemAt',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.2.0',
@@ -61,7 +54,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$arrayToObject',
     value: '$arrayToObject',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.4',
@@ -69,7 +61,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$binarySize',
     value: '$binarySize',
-    firstStage: false,
     score: 1,
     meta: 'expr:obj',
     version: '4.4.0',
@@ -77,7 +68,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$bsonSize',
     value: '$bsonSize',
-    firstStage: false,
     score: 1,
     meta: 'expr:obj',
     version: '4.4.0',
@@ -85,7 +75,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$ceil',
     value: '$ceil',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -93,7 +82,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$cmp',
     value: '$cmp',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -101,7 +89,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$concat',
     value: '$concat',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '2.4.0',
@@ -109,7 +96,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$concatArrays',
     value: '$concatArrays',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.2.0',
@@ -117,7 +103,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$cond',
     value: '$cond',
-    firstStage: false,
     score: 1,
     meta: 'expr:cond',
     version: '2.6.0',
@@ -125,7 +110,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateAdd',
     value: '$dateAdd',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.0.0',
@@ -133,7 +117,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateDiff',
     value: '$dateDiff',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.0.0',
@@ -141,7 +124,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateFromParts',
     value: '$dateFromParts',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.6.0',
@@ -149,7 +131,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateFromString',
     value: '$dateFromString',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.6.0',
@@ -157,7 +138,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateSubtract',
     value: '$dateSubtract',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.0.0',
@@ -165,7 +145,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateToParts',
     value: '$dateToParts',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.6.0',
@@ -173,7 +152,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateToString',
     value: '$dateToString',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.6.0',
@@ -181,7 +159,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateTrunc',
     value: '$dateTrunc',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.0.0',
@@ -189,7 +166,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dayOfMonth',
     value: '$dayOfMonth',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -197,7 +173,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dayOfWeek',
     value: '$dayOfWeek',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -205,7 +180,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dayOfYear',
     value: '$dayOfYear',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -213,7 +187,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$dateToString',
     value: '$dateToString',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.0.0',
@@ -221,7 +194,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$divide',
     value: '$divide',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '2.2.0',
@@ -229,7 +201,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$eq',
     value: '$eq',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -237,7 +208,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$exp',
     value: '$exp',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -245,7 +215,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$filter',
     value: '$filter',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.2.0',
@@ -253,7 +222,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$first',
     value: '$first',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '4.4.0',
@@ -261,7 +229,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$floor',
     value: '$floor',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -269,7 +236,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$function',
     value: '$function',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '4.4.0',
@@ -277,7 +243,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$getField',
     value: '$getField',
-    firstStage: false,
     score: 1,
     meta: 'expr:get',
     version: '5.0.0',
@@ -285,7 +250,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$gt',
     value: '$gt',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -293,7 +257,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$gte',
     value: '$gte',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -301,7 +264,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$hour',
     value: '$hour',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -309,7 +271,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$ifNull',
     value: '$ifNull',
-    firstStage: false,
     score: 1,
     meta: 'expr:cond',
     version: '2.2.0',
@@ -317,7 +278,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$in',
     value: '$in',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',
@@ -325,7 +285,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$indexOfArray',
     value: '$indexOfArray',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',
@@ -333,7 +292,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$indexOfBytes',
     value: '$indexOfBytes',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -341,7 +299,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$indexOfCP',
     value: '$indexOfCP',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -349,7 +306,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$isArray',
     value: '$isArray',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.2.0',
@@ -357,7 +313,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$isNumber',
     value: '$isNumber',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '4.4.0',
@@ -365,7 +320,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$isoDayOfWeek',
     value: '$isoDayOfWeek',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.4.0',
@@ -373,7 +327,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$isoWeek',
     value: '$isoWeek',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.4.0',
@@ -381,7 +334,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$isoWeekYear',
     value: '$isoWeekYear',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '3.4.0',
@@ -389,7 +341,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$last',
     value: '$last',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '4.4.0',
@@ -397,7 +348,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$let',
     value: '$let',
-    firstStage: false,
     score: 1,
     meta: 'expr:var',
     version: '2.6.0',
@@ -405,7 +355,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$literal',
     value: '$literal',
-    firstStage: false,
     score: 1,
     meta: 'expr:literal',
     version: '2.6.0',
@@ -413,7 +362,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$lt',
     value: '$lt',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -421,7 +369,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$lt',
     value: '$lte',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -429,7 +376,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$ln',
     value: '$ln',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -437,7 +383,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$log',
     value: '$log',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -445,7 +390,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$log10',
     value: '$log10',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -453,7 +397,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$map',
     value: '$map',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '2.6.0',
@@ -461,7 +404,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$mergeObjects',
     value: '$mergeObjects',
-    firstStage: false,
     score: 1,
     meta: 'expr:obj',
     version: '3.6.0',
@@ -469,7 +411,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$meta',
     value: '$meta',
-    firstStage: false,
     score: 1,
     meta: 'expr:text',
     version: '2.6.0',
@@ -477,7 +418,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$millisecond',
     value: '$millisecond',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.4.0',
@@ -485,7 +425,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$minute',
     value: '$minute',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -493,7 +432,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$mod',
     value: '$mod',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '2.2.0',
@@ -501,7 +439,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$month',
     value: '$month',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -509,7 +446,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$multiply',
     value: '$multiply',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '2.2.0',
@@ -517,7 +453,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$new',
     value: '$new',
-    firstStage: false,
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
@@ -525,7 +460,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$not',
     value: '$not',
-    firstStage: false,
     score: 1,
     meta: 'expr:bool',
     version: '2.2.0',
@@ -533,7 +467,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$objectToArray',
     value: '$objectToArray',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.4',
@@ -541,7 +474,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$or',
     value: '$or',
-    firstStage: false,
     score: 1,
     meta: 'expr:bool',
     version: '2.2.0',
@@ -549,7 +481,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$pow',
     value: '$pow',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -557,7 +488,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$range',
     value: '$range',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',
@@ -565,7 +495,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$reduce',
     value: '$reduce',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',
@@ -573,7 +502,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$regexFind',
     value: '$regexFind',
-    firstStage: false,
     score: 1,
     meta: 'expr:regex',
     version: '4.1.11',
@@ -581,7 +509,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$regexFindAll',
     value: '$regexFindAll',
-    firstStage: false,
     score: 1,
     meta: 'expr:regex',
     version: '4.1.11',
@@ -589,7 +516,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$regexMatch',
     value: '$regexMatch',
-    firstStage: false,
     score: 1,
     meta: 'expr:regex',
     version: '4.1.11',
@@ -597,7 +523,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$replaceAll',
     value: '$replaceAll',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '4.4.0',
@@ -605,7 +530,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$replaceOne',
     value: '$replaceOne',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '4.4.0',
@@ -613,7 +537,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$reverseArray',
     value: '$reverseArray',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',
@@ -621,7 +544,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$second',
     value: '$second',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -629,7 +551,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$setDifference',
     value: '$setDifference',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -637,7 +558,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$setEquals',
     value: '$setEquals',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -645,7 +565,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$setIntersection',
     value: '$setIntersection',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -653,7 +572,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$setIsSubset',
     value: '$setIsSubset',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -661,7 +579,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$setUnion',
     value: '$setUnion',
-    firstStage: false,
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
@@ -669,7 +586,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$size',
     value: '$size',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '2.6.0',
@@ -677,7 +593,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$slice',
     value: '$slice',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.2.0',
@@ -685,7 +600,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$sortArray',
     value: '$sortArray',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '5.2.0',
@@ -693,7 +607,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$split',
     value: '$split',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -701,7 +614,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$sqrt',
     value: '$sqrt',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -709,7 +621,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$strcasecmp',
     value: '$strcasecmp',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
@@ -717,7 +628,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$strLenBytes',
     value: '$strLenBytes',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -725,7 +635,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$strLenCP',
     value: '$strLenCP',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -733,7 +642,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$substr',
     value: '$substr',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
@@ -743,7 +651,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$substrBytes',
     value: '$substrBytes',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -751,7 +658,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$substrCP',
     value: '$substrCP',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '3.4.0',
@@ -759,7 +665,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$subtract',
     value: '$subtract',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -767,7 +672,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$switch',
     value: '$switch',
-    firstStage: false,
     score: 1,
     meta: 'expr:cond',
     version: '3.4.0',
@@ -775,7 +679,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$toLower',
     value: '$toLower',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
@@ -783,7 +686,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$toUpper',
     value: '$toUpper',
-    firstStage: false,
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
@@ -791,7 +693,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$tsSecond',
     value: '$tsSecond',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.1.0',
@@ -799,7 +700,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$tsIncrement',
     value: '$tsIncrement',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '5.1.0',
@@ -807,7 +707,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$trunc',
     value: '$trunc',
-    firstStage: false,
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
@@ -815,7 +714,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$type',
     value: '$type',
-    firstStage: false,
     score: 1,
     meta: 'expr:type',
     version: '3.4.0',
@@ -823,7 +721,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$week',
     value: '$week',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -831,7 +728,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$year',
     value: '$year',
-    firstStage: false,
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
@@ -839,7 +735,6 @@ const EXPRESSION_OPERATORS = [
   {
     name: '$zip',
     value: '$zip',
-    firstStage: false,
     score: 1,
     meta: 'expr:array',
     version: '3.4.0',

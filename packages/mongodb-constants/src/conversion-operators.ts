@@ -5,7 +5,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$convert',
     value: '$convert',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -13,7 +12,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$ltrim',
     value: '$ltrim',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '3.7.2',
@@ -21,7 +19,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$rtrim',
     value: '$rtrim',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '3.7.2',
@@ -29,7 +26,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toBool',
     value: '$toBool',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -37,7 +33,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toDate',
     value: '$toDate',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -45,7 +40,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toDecimal',
     value: '$toDecimal',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -53,7 +47,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toDouble',
     value: '$toDouble',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -61,7 +54,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toInt',
     value: '$toInt',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -69,7 +61,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toLong',
     value: '$toLong',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -77,7 +68,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toObjectId',
     value: '$toObjectId',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -85,7 +75,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$toString',
     value: '$toString',
-    firstStage: false,
     score: 1,
     meta: 'conv',
     version: '3.7.2',
@@ -93,7 +82,6 @@ const CONVERSION_OPERATORS = [
   {
     name: '$trim',
     value: '$trim',
-    firstStage: false,
     score: 1,
     meta: 'accumulator',
     version: '3.7.2',
