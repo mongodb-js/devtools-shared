@@ -8,6 +8,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$and',
@@ -15,6 +16,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$bitsAllClear',
@@ -22,6 +24,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.2.0',
+    geospatial: false,
   },
   {
     name: '$bitsAllSet',
@@ -29,6 +32,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.2.0',
+    geospatial: false,
   },
   {
     name: '$bitsAnyClear',
@@ -36,6 +40,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.2.0',
+    geospatial: false,
   },
   {
     name: '$bitsAnySet',
@@ -43,6 +48,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.2.0',
+    geospatial: false,
   },
   {
     name: '$comment',
@@ -50,6 +56,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.2.0',
+    geospatial: false,
   },
   {
     name: '$elemMatch',
@@ -57,6 +64,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$eq',
@@ -64,6 +72,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$exists',
@@ -71,6 +80,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$expr',
@@ -78,6 +88,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.6.0',
+    geospatial: false,
   },
   {
     name: '$geoIntersects',
@@ -85,6 +96,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: true,
   },
   {
     name: '$geoWithin',
@@ -92,6 +104,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: true,
   },
   {
     name: '$gt',
@@ -99,6 +112,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$gte',
@@ -106,6 +120,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$in',
@@ -113,6 +128,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$jsonSchema',
@@ -120,6 +136,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '3.6.0',
+    geospatial: false,
   },
   {
     name: '$lt',
@@ -127,6 +144,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$lte',
@@ -134,6 +152,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$mod',
@@ -141,6 +160,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$ne',
@@ -148,6 +168,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$near',
@@ -155,6 +176,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: true,
   },
   {
     name: '$nearSphere',
@@ -162,6 +184,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: true,
   },
   {
     name: '$nin',
@@ -169,6 +192,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$not',
@@ -176,6 +200,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$nor',
@@ -183,6 +208,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$or',
@@ -190,6 +216,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$regex',
@@ -197,6 +224,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$size',
@@ -204,6 +232,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$slice',
@@ -211,6 +240,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$text',
@@ -218,6 +248,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$type',
@@ -225,6 +256,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
   {
     name: '$where',
@@ -232,6 +264,7 @@ const QUERY_OPERATORS = [
     score: 1,
     meta: 'query',
     version: '2.2.0',
+    geospatial: false,
   },
 ] as const;
 
