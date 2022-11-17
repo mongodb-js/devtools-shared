@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as acorn from 'acorn';
 import { STAGE_OPERATORS } from './stage-operators';
+import uncomment from 'uncomment';
 
 // Replaces any placeholder with a variable,
 // the resulting snippet should always be parseable.
@@ -46,7 +47,15 @@ describe('stage operators', function () {
       const snippet = replacePlaceholders(operator.snippet);
 
       expect(
-        () => acorn.parseExpressionAt(snippet, 0, { ecmaVersion: 'latest' }),
+        () => {
+          // acorn can't parse snippets that only contain comments
+          const snippetWithoutComments = uncomment(snippet);
+          if (snippetWithoutComments.trim()) {
+            acorn.parseExpressionAt(snippetWithoutComments, 0, {
+              ecmaVersion: 'latest',
+            });
+          }
+        },
         'expected snippet to parse'
       ).not.to.throw();
 
