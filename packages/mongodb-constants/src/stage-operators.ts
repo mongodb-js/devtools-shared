@@ -51,7 +51,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:newField}: \${2:expression}, \${3:...}
+  // \${1:newField}: \${2:expression}, \${3:...}
 }`,
   },
   {
@@ -79,12 +79,12 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  groupBy: \${1:expression},
-  boundaries: [ \${2:lowerbound}, \${3:...} ],
-  default: \${4:literal},
-  output: {
-    \${5:outputN}: { \${6:accumulator} }, \${7:...}
-  }
+  // groupBy: \${1:expression},
+  // boundaries: [ \${2:lowerbound}, \${3:...} ],
+  // default: \${4:literal},
+  // output: {
+  //   \${5:outputN}: { \${6:accumulator} }, \${7:...}
+  // }
 }`,
   },
   {
@@ -112,12 +112,12 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  groupBy: \${1:expression},
-  buckets: \${2:number},
-  output: {
-    \${3:outputN}: \${4:accumulator}, \${5:...}
-  },
-  granularity: '\${6:string}'
+  // groupBy: \${1:expression},
+  // buckets: \${2:number},
+  // output: {
+  //   \${3:outputN}: \${4:accumulator}, \${5:...}
+  // },
+  // granularity: '\${6:string}'
 }`,
   },
   {
@@ -140,10 +140,10 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  latencyStats: {
-    histograms: \${1:boolean}
-  },
-  storageStats: {\${2:}},
+  // latencyStats: {
+  //   histograms: \${1:boolean}
+  // },
+  // storageStats: {\${2:}},
 }`,
   },
   {
@@ -194,13 +194,13 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  field: \${1:string},
-  partitionByFields: [\${2:string}, \${3:string}, ...],
-  range: {
-    step: \${4:number},
-    unit: \${5:string},
-    bounds: [\${6:lowerbound}, \${7:upperbound}, ...]
-  }
+  // field: \${1:string},
+  // partitionByFields: [\${2:string}, \${3:string}, ...],
+  // range: {
+  //   step: \${4:number},
+  //   unit: \${5:string},
+  //   bounds: [\${6:lowerbound}, \${7:upperbound}, ...]
+  // }
 }`,
   },
   {
@@ -222,7 +222,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:expression}
+  // \${1:expression}
 }`,
   },
   {
@@ -245,7 +245,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:outputFieldN}: [ \${2:stageN}, \${3:...} ]
+  // \${1:outputFieldN}: [ \${2:stageN}, \${3:...} ]
 }`,
   },
   {
@@ -271,14 +271,14 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  sortBy: \${1:sortSpec},
-  partitionBy: \${2:expression},
-  partitionByFields: [\${3:string}, \${4:string}, ...],
-  output: {
-    field1: {value: \${5:expression}},
-    field2: {method: \${6:string}},
-    ...
-  }
+  // sortBy: \${1:sortSpec},
+  // partitionBy: \${2:expression},
+  // partitionByFields: [\${3:string}, \${4:string}, ...],
+  // output: {
+  //   field1: {value: \${5:expression}},
+  //   field2: {method: \${6:string}},
+  //   ...
+  // }
 }`,
   },
   {
@@ -306,13 +306,13 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
+  // near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
   distanceField: '\${3:string}',
-  maxDistance: \${4:number},
+  // maxDistance: \${4:number},
   query: {\${5}},
   includeLocs: '\${6}',
-  num: \${7:number},
-  spherical: \${8:boolean}
+  // num: \${7:number},
+  // spherical: \${8:boolean}
 }`,
   },
   {
@@ -342,11 +342,11 @@ const STAGE_OPERATORS = [
 `,
     snippet: `{
   from: '\${1:string}',
-  startWith: \${2:expression},
+  // startWith: \${2:expression},
   connectFromField: '\${3:string}',
   connectToField: '\${4:string}',
   as: '\${5:string}',
-  maxDepth: \${6:number},
+  // maxDepth: \${6:number},
   depthField: '\${7:string}',
   restrictSearchWithMatch: {\${8}}
 }`,
@@ -371,10 +371,10 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  _id: \${1:expression},
-  \${2:fieldN}: {
-    \${3:accumulatorN}: \${4:expressionN}
-  }
+  // _id: \${1:expression},
+  // \${2:fieldN}: {
+  //   \${3:accumulatorN}: \${4:expressionN}
+  // }
 }`,
   },
   {
@@ -417,7 +417,7 @@ const STAGE_OPERATORS = [
  * Provide the number of documents to limit.
  */
 `,
-    snippet: '${1:number}',
+    snippet: '// ${1:number}',
   },
   {
     name: '$lookup',
@@ -443,10 +443,10 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  from: \${1:collection},
-  localField: \${2:field},
-  foreignField: \${3:field},
-  as: \${4:result}
+  // from: \${1:collection},
+  // localField: \${2:field},
+  // foreignField: \${3:field},
+  // as: \${4:result}
 }`,
   },
   {
@@ -469,7 +469,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:query}
+  // \${1:query}
 }`,
   },
   {
@@ -614,7 +614,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:specification(s)}
+  // \${1:specification(s)}
 }`,
   },
   {
@@ -638,7 +638,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:expression}
+  // \${1:expression}
 }`,
   },
   {
@@ -660,7 +660,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  newWith: \${1:replacementDocument}
+  // newWith: \${1:replacementDocument}
 }`,
   },
   {
@@ -682,7 +682,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  newRoot: \${1:replacementDocument}
+  // newRoot: \${1:replacementDocument}
 }`,
   },
   {
@@ -705,7 +705,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  size: \${1:number}
+  // size: \${1:number}
 }`,
   },
   {
@@ -770,28 +770,28 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  index: \${1:string},
-  facet: {
-    operator: {
-      text: {
-        query: \${2:string},
-        path: \${3:string}
-      }
-    },
-    facets: {
-      \${4:stringFacet}: {
-        type: \${5:string},
-        path: \${6:string},
-        numBuckets: \${7:integer}
-      },
-      numberFacet: {
-        type: 'number',
-        path: \${8:string},
-        boundaries: [\${9:lowerbound}, \${10:upperbound}, ...],
-        default: \${11:string}
-      }
-    }
-  }
+  // index: \${1:string},
+  // facet: {
+  //   operator: {
+  //     text: {
+  //       query: \${2:string},
+  //       path: \${3:string}
+  //     }
+  //   },
+  //   facets: {
+  //     \${4:stringFacet}: {
+  //       type: \${5:string},
+  //       path: \${6:string},
+  //       numBuckets: \${7:integer}
+  //     },
+  //     numberFacet: {
+  //       type: 'number',
+  //       path: \${8:string},
+  //       boundaries: [\${9:lowerbound}, \${10:upperbound}, ...],
+  //       default: \${11:string}
+  //     }
+  //   }
+  // }
 }`,
   },
   {
@@ -815,7 +815,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:field}: \${2:expression}
+  // \${1:field}: \${2:expression}
 }`,
   },
   {
@@ -849,19 +849,19 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  partitionBy: \${1:expression},
-  sortBy: \${2:sortSpec},
-  output: {
-    \${3:path}: {
-      \${4:function}: \${5:functionArgs},
-      window: {
-        documents: [\${6:lowerbound}, \${7:upperbound}],
-        range: [\${8:lowerbound}, \${9:upperbound}],
-        unit: \${10:string}
-      }
-    },
-    \${11:path2}: ...
-  }
+  // partitionBy: \${1:expression},
+  // sortBy: \${2:sortSpec},
+  // output: {
+  //   \${3:path}: {
+  //     \${4:function}: \${5:functionArgs},
+  //     window: {
+  //       documents: [\${6:lowerbound}, \${7:upperbound}],
+  //       range: [\${8:lowerbound}, \${9:upperbound}],
+  //       unit: \${10:string}
+  //     }
+  //   },
+  //   \${11:path2}: ...
+  // }
 }`,
   },
   {
@@ -883,7 +883,7 @@ const STAGE_OPERATORS = [
  * Provide the number of documents to skip.
  */
 `,
-    snippet: '${1:number}',
+    snippet: '// ${1:number}',
   },
   {
     name: '$sort',
@@ -905,7 +905,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:field1}: \${2:sortOrder}
+  // \${1:field1}: \${2:sortOrder}
 }`,
   },
   {
@@ -928,7 +928,7 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  \${1:expression}
+  // \${1:expression}
 }`,
   },
   {
@@ -952,7 +952,7 @@ const STAGE_OPERATORS = [
 `,
     snippet: `{
   coll: '\${1:coll}',
-  pipeline: [\${2:pipeline}]
+  // pipeline: [\${2:pipeline}]
 }`,
   },
   {
@@ -1000,9 +1000,9 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  path: \${1:path},
-  includeArrayIndex: '\${2:string}',
-  preserveNullAndEmptyArrays: \${3:boolean}
+  // path: \${1:path},
+  // includeArrayIndex: '\${2:string}',
+  // preserveNullAndEmptyArrays: \${3:boolean}
 }`,
   },
 ] as const;
