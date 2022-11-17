@@ -46,18 +46,15 @@ describe('stage operators', function () {
     it(`${operator.name} has a properly formatted snippet`, function () {
       const snippet = replacePlaceholders(operator.snippet);
 
-      expect(
-        () => {
-          // acorn can't parse snippets that only contain comments
-          const snippetWithoutComments = uncomment(snippet);
-          if (snippetWithoutComments.trim()) {
-            acorn.parseExpressionAt(snippetWithoutComments, 0, {
-              ecmaVersion: 'latest',
-            });
-          }
-        },
-        'expected snippet to parse'
-      ).not.to.throw();
+      expect(() => {
+        // acorn can't parse snippets that only contain comments
+        const snippetWithoutComments = uncomment(snippet);
+        if (snippetWithoutComments.trim()) {
+          acorn.parseExpressionAt(snippetWithoutComments, 0, {
+            ecmaVersion: 'latest',
+          });
+        }
+      }, 'expected snippet to parse').not.to.throw();
 
       const snippetLines = snippet.split('\n');
 
