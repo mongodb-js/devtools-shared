@@ -580,16 +580,29 @@ const STAGE_OPERATORS = [
       'Writes the result of a pipeline to an Atlas cluster or S3 bucket.',
     comment: `/**
  * s3Url: A S3 URL to save the data.
- * atlas: Parameters to save to Atlas.
+ * atlas: Parameters to save to Atlas. Example:
+ * {
+    atlas: {
+      db: 'string',
+      coll: 'string',
+      projectId: 'string',
+      clusterName: 'string'
+    }
+  }
  */
 `,
     snippet: `{
-  s3: '\${1:s3url}',
-  atlas: {
-    db: '\${2:db}',
-    coll: '\${3:coll}',
-    projectId: '\${4:projectId}',
-    clusterName: '\${5:clusterName}'
+  s3: {
+    bucket: '\${1:string}',
+    region: '\${2:string}',
+    filename: '\${3:string}',
+    format: {
+      name: '\${4:string}',
+      maxFileSize: '\${5:bytes}',
+      maxRowGroupSize: '\${6:string}',
+      columnCompression: '\${7:string}'
+    },
+    errorMode: '\${8:string}'
   }
 }`,
   },
