@@ -582,13 +582,13 @@ const STAGE_OPERATORS = [
  * s3Url: A S3 URL to save the data.
  * atlas: Parameters to save to Atlas. Example:
  * {
-    atlas: {
-      db: 'string',
-      coll: 'string',
-      projectId: 'string',
-      clusterName: 'string'
-    }
-  }
+ *   atlas: {
+ *     db: 'string',
+ *     coll: 'string',
+ *     projectId: 'string',
+ *     clusterName: 'string'
+ *   }
+ * }
  */
 `,
     snippet: `{
