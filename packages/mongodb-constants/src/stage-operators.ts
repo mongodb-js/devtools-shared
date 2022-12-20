@@ -579,8 +579,9 @@ const STAGE_OPERATORS = [
     description:
       'Writes the result of a pipeline to an Atlas cluster or S3 bucket.',
     comment: `/**
- * s3Url: A S3 URL to save the data.
- * atlas: Parameters to save to Atlas. Example:
+ * Use any one of the following:
+ * s3: Parameters to save the data to S3.
+ * atlas: Parameters to save the data to Atlas. Example:
  * {
  *   atlas: {
  *     db: 'string',
