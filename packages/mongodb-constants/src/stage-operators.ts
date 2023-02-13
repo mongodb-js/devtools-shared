@@ -1019,6 +1019,100 @@ const STAGE_OPERATORS = [
   preserveNullAndEmptyArrays: \${3:boolean}
 }`,
   },
+  {
+    name: '$changeStream',
+    value: '$changeStream',
+    label: '$changeStream',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '4.2.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description: 'Returns a Change Stream cursor for the collection.',
+    comment: `/**
+ * allChangesForCluster: Optional boolean to include all changes in the cluster.
+ * fullDocument: Optional value to request a copy of full document when modified by update operations (Introduced in 6.0).
+ * fullDocumentBeforeChange: Value to configure whether to return a full document before the change or not.
+ * resumeAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with startAfter or startAtOperationTime fields.
+ * showExpandedEvents: Specifies whether to include additional change events, such as such as DDL and index operations (Introduced in 6.0).
+ * startAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with resumeAfter or startAtOperationTime fields.
+ * startAtOperationTime: Specifies a time as the logical starting point for the change stream. Cannot be used with resumeAfter or startAfter fields.
+ */
+`,
+    snippet: `{
+  allChangesForCluster: \${1:boolean},
+  fullDocument: '\${2:string}',
+  fullDocumentBeforeChange: '\${3:string}',
+  resumeAfter: \${4:resumeToken},
+  showExpandedEvents: \${5:boolean},
+  startAfter: \${6:resumeToken},
+  startAtOperationTime: \${7:time},
+}`,
+  },
+  {
+    name: '$currentOp',
+    value: '$currentOp',
+    label: '$currentOp',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ADL, ON_PREM],
+    meta: 'stage',
+    version: '3.6.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Returns a cursor over information on active and/or dormant operations for the MongoDB deployment as well as inactive sessions that are holding locks as part of a transaction.',
+    comment: `/**
+ * allUsers: Optional boolean value to specify whether to return operations for all users or not.
+ * idleConnections: Optional boolean value to specify whether to return all operations including idle connections or not.
+ * idleCursors: Optional boolean value to specify whether to report on cursors that are idle or not.
+ * idleSessions: Optional boolean value to specify whether to report on dormant sessions or not.
+ * localOps: Optional boolean value to specify whether to report on operations running locally on targetted mongos or not.
+ * backtrace: Optional boolean value to specify whether callstack information is returned as part of the waitingForLatch output field.
+ */
+`,
+    snippet: `{
+  allUsers: \${1:false},
+  idleConnections: \${2:false},
+  idleCursors: \${3:false},
+  idleSessions: \${4:true},
+  localOps: \${5:false},
+  backtrace: \${6:false},
+}`,
+  },
+  {
+    name: '$listLocalSessions',
+    value: '$listLocalSessions',
+    label: '$listLocalSessions',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '3.6.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Lists the sessions cached in memory by the mongod or mongos instance.',
+    comment: `/**
+ * users: Optional list of users for which local sessions need to be returned.
+ * allUsers: Optional boolean value to specify whether to return local sessions for all users or not.
+ */
+`,
+    snippet: `{
+  allUsers: \${1:false},
+  users: [
+    { user: '\${2:string}', db: '\${3:string}' }
+  ]
+}`,
+  },
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
