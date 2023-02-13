@@ -739,6 +739,34 @@ const EXPRESSION_OPERATORS = [
     meta: 'expr:array',
     version: '3.4.0',
   },
+  {
+    name: '$bitAnd',
+    value: '$bitAnd',
+    score: 1,
+    meta: 'expr:arith',
+    version: '7.0.0',
+  },
+  {
+    name: '$bitOr',
+    value: '$bitOr',
+    score: 1,
+    meta: 'expr:arith',
+    version: '7.0.0',
+  },
+  {
+    name: '$bitXor',
+    value: '$bitXor',
+    score: 1,
+    meta: 'expr:arith',
+    version: '7.0.0',
+  },
+  {
+    name: '$bitNot',
+    value: '$bitNot',
+    score: 1,
+    meta: 'expr:arith',
+    version: '7.0.0',
+  },
 ] as const;
 
 export { EXPRESSION_OPERATORS };
