@@ -209,7 +209,7 @@ const STAGE_OPERATORS = [
     label: '$documents',
     outputStage: false,
     fullScan: false,
-    firstStage: false,
+    firstStage: true,
     score: 1,
     env: [ATLAS, ADL, ON_PREM],
     meta: 'stage',
