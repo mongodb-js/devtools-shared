@@ -4,6 +4,8 @@ import * as constants from './index';
 describe('constants', function () {
   it('should export all constants', function () {
     expect(Object.keys(constants)).to.deep.eq([
+      'getFilteredCompletions',
+      'wrapField',
       'ACCUMULATORS',
       'BSON_TYPE_ALIASES',
       'BSON_TYPES',
