@@ -8,4 +8,4 @@ export * from './json-schema';
 export * from './ns';
 export * from './query-operators';
 export * from './stage-operators';
-export { filter, wrapField } from './filter';
+export { getFilteredCompletions, wrapField } from './filter';

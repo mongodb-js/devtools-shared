@@ -19,6 +19,8 @@ const ALL_CONSTANTS = [
   ...STAGE_OPERATORS,
 ];
 
+const DEFAULT_SERVER_VERSION = '999.999.999';
+
 export type Meta =
   | typeof ALL_CONSTANTS[number]['meta']
   | 'field:identifier'
@@ -102,14 +104,16 @@ function isIn<T extends string | number>(
 
 export function createConstantFilter({
   meta: filterMeta,
-  serverVersion = '999.999.999',
+  serverVersion = DEFAULT_SERVER_VERSION,
   stage: filterStage = {},
 }: Pick<FilterOptions, 'meta' | 'serverVersion' | 'stage'> = {}): (
   completion: Completion
 ) => boolean {
   const currentServerVersion =
     /^(?<version>\d+?\.\d+?\.\d+?)/.exec(serverVersion)?.groups?.version ??
-    serverVersion;
+    // Fallback to default server version if provided version doesn't match
+    // regex so that semver doesn't throw when checking
+    DEFAULT_SERVER_VERSION;
   return ({ version: minServerVersion, meta, env, namespace, apiVersions }) => {
     return (
       gte(currentServerVersion, minServerVersion) &&
@@ -165,11 +169,16 @@ function normalizeField(
  * @param constants list of constants to filter, for testing purposes only
  * @returns filtered constants
  */
-export function filter(
+export function getFilteredCompletions(
   options: FilterOptions = {},
   constants: Completion[] = ALL_CONSTANTS as Completion[]
 ): Completion[] {
-  const { serverVersion = '999.999.999', fields = [], meta, stage } = options;
+  const {
+    serverVersion = DEFAULT_SERVER_VERSION,
+    fields = [],
+    meta,
+    stage,
+  } = options;
   const completionsFilter = createConstantFilter({
     serverVersion,
     meta,

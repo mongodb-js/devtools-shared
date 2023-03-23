@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import type { Completion, Meta } from './filter';
-import { wrapField, filter } from './filter';
+import type { Completion } from './filter';
+import { wrapField, getFilteredCompletions } from './filter';
 
 describe('completer', function () {
   const simpleConstants: Completion[] = [
@@ -11,8 +11,10 @@ describe('completer', function () {
     { value: 'barbar', version: '2.0.0', meta: 'expr:bool' },
   ];
 
-  function getFilteredValues(...args: Parameters<typeof filter>): string[] {
-    return filter(args[0], args[1] ?? simpleConstants).map(
+  function getFilteredValues(
+    ...args: Parameters<typeof getFilteredCompletions>
+  ): string[] {
+    return getFilteredCompletions(args[0], args[1] ?? simpleConstants).map(
       (completion) => completion.value
     );
   }
@@ -26,6 +28,16 @@ describe('completer', function () {
     expect(getFilteredValues({ serverVersion: '0.0.1-alpha0' })).to.deep.eq([
       'foo',
       'Foo',
+    ]);
+  });
+
+  it('should ignore version when version is not valid', function () {
+    expect(getFilteredValues({ serverVersion: '1' })).to.deep.eq([
+      'foo',
+      'Foo',
+      'bar',
+      'buz',
+      'barbar',
     ]);
   });
 
@@ -100,7 +112,7 @@ describe('completer', function () {
   });
 
   it('should keep field description when provided', function () {
-    const completions = filter(
+    const completions = getFilteredCompletions(
       {
         meta: ['field:identifier'],
         fields: [
