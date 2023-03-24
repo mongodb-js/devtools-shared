@@ -28,6 +28,7 @@ describe('constants', function () {
       'OUT_STAGES',
       'FULL_SCAN_STAGES',
       'REQUIRED_AS_FIRST_STAGE',
+      'SYSTEM_VARIABLES',
     ]);
   });
 });
