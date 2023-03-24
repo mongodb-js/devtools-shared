@@ -7,6 +7,7 @@ import { EXPRESSION_OPERATORS } from './expression-operators';
 import { JSON_SCHEMA } from './json-schema';
 import { QUERY_OPERATORS } from './query-operators';
 import { STAGE_OPERATORS } from './stage-operators';
+import { SYSTEM_VARIABLES } from './system-variables';
 
 const ALL_CONSTANTS = [
   ...ACCUMULATORS,
@@ -17,6 +18,7 @@ const ALL_CONSTANTS = [
   ...JSON_SCHEMA,
   ...QUERY_OPERATORS,
   ...STAGE_OPERATORS,
+  ...SYSTEM_VARIABLES,
 ];
 
 const DEFAULT_SERVER_VERSION = '999.999.999';
