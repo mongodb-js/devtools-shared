@@ -1,3 +1,3 @@
-#  @mongodb-js/oidc-mock-provider
+# @mongodb-js/oidc-mock-provider
 
 For testing use only!
