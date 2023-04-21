@@ -265,7 +265,7 @@ export class OIDCMockProvider {
         JSON.stringify({
           error:
             typeof err === 'object' && err && 'message' in err
-              ? err.message
+              ? (err as Error).message
               : String(err),
         })
       );
