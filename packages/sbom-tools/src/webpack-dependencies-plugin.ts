@@ -22,17 +22,19 @@ const DEFAULT_ALLOWED_LICENSES = [
 
 const PLUGIN_NAME = 'WebpackDependenciesPlugin';
 
+type LicensesOptions = {
+  ignoredOrgs?: string[];
+  ignoredPackages?: string[];
+  outputFilename?: string;
+  licenseOverrides?: Record<string, string>;
+  allowedLicenses?: RegExp[];
+};
+
 type WebpackDependenciesPluginOptions = {
   outputFilename?: string;
   includePackages?: string[];
   includeExternalProductionDependencies?: boolean;
-  licenses?: {
-    ignoredOrgs?: string[];
-    ignoredPackages?: string[];
-    outputFilename?: string;
-    licenseOverrides?: Record<string, string>;
-    allowedLicenses?: RegExp[];
-  };
+  licenses?: LicensesOptions | false;
 };
 
 /**
@@ -42,7 +44,7 @@ type WebpackDependenciesPluginOptions = {
 export class WebpackDependenciesPlugin implements WebpackPluginInstance {
   private readonly pluginName = PLUGIN_NAME;
   outputPath: string;
-  licensePlugin: WebpackLicensePlugin;
+  licensePlugin?: WebpackLicensePlugin;
   includePackages: string[] = [];
 
   constructor(private options: WebpackDependenciesPluginOptions = {}) {
@@ -55,29 +57,34 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
 
     this.outputPath = options.outputFilename || 'dependencies.json';
 
-    const licensePluginOptions = {
-      outputFilename: options?.licenses?.outputFilename,
-      excludedPackageTest: (packageName: string, version: string) => {
-        return (
-          (options.licenses?.ignoredOrgs || []).some((org) =>
-            packageName.startsWith(org + '/')
-          ) ||
-          (options.licenses?.ignoredPackages || []).includes(
-            `${packageName}@${version}`
-          )
-        );
-      },
-      licenseOverrides: options.licenses?.licenseOverrides || {},
-      unacceptableLicenseTest: (licenseIdentifier: string) => {
-        const allowedLicenses =
-          options.licenses?.allowedLicenses || DEFAULT_ALLOWED_LICENSES;
-        return !allowedLicenses.some((regex) => regex.test(licenseIdentifier));
-      },
+    if (options?.licenses) {
+      const licensesOptions: LicensesOptions = options.licenses;
+      const licensePluginOptions = {
+        outputFilename: licensesOptions?.outputFilename,
+        excludedPackageTest: (packageName: string, version: string) => {
+          return (
+            (licensesOptions.ignoredOrgs || []).some((org) =>
+              packageName.startsWith(org + '/')
+            ) ||
+            (licensesOptions.ignoredPackages || []).includes(
+              `${packageName}@${version}`
+            )
+          );
+        },
+        licenseOverrides: options.licenses?.licenseOverrides || {},
+        unacceptableLicenseTest: (licenseIdentifier: string) => {
+          const allowedLicenses =
+            licensesOptions.allowedLicenses || DEFAULT_ALLOWED_LICENSES;
+          return !allowedLicenses.some((regex) =>
+            regex.test(licenseIdentifier)
+          );
+        },
 
-      includePackages: () => [...this.includePackages],
-    };
+        includePackages: () => [...this.includePackages],
+      };
 
-    this.licensePlugin = new WebpackLicensePlugin(licensePluginOptions);
+      this.licensePlugin = new WebpackLicensePlugin(licensePluginOptions);
+    }
   }
 
   private readPackageMeta = async (packageJsonPath: string) => {
@@ -133,7 +140,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
   };
 
   apply(compiler: Compiler): void {
-    this.licensePlugin.apply(compiler as any);
+    this.licensePlugin?.apply(compiler as any);
 
     compiler.hooks.emit.tapPromise(PLUGIN_NAME, this.handleTap);
   }
