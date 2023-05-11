@@ -10,11 +10,13 @@ type BundleInfoEntry = {
 };
 
 type Options = {
-  bundleInfoFiles: string[];
+  licenseFiles: string[];
 };
 
-export async function generate3rdPartyNotices({ bundleInfoFiles }: Options) {
-  const bundleInfo = await loadBundleInfo<BundleInfoEntry>(bundleInfoFiles);
+export async function generate3rdPartyNotices({
+  licenseFiles,
+}: Options): Promise<void> {
+  const bundleInfo = await loadBundleInfo<BundleInfoEntry>(licenseFiles);
 
   const entryAnchor = (entry: BundleInfoEntry) =>
     `${entry.name.replace(/ /g, '-')}-${entry.version.replace(/ /g, '-')}`;

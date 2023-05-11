@@ -12,8 +12,14 @@ program
   .description('Generate vulnerabilities report')
   .option('--dir <path>', 'Directory to scan', '.')
   .option(
-    '--bundle-info <paths>',
-    'Comma-separated list of bundle info files',
+    '--dependency-files <paths>',
+    'Comma-separated list of dependency files',
+    commaSeparatedList,
+    []
+  )
+  .option(
+    '--dependencies <dependencies>',
+    'Comma-separated list of dependencies. Example electron@18.0.0',
     commaSeparatedList,
     []
   )
@@ -26,7 +32,8 @@ program
   .option('--fail-on [level]', 'Fail on the specified severity level')
   .action(async (options) => {
     await generateVulnerabilityReport({
-      bundleInfoFiles: options.bundleInfo,
+      dependencyFiles: options.dependencyFiles,
+      dependencies: options.dependencies,
       snykReports: options.snykReports,
       failOn: options.failOn,
     });
@@ -36,14 +43,14 @@ program
   .command('generate-3rd-party-notices')
   .description('Generate third-party notices')
   .option(
-    '--bundle-info <paths>',
-    'Comma-separated list of bundle info files',
+    '--license-files <paths>',
+    'Comma-separated list of license info files',
     commaSeparatedList,
     []
   )
   .action(async (options) => {
     await generate3rdPartyNotices({
-      bundleInfoFiles: options.bundleInfo,
+      licenseFiles: options.licenseFiles,
     });
   });
 
