@@ -10,7 +10,7 @@ export async function loadBundleInfo<
         JSON.parse(await fs.readFile(fileName, 'utf-8'))
       )
     )
-  ).reduce((acc: any[], curr: any) => [...acc, ...curr], []);
+  ).flat();
 
   const uniqueData = _.uniqBy(
     data,
