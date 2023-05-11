@@ -29,14 +29,16 @@ export function findPackageLocation(packageName: string) {
 function getProductionDeps(packageLocation: string) {
   const packageJsonPath = path.join(packageLocation, 'package.json');
   let dependencies = {};
+  let optionalDependencies = {};
   try {
     const packageJsonContents = fs.readFileSync(packageJsonPath, 'utf8');
     const packageJson = JSON.parse(packageJsonContents);
     dependencies = packageJson.dependencies || {};
+    optionalDependencies = packageJson.optionalDependencies || {};
   } catch (err) {
     console.error(`Failed to read package.json in ${packageLocation}`);
   }
-  return Object.keys(dependencies);
+  return { dependencies, optionalDependencies };
 }
 
 export function findAllProdDepsTreeLocations(): string[] {
@@ -61,8 +63,12 @@ export function findAllProdDepsTreeLocations(): string[] {
     }
     visited.add(packageLocation);
 
-    const productionDeps = getProductionDeps(packageLocation);
-    productionDeps.forEach((dep) => {
+    const { dependencies, optionalDependencies } =
+      getProductionDeps(packageLocation);
+    [
+      ...Object.keys(dependencies),
+      ...Object.keys(optionalDependencies),
+    ].forEach((dep) => {
       try {
         const depLocation = findPackageLocation(dep);
         if (depLocation) {
@@ -71,7 +77,7 @@ export function findAllProdDepsTreeLocations(): string[] {
         }
       } catch (error) {
         console.error(
-          `Error adding ${dep} from ${packageLocation}: ${
+          `Warning: failed to resolve ${dep} from ${packageLocation}. This is normal if this dependency is optional. ${
             (error as Error).message
           }`
         );
