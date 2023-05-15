@@ -85,7 +85,7 @@ export async function getPackageInfo(modulePath: string): Promise<Package> {
     (
       await fs.readdir(packagePath)
     )
-      .filter((filename) => licenseRegexp.exec(filename))
+      .filter((filename) => licenseRegexp.test(filename))
       .sort()
       .map(async (filename) => ({
         filename,
