@@ -10,16 +10,9 @@ function commaSeparatedList(value: string) {
 program
   .command('generate-vulnerability-report')
   .description('Generate vulnerabilities report')
-  .option('--dir <path>', 'Directory to scan', '.')
   .option(
-    '--dependency-files <paths>',
+    '--dependencies <paths>',
     'Comma-separated list of dependency files',
-    commaSeparatedList,
-    []
-  )
-  .option(
-    '--dependencies <dependencies>',
-    'Comma-separated list of dependencies. Example electron@18.0.0',
     commaSeparatedList,
     []
   )
@@ -32,8 +25,7 @@ program
   .option('--fail-on [level]', 'Fail on the specified severity level')
   .action(async (options) => {
     await generateVulnerabilityReport({
-      dependencyFiles: options.dependencyFiles,
-      dependencies: options.dependencies,
+      dependencyFiles: options.dependencies,
       snykReports: options.snykReports,
       failOn: options.failOn,
     });
@@ -42,15 +34,23 @@ program
 program
   .command('generate-3rd-party-notices')
   .description('Generate third-party notices')
+  .option('--product <productName>', 'Product name')
   .option(
-    '--license-files <paths>',
-    'Comma-separated list of license info files',
+    '--config [config]',
+    'Path of the configuration file',
+    'licenses.json'
+  )
+  .option(
+    '--dependencies <paths>',
+    'Comma-separated list of dependency files',
     commaSeparatedList,
     []
   )
   .action(async (options) => {
     await generate3rdPartyNotices({
-      licenseFiles: options.licenseFiles,
+      productName: options.product,
+      dependencyFiles: options.dependencies,
+      configPath: options.config,
     });
   });
 

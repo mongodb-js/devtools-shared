@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import _ from 'lodash';
 
-export async function loadBundleInfo<
+export async function loadDependencyFiles<
   T extends { name: string; version: string }
 >(files: string[]): Promise<T[]> {
   const data = (
