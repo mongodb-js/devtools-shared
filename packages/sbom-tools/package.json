@@ -82,7 +82,6 @@
     "semver": "^7.5.0",
     "snyk-policy": "^2.0.4",
     "spdx-satisfies": "^5.0.1",
-    "webpack": "^5.82.0",
-    "webpack-license-plugin": "^4.2.2"
+    "webpack": "^5.82.0"
   }
 }
