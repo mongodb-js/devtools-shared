@@ -88,7 +88,7 @@ const SYSTEM_VARIABLES = [
     meta: 'variable:system',
     version: '7.0.0',
     description:
-      'A variable that stores the the role names of the authenticated user running the command.',
+      'A variable that stores the role names of the authenticated user running the command.',
   },
 ];
 
