@@ -81,6 +81,15 @@ const SYSTEM_VARIABLES = [
     description:
       'A variable that stores the metadata results of an Atlas Search query. In all supported aggregation pipeline stages, a field set to the variable SEARCH_META returns the metadata results for the query. For an example of its usage, see Atlas Search facet and count.',
   },
+  {
+    name: '$$USER_ROLES',
+    value: '$$USER_ROLES',
+    score: 1,
+    meta: 'variable:system',
+    version: '7.0.0',
+    description:
+      'A variable that stores the role names of the authenticated user running the command.',
+  },
 ];
 
 export { SYSTEM_VARIABLES };
