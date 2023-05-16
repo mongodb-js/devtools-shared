@@ -138,6 +138,13 @@ const ACCUMULATORS = [
     version: '5.2.0',
   },
   {
+    name: '$median',
+    value: '$median',
+    score: 1,
+    meta: 'accumulator',
+    version: '7.0.0',
+  },
+  {
     name: '$min',
     value: '$min',
     score: 1,
@@ -151,6 +158,13 @@ const ACCUMULATORS = [
     score: 1,
     meta: 'accumulator',
     version: '5.2.0',
+  },
+  {
+    name: '$percentile',
+    value: '$percentile',
+    score: 1,
+    meta: 'accumulator',
+    version: '7.0.0',
   },
   {
     name: '$push',
