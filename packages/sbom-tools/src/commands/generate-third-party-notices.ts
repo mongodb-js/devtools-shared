@@ -29,6 +29,7 @@ type PackageLockJson = {
 
 const ALLOWED_LICENSES = [
   'MIT',
+  '0BSD',
   'BSD-2-Clause',
   'BSD-3-Clause',
   'BSD-4-Clause',
