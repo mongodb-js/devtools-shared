@@ -3,6 +3,8 @@ import { promises as fs } from 'fs';
 import type { Compilation, Compiler, WebpackPluginInstance } from 'webpack';
 import _ from 'lodash';
 
+import { minimatch } from 'minimatch';
+
 import {
   findAllProdDepsTreeLocations,
   findPackageLocation,
@@ -15,6 +17,7 @@ type WebpackDependenciesPluginOptions = {
   outputFilename?: string;
   includePackages?: string[];
   includeExternalProductionDependencies?: boolean;
+  excludeModules?: string[];
 };
 
 /**
@@ -26,6 +29,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
   outputPath: string;
   includePackages: string[] = [];
   resolvedModules = new Set<string>();
+  excludedModules: string[];
 
   constructor(private options: WebpackDependenciesPluginOptions = {}) {
     this.includePackages = [
@@ -35,7 +39,14 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
       ...(options.includePackages || []).map(findPackageLocation),
     ];
 
+    this.excludedModules = options.excludeModules || [];
     this.outputPath = options.outputFilename || 'dependencies.json';
+  }
+
+  private isExcluded(modulePath: string) {
+    return this.excludedModules.some((excludedModulePattern) =>
+      minimatch(modulePath, excludedModulePattern)
+    );
   }
 
   private handleTap = (compilation: Compilation) => {
@@ -43,7 +54,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
       const resource = (module as unknown as any).resource;
       if (resource) {
         const modulePath = resource;
-        if (typeof modulePath === 'string') {
+        if (typeof modulePath === 'string' && !this.isExcluded(modulePath)) {
           this.resolvedModules.add(modulePath);
         }
       }
