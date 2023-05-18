@@ -77,7 +77,11 @@ async function fetchScore(vulnId: string, nodeVuln: NodeVuln) {
     nodeVuln.cve.map((cve) =>
       fetch(
         `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
-      ).then((res) => res.json())
+      ).then((res) =>
+        res.ok
+          ? res.json()
+          : Promise.reject(`Fetch ${cve} failed! status: ${res.status}`)
+      )
     )
   ).catch((e) => {
     console.error(
