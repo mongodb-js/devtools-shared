@@ -73,55 +73,54 @@ async function formatVuln(
 }
 
 async function fetchScore(vulnId: string, nodeVuln: NodeVuln) {
-  try {
-    const cves = await Promise.all(
-      nodeVuln.cve.map((cve) =>
-        fetch(
-          `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
-        ).then((res) => res.json())
-      )
-    );
-
-    const getBestCvssMetricScore = (
-      cvssMetrics: {
-        type: 'Primary' | 'Secondary';
-        cvssData: { baseScore: number };
-      }[]
-    ) => {
-      return (
-        cvssMetrics.find((m) => m.type === 'Primary')?.cvssData?.baseScore ??
-        cvssMetrics.find((m) => m.type === 'Secondary')?.cvssData?.baseScore
-      );
-    };
-
-    const allCvss: (number | undefined)[] = cves.map(
-      (cve) =>
-        getBestCvssMetricScore(
-          cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV31 ?? []
-        ) ??
-        getBestCvssMetricScore(
-          cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV30 ?? []
-        ) ??
-        getBestCvssMetricScore(
-          cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV2 ?? []
-        )
-    );
-
-    const knownCvss: number[] = [];
-
-    for (const cvss of allCvss) {
-      if (typeof cvss === 'number') {
-        knownCvss.push(cvss);
-      }
-    }
-
-    return knownCvss.length ? Math.max(...knownCvss) : undefined;
-  } catch (e) {
+  const cves = await Promise.all(
+    nodeVuln.cve.map((cve) =>
+      fetch(
+        `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
+      ).then((res) => res.json())
+    )
+  ).catch((e) => {
     console.error(
       `Error fetching score for ${vulnId}: ${(e as Error).message}`
     );
-    return undefined;
+
+    return [];
+  });
+
+  const getBestCvssMetricScore = (
+    cvssMetrics: {
+      type: 'Primary' | 'Secondary';
+      cvssData: { baseScore: number };
+    }[]
+  ) => {
+    return (
+      cvssMetrics.find((m) => m.type === 'Primary')?.cvssData?.baseScore ??
+      cvssMetrics.find((m) => m.type === 'Secondary')?.cvssData?.baseScore
+    );
+  };
+
+  const allCvss: (number | undefined)[] = cves.map(
+    (cve) =>
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV31 ?? []
+      ) ??
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV30 ?? []
+      ) ??
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV2 ?? []
+      )
+  );
+
+  const knownCvss: number[] = [];
+
+  for (const cvss of allCvss) {
+    if (typeof cvss === 'number') {
+      knownCvss.push(cvss);
+    }
   }
+
+  return knownCvss.length ? Math.max(...knownCvss) : undefined;
 }
 
 async function downloadCoreDb(): Promise<Record<string, NodeVuln>> {
