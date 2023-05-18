@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import semver from 'semver';
 import nv from '@pkgjs/nv';
+import { scoreToSeverity } from './severity';
 
 type NodeVuln = {
   cve: string[];
@@ -12,42 +13,13 @@ type NodeVuln = {
   affectedEnvironments: string[];
 };
 
-type Severity = 'low' | 'medium' | 'high' | 'critical';
-
-function scoreToSeverity(score: number): Severity {
-  if (score >= 9) {
-    return 'critical';
-  }
-  if (score >= 7) {
-    return 'high';
-  }
-  if (score >= 4) {
-    return 'medium';
-  }
-  return 'low';
-}
-
 async function formatVuln(
   id: string,
   nodeVuln: NodeVuln,
   nodeVersion: string
 ): Promise<any> {
-  let score;
-
-  try {
-    const cves = await Promise.all(
-      nodeVuln.cve.map((cve) =>
-        fetch(`https://cve.circl.lu/api/cve/${cve}`).then((res) => res.json())
-      )
-    );
-
-    const allCvss: number[] = cves.map((cve) => cve.cvss);
-
-    score = Math.max(...allCvss);
-  } catch (e) {
-    console.error(e);
-  }
-
+  const score = await fetchScore(`NSWG-COR-${id}`, nodeVuln);
+  const severity = scoreToSeverity(score);
   return {
     id: `NSWG-COR-${id}`,
     title: `Node.js core vulnerability #${id}`,
@@ -64,7 +36,7 @@ async function formatVuln(
       triageAdvice: null,
     },
     language: 'js',
-    severity: scoreToSeverity(score ?? 9),
+    severity: severity,
     cvssScore: score,
     functions: [],
     moduleName: '.node.js',
@@ -90,7 +62,7 @@ async function formatVuln(
     publicationTime: '-',
     modificationTime: '-',
     socialTrendAlert: false,
-    severityWithCritical: 'high',
+    severityWithCritical: severity,
     from: [`.node.js@${nodeVersion}`],
     upgradePath: [],
     isUpgradable: true,
@@ -98,6 +70,61 @@ async function formatVuln(
     name: '.node.js',
     version: nodeVersion,
   };
+}
+
+async function fetchScore(vulnId: string, nodeVuln: NodeVuln) {
+  const cves = await Promise.all(
+    nodeVuln.cve.map((cve) =>
+      fetch(
+        `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
+      ).then((res) =>
+        res.ok
+          ? res.json()
+          : Promise.reject(`Fetch ${cve} failed! status: ${res.status}`)
+      )
+    )
+  ).catch((e) => {
+    console.error(
+      `Error fetching score for ${vulnId}: ${(e as Error).message}`
+    );
+
+    return [];
+  });
+
+  const getBestCvssMetricScore = (
+    cvssMetrics: {
+      type: 'Primary' | 'Secondary';
+      cvssData: { baseScore: number };
+    }[]
+  ) => {
+    return (
+      cvssMetrics.find((m) => m.type === 'Primary')?.cvssData?.baseScore ??
+      cvssMetrics.find((m) => m.type === 'Secondary')?.cvssData?.baseScore
+    );
+  };
+
+  const allCvss: (number | undefined)[] = cves.map(
+    (cve) =>
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV31 ?? []
+      ) ??
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV30 ?? []
+      ) ??
+      getBestCvssMetricScore(
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV2 ?? []
+      )
+  );
+
+  const knownCvss: number[] = [];
+
+  for (const cvss of allCvss) {
+    if (typeof cvss === 'number') {
+      knownCvss.push(cvss);
+    }
+  }
+
+  return knownCvss.length ? Math.max(...knownCvss) : undefined;
 }
 
 async function downloadCoreDb(): Promise<Record<string, NodeVuln>> {
