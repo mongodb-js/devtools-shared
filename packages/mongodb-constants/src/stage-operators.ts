@@ -739,7 +739,6 @@ const STAGE_OPERATORS = [
     comment: `/**
  * index: The name of the Search index.
  * text: Analyzed search, with required fields of query and path, the analyzed field(s) to search.
- * term: Un-analyzed search.
  * compound: Combines ops.
  * span: Find in text field regions.
  * exists: Test for presence of a field.
