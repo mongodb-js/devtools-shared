@@ -2,20 +2,20 @@ import path from 'path';
 import findUp from 'find-up';
 import fs from 'fs';
 
-function resolvePackage(packageName: string) {
-  const resolved = require.resolve(packageName);
+function resolvePackage(packageName: string, from: string) {
+  const resolved = require.resolve(packageName, { paths: [from] });
   // this is the case of native packages that are also distributed as
   // npm packages for webpack (for example "buffer")
   if (resolved === packageName) {
-    return require.resolve(packageName + '/');
+    return require.resolve(packageName + '/', { paths: [from] });
   }
 
   return resolved;
 }
 
-export function findPackageLocation(packageName: string) {
+export function findPackageLocation(packageName: string, from: string): string {
   const packageJsonPath = findUp.sync('package.json', {
-    cwd: resolvePackage(packageName),
+    cwd: resolvePackage(packageName, from),
     allowSymlinks: false,
   });
 
@@ -41,8 +41,8 @@ function getProductionDeps(packageLocation: string) {
   return { dependencies, optionalDependencies };
 }
 
-export function findAllProdDepsTreeLocations(): string[] {
-  const rootPackageJsonPath = findUp.sync('package.json');
+export function findAllProdDepsTreeLocations(from = process.cwd()): string[] {
+  const rootPackageJsonPath = findUp.sync('package.json', { cwd: from });
   if (!rootPackageJsonPath) {
     throw new Error('cannot find root package.json');
   }
@@ -54,6 +54,7 @@ export function findAllProdDepsTreeLocations(): string[] {
 
   while (queue.length > 0) {
     const packageLocation = queue.shift();
+
     if (!packageLocation) {
       continue;
     }
@@ -61,6 +62,7 @@ export function findAllProdDepsTreeLocations(): string[] {
     if (visited.has(packageLocation)) {
       continue;
     }
+
     visited.add(packageLocation);
 
     const { dependencies, optionalDependencies } =
@@ -70,7 +72,8 @@ export function findAllProdDepsTreeLocations(): string[] {
       ...Object.keys(optionalDependencies),
     ].forEach((dep) => {
       try {
-        const depLocation = findPackageLocation(dep);
+        const depLocation = findPackageLocation(dep, from);
+
         if (depLocation) {
           allLocations.add(depLocation);
           queue.push(depLocation);

@@ -3,8 +3,6 @@ import { promises as fs } from 'fs';
 import type { Compilation, Compiler, WebpackPluginInstance } from 'webpack';
 import _ from 'lodash';
 
-import { minimatch } from 'minimatch';
-
 import {
   findAllProdDepsTreeLocations,
   findPackageLocation,
@@ -13,11 +11,10 @@ import { getPackageInfo } from './get-package-info';
 
 const PLUGIN_NAME = 'WebpackDependenciesPlugin';
 
-type WebpackDependenciesPluginOptions = {
+export type WebpackDependenciesPluginOptions = {
   outputFilename?: string;
   includePackages?: string[];
   includeExternalProductionDependencies?: boolean;
-  excludeModules?: string[];
 };
 
 /**
@@ -26,27 +23,20 @@ type WebpackDependenciesPluginOptions = {
 */
 export class WebpackDependenciesPlugin implements WebpackPluginInstance {
   private readonly pluginName = PLUGIN_NAME;
-  outputPath: string;
-  includePackages: string[] = [];
+  outputPath?: string;
   resolvedModules = new Set<string>();
-  excludedModules: string[];
+  includeExternalProductionDependencies: boolean;
+  includePackages: string[] = [];
 
   constructor(private options: WebpackDependenciesPluginOptions = {}) {
-    this.includePackages = [
-      ...(options.includeExternalProductionDependencies
-        ? findAllProdDepsTreeLocations()
-        : []),
-      ...(options.includePackages || []).map(findPackageLocation),
-    ];
-
-    this.excludedModules = options.excludeModules || [];
-    this.outputPath = options.outputFilename || 'dependencies.json';
+    this.includeExternalProductionDependencies =
+      options.includeExternalProductionDependencies ?? false;
+    this.includePackages = options.includePackages ?? [];
+    this.outputPath = options.outputFilename;
   }
 
-  private isExcluded(modulePath: string) {
-    return this.excludedModules.some((excludedModulePattern) =>
-      minimatch(modulePath, excludedModulePattern)
-    );
+  private isThirdPartyModule(modulePath: string) {
+    return modulePath.split(path.sep).includes('node_modules');
   }
 
   private handleTap = (compilation: Compilation) => {
@@ -54,13 +44,25 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
       const resource = (module as unknown as any).resource;
       if (resource) {
         const modulePath = resource;
-        if (typeof modulePath === 'string' && !this.isExcluded(modulePath)) {
+        if (
+          typeof modulePath === 'string' &&
+          this.isThirdPartyModule(modulePath)
+        ) {
           this.resolvedModules.add(modulePath);
         }
       }
     }
 
-    for (const includedPackagePath of this.includePackages) {
+    const includePackages = [
+      ...(this.includeExternalProductionDependencies
+        ? findAllProdDepsTreeLocations(compilation.compiler.context)
+        : []),
+      ...(this.includePackages || []).map((packageName) =>
+        findPackageLocation(packageName, compilation.compiler.context)
+      ),
+    ];
+
+    for (const includedPackagePath of includePackages) {
       const packageJsonPath = path.join(includedPackagePath, 'package.json');
 
       if (packageJsonPath) {
@@ -85,11 +87,14 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
         ({ name, version }) => `${name}@${version}`
       );
 
-      await fs.mkdir(path.dirname(path.resolve(this.outputPath)), {
+      const outputPath =
+        this.outputPath ?? path.join(compiler.context, 'dependencies.json');
+
+      await fs.mkdir(path.dirname(path.resolve(outputPath)), {
         recursive: true,
       });
 
-      await fs.writeFile(this.outputPath, JSON.stringify(sortedList, null, 2));
+      await fs.writeFile(outputPath, JSON.stringify(sortedList, null, 2));
     });
 
     compiler.hooks.emit.tap(PLUGIN_NAME, this.handleTap);
