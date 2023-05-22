@@ -12,7 +12,11 @@
     "node": ">=14.17.5",
     "npm": ">=7.16.0"
   },
-  "workspaces": ["packages/*", "configs/*", "scripts"],
+  "workspaces": [
+    "packages/*",
+    "configs/*",
+    "scripts"
+  ],
   "scripts": {
     "bootstrap-ci": "npm ci && lerna run bootstrap",
     "bootstrap": "npm install && lerna run bootstrap --stream",

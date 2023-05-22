@@ -1,30 +1,16 @@
 import crypto from 'crypto';
 import spdxSatisfies from 'spdx-satisfies';
-import findUp from 'find-up';
+
 import { promises as fs } from 'fs';
 
 import type { Package } from '../get-package-info';
 import { loadDependencyFiles } from '../load-dependency-files';
-import crossSpawn from 'cross-spawn';
+import { Command } from 'commander';
 
 type Config = {
   ignoredOrgs?: string[];
   ignoredPackages?: string[];
   licenseOverrides?: Record<string, string>;
-};
-
-type PackageLockJsonDependency = {
-  version: string;
-  dependencies?: Record<string, PackageLockJsonDependency>;
-};
-
-type PackageLockJson = {
-  lockfileVersion: 2;
-  packages?: Record<
-    string,
-    { name: string; version: string; workspaces?: string[] }
-  >;
-  dependencies: Record<string, PackageLockJsonDependency>;
 };
 
 const ALLOWED_LICENSES = [
@@ -41,50 +27,17 @@ const ALLOWED_LICENSES = [
   'Unlicense',
 ];
 
-function checkOverrides(
-  packagesToCheck: string[],
-  packageLockJson: PackageLockJson
-) {
-  const allDepsInLock = new Set();
-  const traverseDependencies = (
-    dependencies: PackageLockJson['dependencies']
-  ) => {
-    for (const packageName in dependencies) {
-      const packageInfo = dependencies[packageName];
-      allDepsInLock.add(`${packageName}@${packageInfo.version}`);
-
-      if (packageInfo.dependencies) {
-        traverseDependencies(packageInfo.dependencies);
-      }
-    }
-  };
-
-  traverseDependencies(packageLockJson.dependencies);
+function checkOverrides(packagesToCheck: string[], dependencies: Package[]) {
+  const depsSet = new Set(
+    dependencies.map(({ name, version }) => `${name}@${version}`)
+  );
 
   for (const packageName of packagesToCheck) {
-    if (!allDepsInLock.has(packageName)) {
+    if (!depsSet.has(packageName)) {
       throw new Error(
-        `The package "${packageName}" is not installed, please remove it from the configured ignoredPackages or licenseOverrides.`
+        `The package "${packageName}" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.`
       );
     }
-  }
-}
-
-async function readPackageLock(): Promise<
-  { path: string; content: PackageLockJson } | undefined
-> {
-  const packageLockJsonPath = await findUp('package-lock.json');
-
-  if (packageLockJsonPath) {
-    const packageLock: PackageLockJson = JSON.parse(
-      await fs.readFile(packageLockJsonPath, 'utf-8')
-    );
-
-    if (packageLock.lockfileVersion !== 2) {
-      throw new Error('Invalid package-lock.json version: !== 2');
-    }
-
-    return { path: packageLockJsonPath, content: packageLock };
   }
 }
 
@@ -144,48 +97,12 @@ function validatePackage(pkg: Package) {
   });
 }
 
-function getMonorepoPackages(packageLock: PackageLockJson | undefined) {
-  if (!packageLock?.packages?.[''].workspaces?.length) {
-    return [];
-  }
-
-  const output = crossSpawn.sync('npm', ['query', '.workspace'], {
-    encoding: 'utf-8',
-  });
-
-  if (output.error) {
-    console.error('Error executing command:', output.error);
-    process.exit(1);
-  }
-
-  const packages = JSON.parse(output.stdout);
-  return packages.map(
-    (pkg: { name: string; version: string }) => `${pkg.name}@${pkg.version}`
-  );
-}
-
 async function readConfig(configPath: string): Promise<Config> {
-  const packageLock = await readPackageLock();
-  const monorepoPackages = getMonorepoPackages(packageLock?.content);
-
   const originalConfig = JSON.parse(await fs.readFile(configPath, 'utf-8'));
-
-  if (packageLock?.content) {
-    checkOverrides(
-      [
-        ...(originalConfig.ignoredPackages ?? []),
-        ...Object.keys(originalConfig.licenseOverrides ?? {}),
-      ],
-      packageLock.content
-    );
-  }
 
   return Promise.resolve({
     ignoredOrgs: [...(originalConfig.ignoredOrgs ?? [])],
-    ignoredPackages: [
-      ...(originalConfig.ignoredPackages ?? []),
-      ...(monorepoPackages ?? []),
-    ],
+    ignoredPackages: [...(originalConfig.ignoredPackages ?? [])],
     licenseOverrides: { ...(originalConfig.licenseOverrides ?? {}) },
   });
 }
@@ -256,23 +173,27 @@ function validatePackages(packages: Package[]) {
   const invalidPackages = packages.filter((pkg) => !validatePackage(pkg));
 
   if (invalidPackages.length) {
-    console.error(
-      `Generation failed, found ${invalidPackages.length} invalid packages:`
+    throw new Error(
+      [
+        `Generation failed, found ${invalidPackages.length} invalid packages:`,
+        ...invalidPackages.map(
+          (pkg) => `- ${pkg.name}@${pkg.version}: ${licenseSpdx(pkg)}`
+        ),
+      ].join('\n')
     );
-
-    for (const pkg of invalidPackages) {
-      console.error(`${pkg.name}@${pkg.version}:`, licenseSpdx(pkg));
-    }
-
-    process.exit(1);
   }
 }
 
-async function loadPackages(
-  dependencyFiles: string[],
-  config: Config
-): Promise<Package[]> {
-  return (await loadDependencyFiles<Package>(dependencyFiles))
+function applyConfig(dependencies: Package[], config: Config): Package[] {
+  checkOverrides(
+    [
+      ...(config.ignoredPackages ?? []),
+      ...Object.keys(config.licenseOverrides ?? {}),
+    ],
+    dependencies
+  );
+
+  return dependencies
     .filter(
       (pkg) =>
         !(config.ignoredOrgs || []).some((org) =>
@@ -295,16 +216,45 @@ export async function generate3rdPartyNotices({
   productName,
   dependencyFiles,
   configPath,
+  printResult,
 }: {
   productName: string;
   dependencyFiles: string[];
   configPath?: string;
+  printResult?: (result: string) => void;
 }): Promise<void> {
   const config: Config = await readConfig(configPath ?? 'licenses.json');
-  const packages: Package[] = await loadPackages(dependencyFiles, config);
+  const allPackages = await loadDependencyFiles<Package>(dependencyFiles);
+  const packages: Package[] = applyConfig(allPackages, config);
 
   validatePackages(packages);
 
   const markdown = printLicenseInformation(productName, packages);
-  console.info(markdown);
+  (printResult ?? console.info)(markdown);
 }
+
+function commaSeparatedList(value: string) {
+  return value.split(',');
+}
+
+export const command = new Command('generate-3rd-party-notices')
+  .description('Generate third-party notices')
+  .option('--product <productName>', 'Product name')
+  .option(
+    '--config [config]',
+    'Path of the configuration file',
+    'licenses.json'
+  )
+  .option(
+    '--dependencies <paths>',
+    'Comma-separated list of dependency files',
+    commaSeparatedList,
+    []
+  )
+  .action(async (options) => {
+    await generate3rdPartyNotices({
+      productName: options.product,
+      dependencyFiles: options.dependencies,
+      configPath: options.config,
+    });
+  });

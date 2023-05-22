@@ -1,33 +1,11 @@
 import { expect } from 'chai';
-import { rimrafSync } from 'rimraf';
 import path from 'path';
-import os from 'os';
 import fs from 'fs';
 import webpack from 'webpack';
 import type { WebpackDependenciesPluginOptions } from './webpack-dependencies-plugin';
 import { WebpackDependenciesPlugin } from './webpack-dependencies-plugin';
 import type { Package } from './get-package-info';
-
-const toCleanup: string[] = [];
-
-function setupTempDir(structure: Record<string, string>) {
-  const tempDirPath = path.join(os.tmpdir(), `sbom-tools-${Date.now()}`);
-
-  fs.mkdirSync(tempDirPath, { recursive: true });
-  toCleanup.push(tempDirPath);
-
-  for (const [entryPath, content] of Object.entries(structure)) {
-    const absoluteEntryPath = path.join(tempDirPath, ...entryPath.split('/'));
-    fs.mkdirSync(path.dirname(absoluteEntryPath), { recursive: true });
-    fs.writeFileSync(absoluteEntryPath, content);
-  }
-
-  return tempDirPath;
-}
-
-function cleanup() {
-  toCleanup.forEach((tempPath) => rimrafSync(tempPath));
-}
+import { cleanup, setupTempDir, toCleanup } from '../test/helpers';
 
 function runPlugin(
   structure: Record<string, string>,
@@ -81,9 +59,7 @@ function runPlugin(
 }
 
 describe('WebpackDependenciesPlugin', function () {
-  after(function () {
-    cleanup();
-  });
+  after(cleanup);
 
   it('returns an empty dependencies file if there are no modules', async function () {
     const structure = {
@@ -123,6 +99,41 @@ describe('WebpackDependenciesPlugin', function () {
       {
         licenseFiles: [],
         name: 'pkg1',
+        version: '0.1.0',
+      },
+    ]);
+  });
+
+  it('works with multiple configs', async function () {
+    const structure = {
+      'package.json': JSON.stringify({
+        name: 'my-package',
+      }),
+      'src/input1.js': 'require("pkg1")',
+      'src/input2.js': 'require("pkg2")',
+      'node_modules/pkg1/package.json': JSON.stringify({
+        name: 'pkg1',
+        version: '0.1.0',
+      }),
+      'node_modules/pkg1/index.js': '',
+      'node_modules/pkg2/package.json': JSON.stringify({
+        name: 'pkg2',
+        version: '0.1.0',
+      }),
+      'node_modules/pkg2/index.js': '',
+    };
+
+    const dependencies = await runPlugin(structure, {});
+
+    expect(dependencies).to.deep.equal([
+      {
+        licenseFiles: [],
+        name: 'pkg1',
+        version: '0.1.0',
+      },
+      {
+        licenseFiles: [],
+        name: 'pkg2',
         version: '0.1.0',
       },
     ]);

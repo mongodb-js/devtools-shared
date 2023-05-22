@@ -1,9 +1,14 @@
 import fetch from 'node-fetch';
 import semver from 'semver';
 import nv from '@pkgjs/nv';
-import { scoreToSeverity } from './severity';
+import type {
+  SnykTestProjectResult,
+  SnykVulnerability,
+} from '../snyk-vulnerability';
+import { buildSnykVulnerability } from '../snyk-vulnerability';
+import { Command } from 'commander';
 
-type NodeVuln = {
+type NodeVulnerability = {
   cve: string[];
   vulnerable: string;
   patched: string;
@@ -13,74 +18,42 @@ type NodeVuln = {
   affectedEnvironments: string[];
 };
 
-async function formatVuln(
+async function formatVulnerability(
   id: string,
-  nodeVuln: NodeVuln,
+  nodeVulnerability: NodeVulnerability,
   nodeVersion: string
-): Promise<any> {
-  const score = await fetchScore(`NSWG-COR-${id}`, nodeVuln);
-  const severity = scoreToSeverity(score);
-  return {
+): Promise<SnykVulnerability> {
+  const score = await fetchScore(`NSWG-COR-${id}`, nodeVulnerability);
+
+  return buildSnykVulnerability({
     id: `NSWG-COR-${id}`,
-    title: `Node.js core vulnerability #${id}`,
-    CVSSv3: '-',
-    credit: ['-'],
-    semver: {
-      vulnerable: nodeVuln.vulnerable,
-    },
-    exploit: '-',
-    patched: [nodeVuln.patched],
-    patches: [],
-    fixedIn: (nodeVuln.patched || '').split(' || '),
-    insights: {
-      triageAdvice: null,
-    },
-    language: 'js',
-    severity: severity,
-    cvssScore: score,
-    functions: [],
-    moduleName: '.node.js',
-    references: [
-      {
-        url: nodeVuln.ref,
-        title: 'Ref',
-      },
-    ],
-    cvssDetails: [],
-    description: nodeVuln.overview,
-    epssDetails: null,
-    identifiers: {
-      CVE: nodeVuln.cve,
-    },
+    cves: nodeVulnerability.cve,
+    fixedIn: (nodeVulnerability.patched || '').split(' || '),
+
     packageName: '.node.js',
-    proprietary: true,
-    creationTime: '-',
-    functions_new: [],
-    alternativeIds: [],
-    disclosureTime: '-',
-    packageManager: 'npm',
-    publicationTime: '-',
-    modificationTime: '-',
-    socialTrendAlert: false,
-    severityWithCritical: severity,
-    from: [`.node.js@${nodeVersion}`],
-    upgradePath: [],
-    isUpgradable: true,
-    isPatchable: false,
-    name: '.node.js',
-    version: nodeVersion,
-  };
+    score,
+
+    url: nodeVulnerability.ref,
+    packageVersion: nodeVersion,
+    description: nodeVulnerability.overview,
+    vulnerableSemver: nodeVulnerability.vulnerable,
+  });
 }
 
-async function fetchScore(vulnId: string, nodeVuln: NodeVuln) {
+async function fetchScore(
+  vulnId: string,
+  nodeVulnerability: NodeVulnerability
+) {
   const cves = await Promise.all(
-    nodeVuln.cve.map((cve) =>
+    nodeVulnerability.cve.map((cve) =>
       fetch(
         `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
       ).then((res) =>
         res.ok
           ? res.json()
-          : Promise.reject(`Fetch ${cve} failed! status: ${res.status}`)
+          : Promise.reject(
+              new Error(`Fetch ${cve} failed. Status: ${res.status}`)
+            )
       )
     )
   ).catch((e) => {
@@ -124,10 +97,13 @@ async function fetchScore(vulnId: string, nodeVuln: NodeVuln) {
     }
   }
 
+  // if no suitable score is found we return 'undefined', and the severity will be set
+  // as unknown. The generate-vulnerability-report will always report vulnerabilities with
+  // severity=unknown as failures, unless intentionally ignored.
   return knownCvss.length ? Math.max(...knownCvss) : undefined;
 }
 
-async function downloadCoreDb(): Promise<Record<string, NodeVuln>> {
+async function downloadCoreDb(): Promise<Record<string, NodeVulnerability>> {
   const url =
     'https://raw.githubusercontent.com/nodejs/security-wg/main/vuln/core/index.json';
 
@@ -148,24 +124,48 @@ async function isSupported(version: string) {
   return semver.satisfies(version, supported);
 }
 
-export async function scanNodeJs({ version }: { version: string }) {
+export async function scanNodeJs({
+  version,
+}: {
+  version: string;
+}): Promise<SnykTestProjectResult> {
+  // the security-wg repo includes only advisories on the supported versions.
+  // if the node.js version is too old we can't continue.
   if (!(await isSupported(version))) {
     throw new Error(`Failed: node.js@${version} is not supported anymore.`);
   }
 
-  const coreDbVuln = await downloadCoreDb();
+  const coreDbVulnerability = await downloadCoreDb();
 
   const affectedBy = [];
 
-  for (const [id, vuln] of Object.entries(coreDbVuln)) {
+  for (const [id, vulnerability] of Object.entries(coreDbVulnerability)) {
     if (
-      semver.satisfies(version, vuln.vulnerable) &&
-      vuln.patched &&
-      !semver.satisfies(version, vuln.patched)
+      semver.satisfies(version, vulnerability.vulnerable) &&
+      vulnerability.patched &&
+      !semver.satisfies(version, vulnerability.patched)
     ) {
-      affectedBy.push(await formatVuln(id, vuln, version));
+      affectedBy.push(await formatVulnerability(id, vulnerability, version));
     }
   }
 
-  console.log(JSON.stringify({ vulnerabilities: affectedBy }, null, 2));
+  return { vulnerabilities: affectedBy };
 }
+
+export const command = new Command('scan-node-js')
+  .description('Scan node.js version for known vulnerabilities')
+  .option(
+    '--version <version>',
+    'Path to the node.js security-wg core database of vulnerabilities'
+  )
+  .action(async (options) => {
+    console.info(
+      JSON.stringify(
+        await scanNodeJs({
+          version: options.version,
+        }),
+        null,
+        2
+      )
+    );
+  });

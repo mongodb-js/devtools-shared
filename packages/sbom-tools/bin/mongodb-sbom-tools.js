@@ -1,3 +1,4 @@
 #!/usr/bin/env node
 
-require('../dist/bin.js');
+const { main } = require('../dist/bin.js');
+main(process.argv);
