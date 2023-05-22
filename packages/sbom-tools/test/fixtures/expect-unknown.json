@@ -1,0 +1,153 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "NSWG-COR-95",
+      "title": "NSWG-COR-95",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": {
+        "vulnerable": "14.x || 16.x || 18.x"
+      },
+      "exploit": "-",
+      "patched": ["^14.20.0", "^16.20.0", "^18.5.0"],
+      "patches": [],
+      "fixedIn": ["^14.20.0", "^16.20.0", "^18.5.0"],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.5,
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "url": "https://nodejs.org/en/blog/vulnerability/july-2022-security-releases/",
+          "title": "Ref"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "The llhttp parser in the http module in Node.js does not strictly use the CRLF sequence to delimit HTTP requests. This can lead to HTTP Request Smuggling (HRS).",
+      "epssDetails": null,
+      "identifiers": {
+        "CVE": ["CVE-2022-32214"]
+      },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [".node.js@16.19.1"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "16.19.1"
+    },
+    {
+      "id": "NSWG-COR-98",
+      "title": "NSWG-COR-98",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": {
+        "vulnerable": "14.x || 16.x || 18.x"
+      },
+      "exploit": "-",
+      "patched": ["^14.20.0", "^16.20.0", "^18.5.0"],
+      "patches": [],
+      "fixedIn": ["^14.20.0", "^16.20.0", "^18.5.0"],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 7.3,
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "url": "https://nodejs.org/en/blog/vulnerability/july-2022-security-releases/",
+          "title": "Ref"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "Node.js is vulnerable to Hijack Execution Flow: DLL Hijacking under certain conditions on Windows platforms.\nThis vulnerability can be exploited if the victim has the following dependencies on a Windows machine:\n* OpenSSL has been installed and “C:\\Program Files\\Common Files\\SSL\\openssl.cnf” exists.\n\nWhenever the above conditions are present, `node.exe` will search for `providers.dll` in the current user directory.\nAfter that, `node.exe` will try to search for `providers.dll` by the DLL Search Order in Windows.\n\nIt is possible for an attacker to place the malicious file `providers.dll` under a variety of paths and exploit this vulnerability.",
+      "epssDetails": null,
+      "identifiers": {
+        "CVE": ["CVE-2022-32223"]
+      },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [".node.js@16.19.1"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "16.19.1"
+    },
+    {
+      "id": "NSWG-COR-99",
+      "title": "NSWG-COR-99",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": {
+        "vulnerable": "14.x || 16.x || 18.x"
+      },
+      "exploit": "-",
+      "patched": ["^14.20.0", "^16.20.0", "^18.9.1"],
+      "patches": [],
+      "fixedIn": ["^14.20.0", "^16.20.0", "^18.9.1"],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "unknown",
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "url": "https://nodejs.org/en/blog/vulnerability/september-2022-security-releases/",
+          "title": "Ref"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "On linux, versions of 18.x prior to Y used a default path for openssl.cnf  that was within a path that might be accessible under some circumstances to a non-admin user instead of /etc/ssl as was the case in versions prior to the upgrade to OpenSSL 3.",
+      "epssDetails": null,
+      "identifiers": {
+        "CVE": ["CVE-2022-32222"]
+      },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "unknown",
+      "from": [".node.js@16.19.1"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "16.19.1"
+    }
+  ]
+}
