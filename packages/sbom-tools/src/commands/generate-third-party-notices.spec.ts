@@ -2,22 +2,23 @@ import path from 'path';
 import type { SinonFakeTimers } from 'sinon';
 import { useFakeTimers } from 'sinon';
 import { generate3rdPartyNotices } from './generate-third-party-notices';
-import { setupTempDir, cleanup } from '../../test/helpers';
+import { withTempDir } from '../../test/helpers';
 import { expect } from 'chai';
+
 async function runGenerateNotices(structure: Record<string, string>) {
-  const tempDir = setupTempDir(structure);
+  return withTempDir(structure, async (tempDir) => {
+    let output = '';
 
-  let output = '';
-
-  const error = await generate3rdPartyNotices({
-    productName: 'My Product',
-    dependencyFiles: [path.resolve(tempDir, 'dependencies.json')],
-    configPath: path.resolve(tempDir, 'licenses.json'),
-    printResult: (result) => {
-      output = result;
-    },
-  }).catch((err) => Promise.resolve(err));
-  return { error, output };
+    const error = await generate3rdPartyNotices({
+      productName: 'My Product',
+      dependencyFiles: [path.resolve(tempDir, 'dependencies.json')],
+      configPath: path.resolve(tempDir, 'licenses.json'),
+      printResult: (result) => {
+        output = result;
+      },
+    }).catch((err) => Promise.resolve(err));
+    return { error, output };
+  });
 }
 
 describe('generate-third-party-notices', function () {
@@ -28,7 +29,6 @@ describe('generate-third-party-notices', function () {
 
   after(function () {
     clock.restore();
-    cleanup();
   });
 
   it('reports licenses', async function () {
