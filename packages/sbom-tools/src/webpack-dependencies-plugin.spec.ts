@@ -1,13 +1,17 @@
 import { expect } from 'chai';
 import path from 'path';
 import fs from 'fs';
-import webpack from 'webpack';
+import { default as webpackCb } from 'webpack';
+import util from 'util';
+
 import type { WebpackDependenciesPluginOptions } from './webpack-dependencies-plugin';
 import { WebpackDependenciesPlugin } from './webpack-dependencies-plugin';
 import type { Package } from './get-package-info';
 import { cleanup, setupTempDir, toCleanup } from '../test/helpers';
 
-function runPlugin(
+const webpack = util.promisify(webpackCb);
+
+async function runPlugin(
   structure: Record<string, string>,
   options: WebpackDependenciesPluginOptions
 ): Promise<Package[]> {
@@ -17,45 +21,35 @@ function runPlugin(
     options.outputFilename ?? path.join(contextPath, 'dependencies.json');
   toCleanup.push(outputPath);
 
-  return new Promise((resolve, reject) => {
-    const plugin = new WebpackDependenciesPlugin(options);
-    const config = fs
-      .readdirSync(path.join(contextPath, 'src'))
-      .filter(
-        (filename) => filename.startsWith('input') && filename.endsWith('.js')
-      )
-      .map((filename, i) => ({
-        context: contextPath,
-        entry: path.resolve(contextPath, 'src', filename),
-        output: {
-          path: path.resolve(contextPath, 'dist'),
-          filename: `output-${i}.js`,
-        },
-        plugins: [plugin],
-      }));
+  const plugin = new WebpackDependenciesPlugin(options);
+  const config = fs
+    .readdirSync(path.join(contextPath, 'src'))
+    .filter(
+      (filename) => filename.startsWith('input') && filename.endsWith('.js')
+    )
+    .map((filename, i) => ({
+      context: contextPath,
+      entry: path.resolve(contextPath, 'src', filename),
+      output: {
+        path: path.resolve(contextPath, 'dist'),
+        filename: `output-${i}.js`,
+      },
+      plugins: [plugin],
+    }));
 
-    webpack(config, (err, stats) => {
-      if (err) {
-        return reject(err);
-      }
+  const stats = await webpack(config);
 
-      if (stats && stats.hasErrors()) {
-        return reject(
-          new Error(
-            JSON.stringify(stats.toJson().errors) ??
-              'Compilation stats contains errors.'
-          )
-        );
-      }
+  if (stats && stats.hasErrors()) {
+    throw new Error(
+      JSON.stringify(stats.toJson().errors) ??
+        'Compilation stats contains errors.'
+    );
+  }
 
-      resolve(
-        JSON.parse(fs.readFileSync(outputPath, 'utf-8')).map(
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          ({ path: _, ...rest }) => rest
-        )
-      );
-    });
-  });
+  return JSON.parse(fs.readFileSync(outputPath, 'utf-8')).map(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ({ path: _, ...rest }) => rest
+  );
 }
 
 describe('WebpackDependenciesPlugin', function () {
