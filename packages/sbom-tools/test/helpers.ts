@@ -15,7 +15,7 @@ export function setupTempDir(structure: Record<string, string>): string {
   toCleanup.push(tempDirPath);
 
   for (const [entryPath, content] of Object.entries(structure)) {
-    const absoluteEntryPath = path.join(tempDirPath, ...entryPath.split('/'));
+    const absoluteEntryPath = path.join(tempDirPath, entryPath);
     fs.mkdirSync(path.dirname(absoluteEntryPath), { recursive: true });
     fs.writeFileSync(absoluteEntryPath, content);
   }
