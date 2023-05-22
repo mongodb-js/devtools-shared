@@ -20,7 +20,7 @@ function runPlugin(
   return new Promise((resolve, reject) => {
     const plugin = new WebpackDependenciesPlugin(options);
     const config = fs
-      .readdirSync(path.join(contextPath, './src'))
+      .readdirSync(path.join(contextPath, 'src'))
       .filter(
         (filename) => filename.startsWith('input') && filename.endsWith('.js')
       )
