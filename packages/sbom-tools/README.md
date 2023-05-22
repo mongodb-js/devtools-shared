@@ -7,6 +7,7 @@ Utilities to generate sbom reports for webpack bundles.
 This package exports `WebpackDependenciesPlugin`, a shared webpack plugin that reports bundled dependencies and licenses as a json file for each bundle.
 
 And exposes a `mongodb-sbom-tools` binary providing the following commands:
+
 - `generate-vulnerability-report`: Generates a report of vulnerabilities from the output of snyk test and a dependencies json file containing all the dependencies.
 - `generate-3rd-party-notices`: Generates a 3rd party notices file based on the licenses information collected by the WebpackDependenciesPlugin. Also validates the licenses.
 - `scan-node-js`: A script to produce a list of vulnerabilities affecting a Node.js version in the same format as snyk test (useful as we are redistributing Node.js with mongosh).
@@ -19,7 +20,7 @@ Setting `includeExternalProductionDependencies` to true the plugin will also inc
 
 #### Usage
 
-``` js
+```js
 // webpack.config.js
 
 const webpackDependenciesPlugin = new WebpackDependenciesPlugin({
@@ -34,7 +35,7 @@ module.exports = { ..., plugins: [buildInfoPlugin] }
 
 **Example Output**
 
-``` json
+```json
 dependencies.json
 
 [{
@@ -59,7 +60,6 @@ Outputs a markdown report of vulnerabilities given one or more `dependencies.jso
 
 #### Usage
 
-
 ```
 Usage: bin generate-vulnerability-report [options]
 
@@ -77,11 +77,11 @@ level
 
 **Example output:**
 
-``` md
-| dep@version | id | score | fixed in | origin | ignored |
-| ----------- | -- | ----- | -------- | ------ | ------- |
-| jquery@2.2.4 | SNYK-JS-JQUERY-567880 | 6.5 (Medium) | 3.5.0 | - |
-| got@10.7.0 | SNYK-JS-GOT-2932019 | 5.4 (Medium) | 11.8.5 | Ignored. Reason: ... |
+```md
+| dep@version  | id                    | score        | fixed in | origin               | ignored |
+| ------------ | --------------------- | ------------ | -------- | -------------------- | ------- |
+| jquery@2.2.4 | SNYK-JS-JQUERY-567880 | 6.5 (Medium) | 3.5.0    | -                    |
+| got@10.7.0   | SNYK-JS-GOT-2932019   | 5.4 (Medium) | 11.8.5   | Ignored. Reason: ... |
 ```
 
 #### Ignored vulnerabilities
@@ -93,6 +93,7 @@ Ignored vulnerabilities won’t cause the report to fail with an error when `--f
 #### Fail on
 
 `--fail-on` configures the command to fail with an error if the report contains a vulnerability that:
+
 - Does not have a known severity
 - Has a score greater or equal to the specified severity
 - Is not ignored
@@ -140,7 +141,7 @@ Options:
 
 **Example config:**
 
-``` json
+```json
 {
   "ignoredOrgs": ["@mongodb-js", "@leafygreen-ui", "@mongosh"],
   "ignoredPackages": [],
@@ -156,26 +157,29 @@ Options:
 
 **Example output:**
 
-``` md
+```md
 The following third-party software is used by and included in **Mongodb Compass**.
 This document was automatically generated on Sun May 14 2023.
 
 ## List of dependencies
 
-Package|Version|License
--------|-------|-------
-**[@aws-sdk/client-cognito-identity](#5416a8cf83b6af5965b709a5538b4b4590f0a081e36cbd99a1af945d73034f1a)**|3.321.1|Apache-2.0
+| Package                                                                                                   | Version | License    |
+| --------------------------------------------------------------------------------------------------------- | ------- | ---------- |
+| **[@aws-sdk/client-cognito-identity](#5416a8cf83b6af5965b709a5538b4b4590f0a081e36cbd99a1af945d73034f1a)** | 3.321.1 | Apache-2.0 |
 
 ...
 
 ## Package details
 
 <a id="5416a8cf83b6af5965b709a5538b4b4590f0a081e36cbd99a1af945d73034f1a"></a>
+
 ### [@aws-sdk/client-cognito-identity](https://www.npmjs.com/package/@aws-sdk/client-cognito-identity) (version 3.321.1)
+
 License tags: Apache-2.0
 
 License files:
-* LICENSE:
+
+- LICENSE:
 
                                       Apache License
                                  Version 2.0, January 2004
@@ -209,8 +213,7 @@ Options:
 
 Use in conjunction with generate-vulnerability-report:
 
-
-``` sh
+```sh
 echo '[{name: ".node.js", version:"'"$NODE_JS_VERSION"'"}]' > node-js-dep.json
 mongodb-sbom-tools scan-node-js --version=$NODE_JS_VERSION > node-js-vuln.json
 
