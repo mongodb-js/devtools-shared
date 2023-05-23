@@ -143,8 +143,12 @@ Options:
 
 ```json
 {
+  // remove orgs and packages from the report
   "ignoredOrgs": ["@mongodb-js", "@leafygreen-ui", "@mongosh"],
-  "ignoredPackages": [],
+  "ignoredPackages": ["package1"],
+  // include packages in the report, just skip validation
+  "doNotValidatePackages": ["package2"],
+  "additionalAllowedLicenses": ["PYTHON-2.0"],
   "licenseOverrides": {
     "@segment/loosely-validate-event@2.0.0": "MIT",
     "component-event@0.1.4": "MIT",
