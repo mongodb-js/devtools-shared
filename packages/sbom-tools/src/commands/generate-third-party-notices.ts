@@ -8,9 +8,11 @@ import { loadDependencyFiles } from '../load-dependency-files';
 import { Command } from 'commander';
 
 type Config = {
-  ignoredOrgs?: string[];
-  ignoredPackages?: string[];
-  licenseOverrides?: Record<string, string>;
+  ignoredOrgs: string[];
+  ignoredPackages: string[];
+  doNotValidatePackages: string[];
+  licenseOverrides: Record<string, string>;
+  additionalAllowedLicenses: string[];
 };
 
 const ALLOWED_LICENSES = [
@@ -45,7 +47,7 @@ function checkOverrides(packagesToCheck: string[], dependencies: Package[]) {
 function id(pkg: Package): string {
   return crypto
     .createHash('sha256')
-    .update(`${pkg.name}@${pkg.version}`)
+    .update(packageNameAndVersion(pkg))
     .digest('hex');
 }
 
@@ -86,26 +88,36 @@ function indent(input: string, depth: number): string {
   return input.replace(/^/gm, ' '.repeat(depth));
 }
 
-function validatePackage(pkg: Package) {
-  return ALLOWED_LICENSES.some((allowedLicense) => {
-    const spdx = licenseSpdx(pkg);
-    try {
-      return spdxSatisfies(allowedLicense, spdx);
-    } catch (error) {
-      return allowedLicense === spdx;
+function validatePackage(pkg: Package, config: Config) {
+  return [...ALLOWED_LICENSES, ...config.additionalAllowedLicenses].some(
+    (allowedLicense) => {
+      const spdx = licenseSpdx(pkg);
+      try {
+        return spdxSatisfies(allowedLicense, spdx);
+      } catch (error) {
+        return allowedLicense === spdx;
+      }
     }
-  });
+  );
 }
 
 async function readConfig(configPath: string): Promise<Config> {
-  const originalConfig = JSON.parse(await fs.readFile(configPath, 'utf-8'));
+  const originalConfig: Partial<Config> = JSON.parse(
+    await fs.readFile(configPath, 'utf-8')
+  );
 
   return Promise.resolve({
     ignoredOrgs: [...(originalConfig.ignoredOrgs ?? [])],
     ignoredPackages: [...(originalConfig.ignoredPackages ?? [])],
     licenseOverrides: { ...(originalConfig.licenseOverrides ?? {}) },
+    doNotValidatePackages: [...(originalConfig.doNotValidatePackages ?? [])],
+    additionalAllowedLicenses: [
+      ...(originalConfig.additionalAllowedLicenses ?? []),
+    ],
   });
 }
+
+const packageNameAndVersion = (pkg: Package) => `${pkg.name}@${pkg.version}`;
 
 // Generate a markdown file containing information about all the packages'
 // licensing data.
@@ -169,8 +181,13 @@ ${packages
   return output;
 }
 
-function validatePackages(packages: Package[]) {
-  const invalidPackages = packages.filter((pkg) => !validatePackage(pkg));
+function validatePackages(packages: Package[], config: Config) {
+  const invalidPackages = packages
+    .filter(
+      (pkg) =>
+        !config.doNotValidatePackages.includes(packageNameAndVersion(pkg))
+    )
+    .filter((pkg) => !validatePackage(pkg, config));
 
   if (invalidPackages.length) {
     throw new Error(
@@ -187,8 +204,9 @@ function validatePackages(packages: Package[]) {
 function applyConfig(dependencies: Package[], config: Config): Package[] {
   checkOverrides(
     [
-      ...(config.ignoredPackages ?? []),
-      ...Object.keys(config.licenseOverrides ?? {}),
+      ...config.ignoredPackages,
+      ...config.doNotValidatePackages,
+      ...Object.keys(config.licenseOverrides),
     ],
     dependencies
   );
@@ -202,12 +220,12 @@ function applyConfig(dependencies: Package[], config: Config): Package[] {
     )
     .filter(
       (pkg) =>
-        !(config.ignoredPackages || []).includes(`${pkg.name}@${pkg.version}`)
+        !(config.ignoredPackages || []).includes(packageNameAndVersion(pkg))
     )
     .map((pkg) => ({
       ...pkg,
       license:
-        (config.licenseOverrides || {})[`${pkg.name}@${pkg.version}`] ??
+        (config.licenseOverrides || {})[packageNameAndVersion(pkg)] ??
         pkg.license,
     }));
 }
@@ -227,7 +245,7 @@ export async function generate3rdPartyNotices({
   const allPackages = await loadDependencyFiles<Package>(dependencyFiles);
   const packages: Package[] = applyConfig(allPackages, config);
 
-  validatePackages(packages);
+  validatePackages(packages, config);
 
   const markdown = printLicenseInformation(productName, packages);
   (printResult ?? console.info)(markdown);

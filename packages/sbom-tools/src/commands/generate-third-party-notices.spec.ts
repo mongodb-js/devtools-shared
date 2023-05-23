@@ -197,6 +197,76 @@ License tags: MIT
 `);
   });
 
+  it('allows to skip validation for packages', async function () {
+    const { error, output } = await runGenerateNotices({
+      'dependencies.json': JSON.stringify([
+        {
+          licenseFiles: [],
+          name: 'invalid-package',
+          version: '1.0.0',
+          license: 'INVALID',
+        },
+      ]),
+      'licenses.json': JSON.stringify({
+        doNotValidatePackages: ['invalid-package@1.0.0'],
+      }),
+    });
+
+    expect(error).to.be.undefined;
+    expect(output).to
+      .equal(`The following third-party software is used by and included in **My Product**.
+This document was automatically generated on Sun Jan 01 2023.
+
+## List of dependencies
+
+Package|Version|License
+-------|-------|-------
+**[invalid-package](#934251c47b0ded46bf0150a82447d2fe02fddda4c32b2c97cf5b9c3f5f67611f)**|1.0.0|INVALID
+
+## Package details
+
+<a id="934251c47b0ded46bf0150a82447d2fe02fddda4c32b2c97cf5b9c3f5f67611f"></a>
+### [invalid-package](https://www.npmjs.com/package/invalid-package) (version 1.0.0)
+License tags: INVALID
+
+`);
+  });
+
+  it('allows to specify additional licenses', async function () {
+    const { error, output } = await runGenerateNotices({
+      'dependencies.json': JSON.stringify([
+        {
+          licenseFiles: [],
+          name: 'invalid-package',
+          version: '1.0.0',
+          license: 'INVALID',
+        },
+      ]),
+      'licenses.json': JSON.stringify({
+        additionalAllowedLicenses: ['INVALID'],
+      }),
+    });
+
+    expect(error).to.be.undefined;
+    expect(output).to
+      .equal(`The following third-party software is used by and included in **My Product**.
+This document was automatically generated on Sun Jan 01 2023.
+
+## List of dependencies
+
+Package|Version|License
+-------|-------|-------
+**[invalid-package](#934251c47b0ded46bf0150a82447d2fe02fddda4c32b2c97cf5b9c3f5f67611f)**|1.0.0|INVALID
+
+## Package details
+
+<a id="934251c47b0ded46bf0150a82447d2fe02fddda4c32b2c97cf5b9c3f5f67611f"></a>
+### [invalid-package](https://www.npmjs.com/package/invalid-package) (version 1.0.0)
+License tags: INVALID
+
+`);
+  });
+
   it('fails if overrides are outdated', async function () {
     const { error } = await runGenerateNotices({
       'dependencies.json': JSON.stringify([
@@ -229,6 +299,26 @@ License tags: MIT
       ]),
       'licenses.json': JSON.stringify({
         ignoredPackages: ['@ignored-org/pkg1@1.0.0'],
+      }),
+    });
+
+    expect(error?.message).to.equal(
+      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.'
+    );
+  });
+
+  it('fails if do not validate packages are outdated', async function () {
+    const { error } = await runGenerateNotices({
+      'dependencies.json': JSON.stringify([
+        {
+          licenseFiles: [],
+          name: '@ignored-org/pkg1',
+          version: '2.0.0',
+          license: 'Apache-2.0',
+        },
+      ]),
+      'licenses.json': JSON.stringify({
+        doNotValidatePackages: ['@ignored-org/pkg1@1.0.0'],
       }),
     });
 
