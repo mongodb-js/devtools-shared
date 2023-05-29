@@ -87,8 +87,8 @@ level
 **Example output:**
 
 ```md
-| dep@version  | id                    | score        | fixed in | origin               | ignored |
-| ------------ | --------------------- | ------------ | -------- | -------------------- | ------- |
+| dep@version  | id                    | score        | fixed in | ignored              |
+| ------------ | --------------------- | ------------ | -------- | -------------------- |
 | jquery@2.2.4 | SNYK-JS-JQUERY-567880 | 6.5 (Medium) | 3.5.0    | -                    |
 | got@10.7.0   | SNYK-JS-GOT-2932019   | 5.4 (Medium) | 11.8.5   | Ignored. Reason: ... |
 ```
