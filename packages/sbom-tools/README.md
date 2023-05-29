@@ -58,6 +58,15 @@ dependencies.json
 
 Outputs a markdown report of vulnerabilities given one or more `dependencies.json` files and the output of one or more multiple `snyk test`.
 
+If `--create-jira-issues` is set then each vulnerability that is not ignored will be also reported as a jira issue.
+
+The jira issue creation must be configured setting the following environment variables:
+
+- `JIRA_BASE_URL` (required): The base url of the jira api (excluded the `/rest/api/...`).
+- `JIRA_API_TOKEN` (required): A jira PAT.
+- `JIRA_PROJECT` (required): The project used to create the ticket.
+- `JIRA_VULNERABILITY_BUILD_INFO`: Additional build info added to the ticket description (for example the commit id).
+
 #### Usage
 
 ```
@@ -67,12 +76,12 @@ Generate vulnerabilities report
 
 Options:
   --dependencies <paths>     Comma-separated list of dependency files (default: [])
-  --snyk-reports <paths>         Comma-separated list of snyk
+  --snyk-reports <paths>     Comma-separated list of snyk
 result files (default: [])
-  --fail-on [level]              Fail on the specified severity
+  --fail-on [level]          Fail on the specified severity
 level
-
-  -h, --help                     display help for command
+  --create-jira-issues       Create Jira issues for the vulnerabilities found
+  -h, --help                 display help for command
 ```
 
 **Example output:**
