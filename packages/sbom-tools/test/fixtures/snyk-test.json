@@ -5,13 +5,9 @@
         "id": "SNYK-JS-REQUEST-3361831",
         "title": "Server-side Request Forgery (SSRF)",
         "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
-        "credit": [
-          "SzymonDrosdzol"
-        ],
+        "credit": ["SzymonDrosdzol"],
         "semver": {
-          "vulnerable": [
-            "*"
-          ]
+          "vulnerable": ["*"]
         },
         "exploit": "Proof of Concept",
         "fixedIn": [],
@@ -56,12 +52,8 @@
           "modelVersion": "v2023.03.01"
         },
         "identifiers": {
-          "CVE": [
-            "CVE-2023-28155"
-          ],
-          "CWE": [
-            "CWE-918"
-          ]
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
         },
         "packageName": "request",
         "proprietary": false,
@@ -92,13 +84,9 @@
         "id": "SNYK-JS-REQUEST-3361831",
         "title": "Server-side Request Forgery (SSRF)",
         "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
-        "credit": [
-          "SzymonDrosdzol"
-        ],
+        "credit": ["SzymonDrosdzol"],
         "semver": {
-          "vulnerable": [
-            "*"
-          ]
+          "vulnerable": ["*"]
         },
         "exploit": "Proof of Concept",
         "fixedIn": [],
@@ -143,12 +131,8 @@
           "modelVersion": "v2023.03.01"
         },
         "identifiers": {
-          "CVE": [
-            "CVE-2023-28155"
-          ],
-          "CWE": [
-            "CWE-918"
-          ]
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
         },
         "packageName": "request",
         "proprietary": false,
@@ -180,13 +164,9 @@
         "id": "SNYK-JS-REQUEST-3361831",
         "title": "Server-side Request Forgery (SSRF)",
         "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
-        "credit": [
-          "SzymonDrosdzol"
-        ],
+        "credit": ["SzymonDrosdzol"],
         "semver": {
-          "vulnerable": [
-            "*"
-          ]
+          "vulnerable": ["*"]
         },
         "exploit": "Proof of Concept",
         "fixedIn": [],
@@ -231,12 +211,8 @@
           "modelVersion": "v2023.03.01"
         },
         "identifiers": {
-          "CVE": [
-            "CVE-2023-28155"
-          ],
-          "CWE": [
-            "CWE-918"
-          ]
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
         },
         "packageName": "request",
         "proprietary": false,
@@ -268,13 +244,9 @@
         "id": "SNYK-JS-REQUEST-3361831",
         "title": "Server-side Request Forgery (SSRF)",
         "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
-        "credit": [
-          "SzymonDrosdzol"
-        ],
+        "credit": ["SzymonDrosdzol"],
         "semver": {
-          "vulnerable": [
-            "*"
-          ]
+          "vulnerable": ["*"]
         },
         "exploit": "Proof of Concept",
         "fixedIn": [],
@@ -319,12 +291,8 @@
           "modelVersion": "v2023.03.01"
         },
         "identifiers": {
-          "CVE": [
-            "CVE-2023-28155"
-          ],
-          "CWE": [
-            "CWE-918"
-          ]
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
         },
         "packageName": "request",
         "proprietary": false,
@@ -357,13 +325,9 @@
         "id": "SNYK-JS-REQUEST-3361831",
         "title": "Server-side Request Forgery (SSRF)",
         "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
-        "credit": [
-          "SzymonDrosdzol"
-        ],
+        "credit": ["SzymonDrosdzol"],
         "semver": {
-          "vulnerable": [
-            "*"
-          ]
+          "vulnerable": ["*"]
         },
         "exploit": "Proof of Concept",
         "fixedIn": [],
@@ -408,12 +372,8 @@
           "modelVersion": "v2023.03.01"
         },
         "identifiers": {
-          "CVE": [
-            "CVE-2023-28155"
-          ],
-          "CWE": [
-            "CWE-918"
-          ]
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
         },
         "packageName": "request",
         "proprietary": false,
