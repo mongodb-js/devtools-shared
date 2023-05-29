@@ -1,0 +1,410 @@
+[
+  {
+    "vulnerabilities": [
+      {
+        "id": "SNYK-JS-REQUEST-3361831",
+        "title": "Server-side Request Forgery (SSRF)",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
+        "credit": ["SzymonDrosdzol"],
+        "semver": {
+          "vulnerable": ["*"]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.5,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "request",
+        "references": [
+          {
+            "url": "https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://github.com/request/request/issues/3442",
+            "title": "GitHub Issue"
+          },
+          {
+            "url": "https://github.com/request/request/pull/3444",
+            "title": "GitHub PR"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+            "cvssV3BaseScore": 6.1,
+            "modificationTime": "2023-03-23T01:10:17.579856Z"
+          }
+        ],
+        "description": "## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n",
+        "epssDetails": {
+          "percentile": "0.24985",
+          "probability": "0.00063",
+          "modelVersion": "v2023.03.01"
+        },
+        "identifiers": {
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
+        },
+        "packageName": "request",
+        "proprietary": false,
+        "creationTime": "2023-03-16T13:58:23.124636Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2023-03-16T13:49:16Z",
+        "packageManager": "npm",
+        "publicationTime": "2023-03-17T07:46:44.219769Z",
+        "modificationTime": "2023-03-23T01:10:17.579856Z",
+        "socialTrendAlert": false,
+        "from": [
+          "mongodb-compass-monorepo@*",
+          "lerna@4.0.0",
+          "@lerna/add@4.0.0",
+          "pacote@11.3.5",
+          "@npmcli/run-script@1.8.5",
+          "node-gyp@7.1.2",
+          "request@2.88.2"
+        ],
+        "upgradePath": [],
+        "isUpgradable": false,
+        "isPatchable": false,
+        "name": "request",
+        "version": "2.88.2"
+      },
+      {
+        "id": "SNYK-JS-REQUEST-3361831",
+        "title": "Server-side Request Forgery (SSRF)",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
+        "credit": ["SzymonDrosdzol"],
+        "semver": {
+          "vulnerable": ["*"]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.5,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "request",
+        "references": [
+          {
+            "url": "https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://github.com/request/request/issues/3442",
+            "title": "GitHub Issue"
+          },
+          {
+            "url": "https://github.com/request/request/pull/3444",
+            "title": "GitHub PR"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+            "cvssV3BaseScore": 6.1,
+            "modificationTime": "2023-03-23T01:10:17.579856Z"
+          }
+        ],
+        "description": "## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n",
+        "epssDetails": {
+          "percentile": "0.24985",
+          "probability": "0.00063",
+          "modelVersion": "v2023.03.01"
+        },
+        "identifiers": {
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
+        },
+        "packageName": "request",
+        "proprietary": false,
+        "creationTime": "2023-03-16T13:58:23.124636Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2023-03-16T13:49:16Z",
+        "packageManager": "npm",
+        "publicationTime": "2023-03-17T07:46:44.219769Z",
+        "modificationTime": "2023-03-23T01:10:17.579856Z",
+        "socialTrendAlert": false,
+        "from": [
+          "mongodb-compass-monorepo@*",
+          "lerna@4.0.0",
+          "@lerna/add@4.0.0",
+          "@lerna/bootstrap@4.0.0",
+          "@lerna/run-lifecycle@4.0.0",
+          "npm-lifecycle@3.1.5",
+          "node-gyp@5.1.1",
+          "request@2.88.2"
+        ],
+        "upgradePath": [],
+        "isUpgradable": false,
+        "isPatchable": false,
+        "name": "request",
+        "version": "2.88.2"
+      },
+      {
+        "id": "SNYK-JS-REQUEST-3361831",
+        "title": "Server-side Request Forgery (SSRF)",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
+        "credit": ["SzymonDrosdzol"],
+        "semver": {
+          "vulnerable": ["*"]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.5,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "request",
+        "references": [
+          {
+            "url": "https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://github.com/request/request/issues/3442",
+            "title": "GitHub Issue"
+          },
+          {
+            "url": "https://github.com/request/request/pull/3444",
+            "title": "GitHub PR"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+            "cvssV3BaseScore": 6.1,
+            "modificationTime": "2023-03-23T01:10:17.579856Z"
+          }
+        ],
+        "description": "## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n",
+        "epssDetails": {
+          "percentile": "0.24985",
+          "probability": "0.00063",
+          "modelVersion": "v2023.03.01"
+        },
+        "identifiers": {
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
+        },
+        "packageName": "request",
+        "proprietary": false,
+        "creationTime": "2023-03-16T13:58:23.124636Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2023-03-16T13:49:16Z",
+        "packageManager": "npm",
+        "publicationTime": "2023-03-17T07:46:44.219769Z",
+        "modificationTime": "2023-03-23T01:10:17.579856Z",
+        "socialTrendAlert": false,
+        "from": [
+          "mongodb-compass-monorepo@*",
+          "@mongodb-js/bump-monorepo-packages@0.2.1",
+          "lerna@4.0.0",
+          "@lerna/add@4.0.0",
+          "pacote@11.3.5",
+          "@npmcli/run-script@1.8.5",
+          "node-gyp@7.1.2",
+          "request@2.88.2"
+        ],
+        "upgradePath": [],
+        "isUpgradable": false,
+        "isPatchable": false,
+        "name": "request",
+        "version": "2.88.2"
+      },
+      {
+        "id": "SNYK-JS-REQUEST-3361831",
+        "title": "Server-side Request Forgery (SSRF)",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
+        "credit": ["SzymonDrosdzol"],
+        "semver": {
+          "vulnerable": ["*"]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.5,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "request",
+        "references": [
+          {
+            "url": "https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://github.com/request/request/issues/3442",
+            "title": "GitHub Issue"
+          },
+          {
+            "url": "https://github.com/request/request/pull/3444",
+            "title": "GitHub PR"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+            "cvssV3BaseScore": 6.1,
+            "modificationTime": "2023-03-23T01:10:17.579856Z"
+          }
+        ],
+        "description": "## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n",
+        "epssDetails": {
+          "percentile": "0.24985",
+          "probability": "0.00063",
+          "modelVersion": "v2023.03.01"
+        },
+        "identifiers": {
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
+        },
+        "packageName": "request",
+        "proprietary": false,
+        "creationTime": "2023-03-16T13:58:23.124636Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2023-03-16T13:49:16Z",
+        "packageManager": "npm",
+        "publicationTime": "2023-03-17T07:46:44.219769Z",
+        "modificationTime": "2023-03-23T01:10:17.579856Z",
+        "socialTrendAlert": false,
+        "from": [
+          "mongodb-compass-monorepo@*",
+          "@mongodb-js/bump-monorepo-packages@0.2.1",
+          "lerna@4.0.0",
+          "@lerna/add@4.0.0",
+          "@lerna/bootstrap@4.0.0",
+          "@lerna/run-lifecycle@4.0.0",
+          "npm-lifecycle@3.1.5",
+          "node-gyp@5.1.1",
+          "request@2.88.2"
+        ],
+        "upgradePath": [],
+        "isUpgradable": false,
+        "isPatchable": false,
+        "name": "request",
+        "version": "2.88.2"
+      },
+      {
+        "id": "SNYK-JS-REQUEST-3361831",
+        "title": "Server-side Request Forgery (SSRF)",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:P",
+        "credit": ["SzymonDrosdzol"],
+        "semver": {
+          "vulnerable": ["*"]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.5,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "request",
+        "references": [
+          {
+            "url": "https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://github.com/request/request/issues/3442",
+            "title": "GitHub Issue"
+          },
+          {
+            "url": "https://github.com/request/request/pull/3444",
+            "title": "GitHub PR"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+            "cvssV3BaseScore": 6.1,
+            "modificationTime": "2023-03-23T01:10:17.579856Z"
+          }
+        ],
+        "description": "## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n",
+        "epssDetails": {
+          "percentile": "0.24985",
+          "probability": "0.00063",
+          "modelVersion": "v2023.03.01"
+        },
+        "identifiers": {
+          "CVE": ["CVE-2023-28155"],
+          "CWE": ["CWE-918"]
+        },
+        "packageName": "request",
+        "proprietary": false,
+        "creationTime": "2023-03-16T13:58:23.124636Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2023-03-16T13:49:16Z",
+        "packageManager": "npm",
+        "publicationTime": "2023-03-17T07:46:44.219769Z",
+        "modificationTime": "2023-03-23T01:10:17.579856Z",
+        "socialTrendAlert": false,
+        "from": [
+          "mongodb-compass-monorepo@*",
+          "@webpack-cli/serve@0.2.0",
+          "@webpack-cli/utils@0.2.3",
+          "jest@24.9.0",
+          "jest-cli@24.9.0",
+          "@jest/core@24.9.0",
+          "@jest/reporters@24.9.0",
+          "jest-runtime@24.9.0",
+          "jest-config@24.9.0",
+          "jest-environment-jsdom@24.9.0",
+          "jsdom@11.12.0",
+          "request@2.88.2"
+        ],
+        "upgradePath": [],
+        "isUpgradable": false,
+        "isPatchable": false,
+        "name": "request",
+        "version": "2.88.2"
+      }
+    ]
+  }
+]
