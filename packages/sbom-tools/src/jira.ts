@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
-import { Severity, VulnerabilityInfo, hasExpiredPolicy } from './vulnerability';
+import type { Severity, VulnerabilityInfo } from './vulnerability';
+import { hasExpiredPolicy } from './vulnerability';
 import { isIgnored } from './vulnerability';
 
 const formatDueDate = (date: Date): string => {
@@ -13,7 +14,6 @@ const formatDueDate = (date: Date): string => {
 async function createJiraTicket(
   jiraBaseUrl: string,
   auth: {
-    email: string;
     token: string;
   },
   issue: {
@@ -27,17 +27,16 @@ async function createJiraTicket(
     dueDate: Date;
   }
 ): Promise<void> {
+  jiraBaseUrl = jiraBaseUrl.replace(/\/$/, '');
   const issueApiUrl = `${jiraBaseUrl}/rest/api/2/issue/`;
 
   const headers = {
-    Authorization: `Basic ${Buffer.from(`${auth.email}:${auth.token}`).toString(
-      'base64'
-    )}`,
+    Authorization: `Bearer ${auth.token}`,
     Accept: 'application/json',
   };
 
   const jqlQuery = new URLSearchParams({
-    jql: `project="${issue.project}" AND issuetype="${issue.issueType}" AND resolution=Unresolved AND summary="${issue.summary}"`,
+    jql: `project="${issue.project}" AND issuetype="${issue.issueType}" AND resolution=Unresolved AND summary~"${issue.summary}"`,
   }).toString();
 
   const searchApiUrl = `${jiraBaseUrl}/rest/api/2/search?${jqlQuery}`;
@@ -47,7 +46,13 @@ async function createJiraTicket(
     headers: {
       ...headers,
     },
-  }).then(async (res) => (res.ok ? (await res.json()).total > 0 : false));
+  }).then(async (res) =>
+    res.ok
+      ? (await res.json()).total > 0
+      : Promise.reject(
+          new Error(`HTTP error: ${res.status}. ${await res.text()}`)
+        )
+  );
 
   if (exists) {
     console.info(
@@ -85,8 +90,11 @@ async function createJiraTicket(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error: ${response.status}`);
+    throw new Error(`HTTP error: ${response.status}.`);
   }
+
+  const key: string = (await response.json())?.res?.key;
+  console.info('Created issue: ', `${jiraBaseUrl}/browse/${key}`);
 }
 
 const JIRA_ISSUE_TYPE = 'Build Failure';
@@ -170,16 +178,10 @@ export async function createVulnerabilityTickets(
 ): Promise<void> {
   if (
     !process.env.JIRA_BASE_URL ||
-    !process.env.JIRA_EMAIL ||
     !process.env.JIRA_API_TOKEN ||
     !process.env.JIRA_PROJECT
   ) {
-    const missingEnv = [
-      'JIRA_BASE_URL',
-      'JIRA_EMAIL',
-      'JIRA_API_TOKEN',
-      'JIRA_PROJECT',
-    ]
+    const missingEnv = ['JIRA_BASE_URL', 'JIRA_API_TOKEN', 'JIRA_PROJECT']
       .filter((k) => !process.env[k])
       .join(', ');
 
@@ -196,7 +198,6 @@ export async function createVulnerabilityTickets(
     await createJiraTicket(
       process.env.JIRA_BASE_URL,
       {
-        email: process.env.JIRA_EMAIL,
         token: process.env.JIRA_API_TOKEN,
       },
       {
