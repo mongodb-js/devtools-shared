@@ -4,8 +4,9 @@ import nv from '@pkgjs/nv';
 import type {
   SnykTestProjectResult,
   SnykVulnerability,
-} from '../snyk-vulnerability';
-import { buildSnykVulnerability } from '../snyk-vulnerability';
+} from '../vulnerability';
+import { scoreToSeverity } from '../vulnerability';
+import { vulnerabilityToSnyk } from '../vulnerability';
 import { Command } from 'commander';
 
 type NodeVulnerability = {
@@ -25,15 +26,16 @@ async function formatVulnerability(
 ): Promise<SnykVulnerability> {
   const score = await fetchScore(`NSWG-COR-${id}`, nodeVulnerability);
 
-  return buildSnykVulnerability({
+  return vulnerabilityToSnyk({
     id: `NSWG-COR-${id}`,
+    title: `NSWG-COR-${id}`,
     cves: nodeVulnerability.cve,
     fixedIn: (nodeVulnerability.patched || '').split(' || '),
-
     packageName: '.node.js',
     score,
-
-    url: nodeVulnerability.ref,
+    severity: scoreToSeverity(score),
+    urls: [{ title: 'Ref', url: nodeVulnerability.ref }],
+    origins: [`.node.js@${nodeVersion}`],
     packageVersion: nodeVersion,
     description: nodeVulnerability.overview,
     vulnerableSemver: nodeVulnerability.vulnerable,

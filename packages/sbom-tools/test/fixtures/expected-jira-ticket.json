@@ -1,0 +1,21 @@
+{
+  "fields": {
+    "project": {
+      "key": "MY-PROJECT"
+    },
+    "summary": "Vulnerability SNYK-JS-REQUEST-3361831 found on request@2.88.2",
+    "description": "h4. Vulnerability Details\n\n- *Affected Package*: request\n- *Affected Version*: 2.88.2\n- *Fixed In*: N/A\n- *Severity*: medium\n- *Cvss score*: 6.5\n\nh4. Vulnerability Description\n\n{panel:title=Server-side Request Forgery (SSRF)}\n## Overview\n[request](https://www.npmjs.com/package/request) is a simplified http request client.\n\nAffected versions of this package are vulnerable to Server-side Request Forgery (SSRF) due to insufficient checks in the `lib/redirect.js` file by allowing insecure redirects in the default configuration, via an attacker-controller server that does a cross-protocol redirect (HTTP to HTTPS, or HTTPS to HTTP).\r\n\r\n**NOTE:** This package has been deprecated, so a fix is not expected. See https://github.com/request/request/issues/3142.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Commit](https://github.com/request/request/commit/d42332182512e56ba68446f49c3e3711e04301a2)\n- [GitHub Issue](https://github.com/request/request/issues/3442)\n- [GitHub PR](https://github.com/request/request/pull/3444)\n\n{panel}\n\nh4. Vulnerable Paths\n\n# {{mongodb-compass-monorepo@* > lerna@4.0.0 > @lerna/add@4.0.0 > pacote@11.3.5 > @npmcli/run-script@1.8.5 > node-gyp@7.1.2 > request@2.88.2}}\n# {{mongodb-compass-monorepo@* > lerna@4.0.0 > @lerna/add@4.0.0 > @lerna/bootstrap@4.0.0 > @lerna/run-lifecycle@4.0.0 > npm-lifecycle@3.1.5 > node-gyp@5.1.1 > request@2.88.2}}\n# {{mongodb-compass-monorepo@* > @mongodb-js/bump-monorepo-packages@0.2.1 > lerna@4.0.0 > @lerna/add@4.0.0 > pacote@11.3.5 > @npmcli/run-script@1.8.5 > node-gyp@7.1.2 > request@2.88.2}}\n# {{mongodb-compass-monorepo@* > @mongodb-js/bump-monorepo-packages@0.2.1 > lerna@4.0.0 > @lerna/add@4.0.0 > @lerna/bootstrap@4.0.0 > @lerna/run-lifecycle@4.0.0 > npm-lifecycle@3.1.5 > node-gyp@5.1.1 > request@2.88.2}}\n# {{mongodb-compass-monorepo@* > @webpack-cli/serve@0.2.0 > @webpack-cli/utils@0.2.3 > jest@24.9.0 > jest-cli@24.9.0 > @jest/core@24.9.0 > @jest/reporters@24.9.0 > jest-runtime@24.9.0 > jest-config@24.9.0 > jest-environment-jsdom@24.9.0 > jsdom@11.12.0 > request@2.88.2}}\n\nh4. Links\n\n- [SNYK-JS-REQUEST-3361831|https://security.snyk.io/vuln/SNYK-JS-REQUEST-3361831]\n- [request@2.88.2 vulnerabilities|https://security.snyk.io/package/npm/request/2.88.2]\n- [CVE-2023-28155|https://nvd.nist.gov/vuln/detail/CVE-2023-28155]\n",
+    "issuetype": {
+      "name": "Build Failure"
+    },
+    "components": [
+      {
+        "name": "Vulnerability Management"
+      }
+    ],
+    "priority": {
+      "name": "Major - P3"
+    },
+    "duedate": "2023-02-12"
+  }
+}
