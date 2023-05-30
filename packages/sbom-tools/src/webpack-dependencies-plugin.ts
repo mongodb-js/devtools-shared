@@ -1,7 +1,9 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import type { Compilation, Compiler, WebpackPluginInstance } from 'webpack';
+import type { Compiler, WebpackPluginInstance } from 'webpack';
 import _ from 'lodash';
+
+import errorStackParser from 'error-stack-parser';
 
 import {
   findAllProdDepsTreeLocations,
@@ -39,26 +41,23 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
     return modulePath.split(path.sep).includes('node_modules');
   }
 
-  private handleTap = (compilation: Compilation) => {
-    for (const module of compilation.modules) {
-      const resource = (module as unknown as any).resource;
-      if (resource) {
-        const modulePath = resource;
-        if (
-          typeof modulePath === 'string' &&
-          this.isThirdPartyModule(modulePath)
-        ) {
-          this.resolvedModules.add(modulePath);
-        }
-      }
-    }
+  private getWebpackModulePath(error: Error) {
+    const stack = errorStackParser.parse(error);
 
+    const webpackEntry = stack.find((entry) =>
+      entry.fileName?.includes('node_modules/webpack')
+    );
+
+    return webpackEntry?.fileName;
+  }
+
+  private addIncludedPackages(compiler: Compiler) {
     const includePackages = [
       ...(this.includeExternalProductionDependencies
-        ? findAllProdDepsTreeLocations(compilation.compiler.context)
+        ? findAllProdDepsTreeLocations(compiler.context)
         : []),
       ...(this.includePackages || []).map((packageName) =>
-        findPackageLocation(packageName, compilation.compiler.context)
+        findPackageLocation(packageName, compiler.context)
       ),
     ];
 
@@ -69,9 +68,38 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
         this.resolvedModules.add(packageJsonPath);
       }
     }
-  };
+  }
 
   apply(compiler: Compiler): void {
+    const webpackModulePath = this.getWebpackModulePath(new Error());
+    this.addIncludedPackages(compiler);
+
+    compiler.hooks.done.tapAsync(PLUGIN_NAME, (stats, done) => {
+      const { modules } = stats.toJson();
+
+      modules?.forEach(({ type, nameForCondition }) => {
+        if (
+          type === 'module' &&
+          nameForCondition &&
+          this.isThirdPartyModule(nameForCondition)
+        ) {
+          this.resolvedModules.add(nameForCondition);
+        }
+      });
+
+      if (
+        modules?.find(
+          (m) =>
+            m.moduleType === 'runtime' && m.name?.startsWith('webpack/runtime')
+        ) &&
+        webpackModulePath
+      ) {
+        this.resolvedModules.add(webpackModulePath);
+      }
+
+      done();
+    });
+
     compiler.hooks.shutdown.tapPromise(PLUGIN_NAME, async () => {
       const dependencyList = await Promise.all(
         Array.from(this.resolvedModules).map(getPackageInfo)
@@ -96,8 +124,6 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
 
       await fs.writeFile(outputPath, JSON.stringify(sortedList, null, 2));
     });
-
-    compiler.hooks.emit.tap(PLUGIN_NAME, this.handleTap);
   }
 }
 
