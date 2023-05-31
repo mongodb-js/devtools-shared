@@ -90,6 +90,8 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
           nameForCondition &&
           this.isThirdPartyModule(nameForCondition)
         ) {
+          console.log(nameForCondition);
+
           this.resolvedModules.add(nameForCondition);
         }
       });
