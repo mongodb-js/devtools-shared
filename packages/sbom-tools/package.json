@@ -76,6 +76,7 @@
   "dependencies": {
     "@pkgjs/nv": "^0.2.1",
     "commander": "^10.0.1",
+    "error-stack-parser": "^2.1.4",
     "find-up": "^4.1.0",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.7",

@@ -13,7 +13,8 @@ const webpack = util.promisify(webpackCb);
 
 async function runPlugin(
   structure: Record<string, string>,
-  options: WebpackDependenciesPluginOptions
+  options: WebpackDependenciesPluginOptions,
+  webpackConfig?: { runtime: boolean }
 ): Promise<Package[]> {
   return withTempDir(structure, async (contextPath) => {
     const outputPath =
@@ -31,7 +32,19 @@ async function runPlugin(
           path: path.resolve(contextPath, 'dist'),
           filename: `output-${i}.js`,
         },
+
         plugins: [plugin],
+        ...(webpackConfig?.runtime
+          ? {
+              output: {
+                path: path.resolve(contextPath, 'dist'),
+                filename: `output-[name]-${i}.js`,
+              },
+              optimization: {
+                runtimeChunk: 'single',
+              } as { runtimeChunk: 'single' },
+            }
+          : {}),
       }));
 
     const stats = await webpack(config);
@@ -223,6 +236,44 @@ describe('WebpackDependenciesPlugin', function () {
     ]);
   });
 
+  it('includes webpack among the dependencies if the bundle includes webpack runtime', async function () {
+    const structure = {
+      'package.json': JSON.stringify({
+        name: 'my-package',
+        dependencies: {
+          pkg1: '^0.1.0',
+        },
+      }),
+      'src/input.js': '',
+      'node_modules/pkg1/package.json': JSON.stringify({
+        name: 'pkg1',
+        version: '0.1.0',
+      }),
+      'node_modules/pkg1/index.js': '',
+    };
+
+    const dependencies = await runPlugin(structure, {}, { runtime: true });
+
+    expect(dependencies).to.deep.equal([
+      {
+        license: 'MIT',
+        licenseFiles: [
+          {
+            content: await fs.readFile(
+              require.resolve('webpack/LICENSE'),
+              'utf-8'
+            ),
+            filename: 'LICENSE',
+          },
+        ],
+        name: 'webpack',
+
+        version: JSON.parse(
+          await fs.readFile(require.resolve('webpack/package.json'), 'utf-8')
+        ).version,
+      },
+    ]);
+  });
   it('returns dependencies included with if includePackages', async function () {
     const structure = {
       'package.json': JSON.stringify({
