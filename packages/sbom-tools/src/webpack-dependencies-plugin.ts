@@ -77,6 +77,8 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
     compiler.hooks.done.tapAsync(PLUGIN_NAME, (stats, done) => {
       const { modules } = stats.toJson();
 
+      console.log(modules?.filter((m) => m.moduleType === 'runtime'));
+
       modules?.forEach(({ type, nameForCondition }) => {
         if (
           type === 'module' &&
