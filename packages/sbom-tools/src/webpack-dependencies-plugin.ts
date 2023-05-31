@@ -45,7 +45,10 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
     const stack = errorStackParser.parse(error);
 
     const webpackEntry = stack.find((entry) =>
-      entry.fileName?.includes('node_modules/webpack')
+      entry.fileName
+        ?.split(path.win32.sep)
+        .join(path.posix.sep)
+        .includes('node_modules/webpack')
     );
 
     return webpackEntry?.fileName;
@@ -72,6 +75,8 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
 
   apply(compiler: Compiler): void {
     const webpackModulePath = this.getWebpackModulePath(new Error());
+    console.log(webpackModulePath);
+
     this.addIncludedPackages(compiler);
 
     compiler.hooks.done.tapAsync(PLUGIN_NAME, (stats, done) => {
