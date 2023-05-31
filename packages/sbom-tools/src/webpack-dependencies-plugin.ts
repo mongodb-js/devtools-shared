@@ -75,14 +75,11 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
 
   apply(compiler: Compiler): void {
     const webpackModulePath = this.getWebpackModulePath(new Error());
-    console.log(webpackModulePath);
 
     this.addIncludedPackages(compiler);
 
     compiler.hooks.done.tapAsync(PLUGIN_NAME, (stats, done) => {
       const { modules } = stats.toJson();
-
-      console.log(modules?.filter((m) => m.moduleType === 'runtime'));
 
       modules?.forEach(({ type, nameForCondition }) => {
         if (
@@ -90,8 +87,6 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
           nameForCondition &&
           this.isThirdPartyModule(nameForCondition)
         ) {
-          console.log(nameForCondition);
-
           this.resolvedModules.add(nameForCondition);
         }
       });
