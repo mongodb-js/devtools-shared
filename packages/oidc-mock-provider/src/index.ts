@@ -35,6 +35,15 @@ export interface OIDCMockProviderConfig {
   getTokenPayload(
     metadata: TokenMetadata
   ): MaybePromise<{ expires_in: number; payload: Record<string, unknown> }>;
+
+  /**
+   * Allow override special handling for specific types of requests.
+   */
+  overrideRequestHandler?(
+    url: string,
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void>;
 }
 
 /**
@@ -116,6 +125,8 @@ export class OIDCMockProvider {
         }).toString();
       }
       let result: unknown;
+      await this.config.overrideRequestHandler?.(url.toString(), req, res);
+      if (res.writableEnded) return;
       switch (url.pathname) {
         case '/.well-known/openid-configuration':
           result = {
