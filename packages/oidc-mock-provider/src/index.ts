@@ -43,7 +43,7 @@ export interface OIDCMockProviderConfig {
     url: string,
     req: IncomingMessage,
     res: ServerResponse
-  ): Promise<void>;
+  ): MaybePromise<void>;
 }
 
 /**
