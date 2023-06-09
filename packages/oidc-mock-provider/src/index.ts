@@ -44,6 +44,11 @@ export interface OIDCMockProviderConfig {
     req: IncomingMessage,
     res: ServerResponse
   ): MaybePromise<void>;
+
+  /**
+   * Optional port number for the server to listen on.
+   */
+  port?: number;
 }
 
 /**
@@ -76,7 +81,7 @@ export class OIDCMockProvider {
   }
 
   private async init(): Promise<this> {
-    this.httpServer.listen(0);
+    this.httpServer.listen(this.config.port ?? 0);
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
     this.issuer = `http://localhost:${port}`;
