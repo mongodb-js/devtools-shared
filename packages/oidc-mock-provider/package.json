@@ -19,8 +19,13 @@
     "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin",
+    "package.json"
   ],
+  "bin": {
+    "oidc-mock-provider": "bin/oidc-mock-provider.js"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "exports": {
@@ -44,6 +49,9 @@
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
+  },
+  "dependencies": {
+    "yargs": "17.7.2"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.3",
