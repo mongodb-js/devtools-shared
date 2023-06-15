@@ -49,6 +49,11 @@ export interface OIDCMockProviderConfig {
    * Optional port number for the server to listen on.
    */
   port?: number;
+
+  /**
+   * Optional hostname for the server to listen on.
+   */
+  hostname?: string;
 }
 
 /**
@@ -59,7 +64,7 @@ export interface OIDCMockProviderConfig {
  */
 export class OIDCMockProvider {
   public httpServer: HTTPServer;
-  public issuer: string; // localhost URL of the HTTP server
+  public issuer: string; // URL of the HTTP server
 
   // This provider only supports a single RSA key currently.
   private kid: string;
@@ -81,10 +86,10 @@ export class OIDCMockProvider {
   }
 
   private async init(): Promise<this> {
-    this.httpServer.listen(this.config.port ?? 0);
+    this.httpServer.listen(this.config.port ?? 0, this.config.hostname);
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
-    this.issuer = `http://localhost:${port}`;
+    this.issuer = `http://${this.config.hostname ?? 'localhost'}:${port}`;
     this.kid = await randomString(8, 'hex');
     this.keys = await promisify(crypto.generateKeyPair)('rsa', {
       modulusLength: 2048,
