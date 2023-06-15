@@ -38,9 +38,6 @@ const DEFAULT_TOKEN_PAYLOAD = {
     getTokenPayload() {
       return DEFAULT_TOKEN_PAYLOAD;
     },
-    overrideRequestHandler() {
-      return () => {};
-    },
     port: argv.port ?? DEFAULT_PORT,
     hostname: argv.host ?? DEFAULT_HOST,
   };
