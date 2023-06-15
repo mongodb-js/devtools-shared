@@ -54,6 +54,13 @@ export interface OIDCMockProviderConfig {
    * Optional hostname for the server to listen on.
    */
   hostname?: string;
+
+  /**
+   * For testing with docker instances it's useful
+   * to bind both to the local loopback address and to
+   * all of the ips so that we can avoid the https requirements.
+   */
+  bindIpAll?: boolean;
 }
 
 /**
@@ -87,6 +94,9 @@ export class OIDCMockProvider {
 
   private async init(): Promise<this> {
     this.httpServer.listen(this.config.port ?? 0, this.config.hostname);
+    if (this.config.bindIpAll) {
+      this.httpServer.listen(this.config.port ?? 0, '0.0.0.0');
+    }
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
     this.issuer = `http://${this.config.hostname ?? 'localhost'}:${port}`;
