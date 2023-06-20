@@ -3,7 +3,6 @@
   "version": "0.9.3",
   "description": "Shared DevTools eslint configuration",
   "license": "SSPL",
-  "private": true,
   "main": "index.js",
   "files": [
     "index.js",
