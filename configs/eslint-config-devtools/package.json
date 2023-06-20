@@ -6,6 +6,7 @@
   "main": "index.js",
   "files": [
     "index.js",
+    "common.js",
     "package.json",
     "README.md"
   ],
