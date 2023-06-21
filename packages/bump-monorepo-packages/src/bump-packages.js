@@ -73,7 +73,13 @@ async function getPackages(cwd) {
     { cwd, encoding: 'utf8' }
   );
 
-  return JSON.parse(stdout);
+  try {
+    const result = JSON.parse(stdout);
+    return result;
+  } catch (err) {
+    console.log(stdout);
+    throw err;
+  }
 }
 
 async function getCommits({ path, range }) {
