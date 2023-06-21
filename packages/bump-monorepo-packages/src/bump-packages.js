@@ -69,7 +69,15 @@ main().catch((e) => {
 async function getPackages(cwd) {
   const { stdout } = await execFile(
     'npx',
-    ['--quiet', 'lerna', 'list', '--loglevel=error', '--toposort', '--all', '--json'],
+    [
+      '--quiet',
+      'lerna',
+      'list',
+      '--loglevel=error',
+      '--toposort',
+      '--all',
+      '--json',
+    ],
     { cwd, encoding: 'utf8' }
   );
 
