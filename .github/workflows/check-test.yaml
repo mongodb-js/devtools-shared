@@ -48,8 +48,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup node
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18.x
           cache: 'npm'
