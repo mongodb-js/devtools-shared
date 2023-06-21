@@ -77,7 +77,7 @@ async function getPackages(cwd) {
     const result = JSON.parse(stdout);
     return result;
   } catch (err) {
-    console.log(stdout);
+    console.log({ stdout });
     throw err;
   }
 }
