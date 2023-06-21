@@ -4,3 +4,4 @@ ignores:
   # bumped higher than the version that breaks depcheck package
   - '@babel/core'
   - '@babel/parser'
+  - 'lerna'

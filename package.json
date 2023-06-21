@@ -41,6 +41,6 @@
   "devDependencies": {
     "@babel/core": "7.16.0",
     "@babel/parser": "7.16.0",
-    "lerna": "^4.0.0"
+    "lerna": "^7.0.2"
   }
 }

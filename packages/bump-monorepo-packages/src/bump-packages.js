@@ -5,6 +5,8 @@ const path = require('path');
 const childProcess = require('child_process');
 const assert = require('assert');
 const { promisify } = require('util');
+const getPackagesInTopologicalOrder = require('./get-packages-in-topological-order');
+
 const execFile = promisify(childProcess.execFile);
 
 const gitLogParser = require('git-log-parser');
@@ -67,14 +69,7 @@ main().catch((e) => {
 });
 
 async function getPackages(cwd) {
-  const lernaCliPath = require.resolve('lerna/cli.js');
-  const { stdout } = await execFile(
-    'node',
-    [lernaCliPath, 'list', '--toposort', '--all', '--json'],
-    { cwd, encoding: 'utf8' }
-  );
-
-  return JSON.parse(stdout);
+  return await getPackagesInTopologicalOrder(cwd);
 }
 
 async function getCommits({ path, range }) {
