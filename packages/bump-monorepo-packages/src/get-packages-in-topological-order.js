@@ -12,7 +12,7 @@ module.exports = async function getPackagesInTopologicalOrder(cwd) {
     patterns.map((pattern) => path.join(pattern, 'package.json'))
   );
 
-  const packages = await Promise.all(
+  const internalPackages = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
       const packageJson = JSON.parse(
         await fs.readFile(packageJsonPath, 'utf8')
@@ -26,21 +26,21 @@ module.exports = async function getPackagesInTopologicalOrder(cwd) {
   );
 
   const edges = [];
-  const packageNames = new Set(packages.map((p) => p.name));
+  const packageNames = new Set(internalPackages.map((p) => p.name));
 
-  for (const p of packages) {
-    const anyDependency = Object.keys({
-      ...(p.packageJson?.dependencies || {}),
-      ...(p.packageJson?.devDependencies || {}),
-      ...(p.packageJson?.optionalDependencies || {}),
-      ...(p.packageJson?.peerDependencies || {}),
+  for (const internalPackage of internalPackages) {
+    const anyInternalDependency = Object.keys({
+      ...(internalPackage.packageJson?.dependencies || {}),
+      ...(internalPackage.packageJson?.devDependencies || {}),
+      ...(internalPackage.packageJson?.optionalDependencies || {}),
+      ...(internalPackage.packageJson?.peerDependencies || {}),
     }).filter((dep) => packageNames.has(dep));
 
-    edges.push(['.root', p.name]);
+    edges.push(['.root', internalPackage.name]);
 
-    if (anyDependency.length) {
-      for (const dep of anyDependency) {
-        edges.push([p.name, dep]);
+    if (anyInternalDependency.length) {
+      for (const dep of anyInternalDependency) {
+        edges.push([internalPackage.name, dep]);
       }
     }
   }
@@ -48,7 +48,7 @@ module.exports = async function getPackagesInTopologicalOrder(cwd) {
   const sorted = toposort(edges).slice(1).reverse();
 
   const result = sorted
-    .map((packageName) => packages.find((p) => p.name === packageName))
+    .map((packageName) => internalPackages.find((p) => p.name === packageName))
     .map((packageInfo) => {
       return {
         name: packageInfo.name,
