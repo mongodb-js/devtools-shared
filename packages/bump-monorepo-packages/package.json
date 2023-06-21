@@ -57,7 +57,6 @@
   },
   "dependencies": {
     "git-log-parser": "^1.2.0",
-    "lerna": "^7.0.2",
     "semver": "^7.3.7"
   }
 }

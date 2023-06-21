@@ -67,10 +67,9 @@ main().catch((e) => {
 });
 
 async function getPackages(cwd) {
-  const lernaCliPath = require.resolve('lerna/cli.js');
   const { stdout } = await execFile(
-    'node',
-    [lernaCliPath, 'list', '--toposort', '--all', '--json'],
+    'npx',
+    ['lerna', 'list', '--toposort', '--all', '--json'],
     { cwd, encoding: 'utf8' }
   );
 
