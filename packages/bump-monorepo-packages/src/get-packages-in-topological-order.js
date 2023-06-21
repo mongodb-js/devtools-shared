@@ -5,8 +5,8 @@ const toposort = require('toposort');
 
 module.exports = async function getPackagesInTopologicalOrder(cwd) {
   const patterns =
-    JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8')).workspaces ||
-    [];
+    JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
+      .workspaces || [];
 
   const packageJsonPaths = await glob(
     patterns.map((pattern) => path.join(pattern, 'package.json'))
