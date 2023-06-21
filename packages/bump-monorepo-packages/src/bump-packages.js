@@ -67,11 +67,18 @@ main().catch((e) => {
 });
 
 async function getPackages(cwd) {
+  const LERNA_BIN = path.resolve(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'node_modules',
+    '.bin',
+    'lerna'
+  );
   const { stdout } = await execFile(
-    'npx',
+    LERNA_BIN,
     [
-      '--quiet',
-      'lerna',
       'list',
       '--loglevel=error',
       '--toposort',
