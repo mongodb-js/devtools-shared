@@ -20,16 +20,18 @@
   "scripts": {
     "bootstrap-ci": "npm ci && lerna run bootstrap",
     "bootstrap": "npm install && lerna run bootstrap --stream",
+    "bump-packages": "bump-monorepo-packages",
     "check-ci": "lerna run check",
     "check": "lerna run check --stream",
     "compile-changed": "lerna run compile --stream --since origin/HEAD",
-    "create-workspace": "node ./scripts/src/create-workspace.js",
-    "depalign": "node scripts/src/depalign.js",
+    "create-workspace": "create-workspace",
+    "depalign": "depalign",
     "depcheck": "depcheck",
     "precheck-ci": "npm run depcheck",
     "precheck": "npm run depcheck",
     "predepcheck": "npm run depalign",
-    "bump-packages": "bump-monorepo-packages",
+    "prepare": "husky install",
+    "precommit": "precommit",
     "publish-packages": "lerna publish from-package --no-verify-access --no-push --no-git-tag-version --yes",
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",
@@ -41,6 +43,8 @@
   "devDependencies": {
     "@babel/core": "7.16.0",
     "@babel/parser": "7.16.0",
+    "depcheck": "^1.4.1",
+    "husky": "^8.0.3",
     "lerna": "^7.0.2"
   }
 }

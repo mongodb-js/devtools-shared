@@ -73,20 +73,20 @@ const jsOverrides = {
   files: ['**/*.js'],
   ...jsParserOptions,
   env: { node: true, es6: true },
-  extends: [...jsConfigurations, 'prettier'],
+  extends: [...jsConfigurations],
 };
 
 const jsxOverrides = {
   files: ['**/*.jsx'],
   ...jsParserOptions,
   env: { node: true, browser: true, es6: true },
-  extends: [...jsConfigurations, ...reactConfigurations, 'prettier'],
+  extends: [...jsConfigurations, ...reactConfigurations],
 };
 
 const tsOverrides = {
   files: ['**/*.ts'],
   ...tsParserOptions,
-  extends: [...tsConfigurations, 'prettier'],
+  extends: [...tsConfigurations],
   rules: { ...tsRules },
 };
 
@@ -94,7 +94,7 @@ const tsxOverrides = {
   files: ['**/*.tsx'],
   ...tsParserOptions,
   env: { node: true, browser: true },
-  extends: [...tsConfigurations, ...reactConfigurations, 'prettier'],
+  extends: [...tsConfigurations, ...reactConfigurations],
   rules: { ...tsxRules },
 };
 
