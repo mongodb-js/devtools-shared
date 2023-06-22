@@ -31,7 +31,6 @@
     "precheck": "npm run depcheck",
     "predepcheck": "npm run depalign",
     "prepare": "husky install",
-    "precommit": "precommit",
     "publish-packages": "lerna publish from-package --no-verify-access --no-push --no-git-tag-version --yes",
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",

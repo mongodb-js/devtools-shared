@@ -6,7 +6,7 @@ const { promisify } = require('util');
 const { execFile } = require('child_process');
 const execFileAsync = promisify(execFile);
 
-const monorepoRoot = path.resolve(__dirname, '..');
+const monorepoRoot = path.resolve(__dirname, '..', '..');
 
 async function main(fileList) {
   const filesToPrettify = [];
@@ -60,7 +60,9 @@ async function main(fileList) {
 }
 
 const fileList = process.argv
-  .slice(process.argv.indexOf('precommit') + 1)
+  .slice(
+    process.argv.findIndex((filename) => filename.includes('precommit')) + 1
+  )
   .filter((arg) => !arg.startsWith('-'))
   .map((filePath) => {
     return path.resolve(process.cwd(), filePath);
