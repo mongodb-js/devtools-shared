@@ -90,11 +90,11 @@ async function createJiraTicket(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error: ${response.status}.`);
+    throw new Error(`HTTP error: ${response.status}. ${await response.text()}`);
   }
 
-  const key: string = (await response.json())?.res?.key;
-  console.info('Created issue: ', `${jiraBaseUrl}/browse/${key}`);
+  const key: string = (await response.json())?.key;
+  console.info('Created issue:', `${jiraBaseUrl}/browse/${key}`);
 }
 
 const JIRA_ISSUE_TYPE = 'Build Failure';
@@ -135,6 +135,25 @@ function severityToDueDate(severity: Severity) {
   );
 }
 
+const formatOrigins = (origins: string[]) => {
+  let text = origins
+    .slice(0, 10)
+    .map((o) => `# {{${o}}}`)
+    .join('\n');
+
+  const remaining = origins.slice(10).length;
+
+  if (remaining) {
+    text =
+      text +
+      `\n# and other ${remaining} vulnerable ${
+        remaining === 1 ? 'path' : 'paths'
+      }.`;
+  }
+
+  return text;
+};
+
 export const buildJiraDescription = (
   vulnerability: VulnerabilityInfo
 ): string => {
@@ -157,7 +176,7 @@ ${vulnerability.description}
 
 h4. Vulnerable Paths
 
-${vulnerability.origins.map((o) => `# {{${o}}}`).join('\n')}
+${formatOrigins(vulnerability.origins)}
 
 h4. Links
 
