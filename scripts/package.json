@@ -18,7 +18,6 @@
   "license": "SSPL",
   "bin": {
     "precommit": "src/precommit.js",
-    "create-workspace": "src/create-workspace.js",
     "depalign": "src/depalign.js"
   },
   "scripts": {

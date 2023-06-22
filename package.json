@@ -24,7 +24,7 @@
     "check-ci": "lerna run check",
     "check": "lerna run check --stream",
     "compile-changed": "lerna run compile --stream --since origin/HEAD",
-    "create-workspace": "create-workspace",
+    "create-workspace": "node ./scripts/src/create-workspace.js",
     "depalign": "depalign",
     "depcheck": "depcheck",
     "precheck-ci": "npm run depcheck",
