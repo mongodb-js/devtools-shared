@@ -48,7 +48,7 @@ async function main(fileList) {
   await execFileAsync('npx', [
     'prettier',
     '--config',
-    require.resolve('@mongodb-js/prettier-config-compass/.prettierrc.json'),
+    require.resolve('@mongodb-js/prettier-config-devtools/.prettierrc.json'),
     // Silently ignore files that are of format that is not supported by prettier
     '--ignore-unknown',
     '--write',
