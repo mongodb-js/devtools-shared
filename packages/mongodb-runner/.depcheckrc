@@ -4,5 +4,7 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ # ESM import using eval
+ - 'get-port'
 ignore-patterns:
  - 'dist'
