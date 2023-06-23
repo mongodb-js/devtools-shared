@@ -29,6 +29,7 @@
     "depcheck": "depcheck",
     "precheck-ci": "npm run depcheck",
     "precheck": "npm run depcheck",
+    "precommit": "precommit",
     "predepcheck": "npm run depalign",
     "prepare": "husky install",
     "publish-packages": "lerna publish from-package --no-verify-access --no-push --no-git-tag-version --yes",
