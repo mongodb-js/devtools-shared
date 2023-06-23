@@ -1,0 +1,26 @@
+{
+  "name": "@mongodb-js/prettier-config-devtools",
+  "version": "1.0.1",
+  "description": "Shared Devtools prettier configuration",
+  "license": "SSPL",
+  "main": "index.json",
+  "peerDependencies": {
+    "prettier": "^2.3.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.3.2"
+  },
+  "scripts": {
+    "check": "npm run lint",
+    "lint": "prettier --check .",
+    "reformat": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "publishConfig": {
+    "access": "public"
+  }
+}

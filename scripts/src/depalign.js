@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 const path = require('path');
 const { promises: fs } = require('fs');
 const chalk = require('chalk');

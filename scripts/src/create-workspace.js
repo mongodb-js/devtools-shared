@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 const path = require('path');
 const { promises: fs } = require('fs');
 const prompts = require('prompts');
@@ -194,7 +196,7 @@ async function main(argv) {
     devDependencies: {
       '@mongodb-js/eslint-config-devtools': '*',
       '@mongodb-js/mocha-config-compass': '*',
-      '@mongodb-js/prettier-config-compass': '*',
+      '@mongodb-js/prettier-config-devtools': '*',
       '@mongodb-js/tsconfig-compass': '*',
       '@types/chai': '*',
       '@types/mocha': '*',
@@ -227,7 +229,7 @@ async function main(argv) {
 
   const depcheckrcPath = path.join(packagePath, '.depcheckrc');
   const ignores = [
-    '@mongodb-js/prettier-config-compass',
+    '@mongodb-js/prettier-config-devtools',
     '@mongodb-js/tsconfig-compass',
     '@types/chai',
     '@types/sinon-chai',
@@ -239,7 +241,7 @@ async function main(argv) {
 
   const prettierrcPath = path.join(packagePath, '.prettierrc.json');
   const prettierrcContent = JSON.stringify(
-    '@mongodb-js/prettier-config-compass'
+    '@mongodb-js/prettier-config-devtools'
   );
 
   const prettierIgnorePath = path.join(packagePath, '.prettierignore');

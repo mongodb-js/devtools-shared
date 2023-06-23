@@ -156,10 +156,7 @@ export async function scanNodeJs({
 
 export const command = new Command('scan-node-js')
   .description('Scan node.js version for known vulnerabilities')
-  .option(
-    '--version <version>',
-    'Path to the node.js security-wg core database of vulnerabilities'
-  )
+  .option('--version <version>', 'node.js version to scan for vulnerabilities')
   .action(async (options) => {
     console.info(
       JSON.stringify(
