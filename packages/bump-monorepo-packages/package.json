@@ -58,8 +58,6 @@
   },
   "dependencies": {
     "git-log-parser": "^1.2.0",
-    "glob": "^10.2.7",
-    "semver": "^7.3.7",
-    "toposort": "^2.0.2"
+    "semver": "^7.3.7"
   }
 }
