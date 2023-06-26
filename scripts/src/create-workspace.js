@@ -5,7 +5,7 @@ const { promises: fs } = require('fs');
 const prompts = require('prompts');
 const pacote = require('pacote');
 const {
-  MONOREPO_ROOT,
+  findMonorepoRoot,
   collectWorkspacesDependencies,
   collectWorkspacesMeta,
   getHighestRange,
@@ -216,8 +216,10 @@ async function main(argv) {
   // Otherwise npm will do this on next install and generate an unwanted diff
   sortDepsByName(pkgJson);
 
+  const monorepoRoot = await findMonorepoRoot();
+
   const packagePath = path.resolve(
-    MONOREPO_ROOT,
+    monorepoRoot,
     isConfig ? 'configs' : 'packages',
     packageNameToDir(name)
   );

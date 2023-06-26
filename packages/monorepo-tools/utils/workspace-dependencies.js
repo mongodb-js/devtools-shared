@@ -1,15 +1,16 @@
 const path = require('path');
-const { MONOREPO_ROOT } = require('./constants');
 const {
   getPackagesInTopologicalOrder,
 } = require('./get-packages-in-topological-order');
+const { findMonorepoRoot } = require('./find-monorepo-root');
 
 async function collectWorkspacesMeta() {
-  const workspaces = await getPackagesInTopologicalOrder(MONOREPO_ROOT);
+  const monorepoRoot = await findMonorepoRoot();
+  const workspaces = await getPackagesInTopologicalOrder(monorepoRoot);
 
   return new Map(
     workspaces
-      .concat({ location: MONOREPO_ROOT })
+      .concat({ location: monorepoRoot })
       .map(({ location }) => [
         location,
         { ...require(path.join(location, 'package.json')), location },

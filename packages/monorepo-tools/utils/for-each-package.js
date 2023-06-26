@@ -1,15 +1,16 @@
 const path = require('path');
-const { MONOREPO_ROOT } = require('./constants');
 const {
   getPackagesInTopologicalOrder,
 } = require('./get-packages-in-topological-order');
+const { findMonorepoRoot } = require('./find-monorepo-root');
 
 async function forEachPackage(fn) {
   let interrupted = false;
   const interrupt = () => {
     interrupted = true;
   };
-  const packages = await getPackagesInTopologicalOrder(MONOREPO_ROOT);
+  const monorepoRoot = await findMonorepoRoot();
+  const packages = await getPackagesInTopologicalOrder(monorepoRoot);
   const result = [];
   for (const packageInfo of packages) {
     const packageJson = require(path.join(
@@ -18,7 +19,7 @@ async function forEachPackage(fn) {
     ));
     result.push(
       await fn(
-        { rootDir: MONOREPO_ROOT, packageJson, ...packageInfo },
+        { rootDir: monorepoRoot, packageJson, ...packageInfo },
         interrupt
       )
     );

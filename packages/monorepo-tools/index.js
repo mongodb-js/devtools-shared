@@ -1,5 +1,5 @@
 module.exports = {
-  ...require('./utils/constants'),
+  ...require('./utils/find-monorepo-root'),
   ...require('./utils/for-each-package'),
   ...require('./utils/licenses'),
   ...require('./utils/run-in-dir'),
