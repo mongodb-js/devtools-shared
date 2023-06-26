@@ -5,18 +5,16 @@ const { promises: fs } = require('fs');
 const prompts = require('prompts');
 const pacote = require('pacote');
 const {
+  MONOREPO_ROOT,
   collectWorkspacesDependencies,
   collectWorkspacesMeta,
-} = require('./utils/workspace-dependencies');
-const { getHighestRange } = require('./utils/semver-helpers');
-const { runInDir } = require('./utils/run-in-dir');
-const { updatePackageJson } = require('./utils/update-package-json');
-const { withProgress } = require('./utils/with-progress');
-const {
+  getHighestRange,
+  runInDir,
+  updatePackageJson,
+  withProgress,
   SSPL_LICENSE_CONTENT,
   APACHE2_LICENSE_CONTENT,
-} = require('./utils/licenses');
-const { MONOREPO_ROOT } = require('./utils/constants');
+} = require('@mongodb-js/monorepo-tools');
 
 function packageNameToDir(pkgName) {
   return pkgName ? pkgName.replace(/^@mongodb-js\//, '') : pkgName;

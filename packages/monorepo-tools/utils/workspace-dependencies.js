@@ -1,15 +1,15 @@
 const path = require('path');
-const { MONOREPO_ROOT: ROOT_DIR, LERNA_BIN } = require('./constants');
-const { runInDir } = require('./run-in-dir');
+const { MONOREPO_ROOT } = require('./constants');
+const {
+  getPackagesInTopologicalOrder,
+} = require('./get-packages-in-topological-order');
 
 async function collectWorkspacesMeta() {
-  const workspaces = JSON.parse(
-    (await runInDir(`${LERNA_BIN} list --all --json --toposort`)).stdout
-  );
+  const workspaces = await getPackagesInTopologicalOrder(MONOREPO_ROOT);
 
   return new Map(
     workspaces
-      .concat({ location: ROOT_DIR })
+      .concat({ location: MONOREPO_ROOT })
       .map(({ location }) => [
         location,
         { ...require(path.join(location, 'package.json')), location },

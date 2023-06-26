@@ -5,7 +5,7 @@ const path = require('path');
 const childProcess = require('child_process');
 const assert = require('assert');
 const { promisify } = require('util');
-const getPackagesInTopologicalOrder = require('./get-packages-in-topological-order');
+const { getPackagesInTopologicalOrder } = require('@mongodb-js/monorepo-tools');
 
 const execFile = promisify(childProcess.execFile);
 

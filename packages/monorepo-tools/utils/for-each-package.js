@@ -1,15 +1,15 @@
 const path = require('path');
-const { MONOREPO_ROOT: ROOT, LERNA_BIN } = require('./constants');
-const { runInDir } = require('./run-in-dir');
+const { MONOREPO_ROOT } = require('./constants');
+const {
+  getPackagesInTopologicalOrder,
+} = require('./get-packages-in-topological-order');
 
 async function forEachPackage(fn) {
   let interrupted = false;
   const interrupt = () => {
     interrupted = true;
   };
-  const packages = JSON.parse(
-    (await runInDir(`${LERNA_BIN} list --all --json --toposort`)).stdout
-  );
+  const packages = await getPackagesInTopologicalOrder(MONOREPO_ROOT);
   const result = [];
   for (const packageInfo of packages) {
     const packageJson = require(path.join(
@@ -17,7 +17,10 @@ async function forEachPackage(fn) {
       'package.json'
     ));
     result.push(
-      await fn({ rootDir: ROOT, packageJson, ...packageInfo }, interrupt)
+      await fn(
+        { rootDir: MONOREPO_ROOT, packageJson, ...packageInfo },
+        interrupt
+      )
     );
     if (interrupted) {
       break;
@@ -26,4 +29,4 @@ async function forEachPackage(fn) {
   return result;
 }
 
-module.exports = { forEachPackage };
+exports.forEachPackage = forEachPackage;

@@ -3,7 +3,7 @@ const path = require('path');
 const { glob } = require('glob');
 const toposort = require('toposort');
 
-module.exports = async function getPackagesInTopologicalOrder(cwd) {
+async function getPackagesInTopologicalOrder(cwd) {
   const patterns =
     JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
       .workspaces || [];
@@ -59,4 +59,6 @@ module.exports = async function getPackagesInTopologicalOrder(cwd) {
     });
 
   return result;
-};
+}
+
+exports.getPackagesInTopologicalOrder = getPackagesInTopologicalOrder;
