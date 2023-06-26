@@ -21,7 +21,7 @@
     "!src/**/*.spec.js",
     "!src/fixtures"
   ],
-  "main": "dist/index.js",
+  "main": "index.js",
   "bin": {
     "precommit": "./precommit.js",
     "depalign": "./depalign.js",
