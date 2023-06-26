@@ -76,7 +76,7 @@ describe('bump-packages', function () {
     console.log('runBumpVersion');
     const { status } = childProcess.spawnSync(
       'node',
-      [path.resolve(__dirname, 'bump-packages.js')],
+      [path.resolve(__dirname, '..', 'bump-packages.js')],
       { cwd: repoPath, stdio: 'inherit' }
     );
 

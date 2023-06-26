@@ -25,7 +25,8 @@
   "bin": {
     "precommit": "./precommit.js",
     "depalign": "./depalign.js",
-    "monorepo-where": "./where.js"
+    "monorepo-where": "./where.js",
+    "bump-monorepo-packages": "./bump-packages.js"
   },
   "scripts": {
     "eslint": "eslint",
@@ -34,11 +35,16 @@
     "depcheck": "depcheck",
     "check": "npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "reformat": "npm run prettier -- --write ."
+    "reformat": "npm run prettier -- --write .",
+    "test": "mocha **/*.spec.*",
+    "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
+    "test-watch": "npm run test -- --watch",
+    "test-ci": "npm run test-cov"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@mongodb-js/mocha-config-compass": "^0.10.0",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
     "prettier": "2.3.2"
@@ -50,9 +56,10 @@
     "ora": "^5.4.0",
     "pacote": "^11.3.5",
     "pkg-up": "^3.1.0",
-    "semver": "^7.3.5",
     "toposort": "^2.0.2",
-    "glob": "^10.2.7"
+    "glob": "^10.2.7",
+    "git-log-parser": "^1.2.0",
+    "semver": "^7.3.7"
   },
   "publishConfig": {
     "access": "public"

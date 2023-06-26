@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 
-const { promises: fs } = require('fs');
-const path = require('path');
-const childProcess = require('child_process');
 const assert = require('assert');
+const childProcess = require('child_process');
+const { promises: fs } = require('fs');
+const gitLogParser = require('git-log-parser');
+const path = require('path');
+const semver = require('semver');
+const { PassThrough } = require('stream');
 const { promisify } = require('util');
-const { getPackagesInTopologicalOrder } = require('@mongodb-js/monorepo-tools');
+
+const getConventionalBump = require('./utils/get-conventional-bump');
+const {
+  getPackagesInTopologicalOrder,
+} = require('./utils/get-packages-in-topological-order');
+const maxIncrement = require('./utils/max-increment');
 
 const execFile = promisify(childProcess.execFile);
-
-const gitLogParser = require('git-log-parser');
-const semver = require('semver');
-
-const maxIncrement = require('./max-increment');
-const getConventionalBump = require('./get-conventional-bump');
-const { PassThrough } = require('stream');
 
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
