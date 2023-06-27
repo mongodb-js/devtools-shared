@@ -17,7 +17,10 @@ describe('MongoCluster', function () {
   });
 
   after(async function () {
-    await fs.rm(tmpDir, { recursive: true });
+    await fs.rm(tmpDir, {
+      recursive: true,
+      maxRetries: 100,
+    });
   });
 
   afterEach(async function () {

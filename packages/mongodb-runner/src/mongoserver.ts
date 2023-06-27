@@ -127,10 +127,13 @@ export class MongoServer {
     if (options.logDir) {
       const outFile = path.join(
         options.logDir,
-        `${options.binary}-${String(proc.pid)}-${new Date().toISOString()}.log`
+        `${options.binary}-${String(proc.pid)}-${new Date()
+          .toISOString()
+          .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`
       );
       await fs.mkdir(options.logDir, { recursive: true });
       const outStream = createWriteStream(outFile);
+      await once(outStream, 'open');
       stdout.pipe(outStream);
       stderr.pipe(outStream);
     } else {
