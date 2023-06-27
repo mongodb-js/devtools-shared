@@ -106,25 +106,31 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
-  // This is the easiest way to ensure that MongoServer can handle the
-  // pre-4.4 log format (because in the devtools-shared CI, we only
-  // test ubuntu-latest).
-  it('can spawn a 4.0.x replset using docker', async function () {
-    cluster = await MongoCluster.start({
-      version: '4.0.x',
-      topology: 'replset',
-      tmpDir,
-      docker: 'mongo:4.0',
-      downloadOptions: {
-        distro: 'ubuntu1604',
-      },
+  context('on Linux', function () {
+    before(function () {
+      if (process.platform !== 'linux') return this.skip(); // No docker
     });
-    expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^4\./);
-    const hello = await cluster.withClient(async (client) => {
-      return await client.db('admin').command({ hello: 1 });
+
+    // This is the easiest way to ensure that MongoServer can handle the
+    // pre-4.4 log format (because in the devtools-shared CI, we only
+    // test ubuntu-latest).
+    it('can spawn a 4.0.x replset using docker', async function () {
+      cluster = await MongoCluster.start({
+        version: '4.0.x',
+        topology: 'replset',
+        tmpDir,
+        docker: 'mongo:4.0',
+        downloadOptions: {
+          distro: 'ubuntu1604',
+        },
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.serverVersion).to.match(/^4\./);
+      const hello = await cluster.withClient(async (client) => {
+        return await client.db('admin').command({ hello: 1 });
+      });
+      expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
     });
-    expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
   });
 
   it('can spawn a 6.x enterprise standalone mongod', async function () {
