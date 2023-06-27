@@ -21,6 +21,7 @@ const util = require('util');
 const { runInContext, createContext } = require('vm');
 const { execFileSync } = require('child_process');
 const { forEachPackage } = require('./utils/for-each-package');
+const { MONOREPO_ROOT } = require('./utils/constants');
 
 let [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;
@@ -52,7 +53,7 @@ async function lernaExec(packages) {
     return;
   }
 
-  const lernaBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'lerna');
+  const lernaBin = path.resolve(MONOREPO_ROOT, 'node_modules', '.bin', 'lerna');
 
   execFileSync(lernaBin, ['exec', ...scope, ...execCommandArgs], {
     stdio: 'inherit',

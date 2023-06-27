@@ -1,33 +1,34 @@
 {
-  "name": "@mongodb-js/bump-monorepo-packages",
-  "description": "Compute and writes conventional bumps for monorepo packages",
+  "name": "@mongodb-js/monorepo-tools",
+  "description": "MongoDB scripts for managing devtools monorepos",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "bin": {
-    "bump-monorepo-packages": "./src/bump-packages.js"
   },
   "bugs": {
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.2.4",
+  "version": "1.1.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
+  "license": "SSPL",
   "files": [
-    "src",
-    "!src/**/*.spec.js",
-    "!src/fixtures"
+    "index.js",
+    "utils",
+    "!utils/**/*.spec.js",
+    "!utils/fixtures"
   ],
-  "license": "Apache-2.0",
-  "main": "dist/index.js",
+  "main": "index.js",
+  "bin": {
+    "precommit": "./precommit.js",
+    "depalign": "./depalign.js",
+    "monorepo-where": "./where.js",
+    "bump-monorepo-packages": "./bump-packages.js"
+  },
   "scripts": {
     "eslint": "eslint",
     "prettier": "prettier",
@@ -35,30 +36,33 @@
     "depcheck": "depcheck",
     "check": "npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "test": "mocha",
+    "reformat": "npm run prettier -- --write .",
+    "test": "mocha **/*.spec.*",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
-    "test-ci": "npm run test-cov",
-    "reformat": "npm run prettier -- --write ."
+    "test-ci": "npm run test-cov"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.5",
     "@mongodb-js/mocha-config-compass": "^0.10.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
-    "@mongodb-js/tsconfig-compass": "^0.6.0",
-    "@types/chai": "^4.2.21",
-    "@types/mocha": "^9.0.0",
-    "@types/sinon-chai": "^3.2.5",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
-    "mocha": "^8.4.0",
-    "nyc": "^15.1.0",
     "prettier": "2.3.2"
   },
   "dependencies": {
+    "chalk": "^4.1.1",
+    "find-up": "^4.1.0",
     "git-log-parser": "^1.2.0",
     "glob": "^10.2.7",
-    "semver": "^7.3.7",
+    "minimist": "^1.2.5",
+    "ora": "^5.4.0",
+    "pacote": "^11.3.5",
+    "pkg-up": "^3.1.0",
+    "semver": "^7.5.3",
     "toposort": "^2.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
