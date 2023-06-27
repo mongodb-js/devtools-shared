@@ -116,6 +116,7 @@ export class MongoServer {
       cwd: options.tmpDir,
       detached: true,
     });
+    await once(proc, 'spawn');
     srv.childProcess = proc;
     srv.pid = proc.pid;
 
