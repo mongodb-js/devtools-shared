@@ -2,6 +2,7 @@ import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { promises as fs, createWriteStream } from 'fs';
 import {
+  LogEntry,
   createLogEntryIterator,
   filterLogStreamForPort,
 } from './mongologreader';
@@ -142,11 +143,13 @@ export class MongoServer {
       stdout.resume();
     }
 
+    let errorLogEntries: LogEntry[] = [];
     try {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
       logEntryStream.on('data', (entry) => {
         if (['E', 'F'].includes(entry.severity)) {
+          errorLogEntries.push(entry);
           debug('mongodb server output', entry);
         }
       });
@@ -155,7 +158,15 @@ export class MongoServer {
       if (port === -1) {
         // This likely means that stdout ended before we could get a path/port
         // from it, most likely because spawning itself failed.
-        throw new Error('server log output did not include port or socket');
+        let message = 'Server log output did not include port or socket';
+        if (errorLogEntries.length > 0) {
+          const format = (entry: LogEntry) =>
+            `${entry.message} ${JSON.stringify(entry.attr)}`;
+          message = `Serve failed to start: ${errorLogEntries
+            .map(format)
+            .join(', ')})`;
+        }
+        throw new Error(message);
       }
       logEntryStream.resume();
 
