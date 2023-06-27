@@ -41,7 +41,7 @@
     "where": "node ./scripts/src/where.js"
   },
   "dependencies": {
-    "@mongodb-js/monorepo-tools": "1.0.0"
+    "@mongodb-js/monorepo-tools": "^1.1.0"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",

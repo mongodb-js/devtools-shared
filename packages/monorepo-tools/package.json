@@ -17,9 +17,10 @@
   },
   "license": "SSPL",
   "files": [
-    "src",
-    "!src/**/*.spec.js",
-    "!src/fixtures"
+    "index.js",
+    "utils",
+    "!utils/**/*.spec.js",
+    "!utils/fixtures"
   ],
   "main": "index.js",
   "bin": {
