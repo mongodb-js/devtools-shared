@@ -5,6 +5,7 @@
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
   },
+  "private": true,
   "bugs": {
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
     "email": "compass@mongodb.com"
@@ -16,10 +17,6 @@
     "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
   "license": "SSPL",
-  "bin": {
-    "precommit": "src/precommit.js",
-    "depalign": "src/depalign.js"
-  },
   "scripts": {
     "eslint": "eslint",
     "prettier": "prettier",
@@ -32,20 +29,13 @@
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@mongodb-js/monorepo-tools": "^1.0.0",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
     "prettier": "2.3.2"
   },
   "dependencies": {
-    "chalk": "^4.1.1",
-    "minimist": "^1.2.5",
-    "ora": "^5.4.0",
     "pacote": "^11.3.5",
-    "pkg-up": "^3.1.0",
-    "prompts": "^2.4.1",
-    "semver": "^7.3.5"
-  },
-  "publishConfig": {
-    "access": "public"
+    "prompts": "^2.4.1"
   }
 }

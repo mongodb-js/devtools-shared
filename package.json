@@ -40,6 +40,9 @@
     "test": "lerna run test --concurrency 1 --stream",
     "where": "node ./scripts/src/where.js"
   },
+  "dependencies": {
+    "@mongodb-js/monorepo-tools": "1.0.0"
+  },
   "devDependencies": {
     "@babel/core": "7.16.0",
     "@babel/parser": "7.16.0",
