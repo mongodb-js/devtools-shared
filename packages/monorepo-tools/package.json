@@ -44,8 +44,8 @@
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.5",
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "@mongodb-js/mocha-config-compass": "^0.10.0",
+    "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
     "prettier": "2.3.2"
@@ -53,14 +53,14 @@
   "dependencies": {
     "chalk": "^4.1.1",
     "find-up": "^4.1.0",
+    "git-log-parser": "^1.2.0",
+    "glob": "^10.2.7",
     "minimist": "^1.2.5",
     "ora": "^5.4.0",
     "pacote": "^11.3.5",
     "pkg-up": "^3.1.0",
-    "toposort": "^2.0.2",
-    "glob": "^10.2.7",
-    "git-log-parser": "^1.2.0",
-    "semver": "^7.3.7"
+    "semver": "^7.5.3",
+    "toposort": "^2.0.2"
   },
   "publishConfig": {
     "access": "public"
