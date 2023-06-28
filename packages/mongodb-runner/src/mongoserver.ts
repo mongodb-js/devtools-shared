@@ -1,17 +1,18 @@
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { promises as fs, createWriteStream } from 'fs';
+import type { LogEntry } from './mongologreader';
 import {
-  LogEntry,
   createLogEntryIterator,
   filterLogStreamForPort,
+  isFailureToSetupListener,
 } from './mongologreader';
 import { Readable } from 'stream';
 import type { Document } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { once } from 'events';
-import { uuid, debug, getPort } from './util';
+import { uuid, debug } from './util';
 
 export interface MongoServerOptions {
   binDir?: string;
@@ -28,6 +29,7 @@ export class MongoServer {
   private pid?: number;
   private port?: number;
   private dbPath?: string;
+  private closing = false;
 
   private constructor() {
     /* see .start() */
@@ -75,6 +77,41 @@ export class MongoServer {
   }
 
   static async start({ ...options }: MongoServerOptions): Promise<MongoServer> {
+    if (options.binary === 'mongos' && !options.args?.includes('--port')) {
+      // SERVER-78384: mongos does not understand `--port 0` ...
+      // Just pick a random port in [1024, 49152), try to listen, and continue until
+      // we find a free one.
+      const minPort = 1025;
+      const maxPort = 49151;
+      let port = Math.floor(Math.random() * (maxPort - minPort) + minPort);
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        try {
+          debug('Trying to spawn mongos on port', port);
+          return await this._start({
+            ...options,
+            args: [...(options.args ?? []), '--port', String(port)],
+          });
+        } catch (err) {
+          if (
+            ((err as any).errorLogEntries as LogEntry[]).some(
+              isFailureToSetupListener
+            )
+          ) {
+            if (port === maxPort) port = minPort;
+            else port++;
+            continue;
+          }
+          throw err;
+        }
+      }
+    }
+    return await this._start(options);
+  }
+
+  static async _start({
+    ...options
+  }: MongoServerOptions): Promise<MongoServer> {
     const srv = new MongoServer();
 
     if (!options.docker) {
@@ -82,9 +119,6 @@ export class MongoServer {
       await fs.mkdir(dbPath, { recursive: true });
       srv.dbPath = dbPath;
     }
-
-    // SERVER-78384: mongos does not understand `--port 0` ...
-    const arbitraryPort = options.binary === 'mongos' ? await getPort() : 0;
 
     const commandline: string[] = [];
     if (options.docker) {
@@ -105,8 +139,7 @@ export class MongoServer {
     }
 
     commandline.push(...(options.args ?? []));
-    if (!options.args?.includes('--port'))
-      commandline.push('--port', String(arbitraryPort));
+    if (!options.args?.includes('--port')) commandline.push('--port', '0');
     if (!options.args?.includes('--dbpath') && options.binary === 'mongod')
       commandline.push('--dbpath', options.docker ? '/tmp' : srv.dbPath!);
 
@@ -143,12 +176,12 @@ export class MongoServer {
       stdout.resume();
     }
 
-    let errorLogEntries: LogEntry[] = [];
+    const errorLogEntries: LogEntry[] = [];
     try {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
       logEntryStream.on('data', (entry) => {
-        if (['E', 'F'].includes(entry.severity)) {
+        if (!this.closing && ['E', 'F'].includes(entry.severity)) {
           errorLogEntries.push(entry);
           debug('mongodb server output', entry);
         }
@@ -162,11 +195,15 @@ export class MongoServer {
         if (errorLogEntries.length > 0) {
           const format = (entry: LogEntry) =>
             `${entry.message} ${JSON.stringify(entry.attr)}`;
-          message = `Serve failed to start: ${errorLogEntries
+          message = `Server failed to start: ${errorLogEntries
             .map(format)
             .join(', ')})`;
         }
-        throw new Error(message);
+        const err: Error & { errorLogEntries?: LogEntry[] } = new Error(
+          message
+        );
+        err.errorLogEntries = errorLogEntries;
+        throw err;
       }
       logEntryStream.resume();
 
@@ -181,6 +218,7 @@ export class MongoServer {
   }
 
   async close(): Promise<void> {
+    this.closing = true;
     if (this.childProcess) {
       debug('closing running process', this.childProcess.pid);
       if (this.childProcess.exitCode === null) {

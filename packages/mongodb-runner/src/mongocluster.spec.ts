@@ -3,7 +3,6 @@ import { MongoCluster } from './mongocluster';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
-import { getPort } from './util';
 
 describe('MongoCluster', function () {
   this.timeout(120_000);
@@ -43,14 +42,13 @@ describe('MongoCluster', function () {
   });
 
   it('can spawn a 6.x standalone mongod on a pre-specified port', async function () {
-    const port = String(await getPort());
     cluster = await MongoCluster.start({
       version: '6.x',
       topology: 'standalone',
       tmpDir,
-      args: ['--port', port],
+      args: ['--port', '50079'],
     });
-    expect(cluster.connectionString).to.include(`:${port}`);
+    expect(cluster.connectionString).to.include(`:50079`);
   });
 
   it('can spawn a 6.x replset', async function () {

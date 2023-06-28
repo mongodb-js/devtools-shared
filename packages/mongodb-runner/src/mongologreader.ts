@@ -69,6 +69,13 @@ export function parseAnyLogEntry(line: string): LogEntry {
   }
 }
 
+export function isFailureToSetupListener(entry: LogEntry): boolean {
+  return (
+    entry.id === 22856 /* Error setting up listener */ ||
+    entry.message.includes('Failed to set up listener')
+  );
+}
+
 /**
  * Look at a log entry to figure out whether we are listening on a
  * TCP port.
@@ -91,6 +98,13 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
     ))
   ) {
     return +(match.groups?.port ?? '0');
+  }
+  if (isFailureToSetupListener(logEntry)) {
+    throw new Error(
+      `Failed to setup listener (${logEntry.message} ${JSON.stringify(
+        logEntry.attr
+      )})`
+    );
   }
   return -1;
 }
