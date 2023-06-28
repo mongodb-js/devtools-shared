@@ -177,7 +177,9 @@ export class MongoServer {
       stderr.pipe(outStream, { end: false });
       Promise.all([once(stdout, 'end'), once(stderr, 'end')]).then(
         () => outStream.end(),
-        () => {}
+        () => {
+          /* ignore error */
+        }
       );
     } else {
       stderr.on('data', (chunk) => debug('server stderr', chunk));
