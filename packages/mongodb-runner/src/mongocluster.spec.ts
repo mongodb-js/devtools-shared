@@ -3,6 +3,9 @@ import { MongoCluster } from './mongocluster';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import createDebug from 'debug';
+
+if (process.env.CI) createDebug.enable('mongodb-runner');
 
 describe('MongoCluster', function () {
   this.timeout(120_000);
