@@ -142,6 +142,11 @@ export class MongoServer {
     if (!options.args?.includes('--port')) commandline.push('--port', '0');
     if (!options.args?.includes('--dbpath') && options.binary === 'mongod')
       commandline.push('--dbpath', options.docker ? '/tmp' : srv.dbPath!);
+    if (
+      !options.args?.includes('--unixSocketPrefix') &&
+      process.platform !== 'win32'
+    )
+      commandline.push('--nounixsocket');
 
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
@@ -168,8 +173,12 @@ export class MongoServer {
       await fs.mkdir(options.logDir, { recursive: true });
       const outStream = createWriteStream(outFile);
       await once(outStream, 'open');
-      stdout.pipe(outStream);
-      stderr.pipe(outStream);
+      stdout.pipe(outStream, { end: false });
+      stderr.pipe(outStream, { end: false });
+      Promise.all([once(stdout, 'end'), once(stderr, 'end')]).then(
+        () => outStream.end(),
+        () => {}
+      );
     } else {
       stderr.on('data', (chunk) => debug('server stderr', chunk));
       stderr.resume();
@@ -197,7 +206,7 @@ export class MongoServer {
             `${entry.message} ${JSON.stringify(entry.attr)}`;
           message = `Server failed to start: ${errorLogEntries
             .map(format)
-            .join(', ')})`;
+            .join(', ')} from ${commandline.join(' ')})`;
         }
         const err: Error & { errorLogEntries?: LogEntry[] } = new Error(
           message
