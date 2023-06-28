@@ -7,6 +7,9 @@ import createDebug from 'debug';
 
 if (process.env.CI) createDebug.enable('mongodb-runner');
 
+const twoIfNotWindowsCI =
+  process.platform === 'win32' && process.env.CI ? 0 : 2;
+
 describe('MongoCluster', function () {
   this.timeout(120_000);
 
@@ -91,7 +94,7 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       shards: 2,
-      secondaries: 2,
+      secondaries: twoIfNotWindowsCI,
       logDir,
     });
     expect(cluster.connectionString).to.be.a('string');
@@ -157,6 +160,7 @@ describe('MongoCluster', function () {
       version: '6.x',
       topology: 'sharded',
       tmpDir,
+      secondaries: 0,
     });
     cluster = await MongoCluster.deserialize(cluster.serialize());
     const { ok } = await cluster.withClient(async (client) => {
