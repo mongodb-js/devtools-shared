@@ -181,7 +181,7 @@ export class MongoServer {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
       logEntryStream.on('data', (entry) => {
-        if (!this.closing && ['E', 'F'].includes(entry.severity)) {
+        if (!srv.closing && ['E', 'F'].includes(entry.severity)) {
           errorLogEntries.push(entry);
           debug('mongodb server output', entry);
         }
