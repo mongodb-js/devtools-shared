@@ -8,14 +8,15 @@ import { runInDir } from './utils/run-in-dir';
 import { listAllPackages } from './utils/list-all-packages';
 import { updatePackageJson } from './utils/update-package-json';
 import { withProgress } from './utils/with-progress';
+import type { WorkspaceDependencyInfo } from './utils/workspace-dependencies';
 import {
   collectWorkspacesMeta,
   collectWorkspacesDependencies,
-  WorkspaceDependencyInfo,
 } from './utils/workspace-dependencies';
 import { calculateReplacements, intersects } from './utils/semver-helpers';
-import minimist, { ParsedArgs } from 'minimist';
-import ora from 'ora';
+import type { ParsedArgs } from 'minimist';
+import minimist from 'minimist';
+import type ora from 'ora';
 
 const DEPENDENCY_GROUPS = [
   'peerDependencies',
@@ -357,6 +358,7 @@ async function applyFixes(
   includeMismatched = false,
   fixOnly = new Set()
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const spinner = this;
   const spinnerText = spinner.text;
 
@@ -507,4 +509,8 @@ function parseOptions() {
   };
 }
 
-main(parseOptions());
+main(parseOptions()).catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);

@@ -25,6 +25,7 @@ async function main(fileList: string[]) {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const packageJson = require(packageJsonPath);
 
       // We are only prettifying files that are inside packages that already
@@ -68,4 +69,8 @@ const fileList = process.argv
     return path.resolve(process.cwd(), filePath);
   });
 
-main(fileList);
+main(fileList).catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);

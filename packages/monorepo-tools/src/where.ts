@@ -23,7 +23,7 @@ import { execFileSync } from 'child_process';
 import { listAllPackages } from './utils/list-all-packages';
 import { findMonorepoRoot } from './utils/find-monorepo-root';
 
-let [expr, ...execCommandArgs] = process.argv.slice(2);
+const [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;
 
 if (execCommandArgs.includes('--lerna-exec')) {
@@ -66,6 +66,7 @@ async function lernaExec(packages: string[]) {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 async function npmWorkspaces(packages: string[]) {
   const npmVersion = execFileSync('npm', ['-v']).toString();
 
@@ -112,4 +113,8 @@ process.on('unhandledRejection', (err: Error) => {
   process.exitCode = 1;
 });
 
-main();
+main().catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);

@@ -1,14 +1,15 @@
-import assert from 'assert';
 import childProcess from 'child_process';
 import { promises as fs } from 'fs';
 // @ts-expect-error No definitions available
 import gitLogParser from 'git-log-parser';
 import path from 'path';
-import semver, { ReleaseType } from 'semver';
+import type { ReleaseType } from 'semver';
+import semver from 'semver';
 import { PassThrough } from 'stream';
 import { isDeepStrictEqual, promisify } from 'util';
 
-import { GitCommit, getConventionalBump } from './utils/get-conventional-bump';
+import type { GitCommit } from './utils/get-conventional-bump';
+import { getConventionalBump } from './utils/get-conventional-bump';
 import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
 import { maxIncrement } from './utils/max-increment';
 
@@ -59,10 +60,11 @@ async function main() {
   await execFile('npm', ['install', '--package-lock-only']);
 }
 
-main().catch((e) => {
-  console.debug(e);
-  process.exit(1);
-});
+main().catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);
 
 async function getCommits({ path, range }: { path: string; range?: string }) {
   const commits: GitCommit[] = [];
@@ -82,7 +84,7 @@ function updateDeps(
   packageJson: Record<string, any>,
   newVersions: Record<string, { version: string; bump: ReleaseType }>
 ) {
-  console.debug(`[${packageJson.name}]`, 'updateDeps', newVersions);
+  console.debug(`[${packageJson.name as string}]`, 'updateDeps', newVersions);
   const newPackageJson = JSON.parse(JSON.stringify(packageJson));
 
   let inc: ReleaseType | undefined | null;
@@ -103,7 +105,7 @@ function updateDeps(
     )) {
       if (!dependenciesSection[depName]) {
         console.debug(
-          `[${packageJson.name}]`,
+          `[${packageJson.name as string}]`,
           'updateDeps',
           sectionName,
           depName,
@@ -113,7 +115,7 @@ function updateDeps(
       }
 
       console.debug(
-        `[${packageJson.name}]`,
+        `[${packageJson.name as string}]`,
         'updateDeps',
         sectionName,
         depName,
@@ -149,7 +151,7 @@ function updateDeps(
           : maxIncrement(depInc, inc);
 
       console.debug(
-        `[${packageJson.name}]`,
+        `[${packageJson.name as string}]`,
         'inc',
         sectionName === 'devDependencies',
         {
@@ -166,7 +168,7 @@ function updateDeps(
   }
 
   console.debug(
-    `[${packageJson.name}]`,
+    `[${packageJson.name as string}]`,
     'new package json',
     JSON.stringify(newPackageJson)
   );
@@ -209,7 +211,7 @@ async function bumpVersionBasedOnCommits(
     oldVersion,
     'to',
     newVersion,
-    `(${inc})`
+    `(${inc as string})`
   );
 
   return newVersion;
@@ -281,7 +283,7 @@ async function processPackage(
   const newPackageJson = { ...packageJsonAfterDepBump, version: newVersion };
 
   if (!isDeepStrictEqual(newPackageJson, packageJson)) {
-    const trailingSpacesMatch = origPackageJsonString.match(/}(\s*)$/);
+    const trailingSpacesMatch = /}(\s*)$/.exec(origPackageJsonString);
     const trailingSpaces =
       (trailingSpacesMatch && trailingSpacesMatch[1]) || '';
 

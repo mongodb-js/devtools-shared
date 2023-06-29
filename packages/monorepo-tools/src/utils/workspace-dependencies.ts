@@ -1,8 +1,6 @@
 import path from 'path';
-import {
-  PackageInfo,
-  getPackagesInTopologicalOrder,
-} from './get-packages-in-topological-order';
+import type { PackageInfo } from './get-packages-in-topological-order';
+import { getPackagesInTopologicalOrder } from './get-packages-in-topological-order';
 import { findMonorepoRoot } from './find-monorepo-root';
 
 export type DepType = 'prod' | 'dev' | 'optional' | 'peer';

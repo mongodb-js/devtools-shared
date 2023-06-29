@@ -1,4 +1,5 @@
-import semver, { ReleaseType } from 'semver';
+import type { ReleaseType } from 'semver';
+import semver from 'semver';
 
 export function maxIncrement(
   inc1: ReleaseType | null | undefined,

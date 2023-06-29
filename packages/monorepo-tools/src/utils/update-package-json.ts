@@ -12,8 +12,9 @@ export type UpdatePackageJsonFunction = (
 export async function updatePackageJson(
   packageDir: string,
   updateFn: UpdatePackageJsonFunction
-) {
+): Promise<void> {
   const pathToPkg = path.resolve(packageDir, 'package.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkgJson = require(pathToPkg);
   const updated = await updateFn(pkgJson, skip);
 

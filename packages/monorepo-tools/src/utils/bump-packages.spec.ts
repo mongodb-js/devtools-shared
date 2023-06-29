@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import fs from 'fs';
 import childProcess from 'child_process';
 import path from 'path';
@@ -107,7 +108,7 @@ describe('bump-packages', function () {
     return manifests;
   };
 
-  beforeEach(async function () {
+  beforeEach(function () {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'compass-release-tests-'));
 
     // create fake git remote:
