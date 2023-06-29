@@ -1,13 +1,14 @@
 import assert from 'assert';
 import childProcess from 'child_process';
 import { promises as fs } from 'fs';
+// @ts-expect-error No definitions available
 import gitLogParser from 'git-log-parser';
 import path from 'path';
-import semver from 'semver';
+import semver, { ReleaseType } from 'semver';
 import { PassThrough } from 'stream';
-import { promisify } from 'util';
+import { isDeepStrictEqual, promisify } from 'util';
 
-import { getConventionalBump } from './utils/get-conventional-bump';
+import { GitCommit, getConventionalBump } from './utils/get-conventional-bump';
 import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
 import { maxIncrement } from './utils/max-increment';
 
@@ -16,7 +17,7 @@ const execFile = promisify(childProcess.execFile);
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
 
-function shouldSkipPackage(packageName) {
+function shouldSkipPackage(packageName: string): boolean {
   const skippedPackages = (process.env.SKIP_BUMP_PACKAGES || '').split(',');
   const shouldSkip = skippedPackages.includes(packageName);
 
@@ -32,7 +33,7 @@ async function main() {
   try {
     await fs.stat('./package.json');
     await fs.stat('.git');
-  } catch (err) {
+  } catch (err: any) {
     if (err.code === 'ENOENT') {
       throw new Error(
         'this command can only be run from the root of a monorepo'
@@ -42,9 +43,9 @@ async function main() {
   }
 
   const monorepoRootPath = process.cwd();
-  const packages = await getPackages(monorepoRootPath);
+  const packages = await getPackagesInTopologicalOrder(monorepoRootPath);
 
-  const newVersions = [];
+  const newVersions = {};
   const range = await getRangeFromLastBump();
 
   for (const packageInfo of packages) {
@@ -55,9 +56,7 @@ async function main() {
     );
   }
 
-  await execFile('npm', ['install', '--package-lock-only'], {
-    stdio: 'inherit',
-  });
+  await execFile('npm', ['install', '--package-lock-only']);
 }
 
 main().catch((e) => {
@@ -65,12 +64,8 @@ main().catch((e) => {
   process.exit(1);
 });
 
-async function getPackages(cwd) {
-  return await getPackagesInTopologicalOrder(cwd);
-}
-
-async function getCommits({ path, range }) {
-  const commits = [];
+async function getCommits({ path, range }: { path: string; range?: string }) {
+  const commits: GitCommit[] = [];
   // PassThrough because gitLogParser returns a legacy stream
   const stream = gitLogParser
     .parse({
@@ -83,11 +78,14 @@ async function getCommits({ path, range }) {
   return commits;
 }
 
-function updateDeps(packageJson, newVersions) {
+function updateDeps(
+  packageJson: Record<string, any>,
+  newVersions: Record<string, { version: string; bump: ReleaseType }>
+) {
   console.debug(`[${packageJson.name}]`, 'updateDeps', newVersions);
   const newPackageJson = JSON.parse(JSON.stringify(packageJson));
 
-  let inc;
+  let inc: ReleaseType | undefined | null;
 
   for (const sectionName of [
     'dependencies',
@@ -176,7 +174,11 @@ function updateDeps(packageJson, newVersions) {
   return newPackageJson;
 }
 
-async function bumpVersionBasedOnCommits(packagePath, oldVersion, options) {
+async function bumpVersionBasedOnCommits(
+  packagePath: string,
+  oldVersion: string,
+  options: { range?: string }
+) {
   const commits = await getCommits({
     path: packagePath,
     range: options.range,
@@ -193,13 +195,13 @@ async function bumpVersionBasedOnCommits(packagePath, oldVersion, options) {
     return oldVersion;
   }
 
-  let inc = 'patch';
+  let inc: ReleaseType | null = 'patch';
 
   for (const commit of commits) {
     inc = maxIncrement(inc, getConventionalBump(commit));
   }
 
-  const newVersion = semver.inc(oldVersion, inc);
+  const newVersion = semver.inc(oldVersion, inc!)!;
 
   console.info(
     `[${packagePath}]`,
@@ -241,7 +243,11 @@ async function getRangeFromLastBump() {
 
 // walk the dep tree up
 
-async function processPackage(packagePath, newVersions, options) {
+async function processPackage(
+  packagePath: string,
+  newVersions: Parameters<typeof updateDeps>[1],
+  options: { range?: string }
+) {
   const packageJsonPath = path.join(packagePath, 'package.json');
 
   const origPackageJsonString = await fs.readFile(packageJsonPath, 'utf-8');
@@ -267,14 +273,14 @@ async function processPackage(packagePath, newVersions, options) {
     if (semver.gt(newVersion, packageJson.version)) {
       newVersions[packageJson.name] = {
         version: newVersion,
-        bump: semver.diff(newVersion, packageJson.version),
+        bump: semver.diff(newVersion, packageJson.version)!,
       };
     }
   }
 
   const newPackageJson = { ...packageJsonAfterDepBump, version: newVersion };
 
-  if (!deepEqual(newPackageJson, packageJson)) {
+  if (!isDeepStrictEqual(newPackageJson, packageJson)) {
     const trailingSpacesMatch = origPackageJsonString.match(/}(\s*)$/);
     const trailingSpaces =
       (trailingSpacesMatch && trailingSpacesMatch[1]) || '';
@@ -286,12 +292,3 @@ async function processPackage(packagePath, newVersions, options) {
     );
   }
 }
-
-const deepEqual = (obj1, obj2) => {
-  try {
-    assert.deepEqual(obj1, obj2);
-    return true;
-  } catch (error) {
-    return false;
-  }
-};

@@ -23,10 +23,10 @@
   ],
   "main": "dist/index.js",
   "bin": {
-    "precommit": "./precommit.js",
-    "depalign": "./depalign.js",
-    "monorepo-where": "./where.js",
-    "bump-monorepo-packages": "./bump-packages.js"
+    "precommit": "./bin/precommit.js",
+    "depalign": "./bin/depalign.js",
+    "monorepo-where": "./bin/where.js",
+    "bump-monorepo-packages": "./bin/bump-packages.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",
@@ -39,6 +39,7 @@
     "depcheck": "depcheck",
     "check": "npm run typecheck && npm run lint && npm run depcheck",
     "check-ci": "npm run check",
+    "pretest": "npm run compile",
     "test": "mocha **/*.spec.*",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
@@ -51,6 +52,8 @@
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.35",
+    "@types/pacote": "^11.1.5",
+    "@types/toposort": "^2.0.3",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
     "gen-esm-wrapper": "^1.1.0",

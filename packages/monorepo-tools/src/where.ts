@@ -20,7 +20,8 @@ import path from 'path';
 import util from 'util';
 import { runInContext, createContext } from 'vm';
 import { execFileSync } from 'child_process';
-import { forEachPackage } from './utils/for-each-package';
+import { listAllPackages } from './utils/list-all-packages';
+import { findMonorepoRoot } from './utils/find-monorepo-root';
 
 let [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;
@@ -30,21 +31,22 @@ if (execCommandArgs.includes('--lerna-exec')) {
   useLernaExec = true;
 }
 
-async function filterPackagesByExpression(expression) {
-  return (
-    await forEachPackage(({ packageJson }) => {
-      try {
-        return runInContext(expression, createContext(packageJson))
-          ? packageJson.name
-          : false;
-      } catch (e) {
-        return false;
-      }
-    })
-  ).filter(Boolean);
+async function filterPackagesByExpression(
+  expression: string
+): Promise<string[]> {
+  const packages: string[] = [];
+  for await (const { packageJson } of listAllPackages()) {
+    try {
+      if (runInContext(expression, createContext(packageJson)))
+        packages.push(packageJson.name);
+    } catch {
+      /* skip */
+    }
+  }
+  return packages;
 }
 
-async function lernaExec(packages) {
+async function lernaExec(packages: string[]) {
   const scope = packages.map((name) => `--scope=${name}`);
 
   if (scope.length === 0) {
@@ -52,14 +54,19 @@ async function lernaExec(packages) {
     return;
   }
 
-  const lernaBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'lerna');
+  const lernaBin = path.resolve(
+    await findMonorepoRoot(),
+    'node_modules',
+    '.bin',
+    'lerna'
+  );
 
   execFileSync(lernaBin, ['exec', ...scope, ...execCommandArgs], {
     stdio: 'inherit',
   });
 }
 
-async function npmWorkspaces(packages) {
+async function npmWorkspaces(packages: string[]) {
   const npmVersion = execFileSync('npm', ['-v']).toString();
 
   if (Number(npmVersion.substr(0, 2)) < 7) {
@@ -99,9 +106,9 @@ async function main() {
   }
 }
 
-process.on('unhandledRejection', (err) => {
+process.on('unhandledRejection', (err: Error) => {
   console.error();
-  console.error(err.stack || err.message || err);
+  console.error(err?.stack || err?.message || err);
   process.exitCode = 1;
 });
 

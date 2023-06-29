@@ -4,12 +4,11 @@ import { exec } from 'child_process';
 const ONE_HOUR = 1000 * 60 * 60;
 
 export async function runInDir(
-  command,
+  command: string,
   cwd = process.cwd(),
   timeout = ONE_HOUR
 ) {
   const execPromise = promisify(exec)(command, {
-    stdio: 'pipe',
     cwd,
     timeout,
   });

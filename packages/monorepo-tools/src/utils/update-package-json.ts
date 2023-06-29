@@ -3,15 +3,16 @@ import { promises as fs } from 'fs';
 
 export const skip = Symbol('skip');
 
-export function insertAfter(obj, key, insertKey, insertValue) {
-  const keys = Object.keys(obj);
-  keys.splice(keys.indexOf(key) + 1, 0, insertKey);
-  return Object.fromEntries(
-    keys.map((key) => [key, key === insertKey ? insertValue : obj[key]])
-  );
-}
+type MaybePromise<T> = T | PromiseLike<T>;
+export type UpdatePackageJsonFunction = (
+  pkgJson: Record<string, any>,
+  s: typeof skip
+) => MaybePromise<typeof skip | Record<string, any>>;
 
-export async function updatePackageJson(packageDir, updateFn) {
+export async function updatePackageJson(
+  packageDir: string,
+  updateFn: UpdatePackageJsonFunction
+) {
   const pathToPkg = path.resolve(packageDir, 'package.json');
   const pkgJson = require(pathToPkg);
   const updated = await updateFn(pkgJson, skip);

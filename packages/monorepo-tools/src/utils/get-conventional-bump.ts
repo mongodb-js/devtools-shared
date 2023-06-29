@@ -1,3 +1,12 @@
+export type GitCommit = {
+  commit: {
+    long: string;
+    short: string;
+  };
+  subject: string;
+  body: string;
+};
+
 /**
  * Calculate the bump for a commit.
  *
@@ -13,7 +22,9 @@
  * @param {{subject: string, body: string}} commit - the commit to analyze
  * @return {string} the semver increment determined
  */
-export function getConventionalBump(commit) {
+export function getConventionalBump(
+  commit: Pick<GitCommit, 'subject' | 'body'>
+) {
   const { subject, body } = commit;
 
   if (

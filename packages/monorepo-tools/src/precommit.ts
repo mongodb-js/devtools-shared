@@ -8,8 +8,8 @@ const execFileAsync = promisify(execFile);
 
 const monorepoRoot = path.resolve(__dirname, '..', '..');
 
-async function main(fileList) {
-  const filesToPrettify = [];
+async function main(fileList: string[]) {
+  const filesToPrettify: string[] = [];
 
   await Promise.all(
     fileList.map(async (filePath) => {

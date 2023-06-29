@@ -1,5 +1,5 @@
 export * from './utils/find-monorepo-root';
-export * from './utils/for-each-package';
+export * from './utils/list-all-packages';
 export * from './utils/licenses';
 export * from './utils/run-in-dir';
 export * from './utils/semver-helpers';
