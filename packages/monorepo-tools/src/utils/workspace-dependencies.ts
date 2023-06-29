@@ -1,8 +1,6 @@
-const path = require('path');
-const {
-  getPackagesInTopologicalOrder,
-} = require('./get-packages-in-topological-order');
-const { findMonorepoRoot } = require('./find-monorepo-root');
+import path from 'path';
+import { getPackagesInTopologicalOrder } from './get-packages-in-topological-order';
+import { findMonorepoRoot } from './find-monorepo-root';
 
 async function collectWorkspacesMeta() {
   const monorepoRoot = await findMonorepoRoot();
@@ -18,25 +16,18 @@ async function collectWorkspacesMeta() {
   );
 }
 
-const DepTypes = {
-  Prod: 'prod',
-  Dev: 'dev',
-  Optional: 'optional',
-  Peer: 'peer',
-};
-
 function getDepType(dependency, version, pkgJson) {
   return pkgJson.devDependencies &&
     pkgJson.devDependencies[dependency] === version
-    ? DepTypes.Dev
+    ? 'dev'
     : pkgJson.peerDependencies &&
       pkgJson.peerDependencies[dependency] === version
-    ? DepTypes.Peer
+    ? 'peer'
     : pkgJson.optionalDependencies &&
       pkgJson.optionalDependencies[dependency] === version
-    ? DepTypes.Optional
+    ? 'optional'
     : pkgJson.dependencies && pkgJson.dependencies[dependency] === version
-    ? DepTypes.Prod
+    ? 'prod'
     : null;
 }
 
@@ -78,7 +69,6 @@ function filterOutStarDeps(entries) {
 }
 
 module.exports = {
-  DepTypes,
   collectWorkspacesMeta,
   collectWorkspacesDependencies,
 };

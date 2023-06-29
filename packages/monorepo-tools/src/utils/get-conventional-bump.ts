@@ -13,7 +13,7 @@
  * @param {{subject: string, body: string}} commit - the commit to analyze
  * @return {string} the semver increment determined
  */
-function getConventionalBump(commit) {
+export function getConventionalBump(commit) {
   const { subject, body } = commit;
 
   if (
@@ -30,5 +30,3 @@ function getConventionalBump(commit) {
 
   return 'patch';
 }
-
-module.exports = getConventionalBump;

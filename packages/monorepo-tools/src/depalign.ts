@@ -1,19 +1,18 @@
 #! /usr/bin/env node
 
-const path = require('path');
-const { promises: fs } = require('fs');
-const chalk = require('chalk');
-const pacote = require('pacote');
-const { runInDir } = require('./utils/run-in-dir');
-const { forEachPackage } = require('./utils/for-each-package');
-const { updatePackageJson } = require('./utils/update-package-json');
-const { withProgress } = require('./utils/with-progress');
-const {
+import path from 'path';
+import { promises as fs } from 'fs';
+import chalk from 'chalk';
+import pacote from 'pacote';
+import { runInDir } from './utils/run-in-dir';
+import { forEachPackage } from './utils/for-each-package';
+import { updatePackageJson } from './utils/update-package-json';
+import { withProgress } from './utils/with-progress';
+import {
   collectWorkspacesMeta,
   collectWorkspacesDependencies,
-  DepTypes,
-} = require('./utils/workspace-dependencies');
-const { calculateReplacements, intersects } = require('./utils/semver-helpers');
+} from './utils/workspace-dependencies';
+import { calculateReplacements, intersects } from './utils/semver-helpers';
 
 const DEPENDENCY_GROUPS = [
   'peerDependencies',
@@ -411,7 +410,7 @@ function prettyPrintReport({ deduped, mismatched }) {
           chalk.dim(
             `at ${path.relative(process.cwd(), from) || 'root'} ${
               // Not printing prod ones as it's kinda implied
-              type !== DepTypes.Prod ? `(${type})` : ''
+              type !== 'prod' ? `(${type})` : ''
             }`.trim()
           )
         );

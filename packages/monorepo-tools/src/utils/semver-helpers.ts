@@ -1,6 +1,6 @@
-const semver = require('semver');
+import semver from 'semver';
 
-function intersects(range) {
+export function intersects(range) {
   for (const [idx, v1] of Object.entries(range)) {
     for (const v2 of range.slice(Number(idx) + 1)) {
       try {
@@ -15,7 +15,7 @@ function intersects(range) {
   return true;
 }
 
-function calculateReplacements(ranges) {
+export function calculateReplacements(ranges) {
   const replacements = new Map();
   const highestRange = getHighestRange(ranges);
 
@@ -33,7 +33,7 @@ function calculateReplacements(ranges) {
   return replacements;
 }
 
-function getHighestRange(ranges) {
+export function getHighestRange(ranges) {
   const validRanges = ranges.filter(
     (range) => semver.validRange(range) && range !== '*'
   );
@@ -58,9 +58,3 @@ function getHighestRange(ranges) {
 
   return sortedRanges[0] || null;
 }
-
-module.exports = {
-  intersects,
-  calculateReplacements,
-  getHighestRange,
-};

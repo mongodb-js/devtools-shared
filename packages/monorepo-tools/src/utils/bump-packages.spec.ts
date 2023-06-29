@@ -1,8 +1,8 @@
-const fs = require('fs');
-const childProcess = require('child_process');
-const path = require('path');
-const os = require('os');
-const assert = require('assert');
+import fs from 'fs';
+import childProcess from 'child_process';
+import path from 'path';
+import os from 'os';
+import assert from 'assert';
 
 const MAIN_BRANCH = 'main';
 

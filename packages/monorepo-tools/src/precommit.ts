@@ -1,9 +1,9 @@
 #! /usr/bin/env node
 
-const path = require('path');
-const pkgUp = require('pkg-up');
-const { promisify } = require('util');
-const { execFile } = require('child_process');
+import path from 'path';
+import pkgUp from 'pkg-up';
+import { promisify } from 'util';
+import { execFile } from 'child_process';
 const execFileAsync = promisify(execFile);
 
 const monorepoRoot = path.resolve(__dirname, '..', '..');

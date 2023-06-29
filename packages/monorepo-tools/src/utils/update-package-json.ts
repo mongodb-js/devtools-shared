@@ -1,9 +1,9 @@
-const path = require('path');
-const { promises: fs } = require('fs');
+import path from 'path';
+import { promises as fs } from 'fs';
 
-const skip = Symbol('skip');
+export const skip = Symbol('skip');
 
-function insertAfter(obj, key, insertKey, insertValue) {
+export function insertAfter(obj, key, insertKey, insertValue) {
   const keys = Object.keys(obj);
   keys.splice(keys.indexOf(key) + 1, 0, insertKey);
   return Object.fromEntries(
@@ -11,7 +11,7 @@ function insertAfter(obj, key, insertKey, insertValue) {
   );
 }
 
-async function updatePackageJson(packageDir, updateFn) {
+export async function updatePackageJson(packageDir, updateFn) {
   const pathToPkg = path.resolve(packageDir, 'package.json');
   const pkgJson = require(pathToPkg);
   const updated = await updateFn(pkgJson, skip);
@@ -33,5 +33,3 @@ async function updatePackageJson(packageDir, updateFn) {
     'utf8'
   );
 }
-
-module.exports = { skip, updatePackageJson, insertAfter };

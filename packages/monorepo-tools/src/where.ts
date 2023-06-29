@@ -16,12 +16,11 @@
  *   npm run where "peerDependencies" -- --lerna-exec --stream --concurrency 1 -- echo "this package has peer deps"
  */
 
-const path = require('path');
-const util = require('util');
-const { runInContext, createContext } = require('vm');
-const { execFileSync } = require('child_process');
-const { forEachPackage } = require('./utils/for-each-package');
-const { MONOREPO_ROOT } = require('./utils/constants');
+import path from 'path';
+import util from 'util';
+import { runInContext, createContext } from 'vm';
+import { execFileSync } from 'child_process';
+import { forEachPackage } from './utils/for-each-package';
 
 let [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;
@@ -53,7 +52,7 @@ async function lernaExec(packages) {
     return;
   }
 
-  const lernaBin = path.resolve(MONOREPO_ROOT, 'node_modules', '.bin', 'lerna');
+  const lernaBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'lerna');
 
   execFileSync(lernaBin, ['exec', ...scope, ...execCommandArgs], {
     stdio: 'inherit',

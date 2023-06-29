@@ -1,19 +1,15 @@
-#!/usr/bin/env node
+import assert from 'assert';
+import childProcess from 'child_process';
+import { promises as fs } from 'fs';
+import gitLogParser from 'git-log-parser';
+import path from 'path';
+import semver from 'semver';
+import { PassThrough } from 'stream';
+import { promisify } from 'util';
 
-const assert = require('assert');
-const childProcess = require('child_process');
-const { promises: fs } = require('fs');
-const gitLogParser = require('git-log-parser');
-const path = require('path');
-const semver = require('semver');
-const { PassThrough } = require('stream');
-const { promisify } = require('util');
-
-const getConventionalBump = require('./utils/get-conventional-bump');
-const {
-  getPackagesInTopologicalOrder,
-} = require('./utils/get-packages-in-topological-order');
-const maxIncrement = require('./utils/max-increment');
+import { getConventionalBump } from './utils/get-conventional-bump';
+import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
+import { maxIncrement } from './utils/max-increment';
 
 const execFile = promisify(childProcess.execFile);
 

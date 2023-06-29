@@ -1,9 +1,9 @@
-const { promises: fs } = require('fs');
-const path = require('path');
-const { glob } = require('glob');
-const toposort = require('toposort');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { glob } from 'glob';
+import toposort from 'toposort';
 
-async function getPackagesInTopologicalOrder(cwd) {
+export async function getPackagesInTopologicalOrder(cwd) {
   const patterns =
     JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
       .workspaces || [];
@@ -60,5 +60,3 @@ async function getPackagesInTopologicalOrder(cwd) {
 
   return result;
 }
-
-exports.getPackagesInTopologicalOrder = getPackagesInTopologicalOrder;

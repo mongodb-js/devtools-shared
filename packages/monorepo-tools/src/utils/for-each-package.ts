@@ -1,10 +1,8 @@
-const path = require('path');
-const {
-  getPackagesInTopologicalOrder,
-} = require('./get-packages-in-topological-order');
-const { findMonorepoRoot } = require('./find-monorepo-root');
+import path from 'path';
+import { getPackagesInTopologicalOrder } from './get-packages-in-topological-order';
+import { findMonorepoRoot } from './find-monorepo-root';
 
-async function forEachPackage(fn) {
+export async function forEachPackage(fn) {
   let interrupted = false;
   const interrupt = () => {
     interrupted = true;
@@ -29,5 +27,3 @@ async function forEachPackage(fn) {
   }
   return result;
 }
-
-exports.forEachPackage = forEachPackage;
