@@ -14,6 +14,6 @@ export function maxIncrement(
       : inc2;
   }
 
-  // return the first defined or undefined in neither are set
+  // return the first defined or null in neither are set
   return (inc1 || inc2) ?? null;
 }
