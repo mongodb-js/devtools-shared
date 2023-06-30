@@ -1,18 +1,20 @@
-const path = require('path');
-const { promises: fs } = require('fs');
+import path from 'path';
+import { promises as fs } from 'fs';
 
-const skip = Symbol('skip');
+export const skip = Symbol('skip');
 
-function insertAfter(obj, key, insertKey, insertValue) {
-  const keys = Object.keys(obj);
-  keys.splice(keys.indexOf(key) + 1, 0, insertKey);
-  return Object.fromEntries(
-    keys.map((key) => [key, key === insertKey ? insertValue : obj[key]])
-  );
-}
+type MaybePromise<T> = T | PromiseLike<T>;
+export type UpdatePackageJsonFunction = (
+  pkgJson: Record<string, any>,
+  s: typeof skip
+) => MaybePromise<typeof skip | Record<string, any>>;
 
-async function updatePackageJson(packageDir, updateFn) {
+export async function updatePackageJson(
+  packageDir: string,
+  updateFn: UpdatePackageJsonFunction
+): Promise<void> {
   const pathToPkg = path.resolve(packageDir, 'package.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkgJson = require(pathToPkg);
   const updated = await updateFn(pkgJson, skip);
 
@@ -33,5 +35,3 @@ async function updatePackageJson(packageDir, updateFn) {
     'utf8'
   );
 }
-
-module.exports = { skip, updatePackageJson, insertAfter };

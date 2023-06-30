@@ -1,6 +1,8 @@
-const ora = require('ora');
+import ora from 'ora';
 
-async function withProgress(text, fn, ...args) {
+export async function withProgress<
+  Fn extends (this: ora.Ora, ...args: any[]) => any
+>(text: string, fn: Fn, ...args: Parameters<Fn>): Promise<ReturnType<Fn>> {
   const spinner = ora(text).start();
   try {
     const result = await fn.call(spinner, ...args);
@@ -13,5 +15,3 @@ async function withProgress(text, fn, ...args) {
     throw e;
   }
 }
-
-exports.withProgress = withProgress;

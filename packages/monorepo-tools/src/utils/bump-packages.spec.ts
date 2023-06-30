@@ -1,8 +1,9 @@
-const fs = require('fs');
-const childProcess = require('child_process');
-const path = require('path');
-const os = require('os');
-const assert = require('assert');
+/* eslint-disable @typescript-eslint/no-var-requires */
+import fs from 'fs';
+import childProcess from 'child_process';
+import path from 'path';
+import os from 'os';
+import assert from 'assert';
 
 const MAIN_BRANCH = 'main';
 
@@ -76,7 +77,7 @@ describe('bump-packages', function () {
     console.log('runBumpVersion');
     const { status } = childProcess.spawnSync(
       'node',
-      [path.resolve(__dirname, '..', 'bump-packages.js')],
+      [path.resolve(__dirname, '..', '..', 'dist', 'bump-packages.js')],
       { cwd: repoPath, stdio: 'inherit' }
     );
 
@@ -86,7 +87,7 @@ describe('bump-packages', function () {
   };
 
   const readAllManifests = () => {
-    const manifests = {};
+    const manifests: Record<string, any> = {};
     for (let i = 1; i <= 6; i++) {
       const packageJsonPath = path.join(
         repoPath,
@@ -95,17 +96,19 @@ describe('bump-packages', function () {
         'package.json'
       );
 
-      manifests[`package${i}`] = JSON.parse(fs.readFileSync(packageJsonPath));
+      manifests[`package${i}`] = JSON.parse(
+        fs.readFileSync(packageJsonPath, 'utf8')
+      );
     }
 
     manifests.lock = JSON.parse(
-      fs.readFileSync(path.join(repoPath, 'package-lock.json'))
+      fs.readFileSync(path.join(repoPath, 'package-lock.json'), 'utf8')
     );
 
     return manifests;
   };
 
-  beforeEach(async function () {
+  beforeEach(function () {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'compass-release-tests-'));
 
     // create fake git remote:
@@ -142,7 +145,7 @@ describe('bump-packages', function () {
       })
     );
 
-    const spawnOptions = { cwd: repoPath, stdio: 'inherit' };
+    const spawnOptions = { cwd: repoPath, stdio: 'inherit' } as const;
 
     childProcess.spawnSync('git', ['init'], spawnOptions);
     childProcess.spawnSync(

@@ -1,4 +1,4 @@
-const SSPL_LICENSE_CONTENT = `                     Server Side Public License
+export const SSPL_LICENSE_CONTENT = `                     Server Side Public License
 VERSION 1, OCTOBER 16, 2018
 
 Copyright © 2018 MongoDB, Inc.
@@ -557,7 +557,7 @@ return for a fee.
    END OF TERMS AND CONDITIONS
 `;
 
-const APACHE2_LICENSE_CONTENT = `Apache License
+export const APACHE2_LICENSE_CONTENT = `Apache License
 Version 2.0, January 2004
 http://www.apache.org/licenses/
 
@@ -759,8 +759,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 `;
-
-module.exports = {
-  APACHE2_LICENSE_CONTENT,
-  SSPL_LICENSE_CONTENT,
-};

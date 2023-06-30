@@ -1,6 +1,6 @@
-const assert = require('assert');
+import assert from 'assert';
 
-const maxIncrement = require('./max-increment');
+import { maxIncrement } from './max-increment';
 
 describe('maxIncrement', function () {
   it('returns the correct increment', function () {

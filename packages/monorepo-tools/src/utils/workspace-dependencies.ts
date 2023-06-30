@@ -1,12 +1,14 @@
-const path = require('path');
-const {
-  getPackagesInTopologicalOrder,
-} = require('./get-packages-in-topological-order');
-const { findMonorepoRoot } = require('./find-monorepo-root');
+import path from 'path';
+import type { PackageInfo } from './get-packages-in-topological-order';
+import { getPackagesInTopologicalOrder } from './get-packages-in-topological-order';
+import { findMonorepoRoot } from './find-monorepo-root';
 
-async function collectWorkspacesMeta() {
+export type DepType = 'prod' | 'dev' | 'optional' | 'peer';
+
+export async function collectWorkspacesMeta() {
   const monorepoRoot = await findMonorepoRoot();
-  const workspaces = await getPackagesInTopologicalOrder(monorepoRoot);
+  const workspaces: Pick<PackageInfo, 'location'>[] =
+    await getPackagesInTopologicalOrder(monorepoRoot);
 
   return new Map(
     workspaces
@@ -18,35 +20,44 @@ async function collectWorkspacesMeta() {
   );
 }
 
-const DepTypes = {
-  Prod: 'prod',
-  Dev: 'dev',
-  Optional: 'optional',
-  Peer: 'peer',
-};
-
-function getDepType(dependency, version, pkgJson) {
+function getDepType(
+  dependency: string,
+  version: string,
+  pkgJson: Record<string, any>
+): DepType | null {
   return pkgJson.devDependencies &&
     pkgJson.devDependencies[dependency] === version
-    ? DepTypes.Dev
+    ? 'dev'
     : pkgJson.peerDependencies &&
       pkgJson.peerDependencies[dependency] === version
-    ? DepTypes.Peer
+    ? 'peer'
     : pkgJson.optionalDependencies &&
       pkgJson.optionalDependencies[dependency] === version
-    ? DepTypes.Optional
+    ? 'optional'
     : pkgJson.dependencies && pkgJson.dependencies[dependency] === version
-    ? DepTypes.Prod
+    ? 'prod'
     : null;
 }
 
-/**
- *
- * @param {Map<string, { dependencies?: any, devDependencies?: any, peerDependencies?: any, optionalDependencies?: any }>} workspaces
- * @returns {Map<string, { version: string, from: string, workspace: string, type: 'prod' | 'dev' | 'optional' | 'peer' }[]>}
- */
-function collectWorkspacesDependencies(workspaces) {
-  const dependencies = new Map();
+export type WorkspaceDependencyInfo = {
+  version: string;
+  from: string;
+  workspace: string;
+  type: DepType;
+};
+export function collectWorkspacesDependencies(
+  workspaces: Map<
+    string,
+    {
+      dependencies?: any;
+      devDependencies?: any;
+      peerDependencies?: any;
+      optionalDependencies?: any;
+      name: string;
+    }
+  >
+) {
+  const dependencies = new Map<string, WorkspaceDependencyInfo[]>();
 
   for (const [location, pkgJson] of workspaces) {
     for (const [dependency, versionRange] of [
@@ -56,14 +67,14 @@ function collectWorkspacesDependencies(workspaces) {
       ...filterOutStarDeps(Object.entries(pkgJson.optionalDependencies || {})),
     ]) {
       const item = {
-        version: versionRange,
+        version: versionRange as string,
         workspace: pkgJson.name,
         from: location,
-        type: getDepType(dependency, versionRange, pkgJson),
+        type: getDepType(dependency, versionRange as string, pkgJson)!,
       };
 
       if (dependencies.has(dependency)) {
-        dependencies.get(dependency).push(item);
+        dependencies.get(dependency)!.push(item);
       } else {
         dependencies.set(dependency, [item]);
       }
@@ -73,12 +84,6 @@ function collectWorkspacesDependencies(workspaces) {
   return dependencies;
 }
 
-function filterOutStarDeps(entries) {
+function filterOutStarDeps(entries: [string, string][]) {
   return entries.filter(([, v]) => v !== '*');
 }
-
-module.exports = {
-  DepTypes,
-  collectWorkspacesMeta,
-  collectWorkspacesDependencies,
-};
