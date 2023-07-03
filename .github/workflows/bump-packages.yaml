@@ -37,6 +37,7 @@ jobs:
         run: |
           npm -v
           npm ci
+          npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
 
       - name: Bump packages
         run: |
