@@ -42,6 +42,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        npm ci
         npm run bootstrap-ci
       shell: bash
 

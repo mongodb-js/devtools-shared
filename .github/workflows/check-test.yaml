@@ -62,6 +62,8 @@ jobs:
           # Dependencies are included when installing as npm workspaces will
           # hoist every package in the repo and it's important that the
           # dependencies of packages we are planning to test are also prepared
+          npm ci
+          npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
           npm run bootstrap-ci -- --stream --since ${SINCE_REF} --include-dependencies
         shell: bash
 
