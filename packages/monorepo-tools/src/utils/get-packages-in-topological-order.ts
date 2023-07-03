@@ -1,10 +1,25 @@
-const { promises: fs } = require('fs');
-const path = require('path');
-const { glob } = require('glob');
-const toposort = require('toposort');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { glob } from 'glob';
+import toposort from 'toposort';
 
-async function getPackagesInTopologicalOrder(cwd) {
-  const patterns =
+interface InternalPackageInfo {
+  name: string;
+  location: string;
+  packageJson: Record<string, any>;
+}
+
+export interface PackageInfo {
+  name: string;
+  location: string;
+  version: string;
+  private: boolean;
+}
+
+export async function getPackagesInTopologicalOrder(
+  cwd: string
+): Promise<PackageInfo[]> {
+  const patterns: string[] =
     JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
       .workspaces || [];
 
@@ -12,7 +27,7 @@ async function getPackagesInTopologicalOrder(cwd) {
     patterns.map((pattern) => path.join(pattern, 'package.json'))
   );
 
-  const internalPackages = await Promise.all(
+  const internalPackages: InternalPackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
       const packageJson = JSON.parse(
         await fs.readFile(packageJsonPath, 'utf8')
@@ -25,7 +40,7 @@ async function getPackagesInTopologicalOrder(cwd) {
     })
   );
 
-  const edges = [];
+  const edges: [string, string][] = [];
   const packageNames = new Set(internalPackages.map((p) => p.name));
 
   for (const internalPackage of internalPackages) {
@@ -50,6 +65,7 @@ async function getPackagesInTopologicalOrder(cwd) {
   const result = sorted
     .map((packageName) => internalPackages.find((p) => p.name === packageName))
     .map((packageInfo) => {
+      if (!packageInfo) throw new Error('unreachable');
       return {
         name: packageInfo.name,
         version: packageInfo.packageJson.version,
@@ -60,5 +76,3 @@ async function getPackagesInTopologicalOrder(cwd) {
 
   return result;
 }
-
-exports.getPackagesInTopologicalOrder = getPackagesInTopologicalOrder;

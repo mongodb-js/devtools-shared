@@ -1,6 +1,6 @@
-const semver = require('semver');
+import semver from 'semver';
 
-function intersects(range) {
+export function intersects(range: string[]) {
   for (const [idx, v1] of Object.entries(range)) {
     for (const v2 of range.slice(Number(idx) + 1)) {
       try {
@@ -15,13 +15,13 @@ function intersects(range) {
   return true;
 }
 
-function calculateReplacements(ranges) {
+export function calculateReplacements(ranges: string[]): Map<string, string> {
   const replacements = new Map();
   const highestRange = getHighestRange(ranges);
 
   for (const range of ranges) {
     try {
-      if (semver.subset(highestRange, range)) {
+      if (semver.subset(highestRange ?? '', range)) {
         replacements.set(range, highestRange);
       }
     } catch (e) {
@@ -33,13 +33,16 @@ function calculateReplacements(ranges) {
   return replacements;
 }
 
-function getHighestRange(ranges) {
+export function getHighestRange(ranges: string[]): string | null {
   const validRanges = ranges.filter(
     (range) => semver.validRange(range) && range !== '*'
   );
 
   const sortedRanges = validRanges.sort((v1, v2) => {
-    const res = semver.compare(semver.minVersion(v2), semver.minVersion(v1));
+    const res = semver.compare(
+      semver.minVersion(v2) ?? '',
+      semver.minVersion(v1) ?? ''
+    );
 
     if (res === 1 || res === -1) {
       return res;
@@ -58,9 +61,3 @@ function getHighestRange(ranges) {
 
   return sortedRanges[0] || null;
 }
-
-module.exports = {
-  intersects,
-  calculateReplacements,
-  getHighestRange,
-};

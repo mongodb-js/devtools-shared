@@ -1,25 +1,28 @@
 #! /usr/bin/env node
 
-const path = require('path');
-const { promises: fs } = require('fs');
-const chalk = require('chalk');
-const pacote = require('pacote');
-const { runInDir } = require('./utils/run-in-dir');
-const { forEachPackage } = require('./utils/for-each-package');
-const { updatePackageJson } = require('./utils/update-package-json');
-const { withProgress } = require('./utils/with-progress');
-const {
+import path from 'path';
+import { promises as fs } from 'fs';
+import chalk from 'chalk';
+import pacote from 'pacote';
+import { runInDir } from './utils/run-in-dir';
+import { listAllPackages } from './utils/list-all-packages';
+import { updatePackageJson } from './utils/update-package-json';
+import { withProgress } from './utils/with-progress';
+import type { WorkspaceDependencyInfo } from './utils/workspace-dependencies';
+import {
   collectWorkspacesMeta,
   collectWorkspacesDependencies,
-  DepTypes,
-} = require('./utils/workspace-dependencies');
-const { calculateReplacements, intersects } = require('./utils/semver-helpers');
+} from './utils/workspace-dependencies';
+import { calculateReplacements, intersects } from './utils/semver-helpers';
+import type { ParsedArgs } from 'minimist';
+import minimist from 'minimist';
+import type ora from 'ora';
 
 const DEPENDENCY_GROUPS = [
   'peerDependencies',
   'dependencies',
   'devDependencies',
-];
+] as const;
 
 const USAGE = `Check for dependency alignment issues.
 
@@ -46,7 +49,7 @@ Options:
 For example: {"ignore": {"async": ["^1.2.3"]}}.
 `;
 
-async function main(args) {
+async function main(args: ParsedArgs) {
   if (args.help) {
     console.log(USAGE);
     return;
@@ -57,14 +60,14 @@ async function main(args) {
       ? path.resolve(process.cwd(), args.config)
       : path.join(process.cwd(), '.depalignrc.json');
 
-  let depalignrc;
+  let depalignrc: Record<string, any>;
 
   if (typeof args.config === 'boolean' && !args.config) {
     depalignrc = {};
   } else {
     try {
       depalignrc = JSON.parse(await fs.readFile(depalignrcPath, 'utf8'));
-    } catch (e) {
+    } catch (e: any) {
       if (e.code === 'ENOENT' && args.config) {
         console.error("Can't find config at path %s.", depalignrcPath);
         throw e;
@@ -74,6 +77,7 @@ async function main(args) {
       }
       // We didn't find the file and it's a default config path that we were
       // checking for, we can ignore that as config file is optional
+      depalignrc = {};
     }
   }
 
@@ -137,13 +141,13 @@ async function main(args) {
             : ''
         );
         console.log();
-        versions.forEach((version) => {
+        for (const version of versions) {
           console.log(
             '    %s%s',
             ' '.repeat(versionPadStart - version.length),
             version
           );
-        });
+        }
         console.log();
       }
     } else {
@@ -206,14 +210,14 @@ async function main(args) {
   process.exitCode = report.mismatched.size;
 }
 
-async function alignPackageToRange(packageName, range) {
+async function alignPackageToRange(packageName: string, range: string) {
   range =
     range === 'latest'
       ? // resolve in registry so we don't update package.json to literally "latest"
         `^${(await pacote.manifest(`${packageName}@${range}`)).version}`
       : range;
 
-  await forEachPackage(async ({ location, packageJson }) => {
+  for await (const { location, packageJson } of listAllPackages()) {
     if (!hasDep(packageJson, packageName)) {
       return;
     }
@@ -221,12 +225,15 @@ async function alignPackageToRange(packageName, range) {
     await updatePackageJson(location, (pkgJson) => {
       return updateDepToRange(pkgJson, packageName, range);
     });
-  });
+  }
 
   await runInDir('npm install');
 }
 
-function hasDep(packageJson, packageName) {
+function hasDep(
+  packageJson: Record<string, any>,
+  packageName: string
+): boolean {
   for (const group of DEPENDENCY_GROUPS) {
     if (packageJson[group] && packageJson[group][packageName]) {
       return true;
@@ -236,7 +243,11 @@ function hasDep(packageJson, packageName) {
   return false;
 }
 
-function updateDepToRange(packageJson, packageName, range) {
+function updateDepToRange(
+  packageJson: Record<string, any>,
+  packageName: string,
+  range: string
+): Record<string, any> {
   const updated = { ...packageJson };
 
   for (const group of DEPENDENCY_GROUPS) {
@@ -248,11 +259,27 @@ function updateDepToRange(packageJson, packageName, range) {
   return updated;
 }
 
+interface ReportItem {
+  versions: WorkspaceDependencyInfo[];
+  fixes: Map<string, string>;
+}
+interface Report {
+  mismatched: Map<string, ReportItem>;
+  deduped: Map<string, ReportItem>;
+}
 function generateReport(
-  dependencies,
-  { includeTypes, includeTypesOnly, ignore = {} } = { ignore: {} }
+  dependencies: ReturnType<typeof collectWorkspacesDependencies>,
+  {
+    includeTypes,
+    includeTypesOnly,
+    ignore = {},
+  }: {
+    includeTypes?: string | string[];
+    includeTypesOnly?: boolean;
+    ignore?: Record<string, string[]>;
+  } = {}
 ) {
-  const report = { mismatched: new Map(), deduped: new Map() };
+  const report: Report = { mismatched: new Map(), deduped: new Map() };
 
   for (const [depName, versions] of dependencies) {
     const ignoredVersions = new Set(ignore[depName] || []);
@@ -269,8 +296,8 @@ function generateReport(
 
     if (
       includeTypesOnly
-        ? !notIgnoredVersions.every(({ type }) => includeTypes.includes(type))
-        : !notIgnoredVersions.some(({ type }) => includeTypes.includes(type))
+        ? !notIgnoredVersions.every(({ type }) => includeTypes?.includes(type))
+        : !notIgnoredVersions.some(({ type }) => includeTypes?.includes(type))
     ) {
       continue;
     }
@@ -290,16 +317,22 @@ function generateReport(
   return report;
 }
 
-function normalizeIgnore({ deduped, mismatched }, ignore = {}) {
+function normalizeIgnore(
+  { deduped, mismatched }: Report,
+  ignore: Record<string, string[]> = {}
+) {
   const ignoreMap = new Map(Object.entries(ignore));
   const mergedReport = new Map([...deduped, ...mismatched]);
-  const extraneous = new Map();
+  const extraneous = new Map<string, string[]>();
   const newIgnore = { ...ignore };
 
   for (const [depName, versions] of ignoreMap) {
     if (mergedReport.has(depName)) {
+      generateReport;
       const reportItemVersionsOnly = new Set(
-        mergedReport.get(depName).versions.map(({ version }) => version)
+        mergedReport
+          .get(depName)
+          ?.versions.map(({ version }: { version: string }) => version)
       );
       const extraneousVersions = versions.filter(
         (version) => !reportItemVersionsOnly.has(version)
@@ -320,10 +353,12 @@ function normalizeIgnore({ deduped, mismatched }, ignore = {}) {
 }
 
 async function applyFixes(
-  { deduped, mismatched },
+  this: ora.Ora,
+  { deduped, mismatched }: Report,
   includeMismatched = false,
   fixOnly = new Set()
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const spinner = this;
   const spinnerText = spinner.text;
 
@@ -342,7 +377,7 @@ async function applyFixes(
 
   spinner.text = `${spinnerText} for ${totalToUpdate} dependencies (collecting info)`;
 
-  const updatesByPackage = new Map();
+  const updatesByPackage = new Map<string, Map<string, string>>();
 
   for (const [depName, { versions, fixes }] of updates) {
     if (!fixAll && !fixOnly.has(depName)) {
@@ -359,7 +394,7 @@ async function applyFixes(
       const fixVersion = fixes.get(version) || fixes.values().next().value;
 
       if (updatesByPackage.has(from)) {
-        updatesByPackage.get(from).set(depName, fixVersion);
+        updatesByPackage.get(from)!.set(depName, fixVersion);
       } else {
         updatesByPackage.set(from, new Map([[depName, fixVersion]]));
       }
@@ -370,7 +405,7 @@ async function applyFixes(
 
   for (const [location, updates] of updatesByPackage) {
     await updatePackageJson(location, (pkgJson) => {
-      updates.forEach((version, name) => {
+      for (const [name, version] of updates) {
         for (const depType of [
           'dependencies',
           'devDependencies',
@@ -381,7 +416,7 @@ async function applyFixes(
             pkgJson[depType][name] = version;
           }
         }
-      });
+      }
       return pkgJson;
     });
   }
@@ -395,15 +430,15 @@ async function applyFixes(
   return updates.size;
 }
 
-function prettyPrintReport({ deduped, mismatched }) {
-  function printReportItems(items) {
-    items.forEach(({ versions }, depName) => {
+function prettyPrintReport({ deduped, mismatched }: Report) {
+  function printReportItems(items: Map<string, ReportItem>) {
+    for (const [depName, { versions }] of items) {
       const versionPadStart = Math.max(
         ...versions.map(({ version }) => version.length)
       );
       console.log('  %s', chalk.bold(depName));
       console.log();
-      versions.forEach(({ version, from, type }) => {
+      for (const { version, from, type } of versions) {
         console.log(
           '    %s%s %s',
           ' '.repeat(versionPadStart - version.length),
@@ -411,13 +446,13 @@ function prettyPrintReport({ deduped, mismatched }) {
           chalk.dim(
             `at ${path.relative(process.cwd(), from) || 'root'} ${
               // Not printing prod ones as it's kinda implied
-              type !== DepTypes.Prod ? `(${type})` : ''
+              type !== 'prod' ? `(${type})` : ''
             }`.trim()
           )
         );
-      });
+      }
       console.log();
-    });
+    }
   }
 
   if (deduped.size > 0) {
@@ -444,14 +479,14 @@ function prettyPrintReport({ deduped, mismatched }) {
   }
 }
 
-process.on('unhandledRejection', (err) => {
+process.on('unhandledRejection', (err: Error) => {
   console.error();
-  console.error(err.stack || err.message || err);
+  console.error(err?.stack || err?.message || err);
   process.exitCode = 1;
 });
 
 function parseOptions() {
-  const args = require('minimist')(process.argv.slice(2));
+  const args = minimist(process.argv.slice(2));
 
   if (typeof args.type === 'string') {
     args.type = args.type.split(',');
@@ -474,4 +509,8 @@ function parseOptions() {
   };
 }
 
-main(parseOptions());
+main(parseOptions()).catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);

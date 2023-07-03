@@ -1,6 +1,6 @@
-const assert = require('assert');
+import assert from 'assert';
 
-const getConventionalBump = require('./get-conventional-bump');
+import { getConventionalBump } from './get-conventional-bump';
 
 describe('getConventionalBump', function () {
   it('returns the correct increment', function () {

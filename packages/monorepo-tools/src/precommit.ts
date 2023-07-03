@@ -1,15 +1,15 @@
 #! /usr/bin/env node
 
-const path = require('path');
-const pkgUp = require('pkg-up');
-const { promisify } = require('util');
-const { execFile } = require('child_process');
+import path from 'path';
+import pkgUp from 'pkg-up';
+import { promisify } from 'util';
+import { execFile } from 'child_process';
 const execFileAsync = promisify(execFile);
 
 const monorepoRoot = path.resolve(__dirname, '..', '..');
 
-async function main(fileList) {
-  const filesToPrettify = [];
+async function main(fileList: string[]) {
+  const filesToPrettify: string[] = [];
 
   await Promise.all(
     fileList.map(async (filePath) => {
@@ -25,6 +25,7 @@ async function main(fileList) {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const packageJson = require(packageJsonPath);
 
       // We are only prettifying files that are inside packages that already
@@ -68,4 +69,8 @@ const fileList = process.argv
     return path.resolve(process.cwd(), filePath);
   });
 
-main(fileList);
+main(fileList).catch((err) =>
+  process.nextTick(() => {
+    throw err;
+  })
+);
