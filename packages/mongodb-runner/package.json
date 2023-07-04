@@ -1,5 +1,5 @@
 {
-  "name": "@mongodb-js/mongodb-runner",
+  "name": "mongodb-runner",
   "description": "The easiest way to test your code against MongoDB Server",
   "author": {
     "name": "MongoDB Inc",
