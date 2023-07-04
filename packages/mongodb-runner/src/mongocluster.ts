@@ -222,7 +222,15 @@ export class MongoCluster {
     try {
       return await fn(client);
     } finally {
-      await client.close();
+      await client.close(true);
     }
+  }
+
+  ref(): void {
+    for (const child of [...this.servers, ...this.shards]) child.ref();
+  }
+
+  unref(): void {
+    for (const child of [...this.servers, ...this.shards]) child.unref();
   }
 }

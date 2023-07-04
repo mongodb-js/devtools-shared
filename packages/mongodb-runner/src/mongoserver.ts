@@ -268,7 +268,19 @@ export class MongoServer {
     try {
       return await fn(client);
     } finally {
-      await client.close();
+      await client.close(true);
     }
+  }
+
+  ref(): void {
+    this.childProcess?.ref();
+    (this.childProcess?.stdout as any)?.ref();
+    (this.childProcess?.stderr as any)?.ref();
+  }
+
+  unref(): void {
+    this.childProcess?.unref();
+    (this.childProcess?.stdout as any)?.unref();
+    (this.childProcess?.stderr as any)?.unref();
   }
 }
