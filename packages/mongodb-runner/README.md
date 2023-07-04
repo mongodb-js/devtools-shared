@@ -5,7 +5,7 @@ Helper for spinning up MongoDB servers and clusters for testing.
 ## Example usage
 
 > Note: Version 5 of mongodb-runner is a full re-write. Many things work
-> differently in previous versions.
+> differently in version 5 and above.
 
 ```bash
 $ npx mongodb-runner start -t sharded
