@@ -74,6 +74,7 @@ describe('bump-packages', function () {
   };
 
   const runBumpVersion = () => {
+    // eslint-disable-next-line no-console
     console.log('runBumpVersion');
     const { status } = childProcess.spawnSync(
       'node',

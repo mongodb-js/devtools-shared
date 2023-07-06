@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fetch from 'node-fetch';
 import type { Severity, VulnerabilityInfo } from './vulnerability';
 import { hasExpiredPolicy } from './vulnerability';

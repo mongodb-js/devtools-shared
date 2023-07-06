@@ -23,6 +23,7 @@
     "bump-packages": "bump-monorepo-packages",
     "check-ci": "lerna run check",
     "check": "lerna run check --stream",
+    "lint": "lerna run lint --stream",
     "compile-changed": "lerna run compile --stream --since origin/HEAD",
     "create-workspace": "node ./scripts/src/create-workspace.js",
     "depalign": "depalign",

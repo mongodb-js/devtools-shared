@@ -1,6 +1,16 @@
 'use strict';
 
+const jsRules = {
+  eqeqeq: 'error',
+  'no-console': 'error',
+};
+
+const jsxRules = {
+  ...jsRules,
+};
+
 const tsRules = {
+  ...jsRules,
   '@typescript-eslint/no-unused-vars': 'error',
   '@typescript-eslint/no-unsafe-assignment': 'off',
   '@typescript-eslint/no-unsafe-call': 'off',
@@ -19,6 +29,7 @@ const tsxRules = {
 };
 
 const testRules = {
+  ...jsRules,
   'mocha/no-exclusive-tests': 'error',
   'mocha/no-hooks-for-single-case': 'off',
   'mocha/no-setup-in-describe': 'off',
@@ -74,6 +85,7 @@ const jsOverrides = {
   ...jsParserOptions,
   env: { node: true, es6: true },
   extends: [...jsConfigurations],
+  rules: { ...jsRules },
 };
 
 const jsxOverrides = {
@@ -81,6 +93,7 @@ const jsxOverrides = {
   ...jsParserOptions,
   env: { node: true, browser: true, es6: true },
   extends: [...jsConfigurations, ...reactConfigurations],
+  rules: { ...jsxRules },
 };
 
 const tsOverrides = {
@@ -114,6 +127,8 @@ const testOverrides = {
 };
 
 module.exports = {
+  jsRules,
+  jsxRules,
   tsRules,
   tsxRules,
   testRules,

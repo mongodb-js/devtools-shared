@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import yargs from 'yargs';
 import { MongoCluster } from './mongocluster';
 import os from 'os';

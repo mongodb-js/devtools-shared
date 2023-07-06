@@ -1,4 +1,5 @@
 #! /usr/bin/env node
+/* eslint-disable no-console */
 
 import path from 'path';
 import pkgUp from 'pkg-up';
