@@ -37,6 +37,10 @@ export class MongoCluster {
     };
   }
 
+  isClosed(): boolean {
+    return this.servers.length === 0 && this.shards.length === 0;
+  }
+
   static async deserialize(serialized: any): Promise<MongoCluster> {
     const cluster = new MongoCluster();
     cluster.topology = serialized.topology;
