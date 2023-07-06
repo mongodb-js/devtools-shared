@@ -17,10 +17,10 @@ interface StoredInstance {
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
-  // TODO(MONGOSH-1488): Proper CLI with start/stop/exec
   const argv = await yargs
     .version(false)
     .scriptName('mongodb-runner')
+    .env('MONGODB_RUNNER')
     .option('topology', {
       alias: 't',
       choices: ['standalone', 'replset', 'sharded'] as const,
