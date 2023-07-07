@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# run prettier inside this repo so we don't have to specify prettier as a dep
+# everywhere we specify @mongodb-js/prettier-config/devtools as a dep
+
+# Why npx? The current directory is probably in a different package, probably a
+# different monorepo rather than this one. So that's where we're executing
+# prettier from. And we can't mess with the current directory, because the
+# command-line args assume we're there. But we don't want to have to install
+# prettier everywhere so the best we can do is probably to specify prettier once
+# per monorepo at the top.
+
+npx prettier "$@"

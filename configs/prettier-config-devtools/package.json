@@ -4,16 +4,17 @@
   "description": "Shared Devtools prettier configuration",
   "license": "SSPL",
   "main": "index.json",
-  "peerDependencies": {
-    "prettier": "^2.3.2"
+  "bin": {
+    "monorepo-prettier": "./bin/monorepo-prettier"
   },
-  "devDependencies": {
+  "peerDependencies": {
     "prettier": "^2.3.2"
   },
   "scripts": {
     "check": "npm run lint",
-    "lint": "prettier --check .",
-    "reformat": "prettier --write ."
+    "prettier": "monorepo-prettier",
+    "lint": "npm run prettier -- --check .",
+    "reformat": "npm run prettier -- --write ."
   },
   "repository": {
     "type": "git",

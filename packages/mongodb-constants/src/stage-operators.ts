@@ -16,11 +16,11 @@ type StageOperator = {
   readonly fullScan: boolean;
   readonly firstStage: boolean;
   readonly score: number;
-  readonly env: readonly typeof ENVS[number][];
+  readonly env: readonly (typeof ENVS)[number][];
   readonly meta: 'stage';
   readonly version: `${number}.${number}.${number}`;
   readonly apiVersions: readonly number[];
-  readonly namespaces: readonly typeof ANY_NAMESPACE[number][];
+  readonly namespaces: readonly (typeof ANY_NAMESPACE)[number][];
   readonly description: string;
   readonly comment: string;
   readonly snippet: string;
@@ -1128,15 +1128,15 @@ const STAGE_OPERATOR_NAMES = STAGE_OPERATORS.map((op) => op.name);
 
 const OUT_STAGES = STAGE_OPERATORS.filter(
   (stage) => stage.outputStage
-) as Extract<typeof STAGE_OPERATORS[number], { outputStage: true }>[];
+) as Extract<(typeof STAGE_OPERATORS)[number], { outputStage: true }>[];
 
 const FULL_SCAN_STAGES = STAGE_OPERATORS.filter(
   (stage) => stage.fullScan
-) as Extract<typeof STAGE_OPERATORS[number], { fullScan: true }>[];
+) as Extract<(typeof STAGE_OPERATORS)[number], { fullScan: true }>[];
 
 const REQUIRED_AS_FIRST_STAGE = STAGE_OPERATORS.filter(
   (stage) => stage.firstStage
-) as Extract<typeof STAGE_OPERATORS[number], { firstStage: true }>[];
+) as Extract<(typeof STAGE_OPERATORS)[number], { firstStage: true }>[];
 
 export {
   STAGE_OPERATORS,

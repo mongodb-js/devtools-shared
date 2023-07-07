@@ -28,12 +28,13 @@
     "eslint-plugin-react-hooks": "^4.2.0"
   },
   "devDependencies": {
-    "prettier": "2.3.2"
+    "@mongodb-js/prettier-config-devtools": "^1.0.1"
   },
   "scripts": {
     "check": "npm run lint",
-    "lint": "prettier --check .",
-    "reformat": "prettier --write ."
+    "prettier": "monorepo-prettier",
+    "lint": "npm run prettier -- --check .",
+    "reformat": "npm run prettier -- --write ."
   },
   "repository": {
     "type": "git",

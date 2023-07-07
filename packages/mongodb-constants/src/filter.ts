@@ -24,7 +24,7 @@ const ALL_CONSTANTS = [
 const DEFAULT_SERVER_VERSION = '999.999.999';
 
 export type Meta =
-  | typeof ALL_CONSTANTS[number]['meta']
+  | (typeof ALL_CONSTANTS)[number]['meta']
   | 'field:identifier'
   | 'field:reference';
 
