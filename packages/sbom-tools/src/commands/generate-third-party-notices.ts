@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import crypto from 'crypto';
 import spdxSatisfies from 'spdx-satisfies';
 

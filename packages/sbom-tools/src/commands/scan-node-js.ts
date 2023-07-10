@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fetch from 'node-fetch';
 import semver from 'semver';
 import nv from '@pkgjs/nv';

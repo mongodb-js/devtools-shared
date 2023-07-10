@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import childProcess from 'child_process';
 import { promises as fs } from 'fs';
 // @ts-expect-error No definitions available

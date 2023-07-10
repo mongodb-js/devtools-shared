@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path';
 import findUp from 'find-up';
 import fs from 'fs';

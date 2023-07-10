@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fetch from 'node-fetch';
 import tar from 'tar';
 import { promisify } from 'util';

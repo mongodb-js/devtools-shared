@@ -1,4 +1,5 @@
 #! /usr/bin/env node
+/* eslint-disable no-console */
 
 import path from 'path';
 import { promises as fs } from 'fs';
@@ -56,7 +57,7 @@ async function main(args: ParsedArgs) {
   }
 
   const depalignrcPath =
-    typeof args.config == 'string'
+    typeof args.config === 'string'
       ? path.resolve(process.cwd(), args.config)
       : path.join(process.cwd(), '.depalignrc.json');
 
