@@ -80,7 +80,7 @@
     "find-up": "^4.1.0",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.7",
-    "semver": "^7.5.0",
+    "semver": "^7.5.4",
     "snyk-policy": "^2.0.4",
     "spdx-satisfies": "^5.0.1"
   }

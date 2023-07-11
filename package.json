@@ -45,10 +45,10 @@
     "@mongodb-js/monorepo-tools": "^1.1.0"
   },
   "devDependencies": {
-    "@babel/core": "7.16.0",
-    "@babel/parser": "7.16.0",
+    "@babel/core": "^7.22.8",
+    "@babel/parser": "^7.22.7",
     "depcheck": "^1.4.1",
     "husky": "^8.0.3",
-    "lerna": "^7.0.2"
+    "lerna": "^7.1.1"
   }
 }
