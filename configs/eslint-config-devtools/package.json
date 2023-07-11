@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/eslint-config-devtools",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "Shared DevTools eslint configuration",
   "license": "SSPL",
   "main": "index.js",
