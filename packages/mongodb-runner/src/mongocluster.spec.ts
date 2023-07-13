@@ -5,7 +5,10 @@ import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
 
-if (process.env.CI) createDebug.enable('mongodb-runner');
+if (process.env.CI) {
+  createDebug.enable('mongodb-runner');
+  createDebug.enable('mongodb-downloader');
+}
 
 const twoIfNotWindowsCI =
   process.platform === 'win32' && process.env.CI ? 0 : 2;
