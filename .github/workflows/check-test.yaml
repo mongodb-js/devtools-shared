@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Deps Ubuntu
         if: ${{ runner.os == 'Linux' }}
-        run: sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
+        run: sudo apt-get -y update && sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
