@@ -162,7 +162,7 @@ describe('MongoCluster', function () {
       expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
     });
 
-    it.only('can spawn a 4.0.x standalone mongod with TLS enabled and get build info', async function () {
+    it('can spawn a 4.0.x standalone mongod with TLS enabled and get build info', async function () {
       cluster = await MongoCluster.start({
         version: '4.0.x',
         topology: 'standalone',
