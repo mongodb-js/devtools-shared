@@ -232,7 +232,10 @@ export class MongoServer {
     this.closing = true;
     if (this.childProcess) {
       debug('closing running process', this.childProcess.pid);
-      if (this.childProcess.exitCode === null) {
+      if (
+        this.childProcess.exitCode === null &&
+        this.childProcess.signalCode === null
+      ) {
         this.childProcess.kill('SIGKILL');
         await once(this.childProcess, 'exit');
       }
