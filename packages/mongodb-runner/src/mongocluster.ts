@@ -1,5 +1,6 @@
 import type { MongoServerOptions } from './mongoserver';
 import { MongoServer } from './mongoserver';
+import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
 import { MongoClient } from 'mongodb';
@@ -62,6 +63,10 @@ export class MongoCluster {
     return `mongodb://${this.hostport}/${
       this.replSetName ? `?replicaSet=${this.replSetName}` : ''
     }`;
+  }
+
+  get connectionStringUrl(): ConnectionString {
+    return new ConnectionString(this.connectionString);
   }
 
   get serverVersion(): string {
