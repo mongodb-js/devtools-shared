@@ -15,7 +15,7 @@ const SERVER_KEY = 'server.bundle.pem';
 const CA_CERT = 'ca.crt';
 
 describe('MongoCluster', function () {
-  this.timeout(120_000);
+  this.timeout(300_000); // Downloading Windows binaries can take a very long time...
 
   let tmpDir: string;
   let cluster: MongoCluster;
