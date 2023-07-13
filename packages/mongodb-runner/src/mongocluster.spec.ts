@@ -10,6 +10,10 @@ if (process.env.CI) createDebug.enable('mongodb-runner');
 const twoIfNotWindowsCI =
   process.platform === 'win32' && process.env.CI ? 0 : 2;
 
+// These are from the testing/certificates directory of mongosh
+const SERVER_KEY = 'server.bundle.pem';
+const CA_CERT = 'ca.crt';
+
 describe('MongoCluster', function () {
   this.timeout(120_000);
 
@@ -113,6 +117,25 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
+  it('can spawn a 6.x standalone mongod with TLS enabled and get build info', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'standalone',
+      tmpDir,
+      args: [
+        '--tlsMode',
+        'requireTLS',
+        '--tlsCertificateKeyFile',
+        path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
+        '--tlsCAFile',
+        path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+      ],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVariant).to.equal('community');
+  });
+
   context('on Linux', function () {
     before(function () {
       if (process.platform !== 'linux') return this.skip(); // No docker
@@ -137,6 +160,32 @@ describe('MongoCluster', function () {
         return await client.db('admin').command({ hello: 1 });
       });
       expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
+    });
+
+    it.only('can spawn a 4.0.x standalone mongod with TLS enabled and get build info', async function () {
+      cluster = await MongoCluster.start({
+        version: '4.0.x',
+        topology: 'standalone',
+        tmpDir,
+        args: [
+          '--sslMode',
+          'requireSSL',
+          '--sslPEMKeyFile',
+          `/projectroot/test/fixtures/${SERVER_KEY}`,
+          '--sslCAFile',
+          `/projectroot/test/fixtures/${CA_CERT}`,
+        ],
+        docker: [
+          `--volume=${path.resolve(__dirname, '..')}:/projectroot:ro`,
+          'mongo:4.0',
+        ],
+        downloadOptions: {
+          distro: 'ubuntu1604',
+        },
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.serverVersion).to.match(/^4\./);
+      expect(cluster.serverVariant).to.equal('community');
     });
   });
 

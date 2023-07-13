@@ -93,7 +93,7 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
   // Or, 4.2-style: <timestamp> I  NETWORK  [listener] waiting for connections on port 27020
   if (
     logEntry.id === undefined &&
-    (match = /^waiting for connections on port (?<port>\d+)$/i.exec(
+    (match = /^waiting for connections on port (?<port>\d+)( ssl)?$/i.exec(
       logEntry.message
     ))
   ) {
@@ -139,4 +139,71 @@ export async function filterLogStreamForPort(
     input.unpipe(inputDuplicate);
   }
   return { port };
+}
+
+export type BuildInfo = { version: string | null; modules: string[] | null };
+
+/**
+ * Look at a log entry and return the build info data, if set.
+ *
+ * @param logEntry A parsed mongodb log line.
+ * @returns Partial build info.
+ */
+function getBuildInfoFromLogEntry(logEntry: LogEntry): Partial<BuildInfo> {
+  let match;
+  // Log message id 23403 has the format
+  // { t: <timestamp>, s: 'I', c: 'CONTROL', id: 23403, ctx: 'initandlisten', msg: '...', attr: { buildInfO: { ... } } }
+  if (logEntry.id === 23403) {
+    return logEntry.attr.buildInfo;
+  }
+  // Or, 4.2-style, split across multiple lines
+  if (
+    logEntry.id === undefined &&
+    (match = /^db version v(?<version>.+)$/i.exec(logEntry.message))
+  ) {
+    return { version: match.groups?.version };
+  }
+  if (
+    logEntry.id === undefined &&
+    (match = /^modules: (?<moduleList>.+)$/i.exec(logEntry.message))
+  ) {
+    return {
+      modules: match.groups?.moduleList
+        ?.split(' ')
+        ?.filter((module) => module !== 'none'),
+    };
+  }
+  return {};
+}
+
+/**
+ * Go through a stream of parsed log entry objects and return the build info
+ * for that server.
+ *
+ * @input A mongodb logv2/logv1 stream.
+ * @returns The build info.
+ */
+export async function filterLogStreamForBuildInfo(
+  input: Readable
+): Promise<BuildInfo> {
+  let buildInfo: BuildInfo = { version: null, modules: null };
+  const inputDuplicate = input.pipe(new PassThrough({ objectMode: true }));
+
+  try {
+    for await (const logEntry of inputDuplicate as AsyncIterable<LogEntry>) {
+      if (
+        logEntry.component !== 'CONTROL' ||
+        !['initandlisten', 'listener'].includes(logEntry.context)
+      ) {
+        continue; // We are only interested in startup events
+      }
+      buildInfo = { ...buildInfo, ...getBuildInfoFromLogEntry(logEntry) };
+      if (buildInfo.version) {
+        break;
+      }
+    }
+  } finally {
+    input.unpipe(inputDuplicate);
+  }
+  return buildInfo;
 }
