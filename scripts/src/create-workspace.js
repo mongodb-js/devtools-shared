@@ -194,9 +194,9 @@ async function main(argv) {
     },
     devDependencies: {
       '@mongodb-js/eslint-config-devtools': '*',
-      '@mongodb-js/mocha-config-compass': '*',
+      '@mongodb-js/mocha-config-devtools': '*',
       '@mongodb-js/prettier-config-devtools': '*',
-      '@mongodb-js/tsconfig-compass': '*',
+      '@mongodb-js/tsconfig-devtools': '*',
       '@types/chai': '*',
       '@types/mocha': '*',
       '@types/node': '*',
@@ -231,7 +231,7 @@ async function main(argv) {
   const depcheckrcPath = path.join(packagePath, '.depcheckrc');
   const ignores = [
     '@mongodb-js/prettier-config-devtools',
-    '@mongodb-js/tsconfig-compass',
+    '@mongodb-js/tsconfig-devtools',
     '@types/chai',
     '@types/sinon-chai',
     'sinon',
@@ -251,7 +251,7 @@ async function main(argv) {
   const tsconfigPath = path.join(packagePath, 'tsconfig.json');
   const tsconfigContent = JSON.stringify(
     {
-      extends: '@mongodb-js/tsconfig-compass/tsconfig.common.json',
+      extends: '@mongodb-js/tsconfig-devtools/tsconfig.common.json',
       compilerOptions: {
         outDir: 'dist',
         allowJs: true,
@@ -288,7 +288,7 @@ module.exports = {
   const eslintIgnorePath = path.join(packagePath, '.eslintignore');
   const eslintIgnoreContent = '.nyc-output\ndist\n';
   const mocharcPath = path.join(packagePath, '.mocharc.js');
-  const mocharcContent = `module.exports = require('@mongodb-js/mocha-config-compass');`;
+  const mocharcContent = `module.exports = require('@mongodb-js/mocha-config-devtools');`;
 
   const indexSrcDir = path.join(packagePath, 'src');
   const indexSrcPath = path.join(indexSrcDir, 'index.ts');

@@ -57,9 +57,9 @@
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.9",
-    "@mongodb-js/mocha-config-compass": "^0.10.0",
+    "@mongodb-js/mocha-config-devtools": "^1.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
-    "@mongodb-js/tsconfig-compass": "^0.6.0",
+    "@mongodb-js/tsconfig-devtools": "^1.0.0",
     "@types/chai": "^4.2.21",
     "@types/debug": "^4.1.8",
     "@types/mocha": "^9.0.0",

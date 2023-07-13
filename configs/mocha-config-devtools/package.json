@@ -1,0 +1,40 @@
+{
+  "name": "@mongodb-js/mocha-config-devtools",
+  "version": "1.0.0",
+  "description": "Shared mocha mocha configuration for Devtools packages",
+  "license": "SSPL",
+  "main": "index.js",
+  "devDependencies": {
+    "@mongodb-js/prettier-config-devtools": "^1.0.0",
+    "prettier": "^2.3.2"
+  },
+  "scripts": {
+    "prettier": "prettier",
+    "lint": "npm run prettier --  --check .",
+    "check": "npm run lint",
+    "check-ci": "npm run lint",
+    "reformat": "npm run prettier -- --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@wojtekmaj/enzyme-adapter-react-17": "^0.8.0",
+    "chai": "^4.3.4",
+    "chai-dom": "^1.9.0",
+    "chai-enzyme": "^1.0.0-beta.1",
+    "enzyme": "^3.11.0",
+    "global-jsdom": "^8.3.0",
+    "jsdom": "^21.1.0",
+    "identity-obj-proxy": "^3.0.0",
+    "react-16-node-hanging-test-fix": "^1.0.0",
+    "sinon-chai": "^3.7.0",
+    "ts-node": "^10.9.1",
+    "why-is-node-running": "^2.2.2"
+  }
+}

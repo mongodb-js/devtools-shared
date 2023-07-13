@@ -1,0 +1,30 @@
+{
+  "name": "@mongodb-js/tsconfig-devtools",
+  "version": "1.0.0",
+  "description": "Shared Devtools Typescript configuration",
+  "license": "SSPL",
+  "files": [
+    "tsconfig.common.json",
+    "tsconfig.react.json"
+  ],
+  "peerDependencies": {
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "prettier": "^2.3.2"
+  },
+  "scripts": {
+    "check": "npm run lint",
+    "lint": "prettier --check .",
+    "reformat": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools.git"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools",
+  "publishConfig": {
+    "access": "public"
+  }
+}
