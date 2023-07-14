@@ -6,8 +6,7 @@ import os from 'os';
 import createDebug from 'debug';
 
 if (process.env.CI) {
-  createDebug.enable('mongodb-runner');
-  createDebug.enable('mongodb-downloader');
+  createDebug.enable('mongodb-runner,mongodb-downloader');
 }
 
 const twoIfNotWindowsCI =
@@ -193,6 +192,9 @@ describe('MongoCluster', function () {
   });
 
   it('can spawn a 6.x enterprise standalone mongod', async function () {
+    if (process.platform === 'win32' && process.env.CI) {
+      return this.skip(); // Github Actions CI runners go OOM when extracting the 6.x enterprise tarball...
+    }
     cluster = await MongoCluster.start({
       version: '6.x-enterprise',
       topology: 'standalone',
