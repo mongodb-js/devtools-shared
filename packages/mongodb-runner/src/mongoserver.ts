@@ -4,6 +4,7 @@ import { promises as fs, createWriteStream } from 'fs';
 import type { LogEntry } from './mongologreader';
 import {
   createLogEntryIterator,
+  filterLogStreamForBuildInfo,
   filterLogStreamForPort,
   isFailureToSetupListener,
 } from './mongologreader';
@@ -20,7 +21,7 @@ export interface MongoServerOptions {
   tmpDir: string; // Stores e.g. database contents
   logDir?: string; // If set, pipe log file output through here.
   args?: string[]; // May or may not contain --port
-  docker?: string; // Image
+  docker?: string | string[]; // Image or docker options
 }
 
 export class MongoServer {
@@ -78,7 +79,7 @@ export class MongoServer {
 
   static async start({ ...options }: MongoServerOptions): Promise<MongoServer> {
     if (options.binary === 'mongos' && !options.args?.includes('--port')) {
-      // SERVER-78384: mongos does not understand `--port 0` ...
+      // SERVER-78384: mongos before 7.1.0 does not understand `--port 0` ...
       // Just pick a random port in [1024, 49152), try to listen, and continue until
       // we find a free one.
       const minPort = 1025;
@@ -126,7 +127,8 @@ export class MongoServer {
       if (options.binDir) {
         commandline.push(`--volume=${options.binDir}:/runner-bin:ro`);
       }
-      commandline.push(options.docker);
+      if (Array.isArray(options.docker)) commandline.push(...options.docker);
+      else commandline.push(options.docker);
       if (options.binDir) {
         commandline.push(`/runner-bin/${options.binary}`);
       } else {
@@ -197,6 +199,19 @@ export class MongoServer {
           debug('mongodb server output', entry);
         }
       });
+      filterLogStreamForBuildInfo(logEntryStream).then(
+        (buildInfo) => {
+          (srv.buildInfo = buildInfo),
+            debug(
+              'got server build info from log',
+              srv.serverVersion,
+              srv.serverVariant
+            );
+        },
+        () => {
+          /* ignore error */
+        }
+      );
       const { port } = await filterLogStreamForPort(logEntryStream);
       debug('server listening on port', port);
       if (port === -1) {
@@ -256,10 +271,15 @@ export class MongoServer {
   }
 
   private async _populateBuildInfo(): Promise<void> {
+    if (this.buildInfo?.version) return;
     this.buildInfo = await this.withClient(
       async (client) => await client.db('admin').command({ buildInfo: 1 })
     );
-    debug('got server build info', this.serverVersion, this.serverVariant);
+    debug(
+      'got server build info through client',
+      this.serverVersion,
+      this.serverVariant
+    );
   }
 
   async withClient<Fn extends (client: MongoClient) => any>(

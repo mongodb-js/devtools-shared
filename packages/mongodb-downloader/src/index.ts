@@ -2,9 +2,9 @@
 import fetch from 'node-fetch';
 import tar from 'tar';
 import { promisify } from 'util';
-import { promises as fs } from 'fs';
+import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
-import download from 'download';
+import decompress from 'decompress';
 import { pipeline } from 'stream';
 import getDownloadURL from 'mongodb-download-url';
 import type { Options as DownloadOptions } from 'mongodb-download-url';
@@ -87,19 +87,32 @@ async function doDownload(
     const url = await lookupDownloadUrl();
     debug(`Downloading ${url} into ${downloadTarget}...`);
 
+    // Using a large highWaterMark setting noticeably speeds up Windows downloads
+    const HWM = 1024 * 1024;
     async function downloadAndExtract(withExtraStripDepth = 0): Promise<void> {
+      const response = await fetch(url, {
+        highWaterMark: HWM,
+      } as any);
       if (/\.tgz$|\.tar(\.[^.]+)?$/.exec(url)) {
         // the server's tarballs can contain hard links, which the (unmaintained?)
         // `download` package is unable to handle (https://github.com/kevva/decompress/issues/93)
-        const response = await fetch(url);
         await promisify(pipeline)(
           response.body,
           tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 })
         );
       } else {
-        await download(url, downloadTarget, {
-          extract: true,
+        const filename = path.join(
+          downloadTarget,
+          path.basename(new URL(url).pathname)
+        );
+        await promisify(pipeline)(
+          response.body,
+          createWriteStream(filename, { highWaterMark: HWM })
+        );
+        debug(`Written file ${url} to ${filename}, extracting...`);
+        await decompress(filename, downloadTarget, {
           strip: isCryptLibrary ? 0 : 1,
+          filter: (file) => path.extname(file.path) !== '.pdb', // Windows .pdb files are huge and useless
         });
       }
 

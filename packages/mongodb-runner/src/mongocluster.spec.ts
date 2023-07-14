@@ -5,13 +5,19 @@ import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
 
-if (process.env.CI) createDebug.enable('mongodb-runner');
+if (process.env.CI) {
+  createDebug.enable('mongodb-runner,mongodb-downloader');
+}
 
 const twoIfNotWindowsCI =
   process.platform === 'win32' && process.env.CI ? 0 : 2;
 
+// These are from the testing/certificates directory of mongosh
+const SERVER_KEY = 'server.bundle.pem';
+const CA_CERT = 'ca.crt';
+
 describe('MongoCluster', function () {
-  this.timeout(120_000);
+  this.timeout(1_000_000); // Downloading Windows binaries can take a very long time...
 
   let tmpDir: string;
   let cluster: MongoCluster;
@@ -113,6 +119,25 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
+  it('can spawn a 6.x standalone mongod with TLS enabled and get build info', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'standalone',
+      tmpDir,
+      args: [
+        '--tlsMode',
+        'requireTLS',
+        '--tlsCertificateKeyFile',
+        path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
+        '--tlsCAFile',
+        path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+      ],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVariant).to.equal('community');
+  });
+
   context('on Linux', function () {
     before(function () {
       if (process.platform !== 'linux') return this.skip(); // No docker
@@ -138,9 +163,38 @@ describe('MongoCluster', function () {
       });
       expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
     });
+
+    it('can spawn a 4.0.x standalone mongod with TLS enabled and get build info', async function () {
+      cluster = await MongoCluster.start({
+        version: '4.0.x',
+        topology: 'standalone',
+        tmpDir,
+        args: [
+          '--sslMode',
+          'requireSSL',
+          '--sslPEMKeyFile',
+          `/projectroot/test/fixtures/${SERVER_KEY}`,
+          '--sslCAFile',
+          `/projectroot/test/fixtures/${CA_CERT}`,
+        ],
+        docker: [
+          `--volume=${path.resolve(__dirname, '..')}:/projectroot:ro`,
+          'mongo:4.0',
+        ],
+        downloadOptions: {
+          distro: 'ubuntu1604',
+        },
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.serverVersion).to.match(/^4\./);
+      expect(cluster.serverVariant).to.equal('community');
+    });
   });
 
   it('can spawn a 6.x enterprise standalone mongod', async function () {
+    if (process.platform === 'win32' && process.env.CI) {
+      return this.skip(); // Github Actions CI runners go OOM when extracting the 6.x enterprise tarball...
+    }
     cluster = await MongoCluster.start({
       version: '6.x-enterprise',
       topology: 'standalone',
