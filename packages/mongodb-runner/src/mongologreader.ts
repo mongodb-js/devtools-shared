@@ -126,7 +126,7 @@ export async function filterLogStreamForPort(
     for await (const logEntry of inputDuplicate as AsyncIterable<LogEntry>) {
       if (
         logEntry.component !== 'NETWORK' ||
-        !['initandlisten', 'listener'].includes(logEntry.context)
+        !['initandlisten', 'listener', 'mongosMain'].includes(logEntry.context)
       ) {
         continue; // We are only interested in listening network events
       }
@@ -159,7 +159,7 @@ function getBuildInfoFromLogEntry(logEntry: LogEntry): Partial<BuildInfo> {
   // Or, 4.2-style, split across multiple lines
   if (
     logEntry.id === undefined &&
-    (match = /^db version v(?<version>.+)$/i.exec(logEntry.message))
+    (match = /^(?:db|mongos) version v(?<version>.+)$/i.exec(logEntry.message))
   ) {
     return { version: match.groups?.version };
   }
