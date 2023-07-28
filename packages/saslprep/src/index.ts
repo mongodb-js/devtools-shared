@@ -149,4 +149,6 @@ function saslprep(
   return normalized_input;
 }
 
+saslprep.saslprep = saslprep;
+saslprep.default = saslprep;
 export = saslprep;
