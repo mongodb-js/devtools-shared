@@ -28,8 +28,14 @@
   ],
   "license": "MIT",
   "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
+    },
+    "require": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "types": "./dist/index.d.ts",
   "scripts": {
