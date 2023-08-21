@@ -27,30 +27,26 @@ describe('getPackagesInTopologicalOrder', function () {
     // create fake git remote:
     remoteDir = path.resolve(tempDir, 'remote');
     await fs.mkdir(remoteDir, { recursive: true });
-    process.chdir(remoteDir);
-    await execFile('git', ['init', '--bare']);
-    await execFile('git', ['config', '--local', 'user.name', 'user']);
-    await execFile('git', [
-      'config',
-      '--local',
-      'user.email',
-      'user@example.com',
-    ]);
+
+    await execFile('git', ['init', '--bare'], { cwd: remoteDir });
+    await execFile('git', ['config', '--local', 'user.name', 'user'], {
+      cwd: remoteDir,
+    });
+    await execFile(
+      'git',
+      ['config', '--local', 'user.email', 'user@example.com'],
+      { cwd: remoteDir }
+    );
 
     // setup repo and package:
     repoPath = path.resolve(tempDir, 'monorepo-test-repo');
     await fs.mkdir(repoPath, { recursive: true });
-    process.chdir(repoPath);
 
-    await execFile('npm', ['init', '-y']);
-
-    const packageJsonPath = path.join(repoPath, 'package.json');
-    const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-
-    await fs.writeFile(
-      packageJsonPath,
-      JSON.stringify({ ...packageJson, workspaces: ['packages/*'] }, null, 2)
-    );
+    await writeRepoFile('package.json', {
+      name: 'monorepo-test-repo',
+      version: '0.1.0',
+      workspaces: ['packages/*'],
+    });
 
     await writeRepoFile('packages/pkg1/package.json', {
       name: 'pkg1',
@@ -74,7 +70,7 @@ describe('getPackagesInTopologicalOrder', function () {
       version: '0.1.0',
     });
 
-    await execFile('npm', ['install']); // generates package-lock.json
+    await execFile('npm', ['install'], { cwd: repoPath }); // generates package-lock.json
   });
 
   // eslint-disable-next-line mocha/no-sibling-hooks
@@ -159,19 +155,24 @@ describe('getPackagesInTopologicalOrder', function () {
 
   describe('since', function () {
     beforeEach(async function () {
-      await execFile('git', ['init']);
-      await execFile('git', ['config', '--local', 'user.name', 'user']);
-      await execFile('git', [
-        'config',
-        '--local',
-        'user.email',
-        'user@example.com',
-      ]);
-      await execFile('git', ['checkout', '-b', 'main']);
-      await execFile('git', ['remote', 'add', 'origin', remoteDir]);
-      await execFile('git', ['add', '.']);
-      await execFile('git', ['commit', '-am', 'init']);
-      await execFile('git', ['push', '--set-upstream', 'origin', 'main']);
+      await execFile('git', ['init'], { cwd: repoPath });
+      await execFile('git', ['config', '--local', 'user.name', 'user'], {
+        cwd: repoPath,
+      });
+      await execFile(
+        'git',
+        ['config', '--local', 'user.email', 'user@example.com'],
+        { cwd: repoPath }
+      );
+      await execFile('git', ['checkout', '-b', 'main'], { cwd: repoPath });
+      await execFile('git', ['remote', 'add', 'origin', remoteDir], {
+        cwd: repoPath,
+      });
+      await execFile('git', ['add', '.'], { cwd: repoPath });
+      await execFile('git', ['commit', '-am', 'init'], { cwd: repoPath });
+      await execFile('git', ['push', '--set-upstream', 'origin', 'main'], {
+        cwd: repoPath,
+      });
     });
     it('returns empty if nothing changed', async function () {
       const packages = await getPackagesInTopologicalOrder(repoPath, {

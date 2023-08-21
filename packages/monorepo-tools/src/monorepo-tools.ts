@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import { spawn } from 'child_process';
-import split2 from 'split2';
-
 import { findMonorepoRoot } from './utils/find-monorepo-root';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import type { PackageInfo } from './utils/get-packages-in-topological-order';
 import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
 import chalk from 'chalk';
+import { Duplex, PassThrough, Readable } from 'stream';
+import readline from 'readline';
 
 type YargsCommand = ReturnType<typeof yargs>;
 type YargsOptionDefinition = Parameters<YargsCommand['options']>[0];
@@ -42,6 +42,19 @@ const getColorFn = (() => {
     return chalkColors[i];
   };
 })();
+
+function split2(map: (l: string) => string) {
+  const input = new PassThrough();
+  return Duplex.from({
+    writable: input,
+    readable: Readable.from(
+      (async function* () {
+        for await (const line of readline.createInterface({ input }))
+          yield map(line);
+      })()
+    ),
+  });
+}
 
 const addPrefix = (
   prefix: string,
