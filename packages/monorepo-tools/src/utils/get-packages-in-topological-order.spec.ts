@@ -71,7 +71,11 @@ describe('getPackagesInTopologicalOrder', function () {
       version: '0.1.0',
     });
 
-    await execFile('npm', ['install'], { cwd: repoPath }); // generates package-lock.json
+    // generates package-lock.json
+    await execFile('npm', ['install'], {
+      cwd: repoPath,
+      shell: true,
+    });
   });
 
   // eslint-disable-next-line mocha/no-sibling-hooks
