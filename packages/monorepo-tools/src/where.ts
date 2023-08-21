@@ -24,19 +24,84 @@ import { execFileSync } from 'child_process';
 import { listAllPackages } from './utils/list-all-packages';
 import { findMonorepoRoot } from './utils/find-monorepo-root';
 
-const [expr, ...execCommandArgs] = process.argv.slice(2);
-let useLernaExec = false;
+const [expr, ...args] = process.argv.slice(2);
 
-if (execCommandArgs.includes('--lerna-exec')) {
-  execCommandArgs.splice(execCommandArgs.indexOf('--lerna-exec'), 1);
-  useLernaExec = true;
+const [execCommandArgs, opts] = splitOptionsFromArgs(args, [
+  '--lerna-exec',
+  '--include-dependencies',
+  '--no-bail',
+]);
+
+type WhereOptions = {
+  useLernaExec: boolean;
+  includeDependencies: boolean;
+  noBail: boolean;
+};
+
+function splitOptionsFromArgs(
+  args: string[],
+  knownOptions: string[]
+): [string[], Record<string, any>] {
+  const filteredArgs: string[] = [];
+  const opts: Record<string, any> = {};
+
+  for (const arg of args) {
+    if (knownOptions.includes(arg)) {
+      opts[arg] = true;
+    } else {
+      filteredArgs.push(arg);
+    }
+  }
+
+  return [filteredArgs, opts];
+}
+
+type PackagesByName = Record<string, Record<string, any>>;
+
+function addInternalDeps(
+  name: string,
+  packagesPlusDeps: string[],
+  internalPackages: PackagesByName
+) {
+  if (packagesPlusDeps.includes(name)) {
+    return;
+  }
+
+  packagesPlusDeps.push(name);
+
+  const packageJson = internalPackages[name];
+  for (const grouping of [
+    'dependencies',
+    'devDependencies',
+    'optionalDependencies',
+    'peerDependencies',
+  ]) {
+    const deps = packageJson[grouping];
+    if (!deps) {
+      continue;
+    }
+    for (const dep of Object.keys(deps)) {
+      if (internalPackages[dep]) {
+        addInternalDeps(dep, packagesPlusDeps, internalPackages);
+      }
+    }
+  }
 }
 
 async function filterPackagesByExpression(
-  expression: string
+  expression: string,
+  includeDependencies?: boolean
 ): Promise<string[]> {
+  const packageOrder: string[] = [];
+  const internalPackages: PackagesByName = {};
+
   const packages: string[] = [];
+
   for await (const { packageJson } of listAllPackages()) {
+    // cache so we can re-use this when processing includeDependencies below
+    packageOrder.push(packageJson.name);
+    internalPackages[packageJson.name] = packageJson;
+
     try {
       if (runInContext(expression, createContext(packageJson)))
         packages.push(packageJson.name);
@@ -44,10 +109,31 @@ async function filterPackagesByExpression(
       /* skip */
     }
   }
+
+  if (includeDependencies) {
+    const packagesPlusDeps: string[] = [];
+    for (const name of packages) {
+      addInternalDeps(name, packagesPlusDeps, internalPackages);
+    }
+
+    return packageOrder.filter((name) => packagesPlusDeps.includes(name));
+  }
+
   return packages;
 }
 
-async function lernaExec(packages: string[]) {
+function reAddArgs(originalArgs: string[], options: WhereOptions) {
+  const args = originalArgs.slice();
+  if (options.includeDependencies) {
+    args.unshift('--include-dependencies');
+  }
+  if (options.noBail) {
+    args.unshift('--no-bail');
+  }
+  return args;
+}
+
+async function lernaExec(packages: string[], options: WhereOptions) {
   const scope = packages.map((name) => `--scope=${name}`);
 
   if (scope.length === 0) {
@@ -62,13 +148,17 @@ async function lernaExec(packages: string[]) {
     'lerna'
   );
 
-  execFileSync(lernaBin, ['exec', ...scope, ...execCommandArgs], {
-    stdio: 'inherit',
-  });
+  execFileSync(
+    lernaBin,
+    ['exec', ...scope, ...reAddArgs(execCommandArgs, options)],
+    {
+      stdio: 'inherit',
+    }
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-async function npmWorkspaces(packages: string[]) {
+async function npmWorkspaces(packages: string[], options: WhereOptions) {
   const npmVersion = execFileSync('npm', ['-v']).toString();
 
   if (Number(npmVersion.substr(0, 2)) < 7) {
@@ -77,9 +167,7 @@ async function npmWorkspaces(packages: string[]) {
     );
   }
 
-  const workspaces = packages.map((name) => `--workspace=${name}`);
-
-  if (workspaces.length === 0) {
+  if (packages.length === 0) {
     console.info(`No packages matched filter "${expr}"`);
     return;
   }
@@ -93,18 +181,41 @@ async function npmWorkspaces(packages: string[]) {
   console.log(util.inspect(packages));
   console.log();
 
-  execFileSync('npm', [...workspaces, ...execCommandArgs], {
-    stdio: 'inherit',
-  });
+  if (options.noBail) {
+    for (const name of packages) {
+      try {
+        execFileSync('npm', [`--workspace=${name}`, ...execCommandArgs], {
+          stdio: 'inherit',
+        });
+      } catch (err: any) {
+        console.error(err.stack);
+      }
+    }
+  } else {
+    const workspaces = packages.map((name) => `--workspace=${name}`);
+
+    execFileSync('npm', [...workspaces, ...execCommandArgs], {
+      stdio: 'inherit',
+    });
+  }
 }
 
 async function main() {
-  const packages = await filterPackagesByExpression(expr);
+  const options = {
+    useLernaExec: !!opts['--lerna-exec'],
+    includeDependencies: !!opts['--include-dependencies'],
+    noBail: !!opts['--no-bail'],
+  };
 
-  if (useLernaExec) {
-    await lernaExec(packages);
+  if (options.useLernaExec) {
+    const packages = await filterPackagesByExpression(expr);
+    await lernaExec(packages, options);
   } else {
-    await npmWorkspaces(packages);
+    const packages = await filterPackagesByExpression(
+      expr,
+      options.includeDependencies
+    );
+    await npmWorkspaces(packages, options);
   }
 }
 
@@ -114,8 +225,8 @@ process.on('unhandledRejection', (err: Error) => {
   process.exitCode = 1;
 });
 
-main().catch((err) =>
+main().catch((err) => {
   process.nextTick(() => {
     throw err;
-  })
-);
+  });
+});
