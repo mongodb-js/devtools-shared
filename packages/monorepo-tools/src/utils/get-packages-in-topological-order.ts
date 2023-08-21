@@ -263,7 +263,7 @@ async function getMonorepoPackages(monorepoRoot: string) {
     ).workspaces || [];
 
   const packageJsonPaths = await glob(
-    patterns.map((pattern) => path.join(pattern, 'package.json')),
+    patterns.map((pattern) => `${pattern}/package.json`),
     { cwd: monorepoRoot }
   );
 
