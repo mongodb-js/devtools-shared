@@ -263,12 +263,11 @@ async function getMonorepoPackages(monorepoRoot: string) {
     ).workspaces || [];
 
   const packageJsonPaths = await glob(
+    // NOTE: glob patterns should always use forward slashes,
+    // path.join here wouldn't work on win.
     patterns.map((pattern) => `${pattern}/package.json`),
     { cwd: monorepoRoot }
   );
-
-  // eslint-disable-next-line no-console
-  console.log({ packageJsonPaths });
 
   const info: PackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {

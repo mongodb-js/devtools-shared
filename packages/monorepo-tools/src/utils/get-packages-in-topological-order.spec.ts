@@ -8,17 +8,6 @@ import assert from 'assert';
 
 const execFile = promisify(execFileCb);
 
-async function lsR(dir) {
-  const dirents = await fs.readdir(dir, { withFileTypes: true });
-  const files = await Promise.all(
-    dirents.map((dirent) => {
-      const res = path.resolve(dir, dirent.name);
-      return dirent.isDirectory() ? lsR(res) : res;
-    })
-  );
-  return Array.prototype.concat(...files);
-}
-
 describe('getPackagesInTopologicalOrder', function () {
   let tempDir: string;
   let remoteDir;
@@ -81,9 +70,6 @@ describe('getPackagesInTopologicalOrder', function () {
       name: 'pkg3',
       version: '0.1.0',
     });
-
-    // eslint-disable-next-line no-console
-    console.log(await lsR(repoPath));
 
     // generates package-lock.json
     await execFile('npm', ['install'], {
