@@ -267,6 +267,9 @@ async function getMonorepoPackages(monorepoRoot: string) {
     { cwd: monorepoRoot }
   );
 
+  // eslint-disable-next-line no-console
+  console.log({ packageJsonPaths });
+
   const info: PackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
       const packageJsonLocation = path.resolve(monorepoRoot, packageJsonPath);
