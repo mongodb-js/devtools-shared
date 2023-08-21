@@ -256,27 +256,30 @@ function getEdgeList(internalPackages: PackageInfo[]): PackagesTreeEdgeList {
   return edges;
 }
 
-async function getMonorepoPackages(cwd: string) {
+async function getMonorepoPackages(monorepoRoot: string) {
   const patterns: string[] =
-    JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
-      .workspaces || [];
+    JSON.parse(
+      await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8')
+    ).workspaces || [];
 
   const packageJsonPaths = await glob(
-    patterns.map((pattern) => path.join(pattern, 'package.json'))
+    patterns.map((pattern) => path.join(pattern, 'package.json')),
+    { cwd: monorepoRoot }
   );
 
   const info: PackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
+      const packageJsonLocation = path.resolve(monorepoRoot, packageJsonPath);
       const packageJson = JSON.parse(
-        await fs.readFile(packageJsonPath, 'utf8')
+        await fs.readFile(packageJsonLocation, 'utf8')
       );
       return {
         name: packageJson.name,
         version: packageJson.version,
-        location: path.resolve(cwd, path.dirname(packageJsonPath)),
+        location: path.dirname(packageJsonLocation),
         private: !!packageJson.private,
         packageJson,
-        rootDir: cwd,
+        rootDir: monorepoRoot,
       };
     })
   );

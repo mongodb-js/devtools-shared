@@ -14,9 +14,10 @@ describe('getPackagesInTopologicalOrder', function () {
   let repoPath: string;
 
   const writeRepoFile = async (filePath: string, content: any) => {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const destPath = path.join(repoPath, filePath);
+    await fs.mkdir(path.dirname(destPath), { recursive: true });
     await fs.writeFile(
-      path.join(repoPath, filePath),
+      destPath,
       typeof content === 'string' ? content : JSON.stringify(content, null, 2)
     );
   };
