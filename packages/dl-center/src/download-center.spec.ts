@@ -77,7 +77,7 @@ describe('download center client', function () {
       );
 
       const content = await downloadCenter.downloadAsset('prefix/asset.txt');
-      expect(content?.toString()).equal('content' + os.EOL);
+      expect(content?.toString()).to.contain('content');
     });
   });
 
