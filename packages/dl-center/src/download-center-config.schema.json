@@ -1,0 +1,105 @@
+{
+  "title": "DownloadCenterConfig",
+  "type": "object",
+  "required": [
+    "versions",
+    "manual_link",
+    "release_notes_link",
+    "previous_releases_link",
+    "development_releases_link",
+    "supported_browsers_link",
+    "tutorial_link"
+  ],
+  "properties": {
+    "versions": {
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "type": "object",
+        "required": ["_id", "version", "platform"],
+        "properties": {
+          "_id": {
+            "type": "string",
+            "pattern": ".+"
+          },
+          "version": {
+            "type": "string",
+            "pattern": ".+"
+          },
+          "platform": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "$ref": "#/definitions/PlatformWithDownloadLink" },
+                { "$ref": "#/definitions/PlatformWithPackages" }
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "manual_link": {
+      "type": "string"
+    },
+    "release_notes_link": {
+      "type": "string"
+    },
+    "previous_releases_link": {
+      "type": "string"
+    },
+    "development_releases_link": {
+      "type": "string"
+    },
+    "supported_browsers_link": {
+      "type": "string"
+    },
+    "tutorial_link": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "PlatformWithDownloadLink": {
+      "type": "object",
+      "properties": {
+        "arch": { "type": "string" },
+        "os": { "type": "string" },
+        "name": { "type": "string" },
+        "download_link": { "type": "string" }
+      },
+      "required": ["arch", "os", "name", "download_link"],
+      "additionalProperties": false
+    },
+    "PlatformWithPackages": {
+      "type": "object",
+      "properties": {
+        "arch": { "type": "string" },
+        "os": { "type": "string" },
+        "packages": { "$ref": "#/definitions/Package" }
+      },
+      "required": ["arch", "os", "packages"],
+      "additionalProperties": false
+    },
+    "Package": {
+      "type": "object",
+      "properties": {
+        "links": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Link" }
+        }
+      },
+      "required": ["links"],
+      "additionalProperties": false
+    },
+    "Link": {
+      "type": "object",
+      "properties": {
+        "download_link": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["name", "download_link"],
+      "additionalProperties": false
+    }
+  }
+}
