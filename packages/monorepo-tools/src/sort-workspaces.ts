@@ -18,18 +18,18 @@ async function main() {
     'utf8'
   );
   const packageJSON = JSON.parse(text);
-  const patterns: string[] | undefined = packageJSON.workspacesPatterns
+  const patterns: string[] | undefined = packageJSON.workspacesPatterns;
 
   if (!patterns) {
-    console.log('Refusing to sort workspaces without workspacesPatterns in monorepo root package.json');
+    console.log(
+      'Refusing to sort workspaces without workspacesPatterns in monorepo root package.json'
+    );
     return;
   }
 
   const packages = await getPackagesInTopologicalOrder(monorepoRoot, patterns);
 
-  packageJSON.workspaces = packages.map(({ location }) =>
-    location.replace(`${monorepoRoot}/`, '')
-  );
+  packageJSON.workspaces = packages.map(({ location }) => location);
 
   await fs.writeFile(
     path.join(monorepoRoot, 'package.json'),

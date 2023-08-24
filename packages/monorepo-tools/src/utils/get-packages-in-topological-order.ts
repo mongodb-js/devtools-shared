@@ -77,7 +77,7 @@ export async function getPackagesInTopologicalOrder(
         name: packageInfo.name,
         version: packageInfo.packageJson.version,
         private: !!packageInfo.packageJson.private,
-        location: path.resolve(path.dirname(packageInfo.location)),
+        location: path.dirname(packageInfo.location),
       };
     });
 
