@@ -15,7 +15,7 @@ export async function collectWorkspacesMeta() {
       .concat({ location: monorepoRoot })
       .map(({ location }) => [
         location,
-        { ...require(path.join(location, 'package.json')), location },
+        { ...require(path.resolve(location, 'package.json')), location },
       ])
   );
 }
