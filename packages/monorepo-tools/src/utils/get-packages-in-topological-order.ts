@@ -17,20 +17,27 @@ export interface PackageInfo {
 }
 
 export async function getPackagesInTopologicalOrder(
-  cwd: string
+  cwd: string,
+  patterns?: string[]
 ): Promise<PackageInfo[]> {
-  const patterns: string[] =
-    JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
-      .workspaces || [];
+  if (!patterns) {
+    patterns =
+      JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
+        .workspaces || [];
+  }
 
   const packageJsonPaths = await glob(
-    patterns.map((pattern) => path.join(pattern, 'package.json'))
+    // NOTE: glob patterns should always use forward slashes,
+    // path.join here wouldn't work on win.
+    (patterns as string[]).map((pattern) => `${pattern}/package.json`),
+    { cwd }
   );
 
   const internalPackages: InternalPackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
+      const packageJsonLocation = path.resolve(cwd, packageJsonPath);
       const packageJson = JSON.parse(
-        await fs.readFile(packageJsonPath, 'utf8')
+        await fs.readFile(packageJsonLocation, 'utf8')
       );
       return {
         name: packageJson.name,
