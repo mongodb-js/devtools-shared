@@ -27,7 +27,7 @@
     "depalign": "./bin/depalign.js",
     "monorepo-where": "./bin/where.js",
     "bump-monorepo-packages": "./bin/bump-packages.js",
-    "sort-workspaces": "./bin/sort-workspaces"
+    "sort-workspaces": "./bin/sort-workspaces.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",
