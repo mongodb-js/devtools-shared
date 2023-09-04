@@ -11,30 +11,35 @@ interface InternalPackageInfo {
 
 export interface PackageInfo {
   name: string;
-  location: string;
   version: string;
   private: boolean;
+  location: string;
 }
 
 export async function getPackagesInTopologicalOrder(
-  cwd: string
+  monorepoRoot: string
 ): Promise<PackageInfo[]> {
   const patterns: string[] =
-    JSON.parse(await fs.readFile(path.join(cwd, `package.json`), 'utf8'))
-      .workspaces || [];
+    JSON.parse(
+      await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8')
+    ).workspaces || [];
 
   const packageJsonPaths = await glob(
-    patterns.map((pattern) => path.join(pattern, 'package.json'))
+    // NOTE: glob patterns should always use forward slashes,
+    // path.join here wouldn't work on win.
+    patterns.map((pattern) => `${pattern}/package.json`),
+    { cwd: monorepoRoot }
   );
 
   const internalPackages: InternalPackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
+      const packageJsonLocation = path.resolve(monorepoRoot, packageJsonPath);
       const packageJson = JSON.parse(
-        await fs.readFile(packageJsonPath, 'utf8')
+        await fs.readFile(packageJsonLocation, 'utf8')
       );
       return {
         name: packageJson.name,
-        location: packageJsonPath,
+        location: path.resolve(path.dirname(packageJsonLocation)),
         packageJson,
       };
     })
@@ -70,7 +75,7 @@ export async function getPackagesInTopologicalOrder(
         name: packageInfo.name,
         version: packageInfo.packageJson.version,
         private: !!packageInfo.packageJson.private,
-        location: path.resolve(path.dirname(packageInfo.location)),
+        location: packageInfo.location,
       };
     });
 
