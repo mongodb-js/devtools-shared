@@ -11,9 +11,9 @@ interface InternalPackageInfo {
 
 export interface PackageInfo {
   name: string;
-  location: string;
   version: string;
   private: boolean;
+  location: string;
 }
 
 export async function getPackagesInTopologicalOrder(
@@ -39,7 +39,7 @@ export async function getPackagesInTopologicalOrder(
       );
       return {
         name: packageJson.name,
-        location: path.dirname(packageJsonLocation),
+        location: path.resolve(path.dirname(packageJsonLocation)),
         packageJson,
       };
     })
@@ -75,7 +75,7 @@ export async function getPackagesInTopologicalOrder(
         name: packageInfo.name,
         version: packageInfo.packageJson.version,
         private: !!packageInfo.packageJson.private,
-        location: path.resolve(path.dirname(packageInfo.location)),
+        location: packageInfo.location,
       };
     });
 
