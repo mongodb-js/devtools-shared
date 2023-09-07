@@ -10,3 +10,7 @@ export * from './query-operators';
 export * from './stage-operators';
 export * from './system-variables';
 export { getFilteredCompletions, wrapField } from './filter';
+export type {
+  Completion,
+  FilterOptions as CompletionFilterOptions,
+} from './filter';
