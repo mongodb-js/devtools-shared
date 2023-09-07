@@ -32,8 +32,6 @@ export type Meta =
  * Our completions are a mix of ace autocompleter types and some custom values
  * added on top, this interface provides a type definition for all required
  * properties that completer is using
- *
- * @internal
  */
 export type Completion = {
   value: string;
