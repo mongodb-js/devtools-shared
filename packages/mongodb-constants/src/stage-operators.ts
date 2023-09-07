@@ -808,6 +808,42 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$vectorSearch',
+    value: '$vectorSearch',
+    label: '$vectorSearch',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS],
+    meta: 'stage',
+    // TODO: this is the actual support range '>=6.0.10 <7.0.0 || >=7.0.2',
+    // we will start with 7.0.2 for now and follow up to extend the support as part
+    // of https://jira.mongodb.org/browse/COMPASS-7065
+    version: '7.0.2',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.',
+    comment: `/**
+ * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+ * index: Name of the Atlas Search index to use. If omitted, defaults to \`default\`. (Optional)
+ * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
+ * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
+ * path: The field to search. (Required)
+ * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector \`dimensions\` specified in the index for the field. (Required)
+ */
+`,
+    snippet: `{
+  queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
+  path: \${3:string},
+  numCandidates: \${4:numCandidates},
+  limit: \${5:limit},
+  index: \${6:string},
+  filter: {}
+}`,
+  },
+  {
     name: '$set',
     value: '$set',
     label: '$set',
