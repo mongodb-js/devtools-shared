@@ -826,20 +826,19 @@ const STAGE_OPERATORS = [
     description:
       'Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.',
     comment: `/**
- * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
- * index: Name of the Atlas Search index to use. If omitted, defaults to \`default\`. (Optional)
- * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
- * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
- * path: The field to search. (Required)
- * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector \`dimensions\` specified in the index for the field. (Required)
- */
-`,
+* queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)
+* path: The field to search. (Required)
+* numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
+* index: Name of the Atlas Search index to use. (Required)
+* limit: Number (of type \`int\` only) of documents to return in the results. (Required)
+* filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+*/`,
     snippet: `{
   queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
   path: \${3:string},
   numCandidates: \${4:numCandidates},
-  limit: \${5:limit},
-  index: \${6:string},
+  index: \${5:string},
+  limit: \${6:limit},
   filter: {}
 }`,
   },
