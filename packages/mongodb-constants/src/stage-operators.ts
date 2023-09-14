@@ -832,7 +832,8 @@ const STAGE_OPERATORS = [
 * index: Name of the Atlas Search index to use. (Required)
 * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
 * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
-*/`,
+*/
+`,
     snippet: `{
   queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
   path: \${3:string},
