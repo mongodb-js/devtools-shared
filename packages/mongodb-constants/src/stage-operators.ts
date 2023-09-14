@@ -840,7 +840,7 @@ const STAGE_OPERATORS = [
   numCandidates: \${4:numCandidates},
   index: \${5:string},
   limit: \${6:limit},
-  filter: {\${}}
+  filter: {\${7:expression}}
 }`,
   },
   {
