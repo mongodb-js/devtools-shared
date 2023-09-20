@@ -29,6 +29,7 @@ describe('constants', function () {
       'FULL_SCAN_STAGES',
       'REQUIRED_AS_FIRST_STAGE',
       'SYSTEM_VARIABLES',
+      'ATLAS_SEARCH_TEMPLATES',
     ]);
   });
 });
