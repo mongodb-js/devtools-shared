@@ -2,14 +2,14 @@ import dedent from 'dedent';
 
 export type SearchTemplate = {
   name: string;
-  snippit: string;
+  snippet: string;
   version: string;
 };
 
 export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   {
     name: 'Dynamic field mappings',
-    snippit: dedent`{
+    snippet: dedent`{
             "mappings": {
               "dynamic": true
             }
@@ -18,20 +18,20 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   },
   {
     name: 'Static field mappings',
-    snippit: dedent`{
+    snippet: dedent`{
             "mappings": {
               "dynamic": false,
               "fields": {
-                <string field name>: {
+                \${1:<string field name>}: {
                     "type": "string"
                 },
-                <number field name>: {
+                \${2:<number field name>}: {
                     "type": "number"
                 },
-                <date field name>: {
+                \${3:<date field name>}: {
                     "type": "date"
                 },
-                <geo field name>: {
+                \${4:<geo field name>}: {
                     "type": "geo"
                 },
               } 
@@ -41,11 +41,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   },
   {
     name: 'Text field mappings',
-    snippit: dedent`{
+    snippet: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
-                <string field name>: [
+                \${1:<string field name>}: [
                   {
                     // Enables text queries
                     "type": "string"
@@ -67,11 +67,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   },
   {
     name: 'Facet field mappings',
-    snippit: dedent`{
+    snippet: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
-                <number field name for faceting>: [
+                \${1:<number field name for faceting>}: [
                   {
                     "type": "numberFacet"
                   },
@@ -79,7 +79,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
                     "type": "number"
                   },
                 ],
-                <date field name for faceting>: [
+                \${1:<date field name for faceting>}: [
                   {
                      "type": "dateFacet"
                   }
@@ -87,7 +87,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
                      "type": "date"
                   }
                 ],
-               <string field name for faceting>: [
+                \${1:<string field name for faceting>}: [
                   {
                     "type": "stringFacet"
                   },
@@ -103,11 +103,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   },
   {
     name: 'Vector Embedding field mapping',
-    snippit: dedent`{
+    snippet: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
-                <vector embedding field name>: [
+                \${1:<vector embedding field name>}: [
                   {
                     "type": "vectorEmbedding"
                   }      
