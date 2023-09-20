@@ -1,24 +1,24 @@
 import dedent from 'dedent';
 
 export type SearchTemplate = {
-	name: string;
-	snippit: string;
-	version: string;
+  name: string;
+  snippit: string;
+  version: string;
 };
 
 export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
-    {
-        name: 'Dynamic field mappings',
-        snippit: dedent`{
+  {
+    name: 'Dynamic field mappings',
+    snippit: dedent`{
             "mappings": {
               "dynamic": true
             }
         }`,
-        version: '4.4.0'
-    },
-    {
-        name: 'Static field mappings',
-        snippit: dedent`{
+    version: '4.4.0',
+  },
+  {
+    name: 'Static field mappings',
+    snippit: dedent`{
             "mappings": {
               "dynamic": false,
               "fields": {
@@ -37,11 +37,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
               } 
             }
         }`,
-        version: '4.4.0'
-    }, 
-    {
-        name: 'Text field mappings',
-        snippit: dedent`{
+    version: '4.4.0',
+  },
+  {
+    name: 'Text field mappings',
+    snippit: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
@@ -63,11 +63,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
               } 
             }
           }`,
-        version: '4.4.0'
-    },
-    {
-        name: 'Facet field mappings',
-        snippit: dedent`{
+    version: '4.4.0',
+  },
+  {
+    name: 'Facet field mappings',
+    snippit: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
@@ -99,11 +99,11 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
               } 
             }
           }`,
-        version: '4.4.0'
-    },
-    {
-        name: 'Vector Embedding field mapping',
-        snippit: dedent`{
+    version: '4.4.0',
+  },
+  {
+    name: 'Vector Embedding field mapping',
+    snippit: dedent`{
             "mappings": {
               "dynamic": true,
               "fields": {
@@ -115,6 +115,6 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
               } 
             }
         }`,
-        version: '4.4.0'
-    },
+    version: '4.4.0',
+  },
 ];
