@@ -79,7 +79,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
                     "type": "number"
                   },
                 ],
-                \${1:<date field name for faceting>}: [
+                \${2:<date field name for faceting>}: [
                   {
                      "type": "dateFacet"
                   }
@@ -87,7 +87,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
                      "type": "date"
                   }
                 ],
-                \${1:<string field name for faceting>}: [
+                \${3:<string field name for faceting>}: [
                   {
                     "type": "stringFacet"
                   },
