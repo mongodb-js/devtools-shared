@@ -42,7 +42,7 @@ export type Completion = {
   snippet?: string;
   score?: number;
   env?: string[];
-  namespace?: string[];
+  namespaces?: string[];
   apiVersions?: number[];
   outputStage?: boolean;
   fullScan?: boolean;
@@ -127,11 +127,17 @@ export function createConstantFilter({
     // Fallback to default server version if provided version doesn't match
     // regex so that semver doesn't throw when checking
     DEFAULT_SERVER_VERSION;
-  return ({ version: minServerVersion, meta, env, namespace, apiVersions }) => {
+  return ({
+    version: minServerVersion,
+    meta,
+    env,
+    namespaces,
+    apiVersions,
+  }) => {
     return (
       satisfiesVersion(currentServerVersion, minServerVersion) &&
       isIn(filterStage.env, env) &&
-      isIn(filterStage.namespace, namespace) &&
+      isIn(filterStage.namespace, namespaces) &&
       isIn(filterStage.apiVersion, apiVersions) &&
       (!filterMeta || matchesMeta(filterMeta, meta))
     );
