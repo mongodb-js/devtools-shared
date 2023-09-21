@@ -97,7 +97,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['adl'],
-        namespace: ['database'],
+        namespaces: ['database'],
         apiVersions: [],
       },
       {
@@ -105,7 +105,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['on-prem'],
-        namespace: ['collection'],
+        namespaces: ['collection'],
         apiVersions: [],
       },
       {
@@ -113,7 +113,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['atlas'],
-        namespace: ['timeseries'],
+        namespaces: ['timeseries'],
         apiVersions: [1],
       },
     ];
