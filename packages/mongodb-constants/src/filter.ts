@@ -69,7 +69,7 @@ export type FilterOptions = {
   /**
    * Filter completions by completion category
    */
-  meta?: (Meta | 'field:*' | 'accumulator:*' | 'expr:*')[];
+  meta?: (Meta | 'field:*' | 'accumulator:*' | 'expr:*' | 'variable:*')[];
   /**
    * Stage-only filters
    */
