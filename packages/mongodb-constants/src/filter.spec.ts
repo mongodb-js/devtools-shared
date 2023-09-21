@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import type { Completion } from './filter';
-import { wrapField, getFilteredCompletions } from './filter';
+import { wrapField, getFilteredCompletions, ALL_CONSTANTS } from './filter';
+import semver from 'semver';
+import util from 'util';
 
 describe('completer', function () {
   const simpleConstants: Completion[] = [
@@ -13,6 +15,16 @@ describe('completer', function () {
       value: 'meow',
       version: '>=2.0.0 <3.0.0 || >=3.5.0',
       meta: 'expr:set',
+    },
+    {
+      value: 'woof',
+      version: '>=0.200.300 <0.200.301',
+      meta: 'accumulator',
+    },
+    {
+      value: 'honk',
+      version: '999.999.999',
+      meta: 'variable:system',
     },
   ];
 
@@ -30,7 +42,13 @@ describe('completer', function () {
       'Foo',
       'bar',
     ]);
-    expect(getFilteredValues({ serverVersion: '0.0.1-alpha0' })).to.deep.eq([
+  });
+
+  it('should clean up version before comparing', function () {
+    expect(getFilteredValues({ serverVersion: '0.200.300-alpha0' })).to.deep.eq(
+      ['foo', 'Foo', 'woof']
+    );
+    expect(getFilteredValues({ serverVersion: '0.0.0---what???' })).to.deep.eq([
       'foo',
       'Foo',
     ]);
@@ -44,14 +62,18 @@ describe('completer', function () {
     );
   });
 
-  it('should ignore version when version is not valid', function () {
-    expect(getFilteredValues({ serverVersion: '1' })).to.deep.eq([
+  it('should use default version when provided version is not valid', function () {
+    expect(
+      getFilteredValues({ serverVersion: 'one dot one dot zero' })
+    ).to.deep.eq(['foo', 'Foo', 'bar', 'buz', 'barbar', 'meow', 'honk']);
+    expect(getFilteredValues({ serverVersion: '1.2' })).to.deep.eq([
       'foo',
       'Foo',
       'bar',
       'buz',
       'barbar',
       'meow',
+      'honk',
     ]);
   });
 
@@ -168,6 +190,23 @@ describe('completer', function () {
       expect(wrapField('quotes"in"the"middle')).to.eq(
         '"quotes\\"in\\"the\\"middle"'
       );
+    });
+  });
+
+  describe('all completions', function () {
+    it('should have valid semver version or range specified', function () {
+      ALL_CONSTANTS.forEach(({ name, version }) => {
+        const errMessage = `Expected completion ${util.inspect({
+          name,
+          version,
+        })} to have valid version`;
+
+        try {
+          expect(semver.valid(version)).to.not.eq(null, errMessage);
+        } catch {
+          expect(semver.validRange(version)).to.not.eq(null, errMessage);
+        }
+      });
     });
   });
 });

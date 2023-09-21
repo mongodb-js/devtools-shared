@@ -9,7 +9,7 @@ import { QUERY_OPERATORS } from './query-operators';
 import { STAGE_OPERATORS } from './stage-operators';
 import { SYSTEM_VARIABLES } from './system-variables';
 
-const ALL_CONSTANTS = [
+export const ALL_CONSTANTS = [
   ...ACCUMULATORS,
   ...BSON_TYPES,
   ...BSON_TYPE_ALIASES,
@@ -111,7 +111,7 @@ function isIn<T extends string | number>(
  * @param v2 Either a single version number or a range to match against
  */
 function satisfiesVersion(v1: string, v2: string): boolean {
-  const isGTECheck = /^\d+?\.\d+?\.\d+?$/.test(v2);
+  const isGTECheck = /^\d+\.\d+\.\d+$/.test(v2);
   return satisfies(v1, isGTECheck ? `>=${v2}` : v2);
 }
 
@@ -123,7 +123,7 @@ export function createConstantFilter({
   completion: Completion
 ) => boolean {
   const currentServerVersion =
-    /^(?<version>\d+?\.\d+?\.\d+?)/.exec(serverVersion)?.groups?.version ??
+    /^(?<version>\d+\.\d+\.\d+)/.exec(serverVersion)?.groups?.version ??
     // Fallback to default server version if provided version doesn't match
     // regex so that semver doesn't throw when checking
     DEFAULT_SERVER_VERSION;
