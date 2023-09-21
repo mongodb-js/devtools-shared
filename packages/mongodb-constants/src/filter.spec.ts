@@ -14,6 +14,16 @@ describe('completer', function () {
       version: '>=2.0.0 <3.0.0 || >=3.5.0',
       meta: 'expr:set',
     },
+    {
+      value: 'woof',
+      version: '>=0.200.300 <0.200.301',
+      meta: 'accumulator',
+    },
+    {
+      value: 'honk',
+      version: '999.999.999',
+      meta: 'variable:system',
+    },
   ];
 
   function getFilteredValues(
@@ -30,7 +40,13 @@ describe('completer', function () {
       'Foo',
       'bar',
     ]);
-    expect(getFilteredValues({ serverVersion: '0.0.1-alpha0' })).to.deep.eq([
+  });
+
+  it('should clean up version before comparing', function () {
+    expect(getFilteredValues({ serverVersion: '0.200.300-alpha0' })).to.deep.eq(
+      ['foo', 'Foo', 'woof']
+    );
+    expect(getFilteredValues({ serverVersion: '0.0.0---what???' })).to.deep.eq([
       'foo',
       'Foo',
     ]);
@@ -44,14 +60,18 @@ describe('completer', function () {
     );
   });
 
-  it('should ignore version when version is not valid', function () {
-    expect(getFilteredValues({ serverVersion: '1' })).to.deep.eq([
+  it('should use default version when provided version is not valid', function () {
+    expect(
+      getFilteredValues({ serverVersion: 'one dot one dot zero' })
+    ).to.deep.eq(['foo', 'Foo', 'bar', 'buz', 'barbar', 'meow', 'honk']);
+    expect(getFilteredValues({ serverVersion: '1.2' })).to.deep.eq([
       'foo',
       'Foo',
       'bar',
       'buz',
       'barbar',
       'meow',
+      'honk',
     ]);
   });
 
