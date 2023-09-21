@@ -1,4 +1,4 @@
-import { gte } from 'semver';
+import { satisfies } from 'semver';
 import { ACCUMULATORS } from './accumulators';
 import { BSON_TYPE_ALIASES } from './bson-type-aliases';
 import { BSON_TYPES } from './bson-types';
@@ -102,6 +102,19 @@ function isIn<T extends string | number>(
   return val.some((v) => set.includes(v));
 }
 
+/**
+ * Helper method that performs a semver check. When comparing current server
+ * version against just a version number (for example "1.2.3"), a "greater than
+ * or equals" check will be performed, otherwise a range check will be used
+ *
+ * @param v1 Current server version
+ * @param v2 Either a single version number or a range to match against
+ */
+function satisfiesVersion(v1: string, v2: string): boolean {
+  const isGTECheck = /^\d+?\.\d+?\.\d+?$/.test(v2);
+  return satisfies(v1, isGTECheck ? `>=${v2}` : v2);
+}
+
 export function createConstantFilter({
   meta: filterMeta,
   serverVersion = DEFAULT_SERVER_VERSION,
@@ -116,7 +129,7 @@ export function createConstantFilter({
     DEFAULT_SERVER_VERSION;
   return ({ version: minServerVersion, meta, env, namespace, apiVersions }) => {
     return (
-      gte(currentServerVersion, minServerVersion) &&
+      satisfiesVersion(currentServerVersion, minServerVersion) &&
       isIn(filterStage.env, env) &&
       isIn(filterStage.namespace, namespace) &&
       isIn(filterStage.apiVersion, apiVersions) &&

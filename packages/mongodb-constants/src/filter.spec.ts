@@ -8,7 +8,12 @@ describe('completer', function () {
     { value: 'Foo', version: '0.0.0', meta: 'stage' },
     { value: 'bar', version: '1.0.0', meta: 'accumulator' },
     { value: 'buz', version: '2.0.0', meta: 'expr:array' },
-    { value: 'barbar', version: '2.0.0', meta: 'expr:bool' },
+    { value: 'barbar', version: '2.3.0', meta: 'expr:bool' },
+    {
+      value: 'meow',
+      version: '>=2.0.0 <3.0.0 || >=3.5.0',
+      meta: 'expr:set',
+    },
   ];
 
   function getFilteredValues(
@@ -31,6 +36,14 @@ describe('completer', function () {
     ]);
   });
 
+  it('should correctly use range version filter', function () {
+    expect(getFilteredValues({ serverVersion: '2.0.0' })).to.include('meow');
+    expect(getFilteredValues({ serverVersion: '3.6.0' })).to.include('meow');
+    expect(getFilteredValues({ serverVersion: '3.0.0' })).to.not.include(
+      'meow'
+    );
+  });
+
   it('should ignore version when version is not valid', function () {
     expect(getFilteredValues({ serverVersion: '1' })).to.deep.eq([
       'foo',
@@ -38,6 +51,7 @@ describe('completer', function () {
       'bar',
       'buz',
       'barbar',
+      'meow',
     ]);
   });
 
@@ -50,6 +64,7 @@ describe('completer', function () {
     expect(getFilteredValues({ meta: ['expr:*'] })).to.deep.eq([
       'buz',
       'barbar',
+      'meow',
     ]);
   });
 
