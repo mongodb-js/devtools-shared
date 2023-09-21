@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import type { Completion } from './filter';
-import { wrapField, getFilteredCompletions } from './filter';
+import { wrapField, getFilteredCompletions, ALL_CONSTANTS } from './filter';
+import semver from 'semver';
+import util from 'util';
 
 describe('completer', function () {
   const simpleConstants: Completion[] = [
@@ -188,6 +190,23 @@ describe('completer', function () {
       expect(wrapField('quotes"in"the"middle')).to.eq(
         '"quotes\\"in\\"the\\"middle"'
       );
+    });
+  });
+
+  describe('all completions', function () {
+    it('should have valid semver version or range specified', function () {
+      ALL_CONSTANTS.forEach(({ name, version }) => {
+        const errMessage = `Expected completion ${util.inspect({
+          name,
+          version,
+        })} to have valid version`;
+
+        try {
+          expect(semver.valid(version)).to.not.eq(null, errMessage);
+        } catch {
+          expect(semver.validRange(version)).to.not.eq(null, errMessage);
+        }
+      });
     });
   });
 });

@@ -9,7 +9,7 @@ import { QUERY_OPERATORS } from './query-operators';
 import { STAGE_OPERATORS } from './stage-operators';
 import { SYSTEM_VARIABLES } from './system-variables';
 
-const ALL_CONSTANTS = [
+export const ALL_CONSTANTS = [
   ...ACCUMULATORS,
   ...BSON_TYPES,
   ...BSON_TYPE_ALIASES,
