@@ -4,7 +4,7 @@ export type SearchTemplate = {
   version: string;
 };
 
-export const ATLAS_SEARCH_TEMPLATES = [
+export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
   {
     name: 'Dynamic field mappings',
     snippet: `{
