@@ -18,7 +18,7 @@ type StageOperator = {
   readonly score: number;
   readonly env: readonly typeof ENVS[number][];
   readonly meta: 'stage';
-  readonly version: `${number}.${number}.${number}`;
+  readonly version: string;
   readonly apiVersions: readonly number[];
   readonly namespaces: readonly typeof ANY_NAMESPACE[number][];
   readonly description: string;
@@ -817,10 +817,7 @@ const STAGE_OPERATORS = [
     score: 1,
     env: [ATLAS],
     meta: 'stage',
-    // TODO: this is the actual support range '>=6.0.10 <7.0.0 || >=7.0.2',
-    // we will start with 7.0.2 for now and follow up to extend the support as part
-    // of https://jira.mongodb.org/browse/COMPASS-7065
-    version: '7.0.2',
+    version: '>=6.0.10 <7.0.0 || >=7.0.2',
     apiVersions: [],
     namespaces: [COLLECTION],
     description:

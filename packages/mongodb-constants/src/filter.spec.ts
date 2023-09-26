@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import type { Completion } from './filter';
-import { wrapField, getFilteredCompletions } from './filter';
+import { wrapField, getFilteredCompletions, ALL_CONSTANTS } from './filter';
+import semver from 'semver';
+import util from 'util';
 
 describe('completer', function () {
   const simpleConstants: Completion[] = [
@@ -8,7 +10,22 @@ describe('completer', function () {
     { value: 'Foo', version: '0.0.0', meta: 'stage' },
     { value: 'bar', version: '1.0.0', meta: 'accumulator' },
     { value: 'buz', version: '2.0.0', meta: 'expr:array' },
-    { value: 'barbar', version: '2.0.0', meta: 'expr:bool' },
+    { value: 'barbar', version: '2.3.0', meta: 'expr:bool' },
+    {
+      value: 'meow',
+      version: '>=2.0.0 <3.0.0 || >=3.5.0',
+      meta: 'expr:set',
+    },
+    {
+      value: 'woof',
+      version: '>=0.200.300 <0.200.301',
+      meta: 'accumulator',
+    },
+    {
+      value: 'honk',
+      version: '999.999.999',
+      meta: 'variable:system',
+    },
   ];
 
   function getFilteredValues(
@@ -25,19 +42,38 @@ describe('completer', function () {
       'Foo',
       'bar',
     ]);
-    expect(getFilteredValues({ serverVersion: '0.0.1-alpha0' })).to.deep.eq([
+  });
+
+  it('should clean up version before comparing', function () {
+    expect(getFilteredValues({ serverVersion: '0.200.300-alpha0' })).to.deep.eq(
+      ['foo', 'Foo', 'woof']
+    );
+    expect(getFilteredValues({ serverVersion: '0.0.0---what???' })).to.deep.eq([
       'foo',
       'Foo',
     ]);
   });
 
-  it('should ignore version when version is not valid', function () {
-    expect(getFilteredValues({ serverVersion: '1' })).to.deep.eq([
+  it('should correctly use range version filter', function () {
+    expect(getFilteredValues({ serverVersion: '2.0.0' })).to.include('meow');
+    expect(getFilteredValues({ serverVersion: '3.6.0' })).to.include('meow');
+    expect(getFilteredValues({ serverVersion: '3.0.0' })).to.not.include(
+      'meow'
+    );
+  });
+
+  it('should use default version when provided version is not valid', function () {
+    expect(
+      getFilteredValues({ serverVersion: 'one dot one dot zero' })
+    ).to.deep.eq(['foo', 'Foo', 'bar', 'buz', 'barbar', 'meow', 'honk']);
+    expect(getFilteredValues({ serverVersion: '1.2' })).to.deep.eq([
       'foo',
       'Foo',
       'bar',
       'buz',
       'barbar',
+      'meow',
+      'honk',
     ]);
   });
 
@@ -50,6 +86,7 @@ describe('completer', function () {
     expect(getFilteredValues({ meta: ['expr:*'] })).to.deep.eq([
       'buz',
       'barbar',
+      'meow',
     ]);
   });
 
@@ -60,7 +97,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['adl'],
-        namespace: ['database'],
+        namespaces: ['database'],
         apiVersions: [],
       },
       {
@@ -68,7 +105,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['on-prem'],
-        namespace: ['collection'],
+        namespaces: ['collection'],
         apiVersions: [],
       },
       {
@@ -76,7 +113,7 @@ describe('completer', function () {
         version: '0.0.0',
         meta: 'stage',
         env: ['atlas'],
-        namespace: ['timeseries'],
+        namespaces: ['timeseries'],
         apiVersions: [1],
       },
     ];
@@ -153,6 +190,23 @@ describe('completer', function () {
       expect(wrapField('quotes"in"the"middle')).to.eq(
         '"quotes\\"in\\"the\\"middle"'
       );
+    });
+  });
+
+  describe('all completions', function () {
+    it('should have valid semver version or range specified', function () {
+      ALL_CONSTANTS.forEach(({ name, version }) => {
+        const errMessage = `Expected completion ${util.inspect({
+          name,
+          version,
+        })} to have valid version`;
+
+        try {
+          expect(semver.valid(version)).to.not.eq(null, errMessage);
+        } catch {
+          expect(semver.validRange(version)).to.not.eq(null, errMessage);
+        }
+      });
     });
   });
 });

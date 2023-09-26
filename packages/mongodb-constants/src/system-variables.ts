@@ -90,6 +90,6 @@ const SYSTEM_VARIABLES = [
     description:
       'A variable that stores the role names of the authenticated user running the command.',
   },
-];
+] as const;
 
 export { SYSTEM_VARIABLES };

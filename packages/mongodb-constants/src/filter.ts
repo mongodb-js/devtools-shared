@@ -1,4 +1,4 @@
-import { gte } from 'semver';
+import { satisfies } from 'semver';
 import { ACCUMULATORS } from './accumulators';
 import { BSON_TYPE_ALIASES } from './bson-type-aliases';
 import { BSON_TYPES } from './bson-types';
@@ -9,7 +9,7 @@ import { QUERY_OPERATORS } from './query-operators';
 import { STAGE_OPERATORS } from './stage-operators';
 import { SYSTEM_VARIABLES } from './system-variables';
 
-const ALL_CONSTANTS = [
+export const ALL_CONSTANTS = [
   ...ACCUMULATORS,
   ...BSON_TYPES,
   ...BSON_TYPE_ALIASES,
@@ -42,7 +42,7 @@ export type Completion = {
   snippet?: string;
   score?: number;
   env?: string[];
-  namespace?: string[];
+  namespaces?: string[];
   apiVersions?: number[];
   outputStage?: boolean;
   fullScan?: boolean;
@@ -69,7 +69,7 @@ export type FilterOptions = {
   /**
    * Filter completions by completion category
    */
-  meta?: (Meta | 'field:*' | 'accumulator:*' | 'expr:*')[];
+  meta?: (Meta | 'field:*' | 'accumulator:*' | 'expr:*' | 'variable:*')[];
   /**
    * Stage-only filters
    */
@@ -102,6 +102,19 @@ function isIn<T extends string | number>(
   return val.some((v) => set.includes(v));
 }
 
+/**
+ * Helper method that performs a semver check. When comparing current server
+ * version against just a version number (for example "1.2.3"), a "greater than
+ * or equals" check will be performed, otherwise a range check will be used
+ *
+ * @param v1 Current server version
+ * @param v2 Either a single version number or a range to match against
+ */
+function satisfiesVersion(v1: string, v2: string): boolean {
+  const isGTECheck = /^\d+\.\d+\.\d+$/.test(v2);
+  return satisfies(v1, isGTECheck ? `>=${v2}` : v2);
+}
+
 export function createConstantFilter({
   meta: filterMeta,
   serverVersion = DEFAULT_SERVER_VERSION,
@@ -110,15 +123,21 @@ export function createConstantFilter({
   completion: Completion
 ) => boolean {
   const currentServerVersion =
-    /^(?<version>\d+?\.\d+?\.\d+?)/.exec(serverVersion)?.groups?.version ??
+    /^(?<version>\d+\.\d+\.\d+)/.exec(serverVersion)?.groups?.version ??
     // Fallback to default server version if provided version doesn't match
     // regex so that semver doesn't throw when checking
     DEFAULT_SERVER_VERSION;
-  return ({ version: minServerVersion, meta, env, namespace, apiVersions }) => {
+  return ({
+    version: minServerVersion,
+    meta,
+    env,
+    namespaces,
+    apiVersions,
+  }) => {
     return (
-      gte(currentServerVersion, minServerVersion) &&
+      satisfiesVersion(currentServerVersion, minServerVersion) &&
       isIn(filterStage.env, env) &&
-      isIn(filterStage.namespace, namespace) &&
+      isIn(filterStage.namespace, namespaces) &&
       isIn(filterStage.apiVersion, apiVersions) &&
       (!filterMeta || matchesMeta(filterMeta, meta))
     );
