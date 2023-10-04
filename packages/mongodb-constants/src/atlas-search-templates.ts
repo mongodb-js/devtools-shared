@@ -107,7 +107,9 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
     "fields": {
       \${1:<vector embedding field name>}: [
         {
-          "type": "vectorEmbedding"
+          "type": "knnVector",
+          "dimensions": \${2:<number of dimensions>},
+          "similarity": \${3:<euclidean | cosine | dotProduct>}
         }      
       ]    
     } 
