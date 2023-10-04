@@ -109,7 +109,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
         {
           "type": "knnVector",
           "dimensions": \${2:<number of dimensions>},
-          "similarity": \${3:<euclidean | cosine | dotProduct>}
+          "similarity": "\${3:<euclidean | cosine | dotProduct>}"
         }      
       ]    
     } 
