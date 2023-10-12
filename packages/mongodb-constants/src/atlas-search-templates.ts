@@ -100,7 +100,7 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
     version: '4.4.0',
   },
   {
-    name: 'Vector Embedding field mapping',
+    name: 'KNN Vector field mapping',
     snippet: `{
   "mappings": {
     "dynamic": true,
