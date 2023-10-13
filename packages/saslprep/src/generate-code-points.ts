@@ -1,35 +1,38 @@
-import { gzipSync } from 'zlib';
-import bitfield from 'sparse-bitfield';
+import { BitField } from './sparse-bitfield';
 import * as codePoints from './code-points-src';
 
-const unassigned_code_points = bitfield();
-const commonly_mapped_to_nothing = bitfield();
-const non_ascii_space_characters = bitfield();
-const prohibited_characters = bitfield();
-const bidirectional_r_al = bitfield();
-const bidirectional_l = bitfield();
+const unassigned_code_points = new BitField();
+const commonly_mapped_to_nothing = new BitField();
+const non_ascii_space_characters = new BitField();
+const prohibited_characters = new BitField();
+const bidirectional_r_al = new BitField();
+const bidirectional_l = new BitField();
 
 /**
- * Iterare over code points and
+ * Iterate over code points and
  * convert it into an buffer.
  */
-function traverse(bits: bitfield.BitFieldInstance, src: Set<number>): Buffer {
+function traverse(bits: BitField, src: Set<number>): Uint8Array {
   for (const code of src.keys()) {
     bits.set(code, true);
   }
 
   const buffer = bits.toBuffer();
-  return Buffer.concat([createSize(buffer), buffer]);
+  return prependSize(buffer);
 }
 
-function createSize(buffer: Buffer): Buffer {
-  const buf = Buffer.alloc(4);
-  buf.writeUInt32BE(buffer.length);
-
+function prependSize(buffer: Uint8Array): Uint8Array {
+  const buf = new Uint8Array(4 + buffer.byteLength);
+  new DataView(buf.buffer, buf.byteOffset, buf.byteLength).setUint32(
+    0,
+    buffer.byteLength,
+    false
+  );
+  buf.set(buffer, 4);
   return buf;
 }
 
-const memory: Buffer[] = [];
+const memory: Uint8Array[] = [];
 
 memory.push(
   traverse(unassigned_code_points, codePoints.unassigned_code_points),
@@ -40,14 +43,11 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-process.stdout.write(
-  `import { gunzipSync } from 'zlib';
+declare const Buffer: any;
 
-export default gunzipSync(
-  Buffer.from(
-    '${gzipSync(Buffer.concat(memory), { level: 9 }).toString('base64')}',
-    'base64'
-  )
-);
-`
+// eslint-disable-next-line no-console
+console.log(
+  `export default Uint8Array.from(atob(
+  ${JSON.stringify(Buffer.concat(memory).toString('base64'))}
+), c => c.charCodeAt(0));`
 );

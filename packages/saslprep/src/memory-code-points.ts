@@ -1,4 +1,4 @@
-import bitfield from 'sparse-bitfield';
+import { BitField } from './sparse-bitfield';
 import memory from './code-points-data';
 
 let offset = 0;
@@ -6,14 +6,15 @@ let offset = 0;
 /**
  * Loads each code points sequence from buffer.
  */
-function read(): bitfield.BitFieldInstance {
-  const size = memory.readUInt32BE(offset);
+function read(): BitField {
+  const dv = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
+  const size = dv.getUint32(offset, false);
   offset += 4;
 
   const codepoints = memory.slice(offset, offset + size);
   offset += size;
 
-  return bitfield({ buffer: codepoints });
+  return new BitField({ buffer: codepoints });
 }
 
 export const unassigned_code_points = read();
