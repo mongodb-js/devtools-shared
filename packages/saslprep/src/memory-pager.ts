@@ -134,7 +134,7 @@ export class Pager {
       }
     }
 
-    return Buffer.concat(list);
+    return concat(list);
   }
 }
 
@@ -166,6 +166,18 @@ function equals(a: Uint8Array, b: Uint8Array) {
   if (a.byteLength !== b.byteLength) return false;
   for (let i = 0; i < a.byteLength; i++) if (a[i] !== b[i]) return false;
   return true;
+}
+
+function concat(list: Uint8Array[]): Uint8Array {
+  let totalByteLength = 0;
+  for (const buf of list) totalByteLength += buf.byteLength;
+  const total = new Uint8Array(totalByteLength);
+  let offset = 0;
+  for (const buf of list) {
+    total.set(buf, offset);
+    offset += buf.byteLength;
+  }
+  return total;
 }
 
 class Page {
