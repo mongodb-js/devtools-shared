@@ -121,6 +121,40 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$changeStream',
+    value: '$changeStream',
+    label: '$changeStream',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '4.2.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description: 'Returns a Change Stream cursor for the collection.',
+    comment: `/**
+ * allChangesForCluster: Optional boolean to include all changes in the cluster.
+ * fullDocument: Optional value to request a copy of full document when modified by update operations (Introduced in 6.0).
+ * fullDocumentBeforeChange: Value to configure whether to return a full document before the change or not.
+ * resumeAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with startAfter or startAtOperationTime fields.
+ * showExpandedEvents: Specifies whether to include additional change events, such as such as DDL and index operations (Introduced in 6.0).
+ * startAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with resumeAfter or startAtOperationTime fields.
+ * startAtOperationTime: Specifies a time as the logical starting point for the change stream. Cannot be used with resumeAfter or startAfter fields.
+ */
+`,
+    snippet: `{
+  allChangesForCluster: \${1:boolean},
+  fullDocument: '\${2:string}',
+  fullDocumentBeforeChange: '\${3:string}',
+  resumeAfter: \${4:resumeToken},
+  showExpandedEvents: \${5:boolean},
+  startAfter: \${6:resumeToken},
+  startAtOperationTime: \${7:time},
+}`,
+  },
+  {
     name: '$collStats',
     value: '$collStats',
     label: '$collStats',
@@ -167,6 +201,39 @@ const STAGE_OPERATORS = [
 `,
     // eslint-disable-next-line quotes
     snippet: `'\${1:string}'`,
+  },
+  {
+    name: '$currentOp',
+    value: '$currentOp',
+    label: '$currentOp',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ADL, ON_PREM],
+    meta: 'stage',
+    version: '3.6.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Returns a cursor over information on active and/or dormant operations for the MongoDB deployment as well as inactive sessions that are holding locks as part of a transaction.',
+    comment: `/**
+ * allUsers: Optional boolean value to specify whether to return operations for all users or not.
+ * idleConnections: Optional boolean value to specify whether to return all operations including idle connections or not.
+ * idleCursors: Optional boolean value to specify whether to report on cursors that are idle or not.
+ * idleSessions: Optional boolean value to specify whether to report on dormant sessions or not.
+ * localOps: Optional boolean value to specify whether to report on operations running locally on targetted mongos or not.
+ * backtrace: Optional boolean value to specify whether callstack information is returned as part of the waitingForLatch output field.
+ */
+`,
+    snippet: `{
+  allUsers: \${1:false},
+  idleConnections: \${2:false},
+  idleCursors: \${3:false},
+  idleSessions: \${4:true},
+  localOps: \${5:false},
+  backtrace: \${6:false},
+}`,
   },
   {
     name: '$densify',
@@ -420,6 +487,33 @@ const STAGE_OPERATORS = [
     snippet: '${1:number}',
   },
   {
+    name: '$listLocalSessions',
+    value: '$listLocalSessions',
+    label: '$listLocalSessions',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '3.6.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Lists the sessions cached in memory by the mongod or mongos instance.',
+    comment: `/**
+ * users: Optional list of users for which local sessions need to be returned.
+ * allUsers: Optional boolean value to specify whether to return local sessions for all users or not.
+ */
+`,
+    snippet: `{
+  allUsers: \${1:false},
+  users: [
+    { user: '\${2:string}', db: '\${3:string}' }
+  ]
+}`,
+  },
+  {
     name: '$lookup',
     value: '$lookup',
     label: '$lookup',
@@ -656,28 +750,6 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
-    name: '$replaceWith',
-    value: '$replaceWith',
-    label: '$replaceWith',
-    outputStage: false,
-    fullScan: false,
-    firstStage: false,
-    score: 1,
-    env: [ATLAS, ADL, ON_PREM],
-    meta: 'stage',
-    version: '4.2.0',
-    apiVersions: [1],
-    namespaces: [...ANY_NAMESPACE],
-    description: 'Replaces a document with the specified embedded document.',
-    comment: `/**
- * replacementDocument: A document or string.
- */
-`,
-    snippet: `{
-  newWith: \${1:replacementDocument}
-}`,
-  },
-  {
     name: '$replaceRoot',
     value: '$replaceRoot',
     label: '$replaceRoot',
@@ -697,6 +769,28 @@ const STAGE_OPERATORS = [
 `,
     snippet: `{
   newRoot: \${1:replacementDocument}
+}`,
+  },
+  {
+    name: '$replaceWith',
+    value: '$replaceWith',
+    label: '$replaceWith',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ADL, ON_PREM],
+    meta: 'stage',
+    version: '4.2.0',
+    apiVersions: [1],
+    namespaces: [...ANY_NAMESPACE],
+    description: 'Replaces a document with the specified embedded document.',
+    comment: `/**
+ * replacementDocument: A document or string.
+ */
+`,
+    snippet: `{
+  newWith: \${1:replacementDocument}
 }`,
   },
   {
@@ -805,39 +899,6 @@ const STAGE_OPERATORS = [
       }
     }
   }
-}`,
-  },
-  {
-    name: '$vectorSearch',
-    value: '$vectorSearch',
-    label: '$vectorSearch',
-    outputStage: false,
-    fullScan: false,
-    firstStage: true,
-    score: 1,
-    env: [ATLAS],
-    meta: 'stage',
-    version: '>=6.0.10 <7.0.0 || >=7.0.2',
-    apiVersions: [],
-    namespaces: [COLLECTION],
-    description:
-      'Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.',
-    comment: `/**
- * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)
- * path: The field to search. (Required)
- * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
- * index: Name of the Atlas Search index to use. (Required)
- * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
- * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
- */
-`,
-    snippet: `{
-  queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
-  path: \${3:string},
-  numCandidates: \${4:numCandidates},
-  index: \${5:string},
-  limit: \${6:limit},
-  filter: {\${7:expression}}
 }`,
   },
   {
@@ -1052,97 +1113,36 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
-    name: '$changeStream',
-    value: '$changeStream',
-    label: '$changeStream',
+    name: '$vectorSearch',
+    value: '$vectorSearch',
+    label: '$vectorSearch',
     outputStage: false,
     fullScan: false,
     firstStage: true,
     score: 1,
-    env: [ATLAS, ON_PREM],
+    env: [ATLAS],
     meta: 'stage',
-    version: '4.2.0',
-    apiVersions: [1],
-    namespaces: [DATABASE],
-    description: 'Returns a Change Stream cursor for the collection.',
-    comment: `/**
- * allChangesForCluster: Optional boolean to include all changes in the cluster.
- * fullDocument: Optional value to request a copy of full document when modified by update operations (Introduced in 6.0).
- * fullDocumentBeforeChange: Value to configure whether to return a full document before the change or not.
- * resumeAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with startAfter or startAtOperationTime fields.
- * showExpandedEvents: Specifies whether to include additional change events, such as such as DDL and index operations (Introduced in 6.0).
- * startAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with resumeAfter or startAtOperationTime fields.
- * startAtOperationTime: Specifies a time as the logical starting point for the change stream. Cannot be used with resumeAfter or startAfter fields.
- */
-`,
-    snippet: `{
-  allChangesForCluster: \${1:boolean},
-  fullDocument: '\${2:string}',
-  fullDocumentBeforeChange: '\${3:string}',
-  resumeAfter: \${4:resumeToken},
-  showExpandedEvents: \${5:boolean},
-  startAfter: \${6:resumeToken},
-  startAtOperationTime: \${7:time},
-}`,
-  },
-  {
-    name: '$currentOp',
-    value: '$currentOp',
-    label: '$currentOp',
-    outputStage: false,
-    fullScan: false,
-    firstStage: true,
-    score: 1,
-    env: [ATLAS, ADL, ON_PREM],
-    meta: 'stage',
-    version: '3.6.0',
-    apiVersions: [1],
-    namespaces: [DATABASE],
+    version: '>=6.0.10 <7.0.0 || >=7.0.2',
+    apiVersions: [],
+    namespaces: [COLLECTION],
     description:
-      'Returns a cursor over information on active and/or dormant operations for the MongoDB deployment as well as inactive sessions that are holding locks as part of a transaction.',
+      'Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.',
     comment: `/**
- * allUsers: Optional boolean value to specify whether to return operations for all users or not.
- * idleConnections: Optional boolean value to specify whether to return all operations including idle connections or not.
- * idleCursors: Optional boolean value to specify whether to report on cursors that are idle or not.
- * idleSessions: Optional boolean value to specify whether to report on dormant sessions or not.
- * localOps: Optional boolean value to specify whether to report on operations running locally on targetted mongos or not.
- * backtrace: Optional boolean value to specify whether callstack information is returned as part of the waitingForLatch output field.
+ * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)
+ * path: The field to search. (Required)
+ * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
+ * index: Name of the Atlas Search index to use. (Required)
+ * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
+ * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
  */
 `,
     snippet: `{
-  allUsers: \${1:false},
-  idleConnections: \${2:false},
-  idleCursors: \${3:false},
-  idleSessions: \${4:true},
-  localOps: \${5:false},
-  backtrace: \${6:false},
-}`,
-  },
-  {
-    name: '$listLocalSessions',
-    value: '$listLocalSessions',
-    label: '$listLocalSessions',
-    outputStage: false,
-    fullScan: false,
-    firstStage: true,
-    score: 1,
-    env: [ATLAS, ON_PREM],
-    meta: 'stage',
-    version: '3.6.0',
-    apiVersions: [1],
-    namespaces: [DATABASE],
-    description:
-      'Lists the sessions cached in memory by the mongod or mongos instance.',
-    comment: `/**
- * users: Optional list of users for which local sessions need to be returned.
- * allUsers: Optional boolean value to specify whether to return local sessions for all users or not.
- */
-`,
-    snippet: `{
-  allUsers: \${1:false},
-  users: [
-    { user: '\${2:string}', db: '\${3:string}' }
-  ]
+  queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
+  path: \${3:string},
+  numCandidates: \${4:numCandidates},
+  index: \${5:string},
+  limit: \${6:limit},
+  filter: {\${7:expression}}
 }`,
   },
 ] as const;
