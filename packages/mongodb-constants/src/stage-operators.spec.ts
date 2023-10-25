@@ -60,4 +60,18 @@ describe('stage operators', function () {
       }
     });
   });
+
+  it('has the stage operators in alphabetical order', function () {
+    STAGE_OPERATORS.forEach((operator, index) => {
+      if (index === 0) {
+        return;
+      }
+      expect(
+        operator.name.localeCompare(STAGE_OPERATORS[index - 1].name),
+        `Expected ${operator.name} to be before ${
+          STAGE_OPERATORS[index - 1].name
+        }`
+      ).to.be.greaterThan(-1);
+    });
+  });
 });
