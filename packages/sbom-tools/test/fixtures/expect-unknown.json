@@ -1,87 +1,31 @@
 {
   "vulnerabilities": [
     {
-      "id": "NSWG-COR-95",
-      "title": "NSWG-COR-95",
+      "id": "NSWG-COR-103",
+      "title": "NSWG-COR-103",
       "CVSSv3": "-",
       "credit": ["-"],
-      "semver": {
-        "vulnerable": "14.x || 16.x || 18.x"
-      },
+      "semver": { "vulnerable": "14.x || 16.x || 18.x || 19.x" },
       "exploit": "-",
-      "patched": ["^14.20.0", "^16.20.0", "^18.5.0"],
+      "patched": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
       "patches": [],
-      "fixedIn": ["^14.20.0", "^16.20.0", "^18.5.0"],
-      "insights": {
-        "triageAdvice": null
-      },
-      "language": "js",
-      "severity": "medium",
-      "cvssScore": 6.5,
-      "functions": [],
-      "moduleName": ".node.js",
-      "references": [
-        {
-          "url": "https://nodejs.org/en/blog/vulnerability/july-2022-security-releases/",
-          "title": "Ref"
-        }
-      ],
-      "cvssDetails": [],
-      "description": "The llhttp parser in the http module in Node.js does not strictly use the CRLF sequence to delimit HTTP requests. This can lead to HTTP Request Smuggling (HRS).",
-      "epssDetails": null,
-      "identifiers": {
-        "CVE": ["CVE-2022-32214"]
-      },
-      "packageName": ".node.js",
-      "proprietary": true,
-      "creationTime": "-",
-      "functions_new": [],
-      "alternativeIds": [],
-      "disclosureTime": "-",
-      "packageManager": "npm",
-      "publicationTime": "-",
-      "modificationTime": "-",
-      "socialTrendAlert": false,
-      "severityWithCritical": "medium",
-      "from": [".node.js@16.19.1"],
-      "upgradePath": [],
-      "isUpgradable": true,
-      "isPatchable": false,
-      "name": ".node.js",
-      "version": "16.19.1"
-    },
-    {
-      "id": "NSWG-COR-98",
-      "title": "NSWG-COR-98",
-      "CVSSv3": "-",
-      "credit": ["-"],
-      "semver": {
-        "vulnerable": "14.x || 16.x || 18.x"
-      },
-      "exploit": "-",
-      "patched": ["^14.20.0", "^16.20.0", "^18.5.0"],
-      "patches": [],
-      "fixedIn": ["^14.20.0", "^16.20.0", "^18.5.0"],
-      "insights": {
-        "triageAdvice": null
-      },
+      "fixedIn": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "insights": { "triageAdvice": null },
       "language": "js",
       "severity": "high",
-      "cvssScore": 7.3,
+      "cvssScore": 7.5,
       "functions": [],
       "moduleName": ".node.js",
       "references": [
         {
-          "url": "https://nodejs.org/en/blog/vulnerability/july-2022-security-releases/",
-          "title": "Ref"
+          "title": "Ref",
+          "url": "https://nodejs.org/en/blog/vulnerability/february-2023-security-releases/"
         }
       ],
       "cvssDetails": [],
-      "description": "Node.js is vulnerable to Hijack Execution Flow: DLL Hijacking under certain conditions on Windows platforms.\nThis vulnerability can be exploited if the victim has the following dependencies on a Windows machine:\n* OpenSSL has been installed and “C:\\Program Files\\Common Files\\SSL\\openssl.cnf” exists.\n\nWhenever the above conditions are present, `node.exe` will search for `providers.dll` in the current user directory.\nAfter that, `node.exe` will try to search for `providers.dll` by the DLL Search Order in Windows.\n\nIt is possible for an attacker to place the malicious file `providers.dll` under a variety of paths and exploit this vulnerability.",
+      "description": "It was possible to bypass Permissions and access non authorized modules by using process.mainModule.require(). This only affects users who had enabled the experimental permissions option with --experimental-policy.",
       "epssDetails": null,
-      "identifiers": {
-        "CVE": ["CVE-2022-32223"]
-      },
+      "identifiers": { "CVE": ["CVE-2023-23918"] },
       "packageName": ".node.js",
       "proprietary": true,
       "creationTime": "-",
@@ -93,44 +37,170 @@
       "modificationTime": "-",
       "socialTrendAlert": false,
       "severityWithCritical": "high",
-      "from": [".node.js@16.19.1"],
+      "from": [".node.js@18.14.0"],
       "upgradePath": [],
       "isUpgradable": true,
       "isPatchable": false,
       "name": ".node.js",
-      "version": "16.19.1"
+      "version": "18.14.0"
     },
     {
-      "id": "NSWG-COR-99",
-      "title": "NSWG-COR-99",
+      "id": "NSWG-COR-104",
+      "title": "NSWG-COR-104",
       "CVSSv3": "-",
       "credit": ["-"],
-      "semver": {
-        "vulnerable": "14.x || 16.x || 18.x"
-      },
+      "semver": { "vulnerable": "14.x || 16.x || 18.x || 19.x" },
       "exploit": "-",
-      "patched": ["^14.20.0", "^16.20.0", "^18.9.1"],
+      "patched": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.2.0"],
       "patches": [],
-      "fixedIn": ["^14.20.0", "^16.20.0", "^18.9.1"],
-      "insights": {
-        "triageAdvice": null
-      },
+      "fixedIn": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.2.0"],
+      "insights": { "triageAdvice": null },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 7.5,
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "title": "Ref",
+          "url": "https://nodejs.org/en/blog/vulnerability/february-2023-security-releases/"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "In some cases Node.js did does not clear the OpenSSL error stack after operations that may set it. This may lead to false positive errors during subsequent cryptographic operations that happen to be on the same thread. This in turn could be used to cause a denial of service.",
+      "epssDetails": null,
+      "identifiers": { "CVE": ["CVE-2023-23919"] },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [".node.js@18.14.0"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "18.14.0"
+    },
+    {
+      "id": "NSWG-COR-105",
+      "title": "NSWG-COR-105",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": { "vulnerable": "14.x || 16.x || 18.x || 19.x" },
+      "exploit": "-",
+      "patched": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "patches": [],
+      "fixedIn": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "insights": { "triageAdvice": null },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 5.4,
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "title": "Ref",
+          "url": "https://nodejs.org/en/blog/vulnerability/february-2023-security-releases/"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "The fetch API in Node.js did not prevent CRLF injection in the 'host' header potentially allowing attacks such as HTTP response splitting and HTTP header injection.",
+      "epssDetails": null,
+      "identifiers": { "CVE": ["CVE-2023-23936"] },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [".node.js@18.14.0"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "18.14.0"
+    },
+    {
+      "id": "NSWG-COR-106",
+      "title": "NSWG-COR-106",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": { "vulnerable": "14.x || 16.x || 18.x || 19.x" },
+      "exploit": "-",
+      "patched": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "patches": [],
+      "fixedIn": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "insights": { "triageAdvice": null },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 7.5,
+      "functions": [],
+      "moduleName": ".node.js",
+      "references": [
+        {
+          "title": "Ref",
+          "url": "https://nodejs.org/en/blog/vulnerability/february-2023-security-releases/"
+        }
+      ],
+      "cvssDetails": [],
+      "description": "The Headers.set() and Headers.append() methods in the fetch API in Node.js where vulnerable to Regular a Expression Denial of Service (ReDoS) attacks.",
+      "epssDetails": null,
+      "identifiers": { "CVE": ["CVE-2023-24807"] },
+      "packageName": ".node.js",
+      "proprietary": true,
+      "creationTime": "-",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "-",
+      "packageManager": "npm",
+      "publicationTime": "-",
+      "modificationTime": "-",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [".node.js@18.14.0"],
+      "upgradePath": [],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": ".node.js",
+      "version": "18.14.0"
+    },
+    {
+      "id": "NSWG-COR-107",
+      "title": "NSWG-COR-107",
+      "CVSSv3": "-",
+      "credit": ["-"],
+      "semver": { "vulnerable": "14.x || 16.x || 18.x || 19.x" },
+      "exploit": "-",
+      "patched": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "patches": [],
+      "fixedIn": ["^14.21.3", "^16.19.1", "^18.14.1", "^19.6.1"],
+      "insights": { "triageAdvice": null },
       "language": "js",
       "severity": "unknown",
       "functions": [],
       "moduleName": ".node.js",
       "references": [
         {
-          "url": "https://nodejs.org/en/blog/vulnerability/september-2022-security-releases/",
-          "title": "Ref"
+          "title": "Ref",
+          "url": "https://nodejs.org/en/blog/vulnerability/february-2023-security-releases/"
         }
       ],
       "cvssDetails": [],
-      "description": "On linux, versions of 18.x prior to Y used a default path for openssl.cnf  that was within a path that might be accessible under some circumstances to a non-admin user instead of /etc/ssl as was the case in versions prior to the upgrade to OpenSSL 3.",
+      "description": "Node.js would search and potentially load ICU data when running with elevated priviledges. Node.js was modified to build with ICU_NO_USER_DATA_OVERRIDE to avoid this.",
       "epssDetails": null,
-      "identifiers": {
-        "CVE": ["CVE-2022-32222"]
-      },
+      "identifiers": { "CVE": ["CVE-2023-23920"] },
       "packageName": ".node.js",
       "proprietary": true,
       "creationTime": "-",
@@ -142,12 +212,12 @@
       "modificationTime": "-",
       "socialTrendAlert": false,
       "severityWithCritical": "unknown",
-      "from": [".node.js@16.19.1"],
+      "from": [".node.js@18.14.0"],
       "upgradePath": [],
       "isUpgradable": true,
       "isPatchable": false,
       "name": ".node.js",
-      "version": "16.19.1"
+      "version": "18.14.0"
     }
   ]
 }
