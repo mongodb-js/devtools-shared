@@ -4,7 +4,6 @@ import { scanNodeJs } from './scan-node-js';
 
 import nock from 'nock';
 import { importFixture } from '../../test/helpers';
-import { writeFile } from 'fs/promises';
 
 async function mockCVEResponse(
   cveId: string,
@@ -54,7 +53,6 @@ describe('scan-node-js', function () {
     await mockCVEResponse('CVE-2023-23920');
 
     const result = await scanNodeJs({ version: '18.14.0' });
-    await writeFile('expect-ok.json', JSON.stringify(result));
     expect(result).to.deep.equal(await importFixture('expect-ok.json'));
   });
 
@@ -62,8 +60,6 @@ describe('scan-node-js', function () {
     await mockCVEResponse('CVE-2023-23920', 500, 'Server error');
 
     const result = await scanNodeJs({ version: '18.14.0' });
-
-    await writeFile('expect-ok.json', JSON.stringify(result));
 
     expect(JSON.parse(JSON.stringify(result, null, 2))).to.deep.equal(
       await importFixture('expect-unknown.json')
