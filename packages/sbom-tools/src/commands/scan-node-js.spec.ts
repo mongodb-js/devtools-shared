@@ -58,7 +58,7 @@ describe('scan-node-js', function () {
     expect(result).to.deep.equal(await importFixture('expect-ok.json'));
   });
 
-  it.only('sets the severity to unknown if fetch from nist fails', async function () {
+  it('sets the severity to unknown if fetch from nist fails', async function () {
     await mockCVEResponse('CVE-2023-23920', 500, 'Server error');
 
     const result = await scanNodeJs({ version: '18.14.0' });
