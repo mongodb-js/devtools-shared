@@ -53,7 +53,7 @@
     "@mongodb-js/mongodb-downloader": "^0.2.9",
     "debug": "^4.3.4",
     "mongodb": "^5.6.0",
-    "mongodb-connection-string-url": "^2.6.0",
+    "mongodb-connection-string-url": "^3.0.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
