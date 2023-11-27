@@ -3,7 +3,8 @@ import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
-import { MongoClient, MongoClientOptions } from 'mongodb';
+import type { MongoClientOptions } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { sleep, range, uuid, debug } from './util';
 
 export interface MongoClusterOptions
