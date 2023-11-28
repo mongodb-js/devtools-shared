@@ -10,11 +10,9 @@ export async function parallelForEach<T>(
   iterable: AsyncIterable<T>,
   fn: (arg0: T) => Promise<void> | void
 ) {
-  const items = iterable[Symbol.asyncIterator]();
-
   const result = [];
-  for (let item = await items.next(); !item.done; item = await items.next()) {
-    result.push(fn(item.value));
+  for await (const item of iterable) {
+    result.push(fn(item));
   }
 
   return await Promise.allSettled(result);
