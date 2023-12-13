@@ -3,18 +3,10 @@ import yargs from 'yargs';
 import { MongoCluster } from './mongocluster';
 import os from 'os';
 import path from 'path';
-import { promises as fs } from 'fs';
-import { BSON } from 'mongodb';
 import { spawn } from 'child_process';
 import createDebug from 'debug';
 import { once } from 'events';
-
-interface StoredInstance {
-  id: string;
-  filepath: string;
-  serialized: string;
-  connectionString: string;
-}
+import * as utilities from './index';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
@@ -77,6 +69,7 @@ interface StoredInstance {
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
+    .command('prune', 'Clean up metadata for any dead MongoDB instances')
     .command('ls', 'List currently running MongoDB instances')
     .command(
       'exec',
@@ -90,24 +83,8 @@ interface StoredInstance {
   }
 
   async function start() {
-    const id = argv.id || new BSON.UUID().toHexString();
-    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-      throw new Error(`ID '${id}' contains non-alphanumeric characters`);
-    }
-    await fs.mkdir(argv.runnerDir, { recursive: true });
-
-    const cluster = await MongoCluster.start({
-      ...argv,
-      args,
-    });
-    const serialized = await cluster.serialize();
-    const { connectionString } = cluster;
-
-    await fs.writeFile(
-      path.join(argv.runnerDir, `m-${id}.json`),
-      JSON.stringify({ id, serialized, connectionString })
-    );
-    console.log(`Server started and running at ${connectionString}`);
+    const { cluster, id } = await utilities.start(argv);
+    console.log(`Server started and running at ${cluster.connectionString}`);
     console.log('Run the following command to stop the instance:');
     console.log(
       `${argv.$0} stop --id=${id}` +
@@ -118,43 +95,21 @@ interface StoredInstance {
     cluster.unref();
   }
 
-  async function* instances(): AsyncIterable<StoredInstance> {
-    for await (const { name } of await fs.opendir(argv.runnerDir)) {
-      if (name.startsWith('m-') && name.endsWith('.json')) {
-        try {
-          const filepath = path.join(argv.runnerDir, name);
-          const stored = JSON.parse(await fs.readFile(filepath, 'utf8'));
-          yield { ...stored, filepath };
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-  }
-
   async function stop() {
     if (!argv.id && !argv.all) {
       throw new Error('Need --id or --all to know which server to stop');
     }
-    const toStop: Array<StoredInstance> = [];
-    for await (const instance of instances()) {
-      if (instance.id === argv.id || argv.all) toStop.push(instance);
-    }
-    await Promise.all(
-      toStop.map(async ({ id, filepath, serialized, connectionString }) => {
-        await (await MongoCluster.deserialize(serialized)).close();
-        await fs.rm(filepath);
-        console.log(
-          `Stopped cluster '${id}' (was running at '${connectionString}')`
-        );
-      })
-    );
+    await utilities.stop(argv);
   }
 
   async function ls() {
-    for await (const { id, connectionString } of instances()) {
+    for await (const { id, connectionString } of utilities.instances(argv)) {
       console.log(`${id}: ${connectionString}`);
     }
+  }
+
+  async function prune() {
+    await utilities.prune(argv);
   }
 
   async function exec() {
@@ -198,7 +153,7 @@ interface StoredInstance {
     );
   }
 
-  await ({ start, stop, exec, ls }[command] ?? unknown)();
+  await ({ start, stop, exec, ls, prune }[command] ?? unknown)();
 })().catch((err) => {
   process.nextTick(() => {
     throw err;

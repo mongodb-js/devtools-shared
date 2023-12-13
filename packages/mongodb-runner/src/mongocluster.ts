@@ -3,6 +3,7 @@ import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
+import type { MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import { sleep, range, uuid, debug } from './util';
 
@@ -225,9 +226,13 @@ export class MongoCluster {
   }
 
   async withClient<Fn extends (client: MongoClient) => any>(
-    fn: Fn
+    fn: Fn,
+    clientOptions: MongoClientOptions = {}
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(this.connectionString);
+    const client = await MongoClient.connect(
+      this.connectionString,
+      clientOptions
+    );
     try {
       return await fn(client);
     } finally {
