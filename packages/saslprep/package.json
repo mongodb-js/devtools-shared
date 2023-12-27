@@ -39,7 +39,7 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "gen-code-points": "ts-node src/generate-code-points.ts > src/code-points-data.ts",
+    "gen-code-points": "ts-node src/generate-code-points.ts src/code-points-data.ts",
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
     "compile": "npm run gen-code-points && tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
