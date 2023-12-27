@@ -39,10 +39,11 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "gen-code-points": "ts-node src/generate-code-points.ts > src/code-points-data.ts",
+    "gen-code-points": "ts-node src/generate-code-points.ts src/code-points-data.ts",
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "npm run gen-code-points && tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "//": "TODO(..): fix codepoint generation",
+    "compile": "SKIP_GENERATE_CODEPOINTS=true npm run gen-code-points && tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",

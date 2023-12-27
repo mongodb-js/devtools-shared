@@ -1,6 +1,7 @@
 import { gzipSync } from 'zlib';
 import bitfield from 'sparse-bitfield';
 import * as codePoints from './code-points-src';
+import { createWriteStream } from 'fs';
 
 const unassigned_code_points = bitfield();
 const commonly_mapped_to_nothing = bitfield();
@@ -40,7 +41,13 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-process.stdout.write(
+if (process.env.SKIP_GENERATE_CODEPOINTS) {
+  process.exitCode = 0;
+  process.exit();
+}
+
+const fsStream = createWriteStream(process.argv[1]);
+fsStream.write(
   `import { gunzipSync } from 'zlib';
 
 export default gunzipSync(
