@@ -42,7 +42,6 @@
     "gen-code-points": "ts-node src/generate-code-points.ts src/code-points-data.ts",
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "//": "TODO(COMPASS-7555): fix codepoint generation",
     "compile": "npm run gen-code-points && tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",

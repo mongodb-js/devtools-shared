@@ -4,6 +4,7 @@ import * as codePoints from './code-points-src';
 import { createWriteStream } from 'fs';
 
 if (!process.env.GENERATE_CODE_POINTS) {
+  // TODO(COMPASS-7555): fix codepoint generation=
   process.exitCode = 0;
   process.exit();
 }
