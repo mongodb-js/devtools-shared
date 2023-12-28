@@ -1,5 +1,7 @@
 import type { ClientType, ClientOptions } from './signing-clients';
-import { assertRequiredVars, getSigningClient, debug } from './utils';
+
+import { getSigningClient } from './signing-clients';
+import { assertRequiredVars, debug } from './utils';
 
 export async function sign<T extends ClientType>(
   file: string,

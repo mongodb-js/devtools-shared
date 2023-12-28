@@ -3,18 +3,13 @@ import { Client } from 'ssh2';
 import { readFile } from 'fs/promises';
 import { debug } from './utils';
 
-export type SSHClientOptions = ConnectConfig & {
-  // Absolute path to private key file. We will read it when connecting.
-  privateKey?: string;
-};
-
 export class SSHClient {
   private sshConnection: Client;
   private sftpConnection?: SFTPWrapper;
 
   private connected = false;
 
-  constructor(private sshClientOptions: SSHClientOptions) {
+  constructor(private sshClientOptions: ConnectConfig) {
     this.sshConnection = new Client();
     this.setupEventListeners();
   }
