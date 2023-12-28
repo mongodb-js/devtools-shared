@@ -1,17 +1,19 @@
-import type { ClientType, ClientOptions } from './signing-clients';
+import type { ClientOptions } from './signing-clients';
 
 import { getSigningClient } from './signing-clients';
 import { assertRequiredVars, debug } from './utils';
 
-export async function sign<T extends ClientType>(
+export async function sign(
   file: string,
-  client: T,
-  options: ClientOptions<T>
+  options: ClientOptions
 ): Promise<void> {
   assertRequiredVars();
-  debug(`Signing file: ${file} with client ${client} and options:`, options);
+  debug(
+    `Signing file: ${file} with client ${options.client} and options:`,
+    options
+  );
   try {
-    const signingClient = await getSigningClient(client, options);
+    const signingClient = await getSigningClient(options);
     await signingClient.sign(file);
   } catch (err) {
     debug(`Error signing file: ${file}`, err);

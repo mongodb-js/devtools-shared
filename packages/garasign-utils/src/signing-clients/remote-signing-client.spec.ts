@@ -65,6 +65,10 @@ describe('RemoteSigningClient', function () {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'remote-signing-client'));
   });
 
+  afterEach(async function () {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
   it('signs the file correctly', async function () {
     const fileToSign = path.join(tmpDir, 'originals', 'file-to-sign.txt');
     const signingScript = path.join(tmpDir, 'originals', 'script.sh');
@@ -85,6 +89,7 @@ describe('RemoteSigningClient', function () {
     const remoteSigningClient = new RemoteSigningClient(getMockedSSHClient(), {
       rootDir: tmpDir,
       signingScript: signingScript,
+      signingMethod: 'gpg',
     });
 
     await remoteSigningClient.sign(fileToSign);

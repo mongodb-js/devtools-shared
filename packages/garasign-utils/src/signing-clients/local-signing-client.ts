@@ -32,7 +32,12 @@ export class LocalSigningClient implements SigningClient {
       debug(`LocalSigningClient: Copied file ${file} to ${remotePath}`);
 
       await execAsync(
-        `cd ${this.options.rootDir} && ./garasign.sh ${path.basename(file)}`
+        `cd ${this.options.rootDir} && ./garasign.sh ${path.basename(file)}`,
+        {
+          env: {
+            method: this.options.signingMethod,
+          },
+        }
       );
       debug(`LocalSigningClient: Signed file ${remotePath}`);
 

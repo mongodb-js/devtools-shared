@@ -83,6 +83,7 @@ export class RemoteSigningClient implements SigningClient {
       `export artifactory_username=${process.env.ARTIFACTORY_USERNAME}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export artifactory_password=${process.env.ARTIFACTORY_PASSWORD}`,
+      `export method=${this.options.signingMethod}`,
       `./garasign.sh ${file}`,
     ];
     const command = cmds.join(' && ');

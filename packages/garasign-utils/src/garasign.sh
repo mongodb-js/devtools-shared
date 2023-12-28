@@ -9,6 +9,7 @@ if [ -z ${garasign_username+omitted} ]; then echo "garasign_username is unset" &
 if [ -z ${garasign_password+omitted} ]; then echo "garasign_password is unset" && exit 1; fi
 if [ -z ${artifactory_username+omitted} ]; then echo "artifactory_username is unset" && exit 1; fi
 if [ -z ${artifactory_password+omitted} ]; then echo "artifactory_password is unset" && exit 1; fi
+if [ -z ${method+omitted} ]; then echo "method must either be gpg or jsign" && exit 1; fi
 
 ARTIFACTORY_HOST="artifactory.corp.mongodb.com"
 
@@ -35,13 +36,32 @@ file=$1
 echo "File to be signed: $file"
 echo "Working directory: $directory"
 
-docker run \
+gpg_sign() {
+  docker run \
+    --env-file=signing-envfile \
+    --rm \
+    -v $directory:$directory \
+    -w $directory \
+    ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
+    /bin/bash -c "gpgloader && gpg --yes -v --armor -o $file.sig --detach-sign $file"
+
+  rm signing-envfile
+}
+
+jsign_sign() {
+  podman run \
   --env-file=signing-envfile \
   --rm \
   -v $directory:$directory \
   -w $directory \
-  ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
-  /bin/bash -c "gpgloader && gpg --yes -v --armor -o $file.sig --detach-sign $file"
+  artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
+  /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 $file"
+}
 
-rm signing-envfile
+if [[ "$method" -eq "gpg" ]]; then 
+  gpg_sign 
+elif [[ "$method" -eq "jsign" ]]; then 
+  jsign_sign
+fi
+
 echo "Finished signing $file"
