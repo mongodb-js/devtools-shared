@@ -1,5 +1,5 @@
-import type { SFTPWrapper } from 'ssh2';
-import { Client, type ConnectConfig } from 'ssh2';
+import type { ConnectConfig, SFTPWrapper } from 'ssh2';
+import { Client } from 'ssh2';
 import { readFile } from 'fs/promises';
 import { debug } from './utils';
 
@@ -48,7 +48,8 @@ export class SSHClient {
         privateKey,
       });
       this.sshConnection.on('error', reject);
-      this.sshConnection.on('ready' as any, resolve);
+      // @ts-expect-error We expect an error here - why?
+      this.sshConnection.on('ready', resolve);
     });
   }
 

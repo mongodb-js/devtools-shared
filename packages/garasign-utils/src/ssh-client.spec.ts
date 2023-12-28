@@ -2,11 +2,11 @@ import sinon from 'sinon';
 import { SSHClient } from './ssh-client';
 import { expect } from 'chai';
 
-describe('SSHClient', () => {
+describe('SSHClient', function () {
   let sshClient: SSHClient;
   let sandbox: sinon.SinonSandbox;
 
-  beforeEach(() => {
+  beforeEach(function () {
     const sshClientOptions = {
       host: 'example.com',
       port: 22,
@@ -16,7 +16,7 @@ describe('SSHClient', () => {
     sandbox = sinon.createSandbox();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
   });
 

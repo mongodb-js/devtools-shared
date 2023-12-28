@@ -1,11 +1,11 @@
 import path from 'path';
-import { SSHClient, type SSHClientOptions } from './ssh-client';
-import {
-  LocalSigningClient,
-  RemoteSigningClient,
-  type SigningClient,
-  type ClientType,
-  type ClientOptions,
+import type { SSHClientOptions } from './ssh-client';
+import { SSHClient } from './ssh-client';
+import { LocalSigningClient, RemoteSigningClient } from './signing-clients';
+import type {
+  SigningClient,
+  ClientType,
+  ClientOptions,
 } from './signing-clients';
 
 // eslint-disable-next-line no-console

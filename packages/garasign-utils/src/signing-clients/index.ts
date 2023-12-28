@@ -1,4 +1,4 @@
-import { type SSHClientOptions } from '../ssh-client';
+import type { SSHClientOptions } from '../ssh-client';
 
 export { LocalSigningClient } from './local-signing-client';
 export { RemoteSigningClient } from './remote-signing-client';

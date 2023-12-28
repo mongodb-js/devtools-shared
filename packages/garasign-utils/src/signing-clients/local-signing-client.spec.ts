@@ -4,10 +4,10 @@ import os from 'os';
 import { LocalSigningClient } from './local-signing-client';
 import { expect } from 'chai';
 
-describe('LocalSigningClient', () => {
+describe('LocalSigningClient', function () {
   let tmpDir: string;
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'local-signing-client'));
   });
 

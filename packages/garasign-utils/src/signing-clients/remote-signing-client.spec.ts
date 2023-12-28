@@ -58,10 +58,10 @@ const getMockedSSHClient = () => {
   } as unknown as SSHClient;
 };
 
-describe('RemoteSigningClient', () => {
+describe('RemoteSigningClient', function () {
   let tmpDir: string;
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'remote-signing-client'));
   });
 
