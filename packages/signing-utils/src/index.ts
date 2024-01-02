@@ -1,11 +1,11 @@
-import type { ClientOptions } from './signing-clients';
+import type { ClientOptions as SigningOptions } from './signing-clients';
 
 import { getSigningClient } from './signing-clients';
 import { assertRequiredVars, debug } from './utils';
 
 export async function sign(
   file: string,
-  options: ClientOptions
+  options: SigningOptions
 ): Promise<void> {
   assertRequiredVars();
   debug(

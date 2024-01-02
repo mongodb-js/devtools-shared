@@ -1,5 +1,5 @@
 {
-  "name": "@mongodb-js/garasign-utils",
+  "name": "@mongodb-js/signing-utils",
   "description": "Utilities for signing packages in CI with Garasign.",
   "author": {
     "name": "MongoDB Inc",

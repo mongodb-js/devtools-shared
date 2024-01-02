@@ -1,6 +1,6 @@
 import { debug as debugFn } from 'debug';
 
-export const debug = debugFn('garasign-utils');
+export const debug = debugFn('signing-utils');
 
 export function assertRequiredVars() {
   [
