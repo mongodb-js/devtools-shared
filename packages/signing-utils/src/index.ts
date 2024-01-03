@@ -1,13 +1,18 @@
-import type { ClientOptions as SigningOptions } from './signing-clients';
+import type { ClientOptions } from './signing-clients';
 
 import { getSigningClient } from './signing-clients';
-import { getEnv, debug } from './utils';
+import { debug } from './utils';
 
+/**
+ * Signs a file using Garasign.
+ *
+ * @param file the name of the file to sign
+ * @param options options to sign with - see the docs for `SigningOptions`
+ */
 export async function sign(
   file: string,
-  options: SigningOptions
+  options: ClientOptions
 ): Promise<void> {
-  getEnv();
   debug(
     `Signing file: ${file} with client ${options.client} and options:`,
     options

@@ -16,12 +16,24 @@ export type SigningClientOptions = {
   signingMethod: SigningMethod;
 };
 
-export type ClientOptions =
-  | (Pick<ConnectConfig, 'username' | 'host' | 'privateKey' | 'port'> & {
-      signingMethod: SigningMethod;
-      client: 'remote';
-    })
-  | { signingMethod: SigningMethod; client: 'local' };
+/** Options for signing a file remotely over an SSH connection. */
+export type RemoteSigningOptions = Pick<
+  ConnectConfig,
+  'username' | 'host' | 'privateKey' | 'port'
+> & {
+  /** The method to sign with.  Use gpg on linux and jsign on windows. */
+  signingMethod: SigningMethod;
+  client: 'remote';
+};
+
+/** Options for signing a file locally. */
+export type LocalSigningOptions = {
+  /** The method to sign with.  Use gpg on linux and jsign on windows. */
+  signingMethod: SigningMethod;
+  client: 'local';
+};
+
+export type ClientOptions = RemoteSigningOptions | LocalSigningOptions;
 
 export interface SigningClient {
   sign(file: string): Promise<void>;
