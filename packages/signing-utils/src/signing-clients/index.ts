@@ -11,16 +11,21 @@ export { RemoteSigningClient } from './remote-signing-client';
 export type SigningMethod = 'gpg' | 'jsign';
 
 export type SigningClientOptions = {
-  rootDir: string;
+  workingDirectory: string;
   signingScript: string;
   signingMethod: SigningMethod;
 };
 
 /** Options for signing a file remotely over an SSH connection. */
-export type RemoteSigningOptions = Pick<
-  ConnectConfig,
-  'username' | 'host' | 'privateKey' | 'port'
-> & {
+export type RemoteSigningOptions = {
+  /** Username for authentication. */
+  username?: string;
+  /** Password for password-based user authentication. */
+  password?: string;
+  /** Port number of the ssh server. */
+  port?: number;
+  /** Buffer or string that contains a private key for either key-based or hostbased user authentication (OpenSSH format). */
+  privateKey?: Buffer | string;
   /** The method to sign with.  Use gpg on linux and jsign on windows. */
   signingMethod: SigningMethod;
   client: 'remote';
@@ -30,6 +35,10 @@ export type RemoteSigningOptions = Pick<
 export type LocalSigningOptions = {
   /** The method to sign with.  Use gpg on linux and jsign on windows. */
   signingMethod: SigningMethod;
+
+  /** Full path to the directory in which to produce the signed file. */
+  directory?: string;
+
   client: 'local';
 };
 
@@ -48,13 +57,13 @@ export async function getSigningClient(
     return sshClient;
   }
 
-  const signingScript = path.join(__dirname, '..', 'src', './garasign.sh');
+  const signingScript = path.join(__dirname, '../..', 'src', './garasign.sh');
 
   if (options.client === 'remote') {
     const sshClient = await getSshClient(options);
     // Currently only linux remote is supported to sign the artifacts
     return new RemoteSigningClient(sshClient, {
-      rootDir: '~/garasign',
+      workingDirectory: '~/garasign',
       signingScript,
       signingMethod: options.signingMethod,
     });
@@ -63,7 +72,7 @@ export async function getSigningClient(
     // For local client, we put everything in a tmp directory to avoid
     // polluting the user's working directory.
     return new LocalSigningClient({
-      rootDir: path.resolve(__dirname, '..', 'tmp'),
+      workingDirectory: path.resolve(__dirname, '..', 'tmp'),
       signingScript,
       signingMethod: options.signingMethod,
     });

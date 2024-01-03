@@ -20,18 +20,20 @@ export class RemoteSigningClient implements SigningClient {
    */
   private async init() {
     this.sftpConnection = await this.sshClient.getSftpConnection();
-    await this.sshClient.exec(`mkdir -p ${this.options.rootDir}`);
+    await this.sshClient.exec(`mkdir -p ${this.options.workingDirectory}`);
 
     // Copy the signing script to the remote machine
     {
-      const remoteScript = `${this.options.rootDir}/garasign.sh`;
+      const remoteScript = `${this.options.workingDirectory}/garasign.sh`;
       await this.copyFile(this.options.signingScript, remoteScript);
       await this.sshClient.exec(`chmod +x ${remoteScript}`);
     }
   }
 
   private getRemoteFilePath(file: string) {
-    return `${this.options.rootDir}/temp-${Date.now()}-${path.basename(file)}`;
+    return `${this.options.workingDirectory}/temp-${Date.now()}-${path.basename(
+      file
+    )}`;
   }
 
   private async copyFile(file: string, remotePath: string): Promise<void> {
@@ -75,7 +77,7 @@ export class RemoteSigningClient implements SigningClient {
      * So, here we are passing the env variables as part of the command.
      */
     const cmds = [
-      `cd ${this.options.rootDir}`,
+      `cd ${this.options.workingDirectory}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export garasign_username=${env.garasign_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -101,11 +103,13 @@ export class RemoteSigningClient implements SigningClient {
       await this.copyFile(file, remotePath);
       debug(`SFTP: Copied file ${file} to ${remotePath}`);
 
-      await this.signRemoteFile(remotePath);
+      await this.signRemoteFile(path.basename(remotePath));
       debug(`SFTP: Signed file ${file}`);
 
       await this.downloadFile(remotePath, file);
       debug(`SFTP: Downloaded signed file to ${file}`);
+    } catch (error) {
+      debug({ error });
     } finally {
       await this.removeFile(remotePath);
       debug(`SFTP: Removed remote file ${remotePath}`);

@@ -1,6 +1,4 @@
 import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
 import { exec } from 'child_process';
 import { RemoteSigningClient } from './remote-signing-client';
 import { expect } from 'chai';
@@ -46,7 +44,7 @@ const getMockedSSHClient = () => {
     },
     exec: (command: string) => {
       return new Promise((resolve, reject) => {
-        exec(command, (err) => {
+        exec(command, { shell: 'bash' }, (err) => {
           if (err) {
             return reject(err);
           }
@@ -59,35 +57,33 @@ const getMockedSSHClient = () => {
 };
 
 describe('RemoteSigningClient', function () {
-  let tmpDir: string;
+  const workingDirectoryPath = 'working-directory';
+  const fileToSign = 'file-to-sign.txt';
+  const signingScript = 'script.sh';
 
-  beforeEach(async function () {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'remote-signing-client'));
-  });
-
-  afterEach(async function () {
-    await fs.rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('signs the file correctly', async function () {
-    const fileToSign = path.join(tmpDir, 'originals', 'file-to-sign.txt');
-    const signingScript = path.join(tmpDir, 'originals', 'script.sh');
-
-    {
-      await fs.mkdir(path.dirname(fileToSign), { recursive: true });
-      await fs.writeFile(fileToSign, 'RemoteSigningClient: original content');
-      await fs.writeFile(
-        signingScript,
-        `
+  beforeEach(async function name() {
+    await fs.writeFile(fileToSign, 'RemoteSigningClient: original content');
+    await fs.writeFile(
+      signingScript,
+      `
         #!/bin/bash
         echo "Signing script called with arguments: $@"
         echo "RemoteSigningClient: signed content" > $1
         `
-      );
-    }
+    );
+  });
 
+  afterEach(async function () {
+    await Promise.allSettled([
+      fs.rm(workingDirectoryPath, { recursive: true, force: true }),
+      fs.rm(signingScript),
+      fs.rm(fileToSign),
+    ]);
+  });
+
+  it('signs the file correctly', async function () {
     const remoteSigningClient = new RemoteSigningClient(getMockedSSHClient(), {
-      rootDir: tmpDir,
+      workingDirectory: workingDirectoryPath,
       signingScript: signingScript,
       signingMethod: 'gpg',
     });
