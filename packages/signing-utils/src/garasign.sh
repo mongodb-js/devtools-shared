@@ -49,7 +49,7 @@ gpg_sign() {
 }
 
 jsign_sign() {
-  podman run \
+  docker run \
   --env-file=signing-envfile \
   --rm \
   -v $directory:$directory \

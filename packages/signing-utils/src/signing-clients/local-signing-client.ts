@@ -1,7 +1,7 @@
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execFileSync } from 'child_process';
 import { promisify } from 'util';
-import { debug } from '../utils';
+import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 const execAsync = promisify(exec);
@@ -31,14 +31,13 @@ export class LocalSigningClient implements SigningClient {
       await this.copyFile(file, remotePath);
       debug(`LocalSigningClient: Copied file ${file} to ${remotePath}`);
 
-      await execAsync(
-        `cd ${this.options.rootDir} && ./garasign.sh ${path.basename(file)}`,
-        {
-          env: {
-            method: this.options.signingMethod,
-          },
-        }
-      );
+      execFileSync('./garasign.sh', [path.basename(file)], {
+        cwd: this.options.rootDir,
+        env: {
+          ...getEnv(),
+          method: this.options.signingMethod,
+        },
+      });
       debug(`LocalSigningClient: Signed file ${remotePath}`);
 
       await this.copyFile(remotePath, file);

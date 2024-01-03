@@ -8,18 +8,20 @@ import { RemoteSigningClient } from './remote-signing-client';
 export { LocalSigningClient } from './local-signing-client';
 export { RemoteSigningClient } from './remote-signing-client';
 
+export type SigningMethod = 'gpg' | 'jsign';
+
 export type SigningClientOptions = {
   rootDir: string;
   signingScript: string;
-  signingMethod: 'gpg' | 'jsign';
+  signingMethod: SigningMethod;
 };
 
 export type ClientOptions =
   | (Pick<ConnectConfig, 'username' | 'host' | 'privateKey' | 'port'> & {
-      signingMethod: 'gpg' | 'jsign';
+      signingMethod: SigningMethod;
       client: 'remote';
     })
-  | { signingMethod: 'gpg' | 'jsign'; client: 'local' };
+  | { signingMethod: SigningMethod; client: 'local' };
 
 export interface SigningClient {
   sign(file: string): Promise<void>;
@@ -34,16 +36,14 @@ export async function getSigningClient(
     return sshClient;
   }
 
-  function getSigningScript() {
-    return path.join(__dirname, '..', 'src', './garasign.sh');
-  }
+  const signingScript = path.join(__dirname, '..', 'src', './garasign.sh');
 
   if (options.client === 'remote') {
     const sshClient = await getSshClient(options);
     // Currently only linux remote is supported to sign the artifacts
     return new RemoteSigningClient(sshClient, {
       rootDir: '~/garasign',
-      signingScript: getSigningScript(),
+      signingScript,
       signingMethod: options.signingMethod,
     });
   }
@@ -52,7 +52,7 @@ export async function getSigningClient(
     // polluting the user's working directory.
     return new LocalSigningClient({
       rootDir: path.resolve(__dirname, '..', 'tmp'),
-      signingScript: getSigningScript(),
+      signingScript,
       signingMethod: options.signingMethod,
     });
   }

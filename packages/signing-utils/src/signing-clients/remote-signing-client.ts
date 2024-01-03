@@ -1,7 +1,7 @@
 import path from 'path';
 import type { SFTPWrapper } from 'ssh2';
 import type { SSHClient } from '../ssh-client';
-import { debug } from '../utils';
+import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 export class RemoteSigningClient implements SigningClient {
@@ -68,6 +68,7 @@ export class RemoteSigningClient implements SigningClient {
   }
 
   private async signRemoteFile(file: string) {
+    const env = getEnv();
     /**
      * Passing env variables as an option to ssh.exec() doesn't work as ssh config
      * (`sshd_config.AllowEnv`) does not allow to pass env variables by default.
@@ -76,13 +77,13 @@ export class RemoteSigningClient implements SigningClient {
     const cmds = [
       `cd ${this.options.rootDir}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export garasign_username=${process.env.GARASIGN_USERNAME}`,
+      `export garasign_username=${env.garasign_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export garasign_password=${process.env.GARASIGN_PASSWORD}`,
+      `export garasign_password=${env.garasign_password}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export artifactory_username=${process.env.ARTIFACTORY_USERNAME}`,
+      `export artifactory_username=${env.artifactory_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export artifactory_password=${process.env.ARTIFACTORY_PASSWORD}`,
+      `export artifactory_password=${env.artifactory_password}`,
       `export method=${this.options.signingMethod}`,
       `./garasign.sh ${file}`,
     ];

@@ -1,11 +1,10 @@
 import * as os from 'os';
 
-export const mochaHooks = {
+export const mochaHooks: { beforeEach: Mocha.HookFunction } = {
   beforeEach() {
-    // @ts-expect-error Stupid mocha binding properties to `this`
-    const test = this.currentTest ?? this.test;
     if (os.platform().toLowerCase().includes('win32')) {
-      test.skip();
+      // @ts-expect-error TS does not know mocha will properly set `this` when it invokes beforeEach
+      this.skip();
     }
   },
 };
