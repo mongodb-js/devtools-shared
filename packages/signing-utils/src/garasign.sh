@@ -25,11 +25,6 @@ echo "${artifactory_password}" | docker login --password-stdin --username ${arti
 # If the docker login failed, exit
 [ $? -ne 0 ] && exit $?
 
-cat <<EOL > signing-envfile
-GRS_CONFIG_USER1_USERNAME=${garasign_username}
-GRS_CONFIG_USER1_PASSWORD=${garasign_password}
-EOL
-
 directory=$(pwd)
 file=$1
 
@@ -38,24 +33,24 @@ echo "Working directory: $directory"
 
 gpg_sign() {
   docker run \
-    --env-file=signing-envfile \
+    -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
+    -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
     --rm \
     -v $directory:$directory \
     -w $directory \
     ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
     /bin/bash -c "gpgloader && gpg --yes -v --armor -o $file.sig --detach-sign $file"
-
-  rm signing-envfile
 }
 
 jsign_sign() {
   docker run \
-  --env-file=signing-envfile \
-  --rm \
-  -v $directory:$directory \
-  -w $directory \
-  artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
-  /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 $file"
+    -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
+    -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
+    --rm \
+    -v $directory:$directory \
+    -w $directory \
+    artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
+    /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 $file"
 }
 
 if [[ "$method" -eq "gpg" ]]; then 
