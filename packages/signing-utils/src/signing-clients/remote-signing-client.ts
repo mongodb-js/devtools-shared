@@ -77,7 +77,7 @@ export class RemoteSigningClient implements SigningClient {
      * So, here we are passing the env variables as part of the command.
      */
     const cmds = [
-      `cd ${this.options.workingDirectory}`,
+      `cd '${this.options.workingDirectory}'`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export garasign_username=${env.garasign_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -87,7 +87,7 @@ export class RemoteSigningClient implements SigningClient {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export artifactory_password=${env.artifactory_password}`,
       `export method=${this.options.signingMethod}`,
-      `./garasign.sh ${file}`,
+      `./garasign.sh '${file}'`,
     ];
     const command = cmds.join(' && ');
     const res = await this.sshClient.exec(command);

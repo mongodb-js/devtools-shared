@@ -39,7 +39,7 @@ gpg_sign() {
     -v $directory:$directory \
     -w $directory \
     ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
-    /bin/bash -c "gpgloader && gpg --yes -v --armor -o $file.sig --detach-sign $file"
+    /bin/bash -c "gpgloader && gpg --yes -v --armor -o '$file.sig' --detach-sign '$file'"
 }
 
 jsign_sign() {
@@ -50,7 +50,7 @@ jsign_sign() {
     -v $directory:$directory \
     -w $directory \
     artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
-    /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 $file"
+    /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 '$file'"
 }
 
 if [[ "$method" -eq "gpg" ]]; then 
