@@ -1,7 +1,9 @@
-import type { ConnectConfig, SFTPWrapper } from 'ssh2';
+import type { ClientChannel, ConnectConfig, SFTPWrapper } from 'ssh2';
 import { Client } from 'ssh2';
 import { readFile } from 'fs/promises';
 import { debug } from './utils';
+import { promisify } from 'util';
+import { once } from 'events';
 
 export class SSHClient {
   private sshConnection: Client;
@@ -32,20 +34,18 @@ export class SSHClient {
 
   async connect() {
     if (this.connected) {
-      return Promise.resolve();
+      return;
     }
     const privateKey = this.sshClientOptions.privateKey
       ? await readFile(this.sshClientOptions.privateKey)
       : undefined;
-    return new Promise((resolve, reject) => {
-      this.sshConnection.connect({
-        ...this.sshClientOptions,
-        privateKey,
-      });
-      this.sshConnection.on('error', reject);
-      // @ts-expect-error We expect an error here - why?
-      this.sshConnection.on('ready', resolve);
+
+    const ready = once(this.sshConnection, 'ready');
+    this.sshConnection.connect({
+      ...this.sshClientOptions,
+      privateKey,
     });
+    await ready;
   }
 
   disconnect() {
@@ -57,29 +57,26 @@ export class SSHClient {
     if (!this.connected) {
       throw new Error('Not connected to ssh server');
     }
-    return new Promise((resolve, reject) => {
-      this.sshConnection.exec(command, (err, stream) => {
-        if (err) {
-          return reject(err);
-        }
-        let data = '';
-        stream.on('data', (chunk: string) => {
-          data += chunk;
-        });
-        stream.stderr.on('data', (chunk) => {
-          data += chunk;
-        });
-        stream.on('close', (code: number) => {
-          if (code === 0) {
-            return resolve(data);
-          } else {
-            return reject(
-              new Error(`Command failed with code ${code}. Error: ${data}`)
-            );
-          }
-        });
-      });
+    const stream: ClientChannel = await promisify(
+      this.sshConnection.exec.bind(this.sshConnection)
+    )(command);
+    let data = '';
+    stream.setEncoding('utf-8');
+    stream.stderr.setEncoding('utf-8');
+    stream.on('data', (chunk: string) => {
+      data += chunk;
     });
+    stream.stderr.on('data', (chunk: string) => {
+      data += chunk;
+    });
+    const [code] = await once(stream, 'close');
+    if (code !== 0) {
+      throw new Error(
+        `Command failed with code ${code as number}. Error: ${data}`
+      );
+    }
+
+    return data;
   }
 
   async getSftpConnection(): Promise<SFTPWrapper> {
@@ -87,20 +84,9 @@ export class SSHClient {
       throw new Error('Not connected to ssh server');
     }
 
-    if (this.sftpConnection) {
-      return Promise.resolve(this.sftpConnection);
-    }
-
-    return new Promise((resolve, reject) => {
-      this.sshConnection.sftp((err, sftp) => {
-        if (err) {
-          debug('SFTP: Failed to setup connection', err);
-          return reject(err);
-        }
-        debug('SFTP: Connection established');
-        this.sftpConnection = sftp;
-        return resolve(sftp);
-      });
-    });
+    this.sftpConnection =
+      this.sftpConnection ??
+      (await promisify(this.sshConnection.sftp.bind(this.sshConnection))());
+    return this.sftpConnection;
   }
 }
