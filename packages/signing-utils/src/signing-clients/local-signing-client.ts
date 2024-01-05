@@ -1,6 +1,6 @@
 import path from 'path';
 import { spawnSync } from 'child_process';
-import { debug, getEnv, signedFileName } from '../utils';
+import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 const localClientDebug = debug.extend('LocalSigningClient');
@@ -12,7 +12,9 @@ const localClientDebug = debug.extend('LocalSigningClient');
  * working directory.  No temp directory / copying of files is necessary.
  */
 export class LocalSigningClient implements SigningClient {
-  constructor(private options: SigningClientOptions) {}
+  constructor(
+    private options: Omit<SigningClientOptions, 'workingDirectory'>
+  ) {}
 
   sign(file: string): Promise<void> {
     localClientDebug(`Signing ${file}`);
@@ -31,11 +33,7 @@ export class LocalSigningClient implements SigningClient {
         encoding: 'utf-8',
       });
 
-      localClientDebug(
-        `Signed file ${file} - output file ${signedFileName(file, {
-          ...this.options,
-        })}`
-      );
+      localClientDebug(`Signed file ${file}`);
 
       return Promise.resolve();
     } catch (error) {

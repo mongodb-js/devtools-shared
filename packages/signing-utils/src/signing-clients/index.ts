@@ -28,6 +28,11 @@ export type RemoteSigningOptions = {
   privateKey?: Buffer | string;
   /** The method to sign with.  Use gpg on linux and jsign on windows. */
   signingMethod: SigningMethod;
+
+  /**
+   * The path of the working directory in which to sign files **on the remote ssh server**.  Defaults to `/home/ubuntu/garasign`.
+   */
+  workingDirectory?: string;
   client: 'remote';
 };
 
@@ -35,9 +40,6 @@ export type RemoteSigningOptions = {
 export type LocalSigningOptions = {
   /** The method to sign with.  Use gpg on linux and jsign on windows. */
   signingMethod: SigningMethod;
-
-  /** Full path to the directory in which to produce the signed file. */
-  directory?: string;
 
   client: 'local';
 };
@@ -63,16 +65,13 @@ export async function getSigningClient(
     const sshClient = await getSshClient(options);
     // Currently only linux remote is supported to sign the artifacts
     return new RemoteSigningClient(sshClient, {
-      workingDirectory: '~/garasign',
+      workingDirectory: options.workingDirectory ?? '/home/ubuntu/garasign',
       signingScript,
       signingMethod: options.signingMethod,
     });
   }
   if (options.client === 'local') {
-    // For local client, we put everything in a tmp directory to avoid
-    // polluting the user's working directory.
     return new LocalSigningClient({
-      workingDirectory: path.resolve(__dirname, '..', 'tmp'),
       signingScript,
       signingMethod: options.signingMethod,
     });

@@ -2,7 +2,6 @@ import fs from 'fs/promises';
 import { LocalSigningClient } from './local-signing-client';
 import { expect } from 'chai';
 import { writeFileSync } from 'fs';
-import { cwd } from 'process';
 
 describe('LocalSigningClient', function () {
   const signingScript = './garasign-temp.sh';
@@ -33,7 +32,6 @@ describe('LocalSigningClient', function () {
     const localSigningClient = new LocalSigningClient({
       signingScript: signingScript,
       signingMethod: 'gpg',
-      workingDirectory: cwd(),
     });
 
     await localSigningClient.sign(fileToSign);
