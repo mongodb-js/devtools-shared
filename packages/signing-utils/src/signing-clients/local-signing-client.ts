@@ -2,7 +2,6 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
-import { inspect } from 'util';
 
 const localClientDebug = debug.extend('LocalSigningClient');
 
@@ -17,6 +16,9 @@ export class LocalSigningClient implements SigningClient {
     private options: Omit<SigningClientOptions, 'workingDirectory'>
   ) {}
 
+  // we want to wrap any errors in promise rejections, so even though there is no
+  // await statement, we use an `async` function
+  // eslint-disable-next-line @typescript-eslint/require-await
   async sign(file: string): Promise<void> {
     localClientDebug(`Signing ${file}`);
 
