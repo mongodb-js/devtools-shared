@@ -2,6 +2,7 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
+import { inspect } from 'util';
 
 const localClientDebug = debug.extend('LocalSigningClient');
 
@@ -16,7 +17,7 @@ export class LocalSigningClient implements SigningClient {
     private options: Omit<SigningClientOptions, 'workingDirectory'>
   ) {}
 
-  sign(file: string): Promise<void> {
+  async sign(file: string): Promise<void> {
     localClientDebug(`Signing ${file}`);
 
     const directoryOfFileToSign = path.dirname(file);
@@ -27,12 +28,26 @@ export class LocalSigningClient implements SigningClient {
         method: this.options.signingMethod,
       };
 
-      spawnSync('bash', [this.options.signingScript, path.basename(file)], {
-        cwd: directoryOfFileToSign,
-        env,
-        encoding: 'utf-8',
-      });
+      const { stdout, stderr, status } = spawnSync(
+        'bash',
+        [this.options.signingScript, path.basename(file)],
+        {
+          cwd: directoryOfFileToSign,
+          env,
+          encoding: 'utf-8',
+        }
+      );
 
+      localClientDebug({ stdout, stderr });
+
+      if (status !== 0) {
+        throw new Error(
+          JSON.stringify({
+            stdout,
+            stderr,
+          })
+        );
+      }
       localClientDebug(`Signed file ${file}`);
 
       return Promise.resolve();

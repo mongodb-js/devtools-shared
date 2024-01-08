@@ -41,4 +41,42 @@ describe('LocalSigningClient', function () {
     ).trim();
     expect(signedFile).to.equal('signed content');
   });
+
+  context('when the script returns a non-zero exit code', function () {
+    beforeEach(function () {
+      writeFileSync(
+        signingScript,
+        `
+          #!/bin/bash
+          echo "Signing script called with arguments: $@"
+          >&2 echo "error - something went wrong"
+          exit 1
+          `
+      );
+    });
+
+    it('sign() rejects', async function () {
+      const localSigningClient = new LocalSigningClient({
+        signingScript: signingScript,
+        signingMethod: 'gpg',
+      });
+
+      const error = await localSigningClient.sign(fileToSign).catch((e) => e);
+      expect(error).to.be.instanceOf(Error);
+    });
+
+    it('includes the stdout and stderr of the failed script in the error', async function () {
+      const localSigningClient = new LocalSigningClient({
+        signingScript: signingScript,
+        signingMethod: 'gpg',
+      });
+
+      const error: Error = await localSigningClient
+        .sign(fileToSign)
+        .catch((e) => e);
+      const { stdout, stderr } = JSON.parse(error.message);
+      expect(stdout).to.contain('Signing script called with arguments: ');
+      expect(stderr).to.equal('error - something went wrong\n');
+    });
+  });
 });
