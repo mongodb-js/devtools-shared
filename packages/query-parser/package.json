@@ -1,5 +1,5 @@
 {
-  "name": "@mongodb-js/query-parser",
+  "name": "mongodb-query-parser",
   "description": "Parse MongoDB queries",
   "author": {
     "name": "MongoDB Inc",

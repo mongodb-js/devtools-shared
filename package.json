@@ -13,6 +13,7 @@
     "npm": ">=7.16.0"
   },
   "workspaces": [
+    "packages/saslprep",
     "packages/*",
     "configs/*",
     "scripts"

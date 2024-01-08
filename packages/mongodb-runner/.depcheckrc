@@ -4,8 +4,5 @@ ignores:
   - '@types/chai'
   - '@types/sinon-chai'
   - 'sinon'
-  # this is explicitly called as a dependency to make sure that is bootstrapped
-  # before mongodb-runner, since it is required via mongodb
-  - '@mongodb-js/saslprep'
 ignore-patterns:
   - 'dist'
