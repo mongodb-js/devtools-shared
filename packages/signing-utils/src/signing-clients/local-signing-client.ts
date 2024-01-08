@@ -49,8 +49,6 @@ export class LocalSigningClient implements SigningClient {
         );
       }
       localClientDebug(`Signed file ${file}`);
-
-      return Promise.resolve();
     } catch (error) {
       localClientDebug({ error });
       throw error;
