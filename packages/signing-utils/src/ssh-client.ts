@@ -79,7 +79,7 @@ export class SSHClient {
     return data;
   }
 
-  async getSftpConnection(): Promise<SFTPWrapper> {
+  private async getSftpConnection(): Promise<SFTPWrapper> {
     if (!this.connected) {
       throw new Error('Not connected to ssh server');
     }
@@ -88,5 +88,26 @@ export class SSHClient {
       this.sftpConnection ??
       (await promisify(this.sshConnection.sftp.bind(this.sshConnection))());
     return this.sftpConnection;
+  }
+
+  async copyFile(file: string, remotePath: string): Promise<void> {
+    const sftpConnection = await this.getSftpConnection();
+    return promisify(sftpConnection.fastPut.bind(sftpConnection))(
+      file,
+      remotePath
+    );
+  }
+
+  async downloadFile(remotePath: string, file: string): Promise<void> {
+    const sftpConnection = await this.getSftpConnection();
+    return promisify(sftpConnection.fastGet.bind(sftpConnection))(
+      remotePath,
+      file
+    );
+  }
+
+  async removeFile(remotePath: string): Promise<void> {
+    const sftpConnection = await this.getSftpConnection();
+    return promisify(sftpConnection.unlink.bind(sftpConnection))(remotePath);
   }
 }

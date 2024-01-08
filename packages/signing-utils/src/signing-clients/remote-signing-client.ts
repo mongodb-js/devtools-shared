@@ -1,12 +1,9 @@
 import path from 'path';
-import type { SFTPWrapper } from 'ssh2';
 import type { SSHClient } from '../ssh-client';
 import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 export class RemoteSigningClient implements SigningClient {
-  private sftpConnection!: SFTPWrapper;
-
   constructor(
     private sshClient: SSHClient,
     private options: SigningClientOptions
@@ -19,13 +16,12 @@ export class RemoteSigningClient implements SigningClient {
    * - Copy the signing script to the remote machine
    */
   private async init() {
-    this.sftpConnection = await this.sshClient.getSftpConnection();
     await this.sshClient.exec(`mkdir -p ${this.options.workingDirectory}`);
 
     // Copy the signing script to the remote machine
     {
       const remoteScript = `${this.options.workingDirectory}/garasign.sh`;
-      await this.copyFile(this.options.signingScript, remoteScript);
+      await this.sshClient.copyFile(this.options.signingScript, remoteScript);
       await this.sshClient.exec(`chmod +x ${remoteScript}`);
     }
   }
@@ -34,39 +30,6 @@ export class RemoteSigningClient implements SigningClient {
     return `${this.options.workingDirectory}/temp-${Date.now()}-${path.basename(
       file
     )}`;
-  }
-
-  private async copyFile(file: string, remotePath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.sftpConnection.fastPut(file, remotePath, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve();
-      });
-    });
-  }
-
-  private async downloadFile(remotePath: string, file: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.sftpConnection.fastGet(remotePath, file, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve();
-      });
-    });
-  }
-
-  private async removeFile(remotePath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.sftpConnection.unlink(remotePath, (err) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve();
-      });
-    });
   }
 
   private async signRemoteFile(file: string) {
@@ -100,18 +63,18 @@ export class RemoteSigningClient implements SigningClient {
       // establish connection
       await this.init();
 
-      await this.copyFile(file, remotePath);
+      await this.sshClient.copyFile(file, remotePath);
       debug(`SFTP: Copied file ${file} to ${remotePath}`);
 
       await this.signRemoteFile(path.basename(remotePath));
       debug(`SFTP: Signed file ${file}`);
 
-      await this.downloadFile(remotePath, file);
+      await this.sshClient.downloadFile(remotePath, file);
       debug(`SFTP: Downloaded signed file to ${file}`);
     } catch (error) {
       debug({ error });
     } finally {
-      await this.removeFile(remotePath);
+      await this.sshClient.removeFile(remotePath);
       debug(`SFTP: Removed remote file ${remotePath}`);
       this.sshClient.disconnect();
     }
