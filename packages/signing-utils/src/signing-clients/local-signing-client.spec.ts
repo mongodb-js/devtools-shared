@@ -31,9 +31,7 @@ describe('LocalSigningClient', function () {
   it('executes the signing script correctly', async function () {
     const localSigningClient = new LocalSigningClient({
       signingScript: signingScript,
-      signingOptions: {
-        method: 'gpg',
-      },
+      signingMethod: 'gpg',
     });
 
     await localSigningClient.sign(fileToSign);
@@ -60,9 +58,7 @@ describe('LocalSigningClient', function () {
     it('sign() rejects', async function () {
       const localSigningClient = new LocalSigningClient({
         signingScript: signingScript,
-        signingOptions: {
-          method: 'gpg',
-        },
+        signingMethod: 'gpg',
       });
 
       const error = await localSigningClient.sign(fileToSign).catch((e) => e);
@@ -72,9 +68,7 @@ describe('LocalSigningClient', function () {
     it('includes the stdout and stderr of the failed script in the error', async function () {
       const localSigningClient = new LocalSigningClient({
         signingScript: signingScript,
-        signingOptions: {
-          method: 'gpg',
-        },
+        signingMethod: 'gpg',
       });
 
       const error: Error = await localSigningClient

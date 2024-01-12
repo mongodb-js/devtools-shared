@@ -8,22 +8,12 @@ import { RemoteSigningClient } from './remote-signing-client';
 export { LocalSigningClient } from './local-signing-client';
 export { RemoteSigningClient } from './remote-signing-client';
 
-export type SigningOptions =
-  | {
-      method: 'gpg';
-    }
-  | {
-      method: 'jsign';
-      // The alias of the certificate used for signing in the keystore
-      certificateAlias: 'compass' | 'mongosh';
-      // The URL of the timestamping authority.
-      timestampUrl?: string;
-    };
+export type SigningMethod = 'gpg' | 'jsign';
 
 export type SigningClientOptions = {
   workingDirectory: string;
   signingScript: string;
-  signingOptions: SigningOptions;
+  signingMethod: SigningMethod;
 };
 
 /** Options for signing a file remotely over an SSH connection. */
@@ -38,8 +28,9 @@ export type RemoteSigningOptions = {
   port?: number;
   /** Buffer or string that contains a private key for either key-based or hostbased user authentication (OpenSSH format). */
   privateKey?: Buffer | string;
+  /** The method to sign with.  Use gpg on linux and jsign on windows. */
+  signingMethod: SigningMethod;
 
-  signingOptions: SigningOptions;
   /**
    * The path of the working directory in which to sign files **on the remote ssh server**.  Defaults to `/home/ubuntu/garasign`.
    */
@@ -49,7 +40,9 @@ export type RemoteSigningOptions = {
 
 /** Options for signing a file locally. */
 export type LocalSigningOptions = {
-  signingOptions: SigningOptions;
+  /** The method to sign with.  Use gpg on linux and jsign on windows. */
+  signingMethod: SigningMethod;
+
   client: 'local';
 };
 
@@ -76,13 +69,13 @@ export async function getSigningClient(
     return new RemoteSigningClient(sshClient, {
       workingDirectory: options.workingDirectory ?? '/home/ubuntu/garasign',
       signingScript,
-      signingOptions: options.signingOptions,
+      signingMethod: options.signingMethod,
     });
   }
   if (options.client === 'local') {
     return new LocalSigningClient({
       signingScript,
-      signingOptions: options.signingOptions,
+      signingMethod: options.signingMethod,
     });
   }
   // @ts-expect-error `client` is a discriminated union - we should never reach here but we throw on the off-chance we do.

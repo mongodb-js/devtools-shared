@@ -1,5 +1,4 @@
 import { debug as debugFn } from 'debug';
-import type { SigningOptions } from './signing-clients';
 
 export const debug = debugFn('signing-utils');
 
@@ -19,24 +18,4 @@ export function getEnv() {
     artifactory_username,
     artifactory_password,
   };
-}
-
-const DEFAULT_JSIGN_TIMESTAMP_URL = 'http://timestamp.digicert.com';
-
-export function mapSigningOptionsForScript(options: SigningOptions) {
-  if (options.method === 'gpg') {
-    return {
-      method: options.method,
-    };
-  }
-
-  if (options.method === 'jsign') {
-    return {
-      method: options.method,
-      alias: options.certificateAlias,
-      timestampUrl: options.timestampUrl ?? DEFAULT_JSIGN_TIMESTAMP_URL,
-    };
-  }
-
-  return {};
 }

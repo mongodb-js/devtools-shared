@@ -47,9 +47,6 @@ gpg_sign() {
 }
 
 jsign_sign() {
-  if [ -z ${alias+omitted} ]; then echo "Alias must be set when signing with jsign" && exit 1; fi
-  if [ -z ${timestampUrl+omitted} ]; then echo "Timestamp URL must be set when signing with jsign" && exit 1; fi
-
   docker run \
     -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
     -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
@@ -57,7 +54,7 @@ jsign_sign() {
     -v $directory:$directory \
     -w $directory \
     artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
-    /bin/bash -c "jsign -t '$timestampUrl' -a '$alias' '$file'"
+    /bin/bash -c "jsign -t 'http://timestamp.digicert.com' -a 'mongo-authenticode-2021' '$file'"
 }
 
 if [[ $method == "gpg" ]]; then
