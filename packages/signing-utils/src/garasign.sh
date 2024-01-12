@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+set -e
+
 if [ -z "$1" ]; then
   echo "Usage: garasign.sh <file>"
   exit 1
@@ -22,13 +24,15 @@ trap logout_artifactory EXIT
 echo "Logging into docker artifactory"
 echo "${artifactory_password}" | docker login --password-stdin --username ${artifactory_username} ${ARTIFACTORY_HOST} > /dev/null 2>&1
 
-# If the docker login failed, exit
-[ $? -ne 0 ] && exit $?
+if [ $? -ne 0 ]; then
+  echo "Docker login failed" >&2
+  exit 1
+fi
 
 directory=$(pwd)
 file=$1
 
-echo "File to be signed: $file"
+echo "File to be signed: $file using $method"
 echo "Working directory: $directory"
 
 gpg_sign() {
@@ -43,6 +47,9 @@ gpg_sign() {
 }
 
 jsign_sign() {
+  if [ -z ${alias+omitted} ]; then echo "Alias must be set when signing with jsign" && exit 1; fi
+  if [ -z ${timestampUrl+omitted} ]; then echo "Timestamp URL must be set when signing with jsign" && exit 1; fi
+
   docker run \
     -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
     -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
@@ -50,13 +57,15 @@ jsign_sign() {
     -v $directory:$directory \
     -w $directory \
     artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-jsign \
-    /bin/bash -c "jsign --tsaurl "timestamp.url" -a mongo-authenticode-2021 '$file'"
+    /bin/bash -c "jsign -t '$timestampUrl' -a '$alias' '$file'"
 }
 
-if [[ "$method" -eq "gpg" ]]; then 
+if [[ $method == "gpg" ]]; then
   gpg_sign 
-elif [[ "$method" -eq "jsign" ]]; then 
+elif [[ $method == "jsign" ]]; then
   jsign_sign
+else
+  echo "Unknown signing method: $method"
+  exit 1
 fi
-
 echo "Finished signing $file"
