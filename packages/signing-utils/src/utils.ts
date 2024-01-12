@@ -23,7 +23,7 @@ export function getEnv() {
 
 const DEFAULT_JSIGN_TIMESTAMP_URL = 'http://timestamp.digicert.com';
 
-export function getSigningOptions(options: SigningOptions) {
+export function mapSigningOptionsForScript(options: SigningOptions) {
   if (options.method === 'gpg') {
     return {
       method: options.method,

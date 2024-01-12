@@ -1,6 +1,6 @@
 import path from 'path';
 import type { SSHClient } from '../ssh-client';
-import { debug, getEnv, getSigningOptions } from '../utils';
+import { debug, getEnv, mapSigningOptionsForScript } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 export class RemoteSigningClient implements SigningClient {
@@ -34,7 +34,9 @@ export class RemoteSigningClient implements SigningClient {
 
   private async signRemoteFile(file: string) {
     const env = getEnv();
-    const signingOptions = getSigningOptions(this.options.signingOptions);
+    const signingOptions = mapSigningOptionsForScript(
+      this.options.signingOptions
+    );
     /**
      * Passing env variables as an option to ssh.exec() doesn't work as ssh config
      * (`sshd_config.AllowEnv`) does not allow to pass env variables by default.

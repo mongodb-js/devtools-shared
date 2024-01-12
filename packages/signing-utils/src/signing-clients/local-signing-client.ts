@@ -1,6 +1,6 @@
 import path from 'path';
 import { spawnSync } from 'child_process';
-import { debug, getEnv, getSigningOptions } from '../utils';
+import { debug, getEnv, mapSigningOptionsForScript } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 const localClientDebug = debug.extend('LocalSigningClient');
@@ -27,7 +27,7 @@ export class LocalSigningClient implements SigningClient {
     try {
       const env = {
         ...getEnv(),
-        ...getSigningOptions(this.options.signingOptions),
+        ...mapSigningOptionsForScript(this.options.signingOptions),
       };
 
       const { stdout, stderr, status } = spawnSync(
