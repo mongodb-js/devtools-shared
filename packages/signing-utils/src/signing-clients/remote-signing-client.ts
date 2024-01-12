@@ -1,6 +1,6 @@
 import path from 'path';
 import type { SSHClient } from '../ssh-client';
-import { debug, getEnv } from '../utils';
+import { debug, getEnv, mapSigningOptionsForScript } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 export class RemoteSigningClient implements SigningClient {
@@ -34,6 +34,9 @@ export class RemoteSigningClient implements SigningClient {
 
   private async signRemoteFile(file: string) {
     const env = getEnv();
+    const signingOptions = mapSigningOptionsForScript(
+      this.options.signingOptions
+    );
     /**
      * Passing env variables as an option to ssh.exec() doesn't work as ssh config
      * (`sshd_config.AllowEnv`) does not allow to pass env variables by default.
@@ -49,7 +52,9 @@ export class RemoteSigningClient implements SigningClient {
       `export artifactory_username=${env.artifactory_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export artifactory_password=${env.artifactory_password}`,
-      `export method=${this.options.signingMethod}`,
+      ...(Object.keys(signingOptions) as (keyof typeof signingOptions)[]).map(
+        (k) => `export ${k}=${signingOptions[k] as string}`
+      ),
       `./garasign.sh '${file}'`,
     ];
     const command = cmds.join(' && ');
