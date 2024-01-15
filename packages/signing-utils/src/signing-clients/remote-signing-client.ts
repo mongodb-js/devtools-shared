@@ -1,6 +1,6 @@
 import path from 'path';
 import type { SSHClient } from '../ssh-client';
-import { debug, getEnv, mapSigningOptionsForScript } from '../utils';
+import { debug, getEnv } from '../utils';
 import type { SigningClient, SigningClientOptions } from '.';
 
 export class RemoteSigningClient implements SigningClient {
@@ -34,9 +34,6 @@ export class RemoteSigningClient implements SigningClient {
 
   private async signRemoteFile(file: string) {
     const env = getEnv();
-    const signingOptions = mapSigningOptionsForScript(
-      this.options.signingOptions
-    );
     /**
      * Passing env variables as an option to ssh.exec() doesn't work as ssh config
      * (`sshd_config.AllowEnv`) does not allow to pass env variables by default.
@@ -52,9 +49,7 @@ export class RemoteSigningClient implements SigningClient {
       `export artifactory_username=${env.artifactory_username}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export artifactory_password=${env.artifactory_password}`,
-      ...(Object.keys(signingOptions) as (keyof typeof signingOptions)[]).map(
-        (k) => `export ${k}=${signingOptions[k] as string}`
-      ),
+      `export method=${this.options.signingMethod}`,
       `./garasign.sh '${file}'`,
     ];
     const command = cmds.join(' && ');
@@ -76,6 +71,13 @@ export class RemoteSigningClient implements SigningClient {
 
       await this.sshClient.downloadFile(remotePath, file);
       debug(`SFTP: Downloaded signed file to ${file}`);
+
+      // For signing using gpg, `.sig` file is created along side the file being signed.
+      // We also have to download it back and put it in the same path as original file.
+      if (this.options.signingMethod === 'gpg') {
+        await this.sshClient.downloadFile(`${remotePath}.sig`, `${file}.sig`);
+        debug(`SFTP: Downloaded signature file to ${file}`);
+      }
     } catch (error) {
       debug({ error });
     } finally {
