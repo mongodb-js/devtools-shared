@@ -1,9 +1,9 @@
-import saslprep from './index';
+import saslprep from './node';
 import { expect } from 'chai';
 
 const chr = String.fromCodePoint;
 
-describe('saslprep', function () {
+describe('saslprep (node)', function () {
   it('should work with latin letters', function () {
     const str = 'user';
     expect(saslprep(str)).to.equal(str);

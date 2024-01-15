@@ -1,25 +1,4 @@
-import {
-  unassigned_code_points,
-  commonly_mapped_to_nothing,
-  non_ASCII_space_characters,
-  prohibited_characters,
-  bidirectional_r_al,
-  bidirectional_l,
-} from './memory-code-points';
-
-// 2.1.  Mapping
-
-/**
- * non-ASCII space characters [StringPrep, C.1.2] that can be
- * mapped to SPACE (U+0020)
- */
-const mapping2space = non_ASCII_space_characters;
-
-/**
- * the "commonly mapped to nothing" characters [StringPrep, B.1]
- * that can be mapped to nothing.
- */
-const mapping2nothing = commonly_mapped_to_nothing;
+import type { createMemoryCodePoints } from './memory-code-points';
 
 // utils
 const getCodePoint = (character: string) => character.codePointAt(0);
@@ -58,9 +37,31 @@ function toCodePoints(input: string): number[] {
  * SASLprep.
  */
 function saslprep(
+  {
+    unassigned_code_points,
+    commonly_mapped_to_nothing,
+    non_ASCII_space_characters,
+    prohibited_characters,
+    bidirectional_r_al,
+    bidirectional_l,
+  }: ReturnType<typeof createMemoryCodePoints>,
   input: string,
   opts: { allowUnassigned?: boolean } = {}
 ): string {
+  // 2.1.  Mapping
+
+  /**
+   * non-ASCII space characters [StringPrep, C.1.2] that can be
+   * mapped to SPACE (U+0020)
+   */
+  const mapping2space = non_ASCII_space_characters;
+
+  /**
+   * the "commonly mapped to nothing" characters [StringPrep, B.1]
+   * that can be mapped to nothing.
+   */
+  const mapping2nothing = commonly_mapped_to_nothing;
+
   if (typeof input !== 'string') {
     throw new TypeError('Expected string.');
   }

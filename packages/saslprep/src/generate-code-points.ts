@@ -59,3 +59,11 @@ export default gunzipSync(
 );
 `
 );
+
+const fsStreamUncompressedData = createWriteStream(process.argv[3]);
+
+fsStreamUncompressedData.write(
+  `const data = Buffer.from('${Buffer.concat(memory).toString(
+    'base64'
+  )}', 'base64');\nexport default data;\n`
+);
