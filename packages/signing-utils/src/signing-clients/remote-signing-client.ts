@@ -71,6 +71,13 @@ export class RemoteSigningClient implements SigningClient {
 
       await this.sshClient.downloadFile(remotePath, file);
       debug(`SFTP: Downloaded signed file to ${file}`);
+
+      // For signing using gpg, `.sig` file is created along side the file being signed.
+      // We also have to download it back and put it in the same path as original file.
+      if (this.options.signingMethod === 'gpg') {
+        await this.sshClient.downloadFile(`${remotePath}.sig`, `${file}.sig`);
+        debug(`SFTP: Downloaded signature file to ${file}`);
+      }
     } catch (error) {
       debug({ error });
     } finally {
