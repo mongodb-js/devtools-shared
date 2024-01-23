@@ -46,7 +46,7 @@ describe('RemoteSigningClient', function () {
     const remoteSigningClient = new RemoteSigningClient(getMockedSSHClient(), {
       workingDirectory: workingDirectoryPath,
       signingScript: signingScript,
-      signingMethod: 'gpg',
+      signingMethod: 'jsign',
     });
 
     await remoteSigningClient.sign(fileToSign);
