@@ -8,7 +8,7 @@ import { RemoteSigningClient } from './remote-signing-client';
 export { LocalSigningClient } from './local-signing-client';
 export { RemoteSigningClient } from './remote-signing-client';
 
-export type SigningMethod = 'gpg' | 'jsign';
+export type SigningMethod = 'gpg' | 'jsign' | 'rpm_gpg';
 
 export type SigningClientOptions = {
   workingDirectory: string;
@@ -16,8 +16,18 @@ export type SigningClientOptions = {
   signingMethod: SigningMethod;
 };
 
+type SharedSigningOptions = {
+  /**
+   * The method to sign with.
+   * - `jsign` - for signing windows files (`exe`, `msi`, `dll`)
+   * - `rpm_gpg` - for signing rhel package (`rpm`)
+   * - `gpg` - for signing other files (`tar`, `zip`, `deb`)
+   */
+  signingMethod: SigningMethod;
+};
+
 /** Options for signing a file remotely over an SSH connection. */
-export type RemoteSigningOptions = {
+export type RemoteSigningOptions = SharedSigningOptions & {
   /** Hostname or IP address of the server to */
   host?: string;
   /** Username for authentication. */
@@ -28,8 +38,6 @@ export type RemoteSigningOptions = {
   port?: number;
   /** Buffer or string that contains a private key for either key-based or hostbased user authentication (OpenSSH format). */
   privateKey?: Buffer | string;
-  /** The method to sign with.  Use gpg on linux and jsign on windows. */
-  signingMethod: SigningMethod;
 
   /**
    * The path of the working directory in which to sign files **on the remote ssh server**.  Defaults to `/home/ubuntu/garasign`.
@@ -39,10 +47,7 @@ export type RemoteSigningOptions = {
 };
 
 /** Options for signing a file locally. */
-export type LocalSigningOptions = {
-  /** The method to sign with.  Use gpg on linux and jsign on windows. */
-  signingMethod: SigningMethod;
-
+export type LocalSigningOptions = SharedSigningOptions & {
   client: 'local';
 };
 
