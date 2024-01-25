@@ -69,7 +69,10 @@ export class RemoteSigningClient implements SigningClient {
       await this.signRemoteFile(path.basename(remotePath));
       debug(`SFTP: Signed file ${file}`);
 
-      if (this.options.signingMethod === 'jsign') {
+      if (
+        this.options.signingMethod === 'jsign' ||
+        this.options.signingMethod === 'rpm_gpg'
+      ) {
         await this.sshClient.downloadFile(remotePath, file);
         debug(`SFTP: Downloaded signed file to ${file}`);
       }
