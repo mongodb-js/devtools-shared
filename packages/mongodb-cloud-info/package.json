@@ -1,6 +1,6 @@
 {
   "name": "mongodb-cloud-info",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Get cloud information based on hostname",
   "author": {
     "name": "MongoDB Inc",
