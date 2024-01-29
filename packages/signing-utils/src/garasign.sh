@@ -14,12 +14,17 @@ if [ -z ${artifactory_password+omitted} ]; then echo "artifactory_password is un
 if [ -z ${method+omitted} ]; then echo "method must either be gpg, rpm_gpg or jsign" && exit 1; fi
 
 ARTIFACTORY_HOST="artifactory.corp.mongodb.com"
+ENV_FILE="signing-envfile"
 
-logout_artifactory() {
+echo "GRS_CONFIG_USER1_USERNAME=${username}" >> "${ENV_FILE}"
+echo "GRS_CONFIG_USER1_PASSWORD=${password}" >> "${ENV_FILE}"
+
+cleanup() {
   docker logout "${ARTIFACTORY_HOST}" > /dev/null 2>&1
+  rm -r "${ENV_FILE}" || true
   echo "Logged out from artifactory"
 }
-trap logout_artifactory EXIT
+trap cleanup EXIT
 
 echo "Logging into docker artifactory"
 echo "${artifactory_password}" | docker login --password-stdin --username ${artifactory_username} ${ARTIFACTORY_HOST} > /dev/null 2>&1
@@ -37,8 +42,7 @@ echo "Working directory: $directory"
 
 gpg_sign() {
   docker run \
-    -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
-    -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
+    --env-file="${ENV_FILE}" \
     --rm \
     -v $directory:$directory \
     -w $directory \
@@ -48,8 +52,7 @@ gpg_sign() {
 
 jsign_sign() {
   docker run \
-    -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
-    -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
+    --env-file="${ENV_FILE}" \
     --rm \
     -v $directory:$directory \
     -w $directory \
@@ -63,8 +66,7 @@ rpm_gpg_sign() {
   # to be used for signing. The rpm signing command is copied from: 
   # https://github.com/mongodb-devprod-infrastructure/barque/blob/3c03fe0b6a5a0d0221a78d688de6015f546fc495/sign/rpm.go#L21
   docker run \
-    -e GRS_CONFIG_USER1_USERNAME="${garasign_username}" \
-    -e GRS_CONFIG_USER1_PASSWORD="${garasign_password}" \
+    --env-file="${ENV_FILE}" \
     --rm \
     -v $directory:$directory \
     -w $directory \
