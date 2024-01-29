@@ -677,6 +677,13 @@ const EXPRESSION_OPERATORS = [
     version: '3.4.0',
   },
   {
+    name: '$toHashedIndexKey',
+    value: '$toHashedIndexKey',
+    score: 1,
+    meta: 'expr:arith',
+    version: '4.2.24',
+  },
+  {
     name: '$toLower',
     value: '$toLower',
     score: 1,

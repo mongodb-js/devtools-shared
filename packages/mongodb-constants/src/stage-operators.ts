@@ -651,11 +651,21 @@ const STAGE_OPERATORS = [
     description:
       'Writes the result of a pipeline to a new or existing collection.',
     comment: `/**
- * Provide the name of the output collection.
+ * Provide the name of the output database and collection.
  */
 `,
     // eslint-disable-next-line quotes
-    snippet: `'\${1:string}'`,
+    snippet: `{
+  db: '\${1:string}',
+  coll: '\${2:string}',
+  /*
+  timeseries: {
+    timeField: '\${3:field}',
+    bucketMaxSpanSeconds: '\${4:number}',
+    granularity: '\${5:granularity}'
+  }
+  */
+}`,
   },
   {
     name: '$out',
