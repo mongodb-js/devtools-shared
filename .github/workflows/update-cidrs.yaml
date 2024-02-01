@@ -25,6 +25,8 @@ jobs:
         run: |
           npm -v
           npm i
+          # make sure precommit.js is compiled
+          npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
 
       - name: Update cidrs.json
         run: npm run -w packages/mongodb-cloud-info update-cidrs
