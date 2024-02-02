@@ -30,6 +30,7 @@ describe('constants', function () {
       'REQUIRED_AS_FIRST_STAGE',
       'SYSTEM_VARIABLES',
       'ATLAS_SEARCH_TEMPLATES',
+      'ATLAS_VECTOR_SEARCH_TEMPLATE',
     ]);
   });
 });

@@ -118,3 +118,16 @@ export const ATLAS_SEARCH_TEMPLATES: SearchTemplate[] = [
     version: '4.4.0',
   },
 ];
+
+export const ATLAS_VECTOR_SEARCH_TEMPLATE: SearchTemplate = {
+  name: 'Vector Search default template',
+  snippet: `{
+  "fields": [{
+    "type": "vector",
+    "path": "\${1:<field name to index>}",
+    "numDimensions": \${2:<number of dimensions>},
+    "similarity": "\${3:<euclidean | cosine | dotProduct>}"
+  }]
+}`,
+  version: '4.4.0',
+};
