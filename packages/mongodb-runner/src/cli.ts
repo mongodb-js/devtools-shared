@@ -83,7 +83,7 @@ import * as utilities from './index';
   }
 
   async function start() {
-    const { cluster, id } = await utilities.start(argv);
+    const { cluster, id } = await utilities.start(argv, args);
     console.log(`Server started and running at ${cluster.connectionString}`);
     console.log('Run the following command to stop the instance:');
     console.log(
