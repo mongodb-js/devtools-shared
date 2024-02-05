@@ -23,19 +23,24 @@ export interface TokenMetadata {
   // parameters that are defined this way.
   client_id: string;
   scope: string;
-  skipIdToken?: boolean;
 }
 
 export type MaybePromise<T> = T | PromiseLike<T>;
 
 export interface OIDCMockProviderConfig {
   /**
-   * Return fields to be included in the generated Access and ID Tokens.
+   * expires_in, payload: Return fields to be included in the generated Access and ID Tokens.
    * This should include e.g. `sub` and any other OIDC claims that are relevant.
+   *
+   * skipIdToken: Exclude ID Token
    */
   getTokenPayload(
     metadata: TokenMetadata
-  ): MaybePromise<{ expires_in: number; payload: Record<string, unknown> }>;
+  ): MaybePromise<{
+    expires_in: number;
+    payload: Record<string, unknown>;
+    skipIdToken?: boolean;
+  }>;
 
   /**
    * Allow override special handling for specific types of requests.
@@ -299,7 +304,8 @@ export class OIDCMockProvider {
     access_token: string;
     id_token: string | undefined;
   }> {
-    const { expires_in, payload } = await this.config.getTokenPayload(metadata);
+    const { expires_in, payload, skipIdToken } =
+      await this.config.getTokenPayload(metadata);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     const header = {
       alg: 'RS256',
@@ -331,7 +337,7 @@ export class OIDCMockProvider {
       expires_in,
       access_token: makeToken(fullPayload),
       // In an ID Token, aud === client_id, in an Access Token, not necessarily
-      id_token: metadata.skipIdToken
+      id_token: skipIdToken
         ? undefined
         : makeToken({ ...fullPayload, aud: metadata.client_id }),
     };
