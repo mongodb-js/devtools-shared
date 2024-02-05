@@ -34,9 +34,7 @@ export interface OIDCMockProviderConfig {
    *
    * skipIdToken: Exclude ID Token
    */
-  getTokenPayload(
-    metadata: TokenMetadata
-  ): MaybePromise<{
+  getTokenPayload(metadata: TokenMetadata): MaybePromise<{
     expires_in: number;
     payload: Record<string, unknown>;
     skipIdToken?: boolean;
