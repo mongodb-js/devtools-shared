@@ -23,6 +23,7 @@ export interface TokenMetadata {
   // parameters that are defined this way.
   client_id: string;
   scope: string;
+  skipIdToken?: boolean;
 }
 
 export type MaybePromise<T> = T | PromiseLike<T>;
@@ -295,7 +296,11 @@ export class OIDCMockProvider {
 
   private async issueToken(
     metadata: TokenMetadata
-  ): Promise<{ expires_in: number; access_token: string; id_token: string }> {
+  ): Promise<{
+    expires_in: number;
+    access_token: string;
+    id_token: string | undefined;
+  }> {
     const { expires_in, payload } = await this.config.getTokenPayload(metadata);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     const header = {
@@ -328,7 +333,9 @@ export class OIDCMockProvider {
       expires_in,
       access_token: makeToken(fullPayload),
       // In an ID Token, aud === client_id, in an Access Token, not necessarily
-      id_token: makeToken({ ...fullPayload, aud: metadata.client_id }),
+      id_token: metadata.skipIdToken
+        ? undefined
+        : makeToken({ ...fullPayload, aud: metadata.client_id }),
     };
   }
 
