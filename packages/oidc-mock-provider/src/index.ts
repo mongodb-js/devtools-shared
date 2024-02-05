@@ -294,9 +294,7 @@ export class OIDCMockProvider {
     }
   }
 
-  private async issueToken(
-    metadata: TokenMetadata
-  ): Promise<{
+  private async issueToken(metadata: TokenMetadata): Promise<{
     expires_in: number;
     access_token: string;
     id_token: string | undefined;
