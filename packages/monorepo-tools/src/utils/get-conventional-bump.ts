@@ -29,7 +29,7 @@ export function getConventionalBump(
 
   if (
     /\bBREAKING CHANGES?\b/.test(subject) ||
-    /^[a-z]+(\([A-z0-9_-]+\))?!:/.test(subject) ||
+    /^[a-z]+(\([A-Za-z0-9_-]+\))?!:/.test(subject) ||
     /\bBREAKING CHANGES?\b/.test(body)
   ) {
     return 'major';
