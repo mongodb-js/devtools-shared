@@ -357,6 +357,22 @@ pineapple}
 }`
       );
     });
+
+    it('retains double spaces and new lines in strings', function () {
+      assert.equal(
+        toJSString(
+          {
+            a: {
+              name: `multi-line with s  p    a   c
+        
+e  s`,
+            },
+          },
+          0
+        ),
+        "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}"
+      );
+    });
   });
 
   describe('stringify', function () {
@@ -367,6 +383,20 @@ pineapple}
     });
     it('should not added extra space when nesting', function () {
       assert.equal(stringify({ a: { $exists: true } }), '{a: {$exists: true}}');
+    });
+
+    // stringify is now deprecated as a result of this.
+    it('changes multi-space values', function () {
+      assert.equal(
+        stringify({
+          a: {
+            name: `multi-line with s  p    a   c
+        
+e  s`,
+          },
+        }),
+        "{a: {name: 'multi-line with s p a c\\n \\ne s'}}"
+      );
     });
 
     context('when providing a long', function () {
