@@ -16,6 +16,7 @@ import {
   parseProject,
   parseSort,
   stringify,
+  toJSString,
   DEFAULT_LIMIT,
   DEFAULT_MAX_TIME_MS,
   DEFAULT_SKIP,
@@ -324,6 +325,37 @@ describe('mongodb-query-parser', function () {
           assert.equal(parsed, false);
         });
       });
+    });
+  });
+
+  describe('toJSString', function () {
+    it('should default to two spaces', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }),
+        `{
+  a: {
+    $exists: true
+  }
+}`
+      );
+    });
+
+    it('should allow falsy indentation', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }, 0),
+        '{a:{$exists:true}}'
+      );
+    });
+
+    it('allows passing custom indent', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }, 'pineapple'),
+        `{
+pineapplea: {
+pineapplepineapple$exists: true
+pineapple}
+}`
+      );
     });
   });
 
