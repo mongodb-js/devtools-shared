@@ -16,6 +16,7 @@ import {
   parseProject,
   parseSort,
   stringify,
+  toJSString,
   DEFAULT_LIMIT,
   DEFAULT_MAX_TIME_MS,
   DEFAULT_SKIP,
@@ -327,6 +328,53 @@ describe('mongodb-query-parser', function () {
     });
   });
 
+  describe('toJSString', function () {
+    it('should default to two spaces', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }),
+        `{
+  a: {
+    $exists: true
+  }
+}`
+      );
+    });
+
+    it('should allow falsy indentation', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }, 0),
+        '{a:{$exists:true}}'
+      );
+    });
+
+    it('allows passing custom indent', function () {
+      assert.equal(
+        toJSString({ a: { $exists: true } }, 'pineapple'),
+        `{
+pineapplea: {
+pineapplepineapple$exists: true
+pineapple}
+}`
+      );
+    });
+
+    it('retains double spaces and new lines in strings', function () {
+      assert.equal(
+        toJSString(
+          {
+            a: {
+              name: `multi-line with s  p    a   c
+        
+e  s`,
+            },
+          },
+          0
+        ),
+        "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}"
+      );
+    });
+  });
+
   describe('stringify', function () {
     it('should work', function () {
       const res = parseFilter('{_id: ObjectId("58c33a794d08b991e3648fd2")}');
@@ -335,6 +383,20 @@ describe('mongodb-query-parser', function () {
     });
     it('should not added extra space when nesting', function () {
       assert.equal(stringify({ a: { $exists: true } }), '{a: {$exists: true}}');
+    });
+
+    // stringify is now deprecated as a result of this.
+    it('changes multi-space values', function () {
+      assert.equal(
+        stringify({
+          a: {
+            name: `multi-line with s  p    a   c
+        
+e  s`,
+          },
+        }),
+        "{a: {name: 'multi-line with s p a c\\n \\ne s'}}"
+      );
     });
 
     context('when providing a long', function () {

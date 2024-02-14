@@ -139,7 +139,7 @@ const BSON_TO_JS_STRING = {
 /** @public */
 export function toJSString(
   obj: unknown,
-  ind?: Parameters<typeof JSON.stringify>[2]
+  ind: Parameters<typeof JSON.stringify>[2] = 2
 ): string | undefined {
   return toJavascriptString(
     obj,
@@ -151,13 +151,18 @@ export function toJSString(
       }
       return toJs(value);
     },
-    ind || ' '
+    ind
   );
 }
 
-/** @public */
+/**
+ * @public
+ * @deprecated
+ * This function is deprecated and not recommended as it replaces
+ * double spaces, newline values, and indents with only one space.
+ **/
 export function stringify(obj: unknown): string | undefined {
-  return toJSString(obj)
+  return toJSString(obj, 1)
     ?.replace(/ ?\n ? ?/g, '')
     .replace(/ {2,}/g, ' ');
 }
