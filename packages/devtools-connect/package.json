@@ -1,0 +1,93 @@
+{
+  "name": "@mongodb-js/devtools-connect",
+  "version": "2.4.3",
+  "description": "A connection establishment utility for MongoDB developer tools",
+  "homepage": "https://github.com/mongodb-js/devtools-connect",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-connect.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/mongodb-js/devtools-connect/issues"
+  },
+  "main": "dist/index.js",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./.esm-wrapper.mjs"
+  },
+  "files": [
+    "LICENSE",
+    "dist",
+    "package.json",
+    "README.md",
+    ".esm-wrapper.mjs"
+  ],
+  "scripts": {
+    "bootstrap": "npm run compile",
+    "prepublishOnly": "npm run compile",
+    "compile": "npm run compile-ts && gen-esm-wrapper . ./.esm-wrapper.mjs",
+    "typecheck": "tsc --noEmit",
+    "eslint": "eslint src/**/*.ts",
+    "prettier": "prettier",
+    "lint": "npm run eslint . && npm run prettier -- --check .",
+    "depcheck": "depcheck",
+    "check": "npm run typecheck && npm run lint && npm run depcheck",
+    "check-ci": "npm run check",
+    "testonly": "nyc mocha --colors -r ts-node/register src/**/*.spec.ts",
+    "test": "npm run lint && npm run compile && npm run testonly",
+    "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
+    "test-watch": "npm run test -- --watch",
+    "test-ci": "npm run test-cov",
+    "reformat": "npm run prettier -- --write .",
+    "prepack": "npm run compile",
+    "compile-ts": "tsc -p tsconfig.json"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "lodash.merge": "^4.6.2",
+    "mongodb-connection-string-url": "^3.0.0",
+    "system-ca": "^1.0.2"
+  },
+  "peerDependencies": {
+    "@mongodb-js/oidc-plugin": "^0.3.1",
+    "mongodb": "^5.8.1 || ^6.0.0",
+    "mongodb-log-writer": "^1.2.0"
+  },
+  "devDependencies": {
+    "@mongodb-js/oidc-http-server-pages": "0.1.0",
+    "@mongodb-js/oidc-plugin": "^0.3.1",
+    "@types/lodash.merge": "^4.6.7",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.4.10",
+    "@typescript-eslint/eslint-plugin": "^6.5.0",
+    "@typescript-eslint/parser": "^6.5.0",
+    "chai": "^4.3.4",
+    "eslint": "^8.48.0",
+    "eslint-config-semistandard": "^17.0.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "gen-esm-wrapper": "^1.1.0",
+    "mocha": "^9.1.1",
+    "mongodb": "^5.8.1 || ^6.0.0",
+    "mongodb-log-writer": "^1.2.0",
+    "nyc": "^15.1.0",
+    "os-dns-native": "^1.2.0",
+    "resolve-mongodb-srv": "^1.1.1",
+    "sinon-chai": "^3.7.0",
+    "ts-node": "^10.2.1",
+    "ts-sinon": "^2.0.1",
+    "typescript": "^5.0.4"
+  },
+  "optionalDependencies": {
+    "kerberos": "^2.1.0",
+    "mongodb-client-encryption": "^6.0.0",
+    "os-dns-native": "^1.2.0",
+    "resolve-mongodb-srv": "^1.1.1",
+    "socks": "^2.7.3"
+  }
+}
