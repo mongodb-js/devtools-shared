@@ -50,7 +50,8 @@
     "@mongodb-js/oidc-http-server-pages": "0.1.0",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.0",
-    "system-ca": "^1.0.2"
+    "system-ca": "^1.0.2",
+    "mongodb": "^5.8.1 || ^6.0.0"
   },
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^0.3.1",
