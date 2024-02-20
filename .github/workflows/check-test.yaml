@@ -57,6 +57,13 @@ jobs:
       - name: Install npm
         run: npm install -g npm@8
 
+      - name: Use python@3.11
+        # Default Python (3.12) doesn't have support for distutils
+        # https://github.com/nodejs/node-gyp/issues/2869
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install Dependencies
         run: |
           # Dependencies are included when installing as npm workspaces will
@@ -79,11 +86,6 @@ jobs:
         # linting and dependency checking is relevant only for packages where
         # the source code was changed
         run: npm run check-ci -- --stream --since ${SINCE_REF} --exclude-dependents
-        shell: bash
-
-      # temporary check
-      - name: Check saslprep
-        run: npm explain @mongodb-js/saslprep
         shell: bash
 
       - name: Run Tests
