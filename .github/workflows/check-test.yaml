@@ -81,6 +81,11 @@ jobs:
         run: npm run check-ci -- --stream --since ${SINCE_REF} --exclude-dependents
         shell: bash
 
+      # temporary check
+      - name: Check saslprep
+        run: npm explain @mongodb-js/saslprep
+        shell: bash
+
       - name: Run Tests
         run: npm run test-ci -- --stream --since ${SINCE_REF}
         shell: bash
