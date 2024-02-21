@@ -4,7 +4,9 @@
 export function isFastFailureConnectionError(error: Error): boolean {
   switch (error.name) {
     case 'MongoNetworkError':
-      return /\b(ECONNREFUSED|ENOTFOUND|ENETUNREACH|EINVAL)\b/.test(error.message);
+      return /\b(ECONNREFUSED|ENOTFOUND|ENETUNREACH|EINVAL)\b/.test(
+        error.message
+      );
     case 'MongoError':
       return /The apiVersion parameter is required/.test(error.message);
     default:
