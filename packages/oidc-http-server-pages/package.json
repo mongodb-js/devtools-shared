@@ -31,7 +31,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && node dist/create-static-pages.js > dist/static-pages.js && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && node dist/create-static-pages.js > dist/templates.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
