@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "allowJs": true,
-    "jsx": "react"
+    "jsx": "react",
+    "allowArbitraryExtensions": true
   },
   "include": ["src/**/*"],
   "exclude": ["./src/**/*.spec.*"]

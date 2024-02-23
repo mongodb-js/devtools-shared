@@ -16,6 +16,7 @@ import {
 import React from 'react';
 import { createHash } from 'crypto';
 import { brotliCompressSync, constants as zlibConstants } from 'zlib';
+import { PageTemplates, ITemplate, Page } from './types';
 
 /** Iterate all sub-arrays of an array */
 function* allSubsets<T>(array: T[]): Iterable<T[]> {
@@ -145,19 +146,13 @@ function placeholder(prop: string): string {
 //   );
 // }
 
-interface ITemplate {
-  parameters: Record<string, string>;
-  html: string;
-}
-type ComponentTemplates = Record<string, ITemplate[]>;
-
 type Component<PropNames extends string> = React.FunctionComponent<
   Partial<Record<PropNames, string>>
 > & {
   name: string;
 };
 
-function getComponentTemplates<PropNames extends string>({
+function getPageTemplates<PropNames extends string>({
   Component,
   parameters,
 }: {
@@ -182,27 +177,29 @@ function getComponentTemplates<PropNames extends string>({
 }
 
 function generateTemplates<PropNames extends string>(
-  components: {
-    name: string;
-    Component: Component<PropNames>;
-    parameters: string[];
-  }[]
-): ComponentTemplates {
-  const templates: ComponentTemplates = {};
-  for (const { name, Component, parameters } of components) {
-    const componentTemplates = getComponentTemplates({ Component, parameters });
-    templates[name] = componentTemplates;
+  pages: Record<
+    Page,
+    {
+      Component: Component<PropNames>;
+      parameters: string[];
+    }
+  >
+): PageTemplates {
+  const templates: Partial<PageTemplates> = {};
+  for (const pageName of Object.keys(pages) as Page[]) {
+    const { Component, parameters } = pages[pageName];
+    const PageTemplates = getPageTemplates({ Component, parameters });
+    templates[pageName] = PageTemplates;
   }
-  return templates;
+  return templates as PageTemplates;
 }
 
 if (require.main === module) {
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
-      generateTemplates([
-        {
-          name: 'OIDCErrorPage',
+      generateTemplates({
+        [Page.OIDCErrorPage]: {
           Component: OIDCErrorPage,
           parameters: [
             'error',
@@ -212,17 +209,15 @@ if (require.main === module) {
             'productName',
           ],
         },
-        {
-          name: 'OIDCAcceptedPage',
+        [Page.OIDCAcceptedPage]: {
           Component: OIDCAcceptedPage,
           parameters: ['productDocsLink', 'productName'],
         },
-        {
-          name: 'OIDCNotFoundPage',
+        [Page.OIDCNotFoundPage]: {
           Component: OIDCNotFoundPage,
           parameters: ['productDocsLink', 'productName'],
         },
-      ])
+      })
     )
   );
 }
