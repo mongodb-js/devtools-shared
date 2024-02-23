@@ -1,10 +1,6 @@
 import type { RedirectServerRequestInfo } from '@mongodb-js/oidc-plugin';
 import type { DevtoolsConnectOptions } from '../connect';
-import {
-  OIDCAcceptedPage,
-  OIDCNotFoundPage,
-  OIDCErrorPage,
-} from '@mongodb-js/oidc-http-server-pages';
+import { getStaticPage, StaticPage } from '@mongodb-js/oidc-http-server-pages';
 
 export function oidcServerRequestHandler(
   options: Pick<DevtoolsConnectOptions, 'productDocsLink' | 'productName'>,
@@ -31,13 +27,31 @@ export function oidcServerRequestHandler(
 
   switch (result) {
     case 'accepted':
-      res.end(OIDCAcceptedPage({ productDocsLink, productName }));
+      res.end(
+        getStaticPage(StaticPage.OIDCAcceptedPage, {
+          productDocsLink,
+          productName,
+        })
+      );
       break;
     case 'rejected':
-      res.end(OIDCErrorPage({ productDocsLink, productName, ...info }));
+      res.end(
+        getStaticPage(StaticPage.OIDCErrorPage, {
+          productDocsLink,
+          productName,
+          error: info.error,
+          errorDescription: info.errorDescription,
+          errorURI: info.errorURI,
+        })
+      );
       break;
     default:
-      res.end(OIDCNotFoundPage({ productDocsLink, productName }));
+      res.end(
+        getStaticPage(StaticPage.OIDCNotFoundPage, {
+          productDocsLink,
+          productName,
+        })
+      );
       break;
   }
 }

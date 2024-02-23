@@ -13,16 +13,28 @@ function findTemplate(templates: ITemplate[], parameterKeys: string[]) {
 
 function replacePlaceholders(
   template: ITemplate,
-  parameters: Record<string, string>
+  parameters: Record<string, string | undefined>
 ) {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
-    html = html.replace(placeholder, parameters[key]);
+    html = html.replace(placeholder, escapeHTML(parameters[key] as string));
   }
   return html;
 }
 
-export function getStaticPage(page: Page, parameters: Record<string, string>) {
+function escapeHTML(str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+export function getStaticPage(
+  page: Page,
+  parameters: Record<string, string | undefined>
+) {
   const pageTemplates = templates[page];
   const nonEmptyParameters = Object.keys(parameters).filter(
     (key) => typeof parameters[key] !== 'undefined' && parameters !== null
