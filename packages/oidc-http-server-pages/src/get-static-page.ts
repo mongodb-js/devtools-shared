@@ -17,7 +17,7 @@ function replacePlaceholders(
 ) {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
-    html = html.replace(placeholder, escapeHTML(parameters[key] as string));
+    html = html.replaceAll(placeholder, escapeHTML(parameters[key] as string));
   }
   return html;
 }
