@@ -2,6 +2,7 @@ import React from 'react';
 import { expect } from 'chai';
 import { H1 } from '@mongodb-js/compass-components';
 import { generateTemplates } from './create-templates';
+import type { PageTemplates } from './types';
 
 describe('generateTemplates', function () {
   enum TestPage {
@@ -16,7 +17,7 @@ describe('generateTemplates', function () {
     );
   }
 
-  let result;
+  let result: PageTemplates<TestPage>;
   before(function () {
     result = generateTemplates<TestPage>({
       [TestPage.Page1]: {
@@ -40,8 +41,8 @@ describe('generateTemplates', function () {
     );
     expect(fullTemplate).to.exist;
     expect(fullTemplate).to.have.own.property('html');
-    expect(fullTemplate.html).to.contain('{{prop:prop1}}');
-    expect(fullTemplate.html).to.contain('{{prop:prop2}}');
+    expect(fullTemplate?.html).to.match(/<h1[^>]+>{{prop:prop1}}<\/h1>/);
+    expect(fullTemplate?.html).to.match(/<p[^>]+>{{prop:prop2}}<\/p>/);
   });
 
   it('includes a template with placeholders for no props', function () {
@@ -51,7 +52,8 @@ describe('generateTemplates', function () {
     );
     expect(fullTemplate).to.exist;
     expect(fullTemplate).to.have.own.property('html');
-    expect(fullTemplate.html).not.to.contain('{{prop:prop1}}');
-    expect(fullTemplate.html).not.to.contain('{{prop:prop2}}');
+    expect(fullTemplate?.html).to.match(/<h1[^>]+>default<\/h1>/);
+    expect(fullTemplate?.html).not.to.contain('{{prop:prop1}}');
+    expect(fullTemplate?.html).not.to.contain('{{prop:prop2}}');
   });
 });

@@ -1,0 +1,54 @@
+import { expect } from 'chai';
+import type { PageTemplates } from './types';
+import { getStaticPage } from './get-static-page';
+
+describe('getStaticPage', function () {
+  enum TestPage {
+    Page1 = 'Page1',
+  }
+
+  const templates: PageTemplates<TestPage> = {
+    [TestPage.Page1]: [
+      {
+        parameters: { prop1: '{{prop:prop1}}', prop2: '{{prop:prop2}}' },
+        html: '<h1>{{prop:prop1}}</h1>{{prop:prop2}}',
+      },
+      {
+        parameters: { prop1: '{{prop:prop1}}' },
+        html: '<h1>{{prop:prop1}}</h1>',
+      },
+      {
+        parameters: { prop2: '{{prop:prop2}}' },
+        html: '<h1>default</h1>{{prop:prop2}}',
+      },
+      {
+        parameters: {},
+        html: '<h1>default</h1>',
+      },
+    ],
+  };
+
+  it('scenario: prop1 + prop2', function () {
+    const prop1 = 'abc';
+    const prop2 = 'def';
+    const html = getStaticPage<TestPage>(
+      TestPage.Page1,
+      { prop1, prop2 },
+      templates
+    );
+    expect(html).to.equal(`<h1>${prop1}</h1>${prop2}`);
+  });
+
+  it('scenario: no props', function () {
+    const html = getStaticPage<TestPage>(TestPage.Page1, {}, templates);
+    expect(html).to.equal('<h1>default</h1>');
+  });
+
+  it('scenario: prop1 with special characters', function () {
+    const prop1 = `'one' & "two" & <three>`;
+    const html = getStaticPage<TestPage>(TestPage.Page1, { prop1 }, templates);
+    expect(html).to.equal(
+      '<h1>&#039;one&#039; &amp; &quot;two&quot; &amp; &lt;three&gt;</h1>'
+    );
+  });
+});

@@ -1,5 +1,4 @@
-import type { ITemplate, HttpServerPage } from './types';
-import templates from './templates.json';
+import type { ITemplate, HttpServerPage, PageTemplates } from './types';
 
 function findTemplate(templates: ITemplate[], parameterKeys: string[]) {
   const parametersJoined = parameterKeys.sort().join('-');
@@ -31,11 +30,18 @@ function escapeHTML(str: string) {
     .replace(/'/g, '&#039;');
 }
 
-export function getStaticPage(
-  page: HttpServerPage,
-  parameters: Record<string, string | undefined>
+export function getStaticPage<TPage extends string = HttpServerPage>(
+  page: TPage,
+  parameters: Record<string, string | undefined>,
+  templates?: PageTemplates<TPage>
 ) {
-  const pageTemplates = templates[page];
+  let httpServerPageTemplates;
+  if (!templates) {
+    httpServerPageTemplates = require('./templates.json');
+  }
+  const pageTemplates = templates
+    ? templates[page]
+    : httpServerPageTemplates[page as HttpServerPage];
   const nonEmptyParameters = Object.keys(parameters).filter(
     (key) => typeof parameters[key] !== 'undefined' && parameters !== null
   );
