@@ -1,6 +1,6 @@
 import type { ITemplate, HttpServerPage, PageTemplates } from './types';
 
-function findTemplate(templates: ITemplate[], parameterKeys: string[]) {
+function findTemplate(templates: ITemplate[], parameterKeys: string[]): ITemplate | undefined {
   const parametersJoined = parameterKeys.sort().join('-');
   for (const template of templates) {
     const templateParametersJoined = Object.keys(template.parameters)
@@ -13,7 +13,7 @@ function findTemplate(templates: ITemplate[], parameterKeys: string[]) {
 function replacePlaceholders(
   template: ITemplate,
   parameters: Record<string, string | undefined>
-) {
+): string {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
     html = html.replaceAll(placeholder, escapeHTML(parameters[key] as string));
@@ -21,7 +21,7 @@ function replacePlaceholders(
   return html;
 }
 
-function escapeHTML(str: string) {
+function escapeHTML(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -34,7 +34,7 @@ export function getStaticPage<TPage extends string = HttpServerPage>(
   page: TPage,
   parameters: Record<string, string | undefined>,
   templates?: PageTemplates<TPage>
-) {
+): string {
   if (!templates) {
     templates = require('./templates.json');
   }

@@ -49,10 +49,9 @@ function getPageTemplates({
 }): ITemplate[] {
   const templates: ITemplate[] = [];
   for (const paramsSubset of allSubsets(parameters)) {
-    const propsObject = paramsSubset.reduce((obj, prop) => {
-      obj[prop] = placeholder(prop);
-      return obj;
-    }, {} as Record<string, string>);
+    const propsObject = Object.fromEntries(
+      paramsSubset.map((prop) => [prop, placeholder(prop)])
+    );
     const markup = renderStylesToString(
       renderToStaticMarkup(React.createElement(Component, propsObject))
     );
