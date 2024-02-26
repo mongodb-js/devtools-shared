@@ -1,4 +1,4 @@
-import type { ITemplate, Page } from './types';
+import type { ITemplate, HttpServerPage } from './types';
 import templates from './templates.json';
 
 function findTemplate(templates: ITemplate[], parameterKeys: string[]) {
@@ -32,7 +32,7 @@ function escapeHTML(str: string) {
 }
 
 export function getStaticPage(
-  page: Page,
+  page: HttpServerPage,
   parameters: Record<string, string | undefined>
 ) {
   const pageTemplates = templates[page];

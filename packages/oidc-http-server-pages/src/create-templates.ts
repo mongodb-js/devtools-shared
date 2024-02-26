@@ -17,7 +17,7 @@ import {
 } from './pages-source';
 import React from 'react';
 import type { PageTemplates, ITemplate } from './types';
-import { Page } from './types';
+import { HttpServerPage } from './types';
 
 /** Iterate all sub-arrays of an array */
 function* allSubsets<T>(array: T[]): Iterable<T[]> {
@@ -36,17 +36,15 @@ function placeholder(prop: string): string {
   return `{{prop:${prop}}}`;
 }
 
-type Component<PropNames extends string> = React.FunctionComponent<
-  Partial<Record<PropNames, string>>
-> & {
+type Component = React.FunctionComponent<Partial<Record<string, string>>> & {
   name: string;
 };
 
-function getPageTemplates<PropNames extends string>({
+function getPageTemplates({
   Component,
   parameters,
 }: {
-  Component: Component<PropNames>;
+  Component: Component;
   parameters: string[];
 }): ITemplate[] {
   const templates: ITemplate[] = [];
@@ -66,22 +64,22 @@ function getPageTemplates<PropNames extends string>({
   return templates;
 }
 
-function generateTemplates<PropNames extends string>(
+export function generateTemplates<TPage extends string = HttpServerPage>(
   pages: Record<
-    Page,
+    TPage,
     {
-      Component: Component<PropNames>;
+      Component: Component;
       parameters: string[];
     }
   >
-): PageTemplates {
-  const templates: Partial<PageTemplates> = {};
-  for (const pageName of Object.keys(pages) as Page[]) {
+): PageTemplates<TPage> {
+  const templates: Partial<PageTemplates<TPage>> = {};
+  for (const pageName of Object.keys(pages) as TPage[]) {
     const { Component, parameters } = pages[pageName];
     const PageTemplates = getPageTemplates({ Component, parameters });
     templates[pageName] = PageTemplates;
   }
-  return templates as PageTemplates;
+  return templates as PageTemplates<TPage>;
 }
 
 if (require.main === module) {
@@ -89,7 +87,7 @@ if (require.main === module) {
   console.log(
     JSON.stringify(
       generateTemplates({
-        [Page.OIDCErrorPage]: {
+        [HttpServerPage.OIDCErrorPage]: {
           Component: OIDCErrorPage,
           parameters: [
             'error',
@@ -99,11 +97,11 @@ if (require.main === module) {
             'productName',
           ],
         },
-        [Page.OIDCAcceptedPage]: {
+        [HttpServerPage.OIDCAcceptedPage]: {
           Component: OIDCAcceptedPage,
           parameters: ['productDocsLink', 'productName'],
         },
-        [Page.OIDCNotFoundPage]: {
+        [HttpServerPage.OIDCNotFoundPage]: {
           Component: OIDCNotFoundPage,
           parameters: ['productDocsLink', 'productName'],
         },

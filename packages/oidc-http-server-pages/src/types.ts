@@ -2,9 +2,12 @@ export interface ITemplate {
   parameters: Record<string, string>;
   html: string;
 }
-export type PageTemplates = Record<Page, ITemplate[]>;
+export type PageTemplates<TPage extends string = HttpServerPage> = Record<
+  TPage,
+  ITemplate[]
+>;
 
-export enum Page {
+export enum HttpServerPage {
   OIDCErrorPage = 'OIDCErrorPage',
   OIDCAcceptedPage = 'OIDCAcceptedPage',
   OIDCNotFoundPage = 'OIDCNotFoundPage',
