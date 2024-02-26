@@ -51,4 +51,20 @@ describe('getStaticPage', function () {
       '<h1>&#039;one&#039; &amp; &quot;two&quot; &amp; &lt;three&gt;</h1>'
     );
   });
+
+  it('no page template is found', function () {
+    expect(() =>
+      getStaticPage<TestPage>('UnknownPage' as TestPage, {}, templates)
+    ).to.throw(Error, /No template found/);
+  });
+
+  it('throws with incorrect properties', function () {
+    expect(() =>
+      getStaticPage<TestPage>(
+        'UnknownPage' as TestPage,
+        { never: 'no' },
+        templates
+      )
+    ).to.throw(Error, /No template found/);
+  });
 });

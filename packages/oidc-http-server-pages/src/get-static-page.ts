@@ -35,18 +35,27 @@ export function getStaticPage<TPage extends string = HttpServerPage>(
   parameters: Record<string, string | undefined>,
   templates?: PageTemplates<TPage>
 ) {
-  let httpServerPageTemplates;
   if (!templates) {
-    httpServerPageTemplates = require('./templates.json');
+    templates = require('./templates.json');
   }
-  const pageTemplates = templates
-    ? templates[page]
-    : httpServerPageTemplates[page as HttpServerPage];
+
+  const pageTemplates = templates && templates[page];
+  if (!pageTemplates) {
+    throw new Error(`No template found for ${page}`);
+  }
+
   const nonEmptyParameters = Object.keys(parameters).filter(
     (key) => typeof parameters[key] !== 'undefined' && parameters !== null
   );
   const template = findTemplate(pageTemplates, nonEmptyParameters);
-  if (!template) return; // TODO: handle missing template
+  if (!template) {
+    throw new Error(
+      `No template found for ${page}; parameters: ${Object.keys(
+        parameters
+      ).join(',')}. The parameters might be incorrect.`
+    );
+  }
+
   const html = replacePlaceholders(template, parameters);
   return html;
 }
