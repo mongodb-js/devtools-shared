@@ -16,6 +16,9 @@ import {
   OIDCNotFoundPage,
 } from './pages-source';
 import React from 'react';
+import { gzipSync } from 'zlib';
+import { writeFileSync } from 'fs';
+import path from 'path';
 import type { PageTemplates, ITemplate } from './types';
 import { HttpServerPage } from './types';
 
@@ -81,30 +84,55 @@ export function generateTemplates<TPage extends string = HttpServerPage>(
   return templates as PageTemplates<TPage>;
 }
 
-if (require.main === module) {
-  // eslint-disable-next-line no-console
-  console.log(
-    JSON.stringify(
-      generateTemplates({
-        [HttpServerPage.OIDCErrorPage]: {
-          Component: OIDCErrorPage,
-          parameters: [
-            'error',
-            'errorDescription',
-            'errorURI',
-            'productDocsLink',
-            'productName',
-          ],
-        },
-        [HttpServerPage.OIDCAcceptedPage]: {
-          Component: OIDCAcceptedPage,
-          parameters: ['productDocsLink', 'productName'],
-        },
-        [HttpServerPage.OIDCNotFoundPage]: {
-          Component: OIDCNotFoundPage,
-          parameters: ['productDocsLink', 'productName'],
-        },
-      })
-    )
+export function generateCompressedTemplates<
+  TPage extends string = HttpServerPage
+>(
+  pages: Record<
+    TPage,
+    {
+      Component: Component;
+      parameters: string[];
+    }
+  >
+): void {
+  const templates = generateTemplates(pages);
+  const buffer = gzipSync(JSON.stringify(templates));
+  writeFileSync(path.join(__dirname, 'templates.gz'), buffer, 'binary');
+
+  writeFileSync(
+    path.join(__dirname, 'templates.js'),
+    `
+    const { gunzipSync } = require('zlib');
+    const buffer = gunzipSync(
+      Buffer.from(
+        '${buffer.toString('base64')}', 
+        'base64'
+      )
+    );
+    module.exports = JSON.parse(buffer.toString());
+  `
   );
+}
+
+if (require.main === module) {
+  generateCompressedTemplates({
+    [HttpServerPage.OIDCErrorPage]: {
+      Component: OIDCErrorPage,
+      parameters: [
+        'error',
+        'errorDescription',
+        'errorURI',
+        'productDocsLink',
+        'productName',
+      ],
+    },
+    [HttpServerPage.OIDCAcceptedPage]: {
+      Component: OIDCAcceptedPage,
+      parameters: ['productDocsLink', 'productName'],
+    },
+    [HttpServerPage.OIDCNotFoundPage]: {
+      Component: OIDCNotFoundPage,
+      parameters: ['productDocsLink', 'productName'],
+    },
+  });
 }

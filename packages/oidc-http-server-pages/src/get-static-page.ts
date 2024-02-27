@@ -39,7 +39,7 @@ export function getStaticPage<TPage extends string = HttpServerPage>(
   templates?: PageTemplates<TPage>
 ): string {
   if (!templates) {
-    templates = require('./templates.json');
+    templates = require('./templates.js');
   }
 
   const pageTemplates = templates && templates[page];
