@@ -1,6 +1,9 @@
 import type { ITemplate, HttpServerPage, PageTemplates } from './types';
 
-function findTemplate(templates: ITemplate[], parameterKeys: string[]): ITemplate | undefined {
+function findTemplate(
+  templates: ITemplate[],
+  parameterKeys: string[]
+): ITemplate | undefined {
   const parametersJoined = parameterKeys.sort().join('-');
   for (const template of templates) {
     const templateParametersJoined = Object.keys(template.parameters)
