@@ -1,6 +1,15 @@
-import type { ITemplate, HttpServerPage, PageTemplates } from './types';
+import { OIDCAcceptedPageProps, OIDCErrorPageProps, OIDCNotFoundPageProps } from './pages-source';
+import {
+  ITemplate,
+  HttpServerPage,
+  PageTemplates,
+  HttpServerPageProps,
+} from './types';
 
-function findTemplate(templates: ITemplate[], parameterKeys: string[]): ITemplate | undefined {
+function findTemplate(
+  templates: ITemplate[],
+  parameterKeys: string[]
+): ITemplate | undefined {
   const parametersJoined = parameterKeys.sort().join('-');
   for (const template of templates) {
     const templateParametersJoined = Object.keys(template.parameters)
@@ -30,10 +39,25 @@ function escapeHTML(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-export function getStaticPage<TPage extends string = HttpServerPage>(
-  page: TPage,
-  parameters: Record<string, string | undefined>,
+type HttpServerPageAndParameters = 
+  {
+    page: HttpServerPage.OIDCErrorPage,
+    parameters: OIDCErrorPageProps,
+  } | {
+    page: HttpServerPage.OIDCAcceptedPage,
+    parameters: OIDCAcceptedPageProps
+  } | {
+    page: HttpServerPage.OIDCNotFoundPage,
+    parameters: OIDCNotFoundPageProps,
+  };
+
+export function getStaticPage<
+  TPage extends string = HttpServerPage,
+  TPageAndParameters extends { page: string, parameters: Record<symbol, string> } = HttpServerPageAndParameters
+>(
+  TPageAndParameters & {
   templates?: PageTemplates<TPage>
+  }
 ): string {
   if (!templates) {
     templates = require('./templates.json');

@@ -56,10 +56,10 @@ const failureIconStyles = css({
   marginBottom: spacing[3] + spacing[1],
 });
 
-export interface OIDCPageBaseProps {
+export type OIDCPageBaseProps = {
   productDocsLink?: string;
   productName?: string;
-}
+};
 
 function DocsLink({
   productDocsLink,
@@ -101,7 +101,11 @@ function PageContainer({
   );
 }
 
-export function OIDCAcceptedPage(baseProps: OIDCPageBaseProps): JSX.Element {
+export type OIDCAcceptedPageProps = OIDCPageBaseProps;
+
+export function OIDCAcceptedPage(
+  baseProps: OIDCAcceptedPageProps
+): JSX.Element {
   return (
     <PageContainer title="Login Successful">
       <Icon
@@ -116,6 +120,8 @@ export function OIDCAcceptedPage(baseProps: OIDCPageBaseProps): JSX.Element {
   );
 }
 
+export type OIDCNotFoundPageProps = OIDCPageBaseProps;
+
 export function OIDCNotFoundPage(baseProps: OIDCPageBaseProps): JSX.Element {
   return (
     <PageContainer title="Page Not Found">
@@ -127,16 +133,18 @@ export function OIDCNotFoundPage(baseProps: OIDCPageBaseProps): JSX.Element {
   );
 }
 
+export type OIDCErrorPageProps = {
+  error?: string;
+  errorDescription?: string;
+  errorURI?: string;
+} & OIDCPageBaseProps;
+
 export function OIDCErrorPage({
   error,
   errorDescription,
   errorURI,
   ...baseProps
-}: {
-  error?: string;
-  errorDescription?: string;
-  errorURI?: string;
-} & OIDCPageBaseProps): JSX.Element {
+}: OIDCErrorPageProps): JSX.Element {
   return (
     <PageContainer title="Authentication Failed">
       <Icon glyph="XWithCircle" size={40} className={cx(failureIconStyles)} />

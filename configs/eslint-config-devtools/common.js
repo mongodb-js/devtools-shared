@@ -11,6 +11,7 @@ const jsxRules = {
 
 const tsRules = {
   ...jsRules,
+  '@typescript-eslint/explicit-function-return-type': 'error',
   '@typescript-eslint/no-unused-vars': 'error',
   '@typescript-eslint/no-unsafe-assignment': 'off',
   '@typescript-eslint/no-unsafe-call': 'off',
