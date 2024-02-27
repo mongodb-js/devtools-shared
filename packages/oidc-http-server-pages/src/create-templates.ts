@@ -16,7 +16,7 @@ import {
   OIDCNotFoundPage,
 } from './pages-source';
 import React from 'react';
-import { gzipSync } from 'zlib';
+import { gzipSync, brotliCompressSync, constants as zlibConstants } from 'zlib';
 import { writeFileSync } from 'fs';
 import path from 'path';
 import type { PageTemplates, ITemplate } from './types';
@@ -84,6 +84,33 @@ export function generateTemplates<TPage extends string = HttpServerPage>(
   return templates as PageTemplates<TPage>;
 }
 
+function generateGzip(data: string): void {
+  const buffer = gzipSync(data);
+  writeFileSync(path.join(__dirname, 'templates.gz'), buffer, 'binary');
+}
+
+function generateJS(data: string): void {
+  const buffer = brotliCompressSync(data, {
+    params: {
+      [zlibConstants.BROTLI_PARAM_MODE]: zlibConstants.BROTLI_MODE_TEXT,
+      [zlibConstants.BROTLI_PARAM_QUALITY]: zlibConstants.BROTLI_MAX_QUALITY,
+    },
+  });
+  writeFileSync(
+    path.join(__dirname, 'templates.js'),
+    `
+    const { brotliDecompressSync } = require('zlib');
+    const buffer = brotliDecompressSync(
+      Buffer.from(
+        '${buffer.toString('base64')}', 
+        'base64'
+      )
+    );
+    module.exports = JSON.parse(buffer.toString());
+  `
+  );
+}
+
 export function generateCompressedTemplates<
   TPage extends string = HttpServerPage
 >(
@@ -95,23 +122,9 @@ export function generateCompressedTemplates<
     }
   >
 ): void {
-  const templates = generateTemplates(pages);
-  const buffer = gzipSync(JSON.stringify(templates));
-  writeFileSync(path.join(__dirname, 'templates.gz'), buffer, 'binary');
-
-  writeFileSync(
-    path.join(__dirname, 'templates.js'),
-    `
-    const { gunzipSync } = require('zlib');
-    const buffer = gunzipSync(
-      Buffer.from(
-        '${buffer.toString('base64')}', 
-        'base64'
-      )
-    );
-    module.exports = JSON.parse(buffer.toString());
-  `
-  );
+  const templates = JSON.stringify(generateTemplates(pages));
+  generateGzip(templates);
+  generateJS(templates);
 }
 
 if (require.main === module) {
