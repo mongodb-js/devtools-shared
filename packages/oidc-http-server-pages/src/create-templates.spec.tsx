@@ -5,9 +5,14 @@ import { generateTemplates } from './create-templates';
 import type { PageTemplates } from './types';
 
 describe('generateTemplates', function () {
-  enum TestPage {
-    Page1 = 'Page1',
-  }
+  type TestPage = 'Page1';
+  type TestPagesProps = {
+    Page1: {
+      prop1?: string;
+      prop2?: string;
+      never?: string;
+    };
+  };
   function Component1({ prop1, prop2 }: { prop1?: string; prop2?: string }) {
     return (
       <div>
@@ -17,10 +22,10 @@ describe('generateTemplates', function () {
     );
   }
 
-  let result: PageTemplates<TestPage>;
+  let result: PageTemplates<TestPagesProps>;
   before(function () {
-    result = generateTemplates<TestPage>({
-      [TestPage.Page1]: {
+    result = generateTemplates<TestPagesProps, TestPage>({
+      Page1: {
         Component: Component1,
         parameters: ['prop1', 'prop2'],
       },
@@ -28,12 +33,12 @@ describe('generateTemplates', function () {
   });
 
   it('creates 4 templates for Page1', function () {
-    expect(result).to.have.own.property(TestPage.Page1);
-    expect(result[TestPage.Page1]).to.have.length(4);
+    expect(result).to.have.own.property('Page1');
+    expect(result['Page1']).to.have.length(4);
   });
 
   it('includes a template with placeholders for prop1 + prop2', function () {
-    const templates = result[TestPage.Page1];
+    const templates = result['Page1'];
     const fullTemplate = templates.find(
       ({ parameters }) =>
         Object.keys(parameters).includes('prop1') &&
@@ -46,7 +51,7 @@ describe('generateTemplates', function () {
   });
 
   it('includes a template with placeholders for no props', function () {
-    const templates = result[TestPage.Page1];
+    const templates = result['Page1'];
     const fullTemplate = templates.find(
       ({ parameters }) => Object.keys(parameters).length === 0
     );

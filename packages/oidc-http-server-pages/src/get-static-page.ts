@@ -1,4 +1,4 @@
-import type { ITemplate, HttpServerPage, PageTemplates } from './types';
+import type { ITemplate, PageTemplates, HttpServerPageProps } from './types';
 import getTemplates from './get-templates.js';
 
 function findTemplate(
@@ -15,12 +15,12 @@ function findTemplate(
 }
 
 function replacePlaceholders(
-  template: ITemplate,
-  parameters: Record<string, string | undefined>
+  template: ITemplate<Record<string, string>>,
+  parameters: Record<string, string>
 ): string {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
-    html = html.replaceAll(placeholder, escapeHTML(parameters[key] as string));
+    html = html.replaceAll(placeholder, escapeHTML(parameters[key]));
   }
   return html;
 }
@@ -34,13 +34,19 @@ function escapeHTML(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-export function getStaticPage<TPage extends string = HttpServerPage>(
+export function getStaticPage<
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
+>(
   page: TPage,
-  parameters: Record<string, string | undefined>,
-  templates?: PageTemplates<TPage>
+  parameters: TPageParameters[TPage],
+  templates?: PageTemplates<TPageParameters>
 ): string {
   if (!templates) {
-    templates = getTemplates() as PageTemplates<TPage>;
+    templates = getTemplates() as PageTemplates<TPageParameters>;
   }
 
   const pageTemplates = templates && templates[page];
