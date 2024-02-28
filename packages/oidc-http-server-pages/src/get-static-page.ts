@@ -1,10 +1,4 @@
-import { OIDCAcceptedPageProps, OIDCErrorPageProps, OIDCNotFoundPageProps } from './pages-source';
-import {
-  ITemplate,
-  HttpServerPage,
-  PageTemplates,
-  HttpServerPageProps,
-} from './types';
+import type { ITemplate, PageTemplates, HttpServerPageProps } from './types';
 
 function findTemplate(
   templates: ITemplate[],
@@ -20,12 +14,12 @@ function findTemplate(
 }
 
 function replacePlaceholders(
-  template: ITemplate,
-  parameters: Record<string, string | undefined>
+  template: ITemplate<Record<string, string>>,
+  parameters: Record<string, string>
 ): string {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
-    html = html.replaceAll(placeholder, escapeHTML(parameters[key] as string));
+    html = html.replaceAll(placeholder, escapeHTML(parameters[key]));
   }
   return html;
 }
@@ -39,25 +33,16 @@ function escapeHTML(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-type HttpServerPageAndParameters = 
-  {
-    page: HttpServerPage.OIDCErrorPage,
-    parameters: OIDCErrorPageProps,
-  } | {
-    page: HttpServerPage.OIDCAcceptedPage,
-    parameters: OIDCAcceptedPageProps
-  } | {
-    page: HttpServerPage.OIDCNotFoundPage,
-    parameters: OIDCNotFoundPageProps,
-  };
-
 export function getStaticPage<
-  TPage extends string = HttpServerPage,
-  TPageAndParameters extends { page: string, parameters: Record<symbol, string> } = HttpServerPageAndParameters
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
 >(
-  TPageAndParameters & {
-  templates?: PageTemplates<TPage>
-  }
+  page: TPage,
+  parameters: TPageParameters[TPage],
+  templates?: PageTemplates<TPageParameters>
 ): string {
   if (!templates) {
     templates = require('./templates.json');
@@ -83,3 +68,5 @@ export function getStaticPage<
   const html = replacePlaceholders(template, parameters);
   return html;
 }
+
+// getStaticPage(HttpServerPage.OIDCErrorPage, { test: 'abc' });

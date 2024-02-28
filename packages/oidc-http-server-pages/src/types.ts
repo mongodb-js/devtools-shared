@@ -17,37 +17,26 @@ export enum HttpServerPage {
   OIDCNotFoundPage = 'OIDCNotFoundPage',
 }
 
-type HttpServerPageProps = {
+export type HttpServerPageProps = {
   [HttpServerPage.OIDCErrorPage]: OIDCErrorPageProps;
   [HttpServerPage.OIDCAcceptedPage]: OIDCAcceptedPageProps;
   [HttpServerPage.OIDCNotFoundPage]: OIDCNotFoundPageProps;
 };
 
-export const props: HttpServerPageProps = {
-  [HttpServerPage.OIDCNotFoundPage]: { productDocsLink: 'abc' },
-  [HttpServerPage.OIDCAcceptedPage]: { productDocsLink: 'abc' },
-  [HttpServerPage.OIDCErrorPage]: { productDocsLink: 'abc' },
+// export type PageTemplates<TPage extends string = HttpServerPage> = Record<
+//   TPage,
+//   ITemplate[]
+// >;
+
+export type PageTemplates<
+  TPageProps extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps
+> = {
+  [Key in keyof TPageProps]: ITemplate<TPageProps[Key]>[];
 };
 
-console.log({ props });
-
-export type PageTemplates<TPage extends string = HttpServerPage> = Record<
-  TPage,
-  ITemplate[]
->;
-
-// export type PageTemplates<
-//   TPage extends string = HttpServerPage,
-//   TPageProps extends Record<
-//     string,
-//     Record<symbol, string>
-//   > = HttpServerPageProps
-// > = {
-//   [Key in keyof TPageProps]: ITemplate<TPageProps[Key]>;
-// };
-
 // export type PageTemplates = {
-//   [Key in keyof HttpServerPageProps]: ITemplate<
-//     HttpServerPageProps[Key]
-//   >;
+//   [Key in keyof HttpServerPageProps]: ITemplate<HttpServerPageProps[Key]>;
 // };

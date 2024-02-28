@@ -16,7 +16,7 @@ import {
   OIDCNotFoundPage,
 } from './pages-source';
 import React from 'react';
-import type { PageTemplates, ITemplate } from './types';
+import type { PageTemplates, ITemplate, HttpServerPageProps } from './types';
 import { HttpServerPage } from './types';
 
 /** Iterate all sub-arrays of an array */
@@ -40,30 +40,36 @@ type Component = React.FunctionComponent<Partial<Record<string, string>>> & {
   name: string;
 };
 
-function getPageTemplates({
+function getPageTemplates<TParameters extends Record<string, string>>({
   Component,
   parameters,
 }: {
   Component: Component;
-  parameters: string[];
-}): ITemplate[] {
-  const templates: ITemplate[] = [];
+  parameters: (string & keyof TParameters)[];
+}): ITemplate<TParameters>[] {
+  const templates: ITemplate<TParameters>[] = [];
   for (const paramsSubset of allSubsets(parameters)) {
     const propsObject = Object.fromEntries(
-      paramsSubset.map((prop) => [prop, placeholder(prop)])
+      paramsSubset.map((prop) => [prop, placeholder(prop)] as const)
     );
     const markup = renderStylesToString(
       renderToStaticMarkup(React.createElement(Component, propsObject))
     );
     templates.push({
-      parameters: propsObject,
+      parameters: propsObject as TParameters,
       html: markup,
     });
   }
   return templates;
 }
 
-export function generateTemplates<TPage extends string = HttpServerPage>(
+export function generateTemplates<
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
+>(
   pages: Record<
     TPage,
     {
@@ -71,14 +77,17 @@ export function generateTemplates<TPage extends string = HttpServerPage>(
       parameters: string[];
     }
   >
-): PageTemplates<TPage> {
-  const templates: Partial<PageTemplates<TPage>> = {};
+): PageTemplates<TPageParameters> {
+  const templates: Partial<PageTemplates<TPageParameters>> = {};
   for (const pageName of Object.keys(pages) as TPage[]) {
     const { Component, parameters } = pages[pageName];
-    const PageTemplates = getPageTemplates({ Component, parameters });
+    const PageTemplates = getPageTemplates<TPageParameters[TPage]>({
+      Component,
+      parameters,
+    });
     templates[pageName] = PageTemplates;
   }
-  return templates as PageTemplates<TPage>;
+  return templates as PageTemplates<TPageParameters>;
 }
 
 if (require.main === module) {
