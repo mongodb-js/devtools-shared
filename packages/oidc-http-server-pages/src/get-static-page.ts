@@ -1,4 +1,5 @@
 import type { ITemplate, HttpServerPage, PageTemplates } from './types';
+import getTemplates from './get-templates.js';
 
 function findTemplate(
   templates: ITemplate[],
@@ -39,7 +40,7 @@ export function getStaticPage<TPage extends string = HttpServerPage>(
   templates?: PageTemplates<TPage>
 ): string {
   if (!templates) {
-    templates = require('./templates.js');
+    templates = getTemplates() as PageTemplates<TPage>;
   }
 
   const pageTemplates = templates && templates[page];

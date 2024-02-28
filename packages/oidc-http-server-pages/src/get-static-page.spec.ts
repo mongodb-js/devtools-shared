@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import type { PageTemplates } from './types';
-import { getStaticPage } from './get-static-page';
+import { getStaticPage } from '../dist/get-static-page';
 
 describe('getStaticPage', function () {
   enum TestPage {

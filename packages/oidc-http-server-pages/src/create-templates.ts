@@ -97,16 +97,19 @@ function generateJS(data: string): void {
     },
   });
   writeFileSync(
-    path.join(__dirname, 'templates.js'),
+    path.join(__dirname, 'get-templates.js'),
     `
     const { brotliDecompressSync } = require('zlib');
-    const buffer = brotliDecompressSync(
-      Buffer.from(
-        '${buffer.toString('base64')}', 
-        'base64'
-      )
-    );
-    module.exports = JSON.parse(buffer.toString());
+    function getTemplates() {
+      const buffer = brotliDecompressSync(
+        Buffer.from(
+          '${buffer.toString('base64')}', 
+          'base64'
+        )
+      );
+      return JSON.parse(buffer.toString());
+    }
+    module.exports = getTemplates;
   `
   );
 }
