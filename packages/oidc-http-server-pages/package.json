@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -31,7 +31,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && node dist/create-static-pages.js > dist/static-pages.js && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && node dist/create-templates.js && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
@@ -39,7 +39,7 @@
     "depcheck": "depcheck",
     "check": "npm run typecheck && npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "test": "mocha",
+    "test": "npm run compile && mocha",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
@@ -55,7 +55,6 @@
     "@leafygreen-ui/emotion": "^4.0.7",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.35",
     "@types/react": "^17.0.53",
     "@types/react-dom": "^17.0.19",
     "@types/sinon-chai": "^3.2.5",
@@ -68,8 +67,6 @@
     "prettier": "^2.3.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "sinon-chai": "^3.7.0",
-    "ts-sinon": "^2.0.1",
     "typescript": "^5.0.4"
   }
 }

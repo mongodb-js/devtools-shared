@@ -1,6 +1,2 @@
-export {
-  OIDCPageBaseProps,
-  OIDCAcceptedPage,
-  OIDCNotFoundPage,
-  OIDCErrorPage,
-} from './static-pages';
+export { getStaticPage } from './get-static-page';
+export { HttpServerPage } from './types';
