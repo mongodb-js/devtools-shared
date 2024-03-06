@@ -4,8 +4,11 @@ import data from './code-points-data';
 
 const codePoints = createMemoryCodePoints(data);
 
-const saslprep = _saslprep.bind(null, codePoints);
+function saslprep(input: string, opts?: { allowUnassigned?: boolean }): string {
+  return _saslprep(codePoints, input, opts);
+}
 
-Object.assign(saslprep, { saslprep, default: saslprep });
+saslprep.saslprep = saslprep;
+saslprep.default = saslprep;
 
 export = saslprep;
