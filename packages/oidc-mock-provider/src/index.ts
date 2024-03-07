@@ -58,6 +58,11 @@ export interface OIDCMockProviderConfig {
    * Optional hostname for the server to listen on.
    */
   hostname?: string;
+
+  /**
+   * Optional additional fields to be returned when the OIDC configuration is accessed.
+   */
+  additionalIssuerMetadata?: () => Record<string, unknown>;
 }
 
 /**
@@ -155,6 +160,7 @@ export class OIDCMockProvider {
               '/device',
               this.issuer
             ).toString(),
+            ...this.config.additionalIssuerMetadata?.(),
           };
           break;
         case '/jwks':
