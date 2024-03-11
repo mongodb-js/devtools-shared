@@ -388,7 +388,7 @@ export async function connectMongoClient(
 }> {
   detectAndLogMissingOptionalDependencies(logger);
 
-  let systemCA: string | undefined = undefined;
+  let systemCA: string | undefined;
   if (clientOptions.useSystemCA) {
     const systemCAOpts: SystemCAOptions = { includeNodeCertificates: true };
     const ca = await systemCertsAsync(systemCAOpts);
