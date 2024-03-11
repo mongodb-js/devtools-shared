@@ -16,8 +16,8 @@ if [ -z ${method+omitted} ]; then echo "method must either be gpg, rpm_gpg or js
 ARTIFACTORY_HOST="artifactory.corp.mongodb.com"
 ENV_FILE="signing-envfile"
 
-echo "GRS_CONFIG_USER1_USERNAME=${username}" >> "${ENV_FILE}"
-echo "GRS_CONFIG_USER1_PASSWORD=${password}" >> "${ENV_FILE}"
+echo "GRS_CONFIG_USER1_USERNAME=${garasign_username}" >> "${ENV_FILE}"
+echo "GRS_CONFIG_USER1_PASSWORD=${garasign_password}" >> "${ENV_FILE}"
 
 cleanup() {
   docker logout "${ARTIFACTORY_HOST}" > /dev/null 2>&1
