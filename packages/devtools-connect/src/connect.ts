@@ -289,7 +289,8 @@ export class DevtoolsConnectionState {
       DevtoolsConnectOptions,
       'productDocsLink' | 'productName' | 'oidc' | 'parentHandle'
     >,
-    logger: ConnectLogEmitter
+    logger: ConnectLogEmitter,
+    systemCA: string | undefined
   ) {
     this.productName = options.productName;
     if (options.parentHandle) {
@@ -316,6 +317,9 @@ export class DevtoolsConnectionState {
           null,
           options
         ),
+        ...(systemCA
+          ? addCAToOIDCPluginHttpOptions(options.oidc, systemCA)
+          : {}),
       });
     }
   }
@@ -383,26 +387,8 @@ export async function connectMongoClient(
   state: DevtoolsConnectionState;
 }> {
   detectAndLogMissingOptionalDependencies(logger);
-  // If PROVIDER_NAME was specified to the MongoClient options, adding callbacks would conflict
-  // with that; we should omit them so that e.g. mongosh users can leverage the non-human OIDC
-  // auth flows by specifying PROVIDER_NAME.
-  const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
-  const state =
-    clientOptions.parentState ??
-    new DevtoolsConnectionState(clientOptions, logger);
-  const mongoClientOptions: MongoClientOptions &
-    Partial<DevtoolsConnectOptions> = merge(
-    {},
-    clientOptions,
-    shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {}
-  );
 
-  // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
-  // Refs https://github.com/microsoft/vscode/issues/189805
-  mongoClientOptions.lookup = (hostname, options, callback) => {
-    return dns.lookup(hostname, { verbatim: false, ...options }, callback);
-  };
-
+  let systemCA: string | undefined;
   if (clientOptions.useSystemCA) {
     const systemCAOpts: SystemCAOptions = { includeNodeCertificates: true };
     const ca = await systemCertsAsync(systemCAOpts);
@@ -410,8 +396,29 @@ export async function connectMongoClient(
       caCount: ca.length,
       asyncFallbackError: systemCAOpts.asyncFallbackError,
     });
-    mongoClientOptions.ca = ca.join('\n');
+    systemCA = ca.join('\n');
   }
+
+  // If PROVIDER_NAME was specified to the MongoClient options, adding callbacks would conflict
+  // with that; we should omit them so that e.g. mongosh users can leverage the non-human OIDC
+  // auth flows by specifying PROVIDER_NAME.
+  const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
+  const state =
+    clientOptions.parentState ??
+    new DevtoolsConnectionState(clientOptions, logger, systemCA);
+  const mongoClientOptions: MongoClientOptions &
+    Partial<DevtoolsConnectOptions> = merge(
+    {},
+    clientOptions,
+    shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
+    systemCA ? { ca: systemCA } : {}
+  );
+
+  // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
+  // Refs https://github.com/microsoft/vscode/issues/189805
+  mongoClientOptions.lookup = (hostname, options, callback) => {
+    return dns.lookup(hostname, { verbatim: false, ...options }, callback);
+  };
 
   delete mongoClientOptions.useSystemCA;
   delete mongoClientOptions.productDocsLink;
@@ -520,4 +527,20 @@ function closeMongoClientWhenAuthFails(
       onOIDCAuthFailed
     )
   );
+}
+
+function addCAToOIDCPluginHttpOptions(
+  existingOIDCPluginOptions: MongoDBOIDCPluginOptions | undefined,
+  ca: string
+): Pick<MongoDBOIDCPluginOptions, 'customHttpOptions'> {
+  const existingCustomOptions = existingOIDCPluginOptions?.customHttpOptions;
+  if (typeof existingCustomOptions === 'function') {
+    return {
+      customHttpOptions: (...args) => ({
+        ...existingCustomOptions(...args),
+        ca,
+      }),
+    };
+  }
+  return { customHttpOptions: { ...existingCustomOptions, ca } };
 }

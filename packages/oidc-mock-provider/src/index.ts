@@ -3,6 +3,7 @@ import type {
   IncomingMessage,
   ServerResponse,
   Server as HTTPServer,
+  RequestListener,
 } from 'http';
 import { createServer as createHTTPServer } from 'http';
 import type { AddressInfo } from 'net';
@@ -63,6 +64,12 @@ export interface OIDCMockProviderConfig {
    * Optional additional fields to be returned when the OIDC configuration is accessed.
    */
   additionalIssuerMetadata?: () => Record<string, unknown>;
+
+  /**
+   * Optional replacement for the HTTP 'createServer' function, e.g. to specify a HTTPS
+   * server with TLS settings.
+   */
+  createHTTPServer?: (requestListener: RequestListener) => HTTPServer;
 }
 
 /**
@@ -83,7 +90,7 @@ export class OIDCMockProvider {
   private config: OIDCMockProviderConfig;
 
   private constructor(config: OIDCMockProviderConfig) {
-    this.httpServer = createHTTPServer(
+    this.httpServer = (config.createHTTPServer ?? createHTTPServer)(
       (req, res) => void this.handleRequest(req, res)
     );
     this.config = config;
@@ -98,7 +105,9 @@ export class OIDCMockProvider {
     this.httpServer.listen(this.config.port ?? 0, this.config.hostname);
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
-    this.issuer = `http://${this.config.hostname ?? 'localhost'}:${port}`;
+    this.issuer = `${
+      'setSecureContext' in this.httpServer ? 'https' : 'http'
+    }://${this.config.hostname ?? 'localhost'}:${port}`;
     this.kid = await randomString(8, 'hex');
     this.keys = await promisify(crypto.generateKeyPair)('rsa', {
       modulusLength: 2048,
