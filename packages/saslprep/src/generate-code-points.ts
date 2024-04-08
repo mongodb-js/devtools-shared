@@ -2,6 +2,8 @@ import { gzipSync } from 'zlib';
 import bitfield from 'sparse-bitfield';
 import * as codePoints from './code-points-src';
 import { createWriteStream } from 'fs';
+import * as prettier from 'prettier';
+import type { Writable } from 'stream';
 
 const unassigned_code_points = bitfield();
 const commonly_mapped_to_nothing = bitfield();
@@ -41,23 +43,40 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-const fsStream = createWriteStream(process.argv[2]);
-fsStream.write(
-  `import { gunzipSync } from 'zlib';
+async function foo() {
+  const config = await prettier.resolveConfig(__dirname);
+  const formatOptions = { ...config, parser: 'typescript' };
 
-export default gunzipSync(
-  Buffer.from(
-    '${gzipSync(Buffer.concat(memory), { level: 9 }).toString('base64')}',
-    'base64'
-  )
-);
-`
-);
+  function write(stream: Writable, chunk: string): Promise<void> {
+    return new Promise((resolve) => stream.write(chunk, () => resolve()));
+  }
+  await write(
+    createWriteStream(process.argv[2]),
+    prettier.format(
+      `import { gunzipSync } from 'zlib';
+  
+  export default gunzipSync(
+    Buffer.from(
+      '${gzipSync(Buffer.concat(memory), { level: 9 }).toString('base64')}',
+      'base64'
+    )
+  );
+  `,
+      formatOptions
+    )
+  );
 
-const fsStreamUncompressedData = createWriteStream(process.argv[3]);
+  const fsStreamUncompressedData = createWriteStream(process.argv[3]);
 
-fsStreamUncompressedData.write(
-  `const data = Buffer.from('${Buffer.concat(memory).toString(
-    'base64'
-  )}', 'base64');\nexport default data;\n`
-);
+  await write(
+    fsStreamUncompressedData,
+    prettier.format(
+      `const data = Buffer.from('${Buffer.concat(memory).toString(
+        'base64'
+      )}', 'base64');\nexport default data;\n`,
+      formatOptions
+    )
+  );
+}
+
+foo().catch((e) => console.error({ e }));
