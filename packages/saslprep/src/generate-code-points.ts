@@ -79,4 +79,7 @@ async function writeCodepoints() {
   );
 }
 
-writeCodepoints().catch((e) => console.error({ e }));
+writeCodepoints().catch((error) =>
+  // eslint-disable-next-line no-console
+  console.error('error occurred generating saslprep codepoint data', { error })
+);
