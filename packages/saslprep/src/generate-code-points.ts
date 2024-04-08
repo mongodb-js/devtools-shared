@@ -41,7 +41,8 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-process.stdout.write(
+const fsStream = createWriteStream(process.argv[2]);
+fsStream.write(
   `import { gunzipSync } from 'zlib';
 
 export default gunzipSync(
