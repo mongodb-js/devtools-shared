@@ -43,7 +43,7 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-async function foo() {
+async function writeCodepoints() {
   const config = await prettier.resolveConfig(__dirname);
   const formatOptions = { ...config, parser: 'typescript' };
 
@@ -79,4 +79,4 @@ async function foo() {
   );
 }
 
-foo().catch((e) => console.error({ e }));
+writeCodepoints().catch((e) => console.error({ e }));
