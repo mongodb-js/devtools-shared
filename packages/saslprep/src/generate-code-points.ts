@@ -3,12 +3,6 @@ import bitfield from 'sparse-bitfield';
 import * as codePoints from './code-points-src';
 import { createWriteStream } from 'fs';
 
-if (!process.env.GENERATE_CODE_POINTS) {
-  // TODO(COMPASS-7555): fix codepoint generation=
-  process.exitCode = 0;
-  process.exit();
-}
-
 const unassigned_code_points = bitfield();
 const commonly_mapped_to_nothing = bitfield();
 const non_ascii_space_characters = bitfield();
@@ -47,8 +41,7 @@ memory.push(
   traverse(bidirectional_l, codePoints.bidirectional_l)
 );
 
-const fsStream = createWriteStream(process.argv[2]);
-fsStream.write(
+process.stdout.write(
   `import { gunzipSync } from 'zlib';
 
 export default gunzipSync(
