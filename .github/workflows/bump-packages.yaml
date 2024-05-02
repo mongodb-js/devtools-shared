@@ -38,7 +38,8 @@ jobs:
           npm -v
           npm ci
           # make sure precommit.js is compiled
-          npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
+          # make sure saslprep is compiled on Linux (same as the publish step), see NODE-6064
+          npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --scope @mongodb-js/saslprep --stream --include-dependencies
 
       - name: Bump packages
         run: |
