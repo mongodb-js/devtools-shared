@@ -7,27 +7,32 @@ import path from 'path';
 import decompress from 'decompress';
 import { pipeline } from 'stream';
 import getDownloadURL from 'mongodb-download-url';
-import type { Options as DownloadOptions } from 'mongodb-download-url';
+import type {
+  Options as DownloadOptions,
+  DownloadArtifactInfo,
+} from 'mongodb-download-url';
 import createDebug from 'debug';
 const debug = createDebug('mongodb-downloader');
 
 export type { DownloadOptions };
 
+export type DownloadResult = DownloadArtifactInfo & {
+  downloadedBinDir: string;
+};
+
 // Download mongod + mongos and return the path to a directory containing them.
-export async function downloadMongoDb(
+export async function downloadMongoDbWithVersionInfo(
   tmpdir: string,
   targetVersionSemverSpecifier = '*',
   options: DownloadOptions = {}
-): Promise<string> {
+): Promise<DownloadResult> {
   let wantsEnterprise = options.enterprise ?? false;
-  async function lookupDownloadUrl(): Promise<string> {
-    return (
-      await getDownloadURL({
-        version: targetVersionSemverSpecifier,
-        enterprise: wantsEnterprise,
-        ...options,
-      })
-    ).url;
+  async function lookupDownloadUrl(): Promise<DownloadArtifactInfo> {
+    return await getDownloadURL({
+      version: targetVersionSemverSpecifier,
+      enterprise: wantsEnterprise,
+      ...options,
+    });
   }
 
   await fs.mkdir(tmpdir, { recursive: true });
@@ -57,13 +62,15 @@ export async function downloadMongoDb(
   );
 }
 
-const downloadPromises: Record<string, Promise<string>> = {};
+const downloadPromises: Record<string, Promise<DownloadResult>> = Object.create(
+  null
+);
 async function doDownload(
   tmpdir: string,
   isCryptLibrary: boolean,
   version: string,
-  lookupDownloadUrl: () => Promise<string>
-) {
+  lookupDownloadUrl: () => Promise<DownloadArtifactInfo>
+): Promise<DownloadResult> {
   const downloadTarget = path.resolve(
     tmpdir,
     `mongodb-${process.platform}-${process.env.DISTRO_ID || 'none'}-${
@@ -75,16 +82,21 @@ async function doDownload(
       downloadTarget,
       isCryptLibrary && process.platform !== 'win32' ? 'lib' : 'bin'
     );
+    const artifactInfoFile = path.join(bindir, '.artifact_info');
     try {
-      await fs.stat(bindir);
+      await fs.stat(artifactInfoFile);
       debug(`Skipping download because ${downloadTarget} exists`);
-      return bindir;
+      return {
+        ...JSON.parse(await fs.readFile(artifactInfoFile, 'utf8')),
+        downloadedBinDir: bindir,
+      };
     } catch {
       /* ignore */
     }
 
     await fs.mkdir(downloadTarget, { recursive: true });
-    const url = await lookupDownloadUrl();
+    const artifactInfo = await lookupDownloadUrl();
+    const { url } = artifactInfo;
     debug(`Downloading ${url} into ${downloadTarget}...`);
 
     // Using a large highWaterMark setting noticeably speeds up Windows downloads
@@ -132,7 +144,14 @@ async function doDownload(
     }
 
     await downloadAndExtract();
+    await fs.writeFile(artifactInfoFile, JSON.stringify(artifactInfo));
     debug(`Download complete`, bindir);
-    return bindir;
+    return { ...artifactInfo, downloadedBinDir: bindir };
   })());
+}
+
+export async function downloadMongoDb(
+  ...args: Parameters<typeof downloadMongoDbWithVersionInfo>
+): Promise<string> {
+  return (await downloadMongoDbWithVersionInfo(...args)).downloadedBinDir;
 }
