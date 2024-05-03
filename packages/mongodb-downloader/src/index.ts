@@ -27,6 +27,9 @@ export async function downloadMongoDbWithVersionInfo(
   options: DownloadOptions = {}
 ): Promise<DownloadResult> {
   let wantsEnterprise = options.enterprise ?? false;
+  const isWindows = ['win32', 'windows'].includes(
+    options.platform ?? process.platform
+  );
   async function lookupDownloadUrl(): Promise<DownloadArtifactInfo> {
     return await getDownloadURL({
       version: targetVersionSemverSpecifier,
@@ -41,6 +44,7 @@ export async function downloadMongoDbWithVersionInfo(
       tmpdir,
       !!options.crypt_shared,
       'latest-alpha',
+      isWindows,
       lookupDownloadUrl
     );
   }
@@ -58,6 +62,7 @@ export async function downloadMongoDbWithVersionInfo(
     !!options.crypt_shared,
     targetVersionSemverSpecifier +
       (wantsEnterprise ? '-enterprise' : '-community'),
+    isWindows,
     () => lookupDownloadUrl()
   );
 }
@@ -69,6 +74,7 @@ async function doDownload(
   tmpdir: string,
   isCryptLibrary: boolean,
   version: string,
+  isWindows: boolean,
   lookupDownloadUrl: () => Promise<DownloadArtifactInfo>
 ): Promise<DownloadResult> {
   const downloadTarget = path.resolve(
@@ -80,7 +86,7 @@ async function doDownload(
   return (downloadPromises[downloadTarget] ??= (async () => {
     const bindir = path.resolve(
       downloadTarget,
-      isCryptLibrary && process.platform !== 'win32' ? 'lib' : 'bin'
+      isCryptLibrary && !isWindows ? 'lib' : 'bin'
     );
     const artifactInfoFile = path.join(bindir, '.artifact_info');
     try {
