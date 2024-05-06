@@ -681,7 +681,7 @@ const STAGE_OPERATORS = [
     apiVersions: [1],
     namespaces: [...ANY_NAMESPACE],
     description:
-      'Writes the result of a pipeline to an Atlas cluster, S3 bucket or Azure Blob Storage.',
+      'Writes the result of a pipeline to an Atlas cluster, S3 bucket, or Azure Blob Storage.',
     comment: `/**
  * Use any one of the following:
  * s3: Parameters to save the data to S3.
