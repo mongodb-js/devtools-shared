@@ -681,7 +681,7 @@ const STAGE_OPERATORS = [
     apiVersions: [1],
     namespaces: [...ANY_NAMESPACE],
     description:
-      'Writes the result of a pipeline to an Atlas cluster or S3 bucket.',
+      'Writes the result of a pipeline to an Atlas cluster, S3 bucket, or Azure Blob Storage.',
     comment: `/**
  * Use any one of the following:
  * s3: Parameters to save the data to S3.
@@ -692,6 +692,22 @@ const STAGE_OPERATORS = [
  *     coll: 'string',
  *     projectId: 'string',
  *     clusterName: 'string'
+ *   }
+ * },
+ * azure: Parameters to save the data to Azure. Example:
+ * {
+ *   azure: {
+ *     serviceURL: 'string',
+ *     containerName: 'string',
+ *     region: 'string,
+ *     filename: 'string',
+ *     format: {
+ *       name: 'string',
+ *       maxFileSize: 'string',
+ *       maxRowGroupSize: 'string',
+ *       columnCompression: 'string'
+ *     },
+ *     errorMode: 'string'
  *   }
  * }
  */
