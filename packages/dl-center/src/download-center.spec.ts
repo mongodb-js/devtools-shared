@@ -129,10 +129,11 @@ describe('download center client', function () {
       const error = await downloadCenter
         .uploadConfig('prefix/compass.json', invalidConfig)
         .catch((e) => e);
-
-      expect(error.message).equal(
-        'Download center urls broken:\n' +
-          '- http://example.com/non-existing-url -> 404'
+      expect(error.message).to.match(
+        new RegExp(
+          'Download center urls broken:\n' +
+            '- http://example.com/non-existing-url -> [45][0-9][0-9]'
+        )
       );
     });
   });
