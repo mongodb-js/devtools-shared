@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/tsconfig-devtools",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared Devtools Typescript configuration",
   "license": "SSPL",
   "files": [
