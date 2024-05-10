@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools.git"
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
   "homepage": "https://github.com/mongodb-js/devtools",
   "publishConfig": {
