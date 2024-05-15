@@ -536,10 +536,8 @@ function addCAToOIDCPluginHttpOptions(
   const existingCustomOptions = existingOIDCPluginOptions?.customHttpOptions;
   if (typeof existingCustomOptions === 'function') {
     return {
-      customHttpOptions: (...args) => ({
-        ...existingCustomOptions(...args),
-        ca,
-      }),
+      customHttpOptions: (url, options, ...restArgs) =>
+        existingCustomOptions(url, { ...options, ca }, ...restArgs),
     };
   }
   return { customHttpOptions: { ...existingCustomOptions, ca } };
