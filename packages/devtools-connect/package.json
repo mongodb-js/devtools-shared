@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
