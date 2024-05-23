@@ -130,12 +130,18 @@ describe('fetch-codeql-results', function () {
       runs: [
         {
           results: [],
+          tool: {
+            driver: { name: 'toolname', semanticVersion: '1.2.3' },
+          },
           versionControlProvenance: [
             { revisionId: '2222222222222222222222222222222222222222' },
           ],
         },
         {
           results: [],
+          tool: {
+            driver: { name: 'toolname', semanticVersion: '1.2.3' },
+          },
           versionControlProvenance: [
             { revisionId: '2222222222222222222222222222222222222222' },
           ],
@@ -168,6 +174,9 @@ describe('fetch-codeql-results', function () {
               },
             },
           ],
+          tool: {
+            driver: { name: 'toolname', semanticVersion: '1.2.3' },
+          },
           versionControlProvenance: [
             { revisionId: '3333333333333333333333333333333333333333' },
           ],
