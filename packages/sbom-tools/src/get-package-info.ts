@@ -4,7 +4,7 @@ import findUp from 'find-up';
 
 // Type definitions for a subset of what package.json generally contains.
 // (See also https://docs.npmjs.com/cli/v7/configuring-npm/package-json)
-interface PackageJSON {
+export interface PackageJSON {
   name: string;
   version: string;
   description?: string;
@@ -15,6 +15,7 @@ interface PackageJSON {
   author?: string | { name: string; email?: string; url?: string };
   contributors?: (string | { name: string; email?: string; url?: string })[];
   private?: boolean;
+  repository?: string | { type: string; url: string };
 }
 
 export interface Package extends PackageJSON {

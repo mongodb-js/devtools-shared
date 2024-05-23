@@ -1,0 +1,14 @@
+[
+  {
+    "name": "mongodb-connection-string-url",
+    "version": "3.0.1",
+    "license": "Apache-2.0",
+    "path": "../../node_modules/mongodb-connection-string-url/",
+    "licenseFiles": [
+      {
+        "filename": "LICENSE",
+        "content": "......"
+      }
+    ]
+  }
+]
