@@ -352,7 +352,7 @@ export const command = new Command('fetch-codeql-results')
       throw new Error('Missing required argument: --sarif-dest');
     }
     const finalReport = await fetchCodeQLResults(octokit, {
-      dependencyFiles: options.despendencies,
+      dependencyFiles: options.dependencies,
       excludeRepos: options.excludeRepos,
       currentRepo: options.currentRepo,
     });
