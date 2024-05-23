@@ -13,11 +13,9 @@ describe('fetch-codeql-results', function () {
         getRef: sinon
           .stub()
           .resolves({ data: { object: { type: 'tag', sha: '1'.repeat(40) } } }),
-        getTag: sinon
-          .stub()
-          .resolves({
-            data: { object: { type: 'commit', sha: '2'.repeat(40) } },
-          }),
+        getTag: sinon.stub().resolves({
+          data: { object: { type: 'commit', sha: '2'.repeat(40) } },
+        }),
       },
       codeScanning: {
         listRecentAnalyses: sinon
