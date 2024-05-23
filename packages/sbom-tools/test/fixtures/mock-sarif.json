@@ -1,0 +1,63 @@
+{
+  "runs": [
+    {
+      "results": [],
+      "tool": { "driver": { "name": "toolname", "semanticVersion": "1.2.3" } },
+      "versionControlProvenance": [
+        { "revisionId": "2222222222222222222222222222222222222222" }
+      ]
+    },
+    {
+      "results": [],
+      "tool": { "driver": { "name": "toolname", "semanticVersion": "1.2.3" } },
+      "versionControlProvenance": [
+        { "revisionId": "2222222222222222222222222222222222222222" }
+      ]
+    },
+    {
+      "results": [
+        {
+          "properties": {
+            "github/alertUrl": "https://example.com/alert1",
+            "mongodb/alertState": {
+              "state": "dismissed",
+              "dismissed_reason": "false positive",
+              "dismissed_comment": "totally fine",
+              "repos": {
+                "revisionId": "3333333333333333333333333333333333333333",
+                "repos": [
+                  {
+                    "owner": "mongodb-js",
+                    "repo": "example-repo",
+                    "commit": "3333333333333333333333333333333333333333"
+                  }
+                ]
+              },
+              "rule": {
+                "id": "rule1234",
+                "description": "foobar",
+                "security_severity_level": "high"
+              }
+            }
+          }
+        }
+      ],
+      "tool": { "driver": { "name": "toolname", "semanticVersion": "1.2.3" } },
+      "versionControlProvenance": [
+        { "revisionId": "3333333333333333333333333333333333333333" }
+      ]
+    }
+  ],
+  "version": "1",
+  "properties": {
+    "mongodb/creationParams": {
+      "fromRepo": {
+        "owner": "mongodb-js",
+        "repo": "example-repo",
+        "commit": "3333333333333333333333333333333333333333"
+      },
+      "excludeRepos": ["mongodb-js/example-repo"],
+      "timestamp": "2024-05-23T12:03:47.796Z"
+    }
+  }
+}

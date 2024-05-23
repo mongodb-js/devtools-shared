@@ -3,14 +3,7 @@
 import { Command } from 'commander';
 import fs from 'fs/promises';
 
-async function sarifToMarkdown({
-  sarifFile,
-  mdFile,
-}: {
-  sarifFile: string;
-  mdFile: string;
-}): Promise<void> {
-  const sarif = JSON.parse(await fs.readFile(sarifFile, 'utf8'));
+export function sarifToMarkdown({ sarif }: { sarif: any }): string {
   const creationParams = sarif.properties['mongodb/creationParams'];
   let markdown = `
   Static analysis results for ${creationParams.fromRepo.owner}/${creationParams.fromRepo.repo} at \`${creationParams.fromRepo.commit}\`
@@ -44,8 +37,7 @@ async function sarifToMarkdown({
   markdown += `
 
 `;
-
-  await fs.writeFile(mdFile, markdown);
+  return markdown;
 }
 
 export const command = new Command('sarif-to-markdown')
@@ -53,8 +45,8 @@ export const command = new Command('sarif-to-markdown')
   .option('--sarif <file>', 'JSON SARIF file input')
   .option('--md <file>', 'Markdown file output')
   .action(async (options) => {
-    await sarifToMarkdown({
-      sarifFile: options.sarif,
-      mdFile: options.md,
+    const markdown = sarifToMarkdown({
+      sarif: JSON.parse(await fs.readFile(options.sarif, 'utf8')),
     });
+    await fs.writeFile(options.md, markdown);
   });

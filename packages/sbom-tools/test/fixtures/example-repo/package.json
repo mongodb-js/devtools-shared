@@ -1,0 +1,7 @@
+{
+  "name": "example-repo",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongodb-connection-string-url": "^3.0.1"
+  }
+}

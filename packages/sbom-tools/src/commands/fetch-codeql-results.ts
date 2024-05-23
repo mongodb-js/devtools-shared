@@ -22,17 +22,11 @@ type ResolvedCommitInformation = {
 type UnresolvedRepoInformation = Omit<ResolvedCommitInformation, 'commit'> &
   Partial<ResolvedCommitInformation> & { packageVersion?: string };
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-  request: { fetch },
-});
-
 // Get CodeQL SARIF reports for a single commit in a single repository
-async function getSingleCommitSarif({
-  owner,
-  repo,
-  commit,
-}: ResolvedCommitInformation): Promise<unknown[]> {
+async function getSingleCommitSarif(
+  octokit: Octokit,
+  { owner, repo, commit }: ResolvedCommitInformation
+): Promise<unknown[]> {
   const reportIds = new Set<number>();
   for (let page = 0; ; page++) {
     const { data } = await octokit.codeScanning.listRecentAnalyses({
@@ -76,14 +70,14 @@ function repoForPackageJSON(
       : packageJson.repository?.url;
   if (!repoUrl)
     throw new Error(
-      `Could not find repostiory information for package.json file at ${atPath}`
+      `Could not find repository information for package.json file at ${atPath}`
     );
   const { owner, repo } =
     repoUrl.match(/github\.com\/(?<owner>[^/]+)\/(?<repo>[^/.]+)(?:.git)?$/)
       ?.groups ?? {};
   if (!owner || !repo)
     throw new Error(
-      `Could not parse repostiory information for package.json file at ${atPath}`
+      `Could not parse repository information for package.json file at ${atPath}`
     );
   return { owner, repo };
 }
@@ -119,6 +113,7 @@ declare class AggregateError {
 
 // Look up the commit associated with a given tag
 async function resolveVersionSpecifier(
+  octokit: Octokit,
   repo: UnresolvedRepoInformation
 ): Promise<ResolvedCommitInformation> {
   if (repo.commit) {
@@ -195,24 +190,23 @@ async function getCurrentRepo(): Promise<ResolvedCommitInformation> {
   return { ...repo, commit };
 }
 
-async function fetchCodeQLResults({
-  dependencyFiles,
-  excludeRepos,
-  currentRepo,
-  sarifDest,
-}: {
-  dependencyFiles: string[];
-  excludeRepos: string[];
-  currentRepo?: Partial<ResolvedCommitInformation>;
-  sarifDest: string;
-}) {
+export async function fetchCodeQLResults(
+  octokit: Octokit,
+  {
+    dependencyFiles,
+    excludeRepos,
+    currentRepo,
+  }: {
+    dependencyFiles: string[];
+    excludeRepos: string[];
+    currentRepo?: Partial<ResolvedCommitInformation>;
+  }
+): Promise<unknown> {
   if (!dependencyFiles?.length) {
     throw new Error('Missing required argument: --dependencies');
   }
-  if (!sarifDest) {
-    throw new Error('Missing required argument: --sarif-dest');
-  }
 
+  // Add the current repository we're in to the list of repos to be scanned
   let resolvedCurrentRepo: ResolvedCommitInformation;
   if (!currentRepo?.owner || !currentRepo.repo || !currentRepo.commit) {
     resolvedCurrentRepo = { ...(await getCurrentRepo()), ...currentRepo };
@@ -220,6 +214,7 @@ async function fetchCodeQLResults({
     resolvedCurrentRepo = currentRepo as ResolvedCommitInformation;
   }
   let repos = await listFirstPartyDependencies(dependencyFiles);
+  // Make sure the only entry for the current repo is the one we explicitly add
   excludeRepos.push(`${resolvedCurrentRepo.owner}/${resolvedCurrentRepo.repo}`);
   repos = repos.filter(
     (repo) => !excludeRepos.includes(`${repo.owner}/${repo.repo}`)
@@ -227,25 +222,26 @@ async function fetchCodeQLResults({
   repos.push(resolvedCurrentRepo);
   repos = deduplicateArray(repos);
   let resolvedRepos = await Promise.all(
-    repos.map(async (repo) => await resolveVersionSpecifier(repo))
+    repos.map(async (repo) => await resolveVersionSpecifier(octokit, repo))
   );
+  // scan each [owner, repo, commit] triple only once, even if it appears for e.g. multiple packages
   resolvedRepos = deduplicateArray(resolvedRepos, ['owner', 'repo', 'commit']);
 
   const sarifs = (
     await Promise.all(
       resolvedRepos.map(async (repo) => {
         try {
-          const reports = await getSingleCommitSarif(repo);
+          const reports = await getSingleCommitSarif(octokit, repo);
           if (reports.length === 0) {
             throw new Error('Could not find any reports');
           }
           return reports;
         } catch (err: unknown) {
-          // @ts-expect-error 'cause' unsupported
           throw new Error(
             `Failed to get SARIF for repository ${JSON.stringify(
               repo
             )}: ${String(err)}`,
+            // @ts-expect-error 'cause' unsupported
             { cause: err }
           );
         }
@@ -316,7 +312,7 @@ async function fetchCodeQLResults({
       timestamp: new Date().toISOString(),
     },
   };
-  await fs.writeFile(sarifDest, JSON.stringify(finalReport, null, 2));
+  return finalReport;
 }
 
 function commaSeparatedList(value: string) {
@@ -348,10 +344,17 @@ export const command = new Command('fetch-codeql-results')
   )
   .option('--sarif-dest <file>', 'JSON SARIF file output')
   .action(async (options) => {
-    await fetchCodeQLResults({
-      dependencyFiles: options.dependencies,
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_TOKEN,
+      request: { fetch },
+    });
+    if (!options.sarifDest) {
+      throw new Error('Missing required argument: --sarif-dest');
+    }
+    const finalReport = await fetchCodeQLResults(octokit, {
+      dependencyFiles: options.despendencies,
       excludeRepos: options.excludeRepos,
       currentRepo: options.currentRepo,
-      sarifDest: options.sarifDest,
     });
+    await fs.writeFile(options.sarifDest, JSON.stringify(finalReport, null, 2));
   });
