@@ -521,6 +521,51 @@ e  s`,
         const stringified = stringify(res);
         assert.equal(stringified, '{name: RegExp("\'")}');
       });
+
+      it('handles $regex object format (keeps format)', function () {
+        const res = parseFilter(
+          '{"name": {"$regex": "pineapple", "$options": "i"}}'
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          "{name: {$regex: 'pineapple',$options: 'i'}}"
+        );
+      });
+
+      it('handles /regex/ format', function () {
+        const res = {
+          name: /pineapple/,
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: RegExp("pineapple")}');
+      });
+    });
+
+    context('when provided a BSONRegExp', function () {
+      it('stringifies correctly with options', function () {
+        const res = {
+          name: new bson.BSONRegExp('pineapple', 'i'),
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: RegExp("pineapple", \'i\')}');
+      });
+
+      it('stringifies correctly with quotes', function () {
+        const res = {
+          name: new bson.BSONRegExp('"\'', 'i'),
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: RegExp("\\"\'", \'i\')}');
+      });
+
+      it('stringifies correctly without options', function () {
+        const res = {
+          name: new bson.BSONRegExp('pineapple'),
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: RegExp("pineapple")}');
+      });
     });
 
     context('when provided a Binary', function () {
