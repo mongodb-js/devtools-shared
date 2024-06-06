@@ -17,6 +17,7 @@ type ResolvedCommitInformation = {
   repo: string;
   forPackage?: string;
   commit: string;
+  alternativeRef?: string;
 };
 
 type UnresolvedRepoInformation = Omit<ResolvedCommitInformation, 'commit'> &
@@ -25,7 +26,7 @@ type UnresolvedRepoInformation = Omit<ResolvedCommitInformation, 'commit'> &
 // Get CodeQL SARIF reports for a single commit in a single repository
 async function getSingleCommitSarif(
   octokit: Octokit,
-  { owner, repo, commit }: ResolvedCommitInformation
+  { owner, repo, commit, alternativeRef }: ResolvedCommitInformation
 ): Promise<unknown[]> {
   const reportIds = new Set<number>();
   for (let page = 0; ; page++) {
@@ -36,7 +37,7 @@ async function getSingleCommitSarif(
     });
     const previousPageAlreadyHadSomeData = reportIds.size > 0;
     for (const item of data) {
-      if (item.commit_sha === commit) {
+      if (item.commit_sha === commit || item.ref === alternativeRef) {
         reportIds.add(item.id);
       }
     }
@@ -183,11 +184,17 @@ async function getCurrentRepo(): Promise<ResolvedCommitInformation> {
       encoding: 'utf8',
     })
   ).stdout.trim();
+
+  let alternativeRef;
+  if (process.env.GITHUB_PR_NUMBER) {
+    alternativeRef = `refs/pull/${process.env.GITHUB_PR_NUMBER}/merge`;
+  }
+
   const repo = repoForPackageJSON(
     JSON.parse(await fs.readFile('package.json', 'utf8')),
     '<root>'
   );
-  return { ...repo, commit };
+  return { ...repo, commit, alternativeRef };
 }
 
 export async function fetchCodeQLResults(

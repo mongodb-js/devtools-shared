@@ -11,6 +11,8 @@ And exposes a `mongodb-sbom-tools` binary providing the following commands:
 - `generate-vulnerability-report`: Generates a report of vulnerabilities from the output of snyk test and a dependencies json file containing all the dependencies.
 - `generate-3rd-party-notices`: Generates a 3rd party notices file based on the licenses information collected by the WebpackDependenciesPlugin. Also validates the licenses.
 - `scan-node-js`: A script to produce a list of vulnerabilities affecting a Node.js version in the same format as snyk test (useful as we are redistributing Node.js with mongosh).
+- `fetch-codeql-results`: A script to fetch CodeQL results from GitHub.
+- `sarif-to-markdown`: Convert SARIF CodeQL results to markdown.
 
 ### `WebpackDependenciesPlugin`
 
