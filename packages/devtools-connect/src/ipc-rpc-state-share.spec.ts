@@ -102,27 +102,22 @@ describe('IPC RPC state sharing', function () {
 
   describe('StateShareServer/StateShareClient', function () {
     let fakeState: DevtoolsConnectionState;
-    let request: sinon.SinonStub;
-    let refresh: sinon.SinonStub;
+    let callback: sinon.SinonStub;
     let server: StateShareServer;
     let client: StateShareClient;
 
     beforeEach(function () {
-      request = sinon.stub();
-      refresh = sinon.stub();
+      callback = sinon.stub();
       fakeState = {
         productName: 'MongoDB Something',
         oidcPlugin: {
           mongoClientOptions: {
             authMechanismProperties: {
-              REFRESH_TOKEN_CALLBACK: refresh,
-              REQUEST_TOKEN_CALLBACK: request,
+              OIDC_HUMAN_CALLBACK: callback,
             },
           },
         },
       } as unknown as DevtoolsConnectionState;
-      request.resolves({ accessToken: 'req-accesstoken' });
-      refresh.resolves({ accessToken: 'ref-accesstoken' });
     });
 
     afterEach(async function () {
@@ -130,43 +125,42 @@ describe('IPC RPC state sharing', function () {
     });
 
     it('can be used to share OIDC state', async function () {
+      callback.resolves({ accessToken: 'req-accesstoken' });
       server = await StateShareServer.create(fakeState);
       client = new StateShareClient(server.handle);
       const result =
-        await client.oidcPlugin.mongoClientOptions.authMechanismProperties.REQUEST_TOKEN_CALLBACK(
+        await client.oidcPlugin.mongoClientOptions.authMechanismProperties.OIDC_HUMAN_CALLBACK(
           {
-            issuer: 'http://localhost/',
-            clientId: 'clientId',
-          },
-          {
-            version: 0,
+            idpInfo: {
+              issuer: 'http://localhost/',
+              clientId: 'clientId',
+            },
+            version: 1,
           }
         );
       expect(result).to.deep.equal({ accessToken: 'req-accesstoken' });
     });
 
     it('supports timeoutContext', async function () {
-      refresh.callsFake(
-        (_idpInfo: unknown, ctx: { timeoutContext: AbortSignal }) => {
-          return new Promise((resolve, reject) =>
-            ctx.timeoutContext.addEventListener('abort', () =>
-              reject(new Error('aborted'))
-            )
-          );
-        }
-      );
+      callback.callsFake((params: { timeoutContext: AbortSignal }) => {
+        return new Promise((resolve, reject) =>
+          params.timeoutContext.addEventListener('abort', () =>
+            reject(new Error('aborted'))
+          )
+        );
+      });
       server = await StateShareServer.create(fakeState);
       client = new StateShareClient(server.handle);
 
       const abortController = new AbortController();
       const result =
-        client.oidcPlugin.mongoClientOptions.authMechanismProperties.REFRESH_TOKEN_CALLBACK(
+        client.oidcPlugin.mongoClientOptions.authMechanismProperties.OIDC_HUMAN_CALLBACK(
           {
-            issuer: 'http://localhost/',
-            clientId: 'clientId',
-          },
-          {
-            version: 0,
+            idpInfo: {
+              issuer: 'http://localhost/',
+              clientId: 'clientId',
+            },
+            version: 1,
             timeoutContext: abortController.signal,
           }
         );

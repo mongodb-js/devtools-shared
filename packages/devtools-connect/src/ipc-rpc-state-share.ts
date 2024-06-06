@@ -1,8 +1,7 @@
 import type {
   MongoDBOIDCPlugin,
-  IdPServerInfo,
   IdPServerResponse,
-  OIDCCallbackContext,
+  OIDCCallbackParams,
 } from '@mongodb-js/oidc-plugin';
 import type { DevtoolsConnectionState } from './connect';
 import { createServer as createHTTPServer, request } from 'http';
@@ -225,26 +224,21 @@ export class StateShareServer extends RpcServer {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async handleRpc(content: any): Promise<Record<string, unknown>> {
-    const oidcCallbacks =
-      this.state.oidcPlugin.mongoClientOptions.authMechanismProperties;
-    let oidcMethod: keyof typeof oidcCallbacks;
     switch (content.method) {
       case 'oidc:_abort':
         this.abortContexts.get(content.timeoutContextId)?.abort();
         return {};
-      case 'oidc:REQUEST_TOKEN_CALLBACK':
-        oidcMethod = 'REQUEST_TOKEN_CALLBACK';
-      // fallthrough
-      case 'oidc:REFRESH_TOKEN_CALLBACK': {
-        oidcMethod ??= 'REFRESH_TOKEN_CALLBACK';
-
+      case 'oidc:OIDC_HUMAN_CALLBACK': {
         const abortController = new AbortController();
         this.abortContexts.set(content.timeoutContextId, abortController);
         try {
-          const result = await oidcCallbacks[oidcMethod](content.info, {
-            ...content.context,
-            timeoutContext: abortController.signal,
-          });
+          const result =
+            await this.state.oidcPlugin.mongoClientOptions.authMechanismProperties.OIDC_HUMAN_CALLBACK(
+              {
+                ...content.callbackParams,
+                timeoutContext: abortController.signal,
+              }
+            );
           return { result };
         } finally {
           this.abortContexts.delete(content.timeoutContextId);
@@ -275,13 +269,9 @@ export class StateShareClient extends RpcClient {
       logger: new EventEmitter(),
       mongoClientOptions: {
         authMechanismProperties: {
-          REQUEST_TOKEN_CALLBACK: this._oidcCallback.bind(
+          OIDC_HUMAN_CALLBACK: this._oidcCallback.bind(
             this,
-            'oidc:REQUEST_TOKEN_CALLBACK'
-          ),
-          REFRESH_TOKEN_CALLBACK: this._oidcCallback.bind(
-            this,
-            'oidc:REFRESH_TOKEN_CALLBACK'
+            'oidc:OIDC_HUMAN_CALLBACK'
           ),
         },
       },
@@ -290,13 +280,12 @@ export class StateShareClient extends RpcClient {
 
   private async _oidcCallback(
     method: string,
-    info: IdPServerInfo,
-    _context: OIDCCallbackContext
+    params: OIDCCallbackParams
   ): Promise<IdPServerResponse> {
     const timeoutContextId = (await promisify(crypto.randomBytes)(16)).toString(
       'base64'
     );
-    const { timeoutContext, ...context } = _context;
+    const { timeoutContext, ...callbackParams } = params;
     const abort = async () => {
       await this.makeRpcCall({
         method: 'oidc:_abort',
@@ -308,8 +297,7 @@ export class StateShareClient extends RpcClient {
       const { result } = await this.makeRpcCall({
         method,
         timeoutContextId,
-        context,
-        info,
+        callbackParams,
       });
       return result as IdPServerResponse;
     } finally {
