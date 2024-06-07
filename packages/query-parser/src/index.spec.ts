@@ -402,7 +402,12 @@ e  s`,
     context('when providing a long', function () {
       it('correctly converts to NumberLong', function () {
         const stringified = stringify({ test: bson.Long.fromNumber(5) });
-        assert.equal(stringified, '{test: NumberLong(5)}');
+        assert.equal(stringified, "{test: NumberLong('5')}");
+
+        assert.equal(
+          stringify({ test: new bson.Long('123456789123456789') }),
+          "{test: NumberLong('123456789123456789')}"
+        );
       });
     });
 
