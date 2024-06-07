@@ -31,12 +31,16 @@ jobs:
     steps:
       - name: Sets env vars
         if: github.event_name == 'pull_request'
-        run: echo "SINCE_REF=remotes/origin/main" >> $GITHUB_ENV
+        run: |
+          echo "SINCE_REF=remotes/origin/main" >> $GITHUB_ENV # linux/mac
+          echo "SINCE_REF=remotes/origin/main" >> $env:GITHUB_ENV # windows
 
       # On main we run all the checks with changes since the last commit
       - name: Sets env vars (main)
         if: github.event_name != 'pull_request'
-        run: echo "SINCE_REF=HEAD~1" >> $GITHUB_ENV
+        run: |
+          echo "SINCE_REF=HEAD~1" >> $GITHUB_ENV # linux/mac
+          echo "SINCE_REF=HEAD~1" >> $env:GITHUB_ENV # windows
 
       - name: Install Deps Ubuntu
         if: ${{ runner.os == 'Linux' }}
