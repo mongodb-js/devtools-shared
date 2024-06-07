@@ -567,7 +567,7 @@ e  s`,
         assert.equal(stringified, '{name: RegExp("pineapple")}');
       });
 
-      it('stringifies into BSONRegExp when js RegExp cannot handle it', function () {
+      it('stringifies into BSONRegExp when js RegExp cannot handle an option', function () {
         const res = {
           name: new bson.BSONRegExp(
             'pineapple',
@@ -576,6 +576,19 @@ e  s`,
         };
         const stringified = stringify(res);
         assert.equal(stringified, '{name: BSONRegExp("pineapple", \'x\')}');
+      });
+
+      it('stringifies into BSONRegExp when js RegExp cannot handle the regex', function () {
+        const res = {
+          name: new bson.BSONRegExp(
+            // Perl Compatible Regular Expressions supported feature that isn't in regular
+            // js RegExp: case-insensitive match.
+            '(?i)a(?-i)cme',
+            'i'
+          ),
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: BSONRegExp("(?i)a(?-i)cme", \'i\')}');
       });
     });
 
