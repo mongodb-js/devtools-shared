@@ -3,6 +3,7 @@
  */
 import type {
   Binary,
+  BSONRegExp,
   BSONValue,
   Code,
   DBRef,
@@ -133,6 +134,18 @@ const BSON_TO_JS_STRING = {
     }
 
     return `RegExp(${JSON.stringify(v.source)}${hasOptions ? `, '${o}'` : ''})`;
+  },
+  BSONRegExp: function (v: BSONRegExp) {
+    const hasOptions = v.options && v.options?.length > 0;
+    let ctor = 'RegExp';
+    try {
+      RegExp(v.pattern, v.options || undefined);
+    } catch {
+      ctor = 'BSONRegExp';
+    }
+    return `${ctor}(${JSON.stringify(v.pattern)}${
+      hasOptions ? `, '${v.options}'` : ''
+    })`;
   },
 };
 
