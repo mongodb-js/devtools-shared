@@ -29,18 +29,20 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Sets env vars
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "SINCE_REF=remotes/origin/main" >> $GITHUB_ENV # linux/mac
-          echo "SINCE_REF=remotes/origin/main" >> $env:GITHUB_ENV # windows
+      - name: Sets env vars (pull_request and non-win)
+        if: github.event_name == 'pull_request' && runner.os != 'Windows'
+        run: echo "SINCE_REF=remotes/origin/main" >> $GITHUB_ENV
+      - name: Sets env vars (pull_request and win)
+        if: github.event_name == 'pull_request' && runner.os == 'Windows'
+        run: echo "SINCE_REF=remotes/origin/main" >> $env:GITHUB_ENV
 
       # On main we run all the checks with changes since the last commit
-      - name: Sets env vars (main)
-        if: github.event_name != 'pull_request'
-        run: |
-          echo "SINCE_REF=HEAD~1" >> $GITHUB_ENV # linux/mac
-          echo "SINCE_REF=HEAD~1" >> $env:GITHUB_ENV # windows
+      - name: Sets env vars (main and non-win)
+        if: github.event_name != 'pull_request' && runner.os != 'Windows'
+        run: echo "SINCE_REF=HEAD~1" >> $GITHUB_ENV
+      - name: Sets env vars (main and win)
+        if: github.event_name != 'pull_request' && runner.os == 'Windows'
+        run: echo "SINCE_REF=HEAD~1" >> $env:GITHUB_ENV
 
       - name: Install Deps Ubuntu
         if: ${{ runner.os == 'Linux' }}
