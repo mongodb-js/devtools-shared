@@ -566,6 +566,17 @@ e  s`,
         const stringified = stringify(res);
         assert.equal(stringified, '{name: RegExp("pineapple")}');
       });
+
+      it('stringifies into BSONRegExp when js RegExp cannot handle it', function () {
+        const res = {
+          name: new bson.BSONRegExp(
+            'pineapple',
+            'x' /* x flag is not valid in js but valid in BSONRegExp*/
+          ),
+        };
+        const stringified = stringify(res);
+        assert.equal(stringified, '{name: BSONRegExp("pineapple", \'x\')}');
+      });
     });
 
     context('when provided a Binary', function () {

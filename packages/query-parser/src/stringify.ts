@@ -142,7 +142,7 @@ const BSON_TO_JS_STRING = {
       RegExp(v.pattern, v.options || undefined);
     } catch {
       ctor = 'BSONRegExp';
-    } 
+    }
     return `${ctor}(${JSON.stringify(v.pattern)}${
       hasOptions ? `, '${v.options}'` : ''
     })`;
