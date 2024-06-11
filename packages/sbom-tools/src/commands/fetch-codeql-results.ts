@@ -197,18 +197,25 @@ async function getCurrentRepo(): Promise<ResolvedCommitInformation> {
   return { ...repo, commit, alternativeRef };
 }
 
-export async function fetchCodeQLResults(
-  octokit: Octokit,
-  {
-    dependencyFiles,
-    excludeRepos,
-    currentRepo,
-  }: {
-    dependencyFiles: string[];
+interface FirstPartyDependencyList {
+  repos: UnresolvedRepoInformation[];
+  creationMetadata: {
     excludeRepos: string[];
-    currentRepo?: Partial<ResolvedCommitInformation>;
-  }
-): Promise<unknown> {
+    fromRepo: ResolvedCommitInformation;
+  };
+}
+
+interface ListFirstPartyDependenciesForCurrentRepoOptions {
+  dependencyFiles: string[];
+  excludeRepos: string[];
+  currentRepo?: Partial<ResolvedCommitInformation>;
+}
+
+export async function listFirstPartyDependenciesForCurrentRepo({
+  dependencyFiles,
+  excludeRepos,
+  currentRepo,
+}: ListFirstPartyDependenciesForCurrentRepoOptions): Promise<FirstPartyDependencyList> {
   if (!dependencyFiles?.length) {
     throw new Error('Missing required argument: --dependencies');
   }
@@ -228,6 +235,50 @@ export async function fetchCodeQLResults(
   );
   repos.push(resolvedCurrentRepo);
   repos = deduplicateArray(repos);
+  return {
+    repos,
+    creationMetadata: { excludeRepos, fromRepo: resolvedCurrentRepo },
+  };
+}
+
+export async function fetchCodeQLResults(
+  octokit: Octokit,
+  options:
+    | ListFirstPartyDependenciesForCurrentRepoOptions
+    | {
+        firstPartyDependencyListFiles: string[];
+      }
+): Promise<unknown> {
+  let repos: UnresolvedRepoInformation[];
+  let creationMetadata: FirstPartyDependencyList['creationMetadata'];
+  if (
+    'firstPartyDependencyListFiles' in options &&
+    options.firstPartyDependencyListFiles
+  ) {
+    const parsedFiles: FirstPartyDependencyList[] = await Promise.all(
+      options.firstPartyDependencyListFiles.map(async (filename) =>
+        JSON.parse(await fs.readFile(filename, 'utf8'))
+      )
+    );
+    const allCreationMetadatas = deduplicateArray(
+      parsedFiles.map((file) => file.creationMetadata)
+    );
+    if (allCreationMetadatas.length !== 1) {
+      throw new Error(
+        `Mismatching creation metadata between different runs: ${JSON.stringify(
+          allCreationMetadatas
+        )}`
+      );
+    }
+    [creationMetadata] = allCreationMetadatas;
+    repos = deduplicateArray(parsedFiles.flatMap((file) => file.repos));
+  } else if ('dependencyFiles' in options) {
+    ({ repos, creationMetadata } =
+      await listFirstPartyDependenciesForCurrentRepo({ ...options }));
+  } else {
+    throw new Error('Unknown option specification');
+  }
+
   let resolvedRepos = await Promise.all(
     repos.map(async (repo) => await resolveVersionSpecifier(octokit, repo))
   );
@@ -314,8 +365,7 @@ export async function fetchCodeQLResults(
   finalReport.properties = {
     ...finalReport.properties,
     'mongodb/creationParams': {
-      fromRepo: resolvedCurrentRepo,
-      excludeRepos,
+      ...creationMetadata,
       timestamp: new Date().toISOString(),
     },
   };
@@ -349,19 +399,49 @@ export const command = new Command('fetch-codeql-results')
       return { owner, repo, commit };
     }
   )
+  .option(
+    '--first-party-deps-list-dest <file>',
+    'If specified, only list first-party dependencies and exit. Does not interact with the Github API.'
+  )
+  .option(
+    '--first-party-deps-list-files <paths>',
+    'Comma-separated list of files created via first-party-deps-list-dest',
+    commaSeparatedList,
+    []
+  )
   .option('--sarif-dest <file>', 'JSON SARIF file output')
   .action(async (options) => {
+    if (!options.sarifDest && !options.firstPartyDepsListDest) {
+      throw new Error(
+        'Missing required argument: --sarif-dest or --first-party-deps-list-dest'
+      );
+    }
+    if (options.sarifDest && options.firstPartyDepsListDest) {
+      throw new Error(
+        'Cannot specify both --sarif-dest and --first-party-deps-list-dest'
+      );
+    }
+
+    const opts = {
+      dependencyFiles: options.dependencies,
+      excludeRepos: options.excludeRepos,
+      currentRepo: options.currentRepo,
+      firstPartyDependencyListFiles: options.firstPartyDepsListFiles,
+    };
+
+    if (options.firstPartyDepsListDest) {
+      const result = await listFirstPartyDependenciesForCurrentRepo(opts);
+      await fs.writeFile(
+        options.firstPartyDepsListDest,
+        JSON.stringify(result, null, 2)
+      );
+      return;
+    }
+
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
       request: { fetch },
     });
-    if (!options.sarifDest) {
-      throw new Error('Missing required argument: --sarif-dest');
-    }
-    const finalReport = await fetchCodeQLResults(octokit, {
-      dependencyFiles: options.dependencies,
-      excludeRepos: options.excludeRepos,
-      currentRepo: options.currentRepo,
-    });
+    const finalReport = await fetchCodeQLResults(octokit, opts);
     await fs.writeFile(options.sarifDest, JSON.stringify(finalReport, null, 2));
   });
