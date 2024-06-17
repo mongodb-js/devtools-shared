@@ -76,7 +76,7 @@ const BSON_TO_JS_STRING = {
     }
     // The `Binary.buffer.toString` type says it doesn't accept
     // arguments. However it does, and a test will fail without it.
-    return `BinData(${subType.toString(16)}, '${v.toString('base64')}')`;
+    return `BinData(${subType.toString(10)}, '${v.toString('base64')}')`;
   },
   DBRef: function (v: DBRef) {
     if (v.db) {
