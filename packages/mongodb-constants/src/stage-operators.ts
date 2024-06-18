@@ -1160,6 +1160,7 @@ const STAGE_OPERATORS = [
  * index: Name of the Atlas Search index to use. (Required)
  * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
  * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+ * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
  */
 `,
     snippet: `{
@@ -1168,7 +1169,8 @@ const STAGE_OPERATORS = [
   numCandidates: \${4:numCandidates},
   index: \${5:string},
   limit: \${6:limit},
-  filter: {\${7:expression}}
+  filter: {\${7:expression}},
+  exact: \${8:boolean}
 }`,
   },
 ] as const;
