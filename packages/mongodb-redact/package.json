@@ -1,5 +1,5 @@
 {
-  "name": "@mongodb-js/mongodb-redact",
+  "name": "mongodb-redact",
   "description": "Remove potentially sensitive information from objects without changing the shape.",
   "author": {
     "name": "MongoDB Inc",
