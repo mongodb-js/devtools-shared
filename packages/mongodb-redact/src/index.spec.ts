@@ -1,4 +1,4 @@
-import assert from 'assert';
+import { expect } from 'chai';
 import redact from './';
 
 /* eslint no-multi-str:0 */
@@ -26,12 +26,12 @@ describe('mongodb-redact', function () {
   describe('Types', function () {
     it('should work with string types', function () {
       const res = redact('foo@bar.com');
-      assert.equal(res, '<email>');
+      expect(res).to.equal('<email>');
     });
 
     it('should work with non-string types (no redaction)', function () {
       const res = redact(13);
-      assert.equal(res, 13);
+      expect(res).to.equal(13);
     });
 
     it('should work with array types', function () {
@@ -41,7 +41,7 @@ describe('mongodb-redact', function () {
         9,
         '/Users/john/apps/index.js',
       ]);
-      assert.deepEqual(res, [
+      expect(res).to.deep.equal([
         '<email>',
         '<ip address>',
         9,
@@ -56,7 +56,7 @@ describe('mongodb-redact', function () {
         number: 9,
         path: '/Users/john/apps/index.js',
       });
-      assert.deepEqual(res, {
+      expect(res).to.deep.equal({
         email: '<email>',
         ip: '<ip address>',
         number: 9,
@@ -66,101 +66,97 @@ describe('mongodb-redact', function () {
 
     it('should work with BinData', function () {
       const res = redact(BIN_DATA);
-      assert(
-        res.includes(
-          'db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "<base64>")}})'
-        ),
-        'contains base64 placeholder'
+      expect(res).to.include(
+        'db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "<base64>")}})'
       );
     });
   });
 
   describe('Regexes', function () {
     it('should redact emails', function () {
-      assert.equal(redact('some.complex+email@somedomain.co.uk'), '<email>');
+      expect(redact('some.complex+email@somedomain.co.uk')).to.equal('<email>');
     });
 
     it('should redact ip addresses', function () {
-      assert.equal(redact('10.0.0.1'), '<ip address>');
+      expect(redact('10.0.0.1')).to.equal('<ip address>');
     });
 
     it('should redact private keys', function () {
-      assert.equal(redact(PRIVATE_KEY), '<private key>');
+      expect(redact(PRIVATE_KEY)).to.equal('<private key>');
     });
 
     it('should redact OS X resource paths', function () {
       const res = redact(
         '/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
       );
-      assert.equal(res, '/<path>/index.html');
+      expect(res).to.equal('/<path>/index.html');
     });
 
     it('should redact Windows resource paths using forward slash', function () {
       const res = redact(
         'C:\\Users\\foo\\AppData\\Local\\MongoDBCompass\\app-1.0.1\\resources\\app\\index.js'
       );
-      assert.equal(res, '\\<path>\\index.js');
+      expect(res).to.equal('\\<path>\\index.js');
     });
 
     it('should redact Windows resource paths using backward slash', function () {
       const res = redact(
         'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
       );
-      assert.equal(res, '/<path>/index.js');
+      expect(res).to.equal('/<path>/index.js');
     });
 
     it('should redact Linux resource paths', function () {
       const res = redact('/usr/foo/myapps/resources/app/index.html');
-      assert.equal(res, '/<path>/index.html');
+      expect(res).to.equal('/<path>/index.html');
     });
 
     it('should redact general Windows user paths', function () {
       let res = redact('c:\\Users\\JohnDoe\\test');
-      assert.equal(res, 'c:\\Users\\<user>\\test');
+      expect(res).to.equal('c:\\Users\\<user>\\test');
       res = redact('C:\\Documents and Settings\\JohnDoe\\test');
-      assert.equal(res, 'C:\\Documents and Settings\\<user>\\test');
+      expect(res).to.equal('C:\\Documents and Settings\\<user>\\test');
     });
 
     it('should redact general OS X user paths', function () {
       let res = redact('/Users/JohnDoe/Documents/letter.pages');
-      assert.equal(res, '/Users/<user>/Documents/letter.pages');
+      expect(res).to.equal('/Users/<user>/Documents/letter.pages');
       res = redact('file:///Users/JohnDoe/Documents/letter.pages');
-      assert.equal(res, 'file:///Users/<user>/Documents/letter.pages');
+      expect(res).to.equal('file:///Users/<user>/Documents/letter.pages');
     });
 
     it('should redact URLs', function () {
       let res = redact('http://www.google.com');
-      assert.equal(res, '<url>');
+      expect(res).to.equal('<url>');
       res = redact('https://www.mongodb.org');
-      assert.equal(res, '<url>');
+      expect(res).to.equal('<url>');
       res = redact('https://www.youtube.com/watch?v=Q__3R5aUkWQ');
-      assert.equal(res, '<url>');
+      expect(res).to.equal('<url>');
     });
 
     it('should redact MongoDB connection URIs', function () {
       let res = redact(
         'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000'
       );
-      assert.equal(res, '<mongodb uri>');
+      expect(res).to.equal('<mongodb uri>');
       res = redact('mongodb://localhost,localhost:27018,localhost:27019');
-      assert.equal(res, '<mongodb uri>');
+      expect(res).to.equal('<mongodb uri>');
     });
 
     it('should redact general linux/unix user paths', function () {
       let res = redact('/home/foobar/documents/tan-numbers.txt');
-      assert.equal(res, '/home/<user>/documents/tan-numbers.txt');
+      expect(res).to.equal('/home/<user>/documents/tan-numbers.txt');
       res = redact('/usr/foobar/documents/tan-numbers.txt');
-      assert.equal(res, '/usr/<user>/documents/tan-numbers.txt');
+      expect(res).to.equal('/usr/<user>/documents/tan-numbers.txt');
       res = redact('/var/users/foobar/documents/tan-numbers.txt');
-      assert.equal(res, '/var/users/<user>/documents/tan-numbers.txt');
+      expect(res).to.equal('/var/users/<user>/documents/tan-numbers.txt');
     });
 
     it('should redact Compass Schema URL fragments', function () {
       const res = redact(
         'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/db.collection'
       );
-      assert.equal(
-        res,
+      expect(res).to.equal(
         'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/<namespace>'
       );
     });
@@ -169,7 +165,7 @@ describe('mongodb-redact', function () {
   describe('Misc', function () {
     it('should redact strings with context', function () {
       const res = redact('send me an email to john.doe@company.com please.');
-      assert.equal(res, 'send me an email to <email> please.');
+      expect(res).to.equal('send me an email to <email> please.');
     });
 
     it('should work on arrays of arrays', function () {
@@ -177,7 +173,7 @@ describe('mongodb-redact', function () {
         ['foo@bar.com', 'bar@baz.net'],
         'http://github.com/mongodb-js',
       ]);
-      assert.deepEqual(res, [['<email>', '<email>'], '<url>']);
+      expect(res).to.deep.equal([['<email>', '<email>'], '<url>']);
     });
 
     it('should work on nested objects', function () {
@@ -186,7 +182,7 @@ describe('mongodb-redact', function () {
           path: '/Users/thomas/something.txt',
         },
       });
-      assert.deepEqual(res, {
+      expect(res).to.deep.equal({
         obj: {
           path: '/Users/<user>/something.txt',
         },
