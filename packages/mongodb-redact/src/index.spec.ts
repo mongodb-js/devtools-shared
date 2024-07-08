@@ -1,8 +1,8 @@
-var assert = require('assert');
-var redact = require('../');
+import assert from 'assert';
+import redact from './';
 
 /* eslint no-multi-str:0 */
-var PRIVATE_KEY =
+const PRIVATE_KEY =
   '-----BEGIN RSA PRIVATE KEY----- \
 MIICXgIBAAKBgQC8fAGwrWndvhjdgnkekAkWqGDUOOzTiiGNvAWwTwmLuI7SWCzi \
 suFYjwyYaCwsJ1biyMlhiWKtFl4tGaEEYbDj4US8kRmaxmCKpXuN1mMKqVEtlZh8 \
@@ -19,23 +19,23 @@ UHu1d1br2NMFrefXb1dhAkEAl5HshFiSCqPcPKeAU/0ndX8tTqhibNaJmnG9aX9r \
 I1mP6zZWN3FLv8M/ISFROkTjs7HZQ81V7dvKmIymRUyQ7A== \
 -----END RSA PRIVATE KEY-----';
 
-var BIN_DATA = `db = db.getSiblingDB("__realm_sync")
+const BIN_DATA = `db = db.getSiblingDB("__realm_sync")
 db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAIAAADTED8xAAADMElEQVR4nOzVwQnAIBQFQYXff81RUkQCOyDj1YOPnbXWPmeTRef+/3O/OyBjzh3CD95BfqICMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMK0CMO0TAAD//2Anhf4QtqobAAAAAElFTkSuQmCC")}})`;
 
 describe('mongodb-redact', function () {
   describe('Types', function () {
     it('should work with string types', function () {
-      var res = redact('foo@bar.com');
+      const res = redact('foo@bar.com');
       assert.equal(res, '<email>');
     });
 
     it('should work with non-string types (no redaction)', function () {
-      var res = redact(13);
+      const res = redact(13);
       assert.equal(res, 13);
     });
 
     it('should work with array types', function () {
-      var res = redact([
+      const res = redact([
         'foo@bar.com',
         '192.168.0.5',
         9,
@@ -50,7 +50,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should work with object types', function () {
-      var res = redact({
+      const res = redact({
         email: 'foo@bar.com',
         ip: '192.168.0.5',
         number: 9,
@@ -65,7 +65,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should work with BinData', function () {
-      var res = redact(BIN_DATA);
+      const res = redact(BIN_DATA);
       assert(
         res.includes(
           'db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "<base64>")}})'
@@ -89,47 +89,47 @@ describe('mongodb-redact', function () {
     });
 
     it('should redact OS X resource paths', function () {
-      var res = redact(
+      const res = redact(
         '/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
       );
       assert.equal(res, '/<path>/index.html');
     });
 
     it('should redact Windows resource paths using forward slash', function () {
-      var res = redact(
+      const res = redact(
         'C:\\Users\\foo\\AppData\\Local\\MongoDBCompass\\app-1.0.1\\resources\\app\\index.js'
       );
       assert.equal(res, '\\<path>\\index.js');
     });
 
     it('should redact Windows resource paths using backward slash', function () {
-      var res = redact(
+      const res = redact(
         'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
       );
       assert.equal(res, '/<path>/index.js');
     });
 
     it('should redact Linux resource paths', function () {
-      var res = redact('/usr/foo/myapps/resources/app/index.html');
+      const res = redact('/usr/foo/myapps/resources/app/index.html');
       assert.equal(res, '/<path>/index.html');
     });
 
     it('should redact general Windows user paths', function () {
-      var res = redact('c:\\Users\\JohnDoe\\test');
+      let res = redact('c:\\Users\\JohnDoe\\test');
       assert.equal(res, 'c:\\Users\\<user>\\test');
       res = redact('C:\\Documents and Settings\\JohnDoe\\test');
       assert.equal(res, 'C:\\Documents and Settings\\<user>\\test');
     });
 
     it('should redact general OS X user paths', function () {
-      var res = redact('/Users/JohnDoe/Documents/letter.pages');
+      let res = redact('/Users/JohnDoe/Documents/letter.pages');
       assert.equal(res, '/Users/<user>/Documents/letter.pages');
       res = redact('file:///Users/JohnDoe/Documents/letter.pages');
       assert.equal(res, 'file:///Users/<user>/Documents/letter.pages');
     });
 
     it('should redact URLs', function () {
-      var res = redact('http://www.google.com');
+      let res = redact('http://www.google.com');
       assert.equal(res, '<url>');
       res = redact('https://www.mongodb.org');
       assert.equal(res, '<url>');
@@ -138,7 +138,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should redact MongoDB connection URIs', function () {
-      var res = redact(
+      let res = redact(
         'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000'
       );
       assert.equal(res, '<mongodb uri>');
@@ -147,7 +147,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should redact general linux/unix user paths', function () {
-      var res = redact('/home/foobar/documents/tan-numbers.txt');
+      let res = redact('/home/foobar/documents/tan-numbers.txt');
       assert.equal(res, '/home/<user>/documents/tan-numbers.txt');
       res = redact('/usr/foobar/documents/tan-numbers.txt');
       assert.equal(res, '/usr/<user>/documents/tan-numbers.txt');
@@ -156,7 +156,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should redact Compass Schema URL fragments', function () {
-      var res = redact(
+      const res = redact(
         'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/db.collection'
       );
       assert.equal(
@@ -168,12 +168,12 @@ describe('mongodb-redact', function () {
 
   describe('Misc', function () {
     it('should redact strings with context', function () {
-      var res = redact('send me an email to john.doe@company.com please.');
+      const res = redact('send me an email to john.doe@company.com please.');
       assert.equal(res, 'send me an email to <email> please.');
     });
 
     it('should work on arrays of arrays', function () {
-      var res = redact([
+      const res = redact([
         ['foo@bar.com', 'bar@baz.net'],
         'http://github.com/mongodb-js',
       ]);
@@ -181,7 +181,7 @@ describe('mongodb-redact', function () {
     });
 
     it('should work on nested objects', function () {
-      var res = redact({
+      const res = redact({
         obj: {
           path: '/Users/thomas/something.txt',
         },

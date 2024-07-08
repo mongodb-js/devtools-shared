@@ -1,4 +1,4 @@
-var regexes = [
+export const regexes = [
   [
     /(BinData\()((0|[1-9][0-9]{0,2}))(\s*,\s*['"]?)[A-Za-z0-9+/=\s]+(['"]?\))/gm,
     '$1$2$4<base64>$5',
@@ -38,18 +38,16 @@ var regexes = [
 
   // URLs
   [
-    /(http(s)?:\/\/)(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/gim,
+    /(http(s)?:\/\/)(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
     '<url>',
   ],
 
   // MongoDB connection strings
   [
-    /(mongodb:\/\/)(www\.)?[-a-zA-Z0-9@:%._\+~#=,]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/gim,
+    /(mongodb:\/\/)(www\.)?[-a-zA-Z0-9@:%._+~#=,]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
     '<mongodb uri>',
   ],
 
   // Compass Schema URL fragments
   [/#schema\/\w+\.\w+/, '#schema/<namespace>'],
-];
-
-module.exports = regexes;
+] as const;
