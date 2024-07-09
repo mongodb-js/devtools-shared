@@ -4,5 +4,7 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ # cyclic monorepo dependency, but only for the benchmarks
+ - 'mongodb-query-parser'
 ignore-patterns:
  - 'dist'
