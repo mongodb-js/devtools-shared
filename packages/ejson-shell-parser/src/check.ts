@@ -1,7 +1,7 @@
-import { Node, BaseCallExpression, Identifier } from 'estree';
+import type { Node, BaseCallExpression, Identifier } from 'estree';
 
 import { GLOBAL_FUNCTIONS, isMethodWhitelisted, GLOBALS } from './scope';
-import { Options } from './options';
+import type { Options } from './options';
 
 class Checker {
   constructor(private options: Options) {}
@@ -53,8 +53,8 @@ class Checker {
    * Only allow an arbitrarily selected list of 'safe' expressions to be used as
    * part of a query
    */
-  checkSafeExpression = (node: Node): boolean => {
-    switch (node.type) {
+  checkSafeExpression = (node: Node | null): boolean => {
+    switch (node?.type) {
       case 'Identifier':
         return Object.prototype.hasOwnProperty.call(GLOBALS, node.name);
       case 'Literal':
@@ -78,16 +78,25 @@ class Checker {
         return node.properties.every((property) => {
           // don't allow computed values { [10 + 10]: ... }
           // don't allow method properties { start() {...} }
-          if (property.computed || property.method) return false;
+          if (
+            ('computed' in property && property.computed) ||
+            ('method' in property && property.method)
+          )
+            return false;
           // only allow literals { 10: ...} or identifiers { name: ... } as keys
-          if (!['Literal', 'Identifier'].includes(property.key.type))
+          if (
+            !('key' in property) ||
+            !['Literal', 'Identifier'].includes(property.key.type)
+          )
             return false;
 
           // object values can be a function expression or any safe expression
           return (
-            ['FunctionExpression', 'ArrowFunctionExpression'].includes(
+            'value' in property &&
+            (['FunctionExpression', 'ArrowFunctionExpression'].includes(
               property.value.type
-            ) || this.checkSafeExpression(property.value)
+            ) ||
+              this.checkSafeExpression(property.value))
           );
         });
       default:

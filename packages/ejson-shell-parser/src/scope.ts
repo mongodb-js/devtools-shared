@@ -1,7 +1,7 @@
 import * as bson from 'bson';
 
 // Returns the same object but frozen and with a null prototype.
-function lookupMap<T extends {}>(input: T): Readonly<T> {
+function lookupMap<T extends object>(input: T): Readonly<T> {
   return Object.freeze(
     Object.create(null, Object.getOwnPropertyDescriptors(input))
   );
@@ -15,6 +15,7 @@ function NumberLong(v: any) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 const SCOPE_CALL: { [x: string]: Function } = lookupMap({
   Date: function (...args: any[]) {
     // casting our arguments as an empty array because we don't know
@@ -24,6 +25,7 @@ const SCOPE_CALL: { [x: string]: Function } = lookupMap({
   },
 });
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 const SCOPE_NEW: { [x: string]: Function } = lookupMap({
   Date: function (...args: any[]) {
     // casting our arguments as an empty array because we don't know
@@ -33,6 +35,7 @@ const SCOPE_NEW: { [x: string]: Function } = lookupMap({
   },
 });
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 const SCOPE_ANY: { [x: string]: Function } = lookupMap({
   RegExp: RegExp,
   Binary: function (buffer: any, subType: any) {
@@ -243,6 +246,7 @@ export const GLOBAL_FUNCTIONS = Object.freeze([
   ...Object.keys(SCOPE_CALL),
 ]);
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function getScopeFunction(key: string, withNew: boolean): Function {
   if (withNew && SCOPE_NEW[key]) {
     return SCOPE_NEW[key];

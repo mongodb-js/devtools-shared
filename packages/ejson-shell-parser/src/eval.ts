@@ -1,4 +1,4 @@
-import {
+import type {
   UnaryExpression,
   BinaryExpression,
   Node,
@@ -28,8 +28,10 @@ const binaryExpression = (node: BinaryExpression): any => {
   const { left, right } = node;
   switch (node.operator) {
     case '==':
+      // eslint-disable-next-line eqeqeq
       return walk(left) == walk(right);
     case '!=':
+      // eslint-disable-next-line eqeqeq
       return walk(left) != walk(right);
     case '===':
       return walk(left) === walk(right);
@@ -50,6 +52,7 @@ const binaryExpression = (node: BinaryExpression): any => {
     case '>>>':
       return walk(left) >>> walk(right);
     case '+':
+      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
       return walk(left) + walk(right);
     case '-':
       return walk(left) - walk(right);
@@ -72,7 +75,9 @@ const binaryExpression = (node: BinaryExpression): any => {
     case 'instanceof':
       return walk(left) instanceof walk(right);
     default:
-      throw new Error(`Invalid BinaryExpression Provided: '${node.operator}'`);
+      throw new Error(
+        `Invalid BinaryExpression Provided: '${String(node.operator)}'`
+      );
   }
 };
 
@@ -98,7 +103,7 @@ const memberExpression = (node: CallExpression, withNew: boolean): any => {
         throw new Error('Expected CallExpression property to be an identifier');
 
       const args = node.arguments.map((arg) => walk(arg));
-      return calleeThis[calleeFn].apply(calleeThis, args);
+      return calleeThis[calleeFn](...args);
     }
     default:
       throw new Error('Should not evaluate invalid expressions');
@@ -113,8 +118,8 @@ const functionExpression = (
   return source.slice(range[0], range[1]);
 };
 
-const walk = (node: Node): any => {
-  switch (node.type) {
+const walk = (node: Node | null): any => {
+  switch (node?.type) {
     case 'Identifier':
       if (Object.prototype.hasOwnProperty.call(GLOBALS, node.name)) {
         return GLOBALS[node.name];
@@ -132,16 +137,18 @@ const walk = (node: Node): any => {
       return memberExpression(node, false);
     case 'NewExpression':
       return memberExpression(node, true);
-    case 'ObjectExpression':
+    case 'ObjectExpression': {
       const obj: { [key: string]: any } = Object.create(null);
-      node.properties.forEach((property) => {
+      for (const property of node.properties) {
+        if (!('key' in property)) continue;
         const key =
           property.key.type === 'Identifier'
             ? property.key.name
             : walk(property.key);
         obj[key] = walk(property.value);
-      });
+      }
       return { ...obj };
+    }
     case 'FunctionExpression':
     case 'ArrowFunctionExpression':
       return functionExpression(node);

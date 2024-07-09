@@ -1,5 +1,6 @@
+'use strict';
 const Benchmark = require('benchmark');
-const { default: parseEJSON } = require('./dist/ejson-shell-parser.cjs.prod');
+const { default: parseEJSON } = require('../');
 const { parseFilter } = require('mongodb-query-parser');
 
 const sample = `({

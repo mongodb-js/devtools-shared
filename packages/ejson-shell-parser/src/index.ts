@@ -1,9 +1,10 @@
 import { parse as parseAST } from 'acorn';
-import { Node } from 'estree';
+import type { Node } from 'estree';
 
 import { checkTree } from './check';
 import { executeAST } from './eval';
-import { Options, buildOptions, ParseMode } from './options';
+import type { Options } from './options';
+import { buildOptions, ParseMode } from './options';
 
 function buildAST(input: string): { ast: Node; hasComments: boolean } {
   let hasComments = false;
@@ -24,7 +25,7 @@ function buildAST(input: string): { ast: Node; hasComments: boolean } {
 
 export { ParseMode };
 
-export default function parse(input: string, options?: Partial<Options>) {
+export function parse(input: string, options?: Partial<Options>) {
   const parsedOptions = buildOptions(options);
 
   const { hasComments, ast } = buildAST(
@@ -41,3 +42,5 @@ export default function parse(input: string, options?: Partial<Options>) {
 
   return '';
 }
+
+export default parse;
