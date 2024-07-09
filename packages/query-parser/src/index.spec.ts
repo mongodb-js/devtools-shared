@@ -466,7 +466,7 @@ e  s`,
         );
       });
 
-      it('fallbacks to an invalid ISODate if the provided Date is invalid', function () {
+      it('falls back to an invalid ISODate if the provided Date is invalid', function () {
         const res = parseFilter("{test: new Date('invalid')}");
         const stringified = stringify(res);
         assert.equal(stringified, "{test: ISODate('Invalid Date')}");
@@ -483,10 +483,11 @@ e  s`,
         );
       });
 
-      it('fallbacks to an invalid ISODate if the provided ISODate is invalid', function () {
-        const res = parseFilter("{test: ISODate('invalid')}");
-        const stringified = stringify(res);
-        assert.equal(stringified, "{test: ISODate('Invalid Date')}");
+      it('throws if the provided ISODate is invalid', function () {
+        assert.throws(
+          () => parseFilter("{test: ISODate('invalid')}"),
+          /"invalid" is not a valid ISODate/
+        );
       });
     });
 
