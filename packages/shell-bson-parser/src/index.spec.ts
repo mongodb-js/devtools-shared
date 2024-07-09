@@ -6,7 +6,7 @@ import { expect } from 'chai';
 import type { SinonSandbox } from 'sinon';
 import { createSandbox } from 'sinon';
 
-describe('ejson-shell-parser', function () {
+describe('@mongodb-js/shell-bson-parser', function () {
   it('should correctly parse a valid object', function () {
     expect(parse('{_id:"hello"}')).to.deep.equal({ _id: 'hello' });
   });

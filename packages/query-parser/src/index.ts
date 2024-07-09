@@ -1,4 +1,6 @@
-import parseShellStringToEJSON, { ParseMode } from 'ejson-shell-parser';
+import parseShellStringToEJSON, {
+  ParseMode,
+} from '@mongodb-js/shell-bson-parser';
 
 import _ from 'lodash';
 import _debug from 'debug';
