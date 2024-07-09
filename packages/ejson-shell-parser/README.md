@@ -1,6 +1,10 @@
 # ejson-shell-parser
 
-Parses valid MongoDB EJSON Shell queries.
+> [!CAUTION]
+> Despite its name, this package does _not_ handle MongoDB Extended JSON (EJSON). It only parses shell syntax representations of BSON.
+> For example, it parses `ObjectId("668d112bafd4c98000a17f44")` but not `{ "$oid": "668d112bafd4c98000a17f44" }`.
+
+Parses valid MongoDB Shell queries.
 This library does not validate that these queries are correct. It's focus is on parsing untrusted input. You may wish to use something like https://github.com/mongodb-js/mongodb-language-model to achieve this.
 
 This library creates an AST from the proposed input, and then traverses this AST to check if it looks like a valid MongoDB query. If it does, the library will then evaluate the code to produce the parsed query.
