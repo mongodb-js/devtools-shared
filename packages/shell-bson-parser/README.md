@@ -1,8 +1,4 @@
-# ejson-shell-parser
-
-> [!CAUTION]
-> Despite its name, this package does _not_ handle MongoDB Extended JSON (EJSON). It only parses shell syntax representations of BSON.
-> For example, it parses `ObjectId("668d112bafd4c98000a17f44")` but not `{ "$oid": "668d112bafd4c98000a17f44" }`.
+# @mongodb-js/shell-bson-parser
 
 Parses valid MongoDB Shell queries.
 This library does not validate that these queries are correct. It's focus is on parsing untrusted input. You may wish to use something like https://github.com/mongodb-js/mongodb-language-model to achieve this.
@@ -14,7 +10,7 @@ This library currently supports three different modes for parsing queries:
 **strict**: [default] Disallows comments and calling methods
 
 ```javascript
-import parse from 'ejson-shell-parser';
+import parse from '@mongodb-js/shell-bson-parser';
 
 const query = parse(
   `{
@@ -33,7 +29,7 @@ const query = parse(
 **weak**: Disallows comments, allows calling methods
 
 ```javascript
-import parse from 'ejson-shell-parser';
+import parse from '@mongodb-js/shell-bson-parser';
 
 const query = parse(
   `{
@@ -51,7 +47,7 @@ const query = parse(
 **loose**: Supports calling methods on Math, Date and ISODate, allows comments
 
 ```javascript
-import parse from 'ejson-shell-parser';
+import parse from '@mongodb-js/shell-bson-parser';
 
 const query = parse(
   `{

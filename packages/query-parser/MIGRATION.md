@@ -29,7 +29,7 @@ Please refer to [the list of BSON changes](https://github.com/mongodb/js-bson/bl
 
 MongoDB Query Parser was making use of [`safer-eval`](https://www.npmjs.com/package/safer-eval) to parse difficult queries, which has been removed as this dependency is insecure.
 
-We've replaced this dependency with [`ejson-shell-parser`](https://github.com/mongodb-js/ejson-shell-parser), which instead walks the AST of the query, and only attempts to evaluate the query if it considered safe and well-formed.
+We've replaced this dependency with [`@mongodb-js/shell-bson-parser`](https://github.com/mongodb-js/devtools-shared/tree/main/packages/shell-bson-parser), which instead walks the AST of the query, and only attempts to evaluate the query if it considered safe and well-formed.
 
 Because of this change, some queries that would validate are no longer valid.
 
