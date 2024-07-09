@@ -7,6 +7,7 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "allowJs": true,
+    "strict": true,
     "jsx": "react"
   },
   "include": ["src/**/*"],
