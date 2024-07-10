@@ -85,44 +85,43 @@ describe('mongodb-redact', function () {
       expect(redact(PRIVATE_KEY)).to.equal('<private key>');
     });
 
-    it('should redact OS X resource paths', function () {
-      const res = redact(
-        '/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
+    it('should redact OS X user paths', function () {
+      let res = redact(
+        '/Users/foo/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
       );
-      expect(res).to.equal('/<path>/index.html');
+      expect(res).to.equal(
+        '/Users/<user>/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
+      );
+      res = redact('/Users/JohnDoe/Documents/letter.pages');
+      expect(res).to.equal(res, '/Users/<user>/Documents/letter.pages');
+      res = redact('file:///Users/JohnDoe/Documents/letter.pages');
+      expect(res).to.equal(res, 'file:///Users/<user>/Documents/letter.pages');
     });
 
-    it('should redact Windows resource paths using forward slash', function () {
-      const res = redact(
+    it('should redact Windows user paths using backward slash', function () {
+      let res = redact(
         'C:\\Users\\foo\\AppData\\Local\\MongoDBCompass\\app-1.0.1\\resources\\app\\index.js'
       );
-      expect(res).to.equal('\\<path>\\index.js');
+      expect(res).to.equal(res, 'C:\\Users\\<user>\\index.js');
+      res = redact('c:\\Users\\JohnDoe\\test');
+      expect(res).to.equal(res, 'c:\\Users\\<user>\\test');
+      res = redact('C:\\Documents and Settings\\JohnDoe\\test');
+      expect(res).to.equal(res, 'C:\\Documents and Settings\\<user>\\test');
     });
 
-    it('should redact Windows resource paths using backward slash', function () {
+    it('should redact Windows user paths using forward slash', function () {
       const res = redact(
         'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
       );
-      expect(res).to.equal('/<path>/index.js');
+      expect(res).to.equal(
+        res,
+        'C:/Users/<user>/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
+      );
     });
 
-    it('should redact Linux resource paths', function () {
+    it('should redact Linux user paths', function () {
       const res = redact('/usr/foo/myapps/resources/app/index.html');
-      expect(res).to.equal('/<path>/index.html');
-    });
-
-    it('should redact general Windows user paths', function () {
-      let res = redact('c:\\Users\\JohnDoe\\test');
-      expect(res).to.equal('c:\\Users\\<user>\\test');
-      res = redact('C:\\Documents and Settings\\JohnDoe\\test');
-      expect(res).to.equal('C:\\Documents and Settings\\<user>\\test');
-    });
-
-    it('should redact general OS X user paths', function () {
-      let res = redact('/Users/JohnDoe/Documents/letter.pages');
-      expect(res).to.equal('/Users/<user>/Documents/letter.pages');
-      res = redact('file:///Users/JohnDoe/Documents/letter.pages');
-      expect(res).to.equal('file:///Users/<user>/Documents/letter.pages');
+      expect(res).to.equal(res, '/usr/<user>/myapps/resources/app/index.html');
     });
 
     it('should redact URLs', function () {
