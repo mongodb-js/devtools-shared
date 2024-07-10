@@ -13,11 +13,11 @@ export const regexes = [
 
   // User directories
   [
-    /(file:\/\/|\/)(Users|user|users|user|usr|home|u01|var\/users|export|Documents and Settings|Profiles)\/[^/]*\//gm,
+    /(file:\/\/|\/)(Users|user|users|user|usr|u01|var\/users|home|export\/home|Documents and Settings|Profiles)\/[^/]*\//gm,
     '$1$2/<user>/',
   ],
   [
-    /(file:\/\/|\\)(Users|user|users|user|usr|home|u01|var\\users|export|Documents and Settings|Profiles)\\[^/]*\\/gm,
+    /(file:\/\/|\\)(Users|user|users|user|usr|u01|var\\users|home|export\\home|Documents and Settings|Profiles)\\[^/]*\\/gm,
     '$1$2\\<user>\\',
   ],
 
