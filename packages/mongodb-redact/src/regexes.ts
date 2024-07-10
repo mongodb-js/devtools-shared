@@ -27,14 +27,6 @@ export const regexes = [
     '$1<email>',
   ],
 
-  // Generic user directories
-  [/\/(Users?)\/[^/]*\//gm, '/$1/<user>/'],
-  [
-    /\/(usr|home|user|users|u01|var\/users|export\/home)\/[^/]*\//gm,
-    '/$1/<user>/',
-  ],
-  [/\\(Users|Documents and Settings|Profiles)\\[^/\\]*\\/gm, '\\$1\\<user>\\'],
-
   // IP addresses
   [
     /((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])/gm,
