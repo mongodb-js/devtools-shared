@@ -51,7 +51,7 @@
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.0",
     "socks": "^2.7.3",
-    "system-ca": "^1.0.2"
+    "system-ca": "^2.0.0"
   },
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^1.0.0",
