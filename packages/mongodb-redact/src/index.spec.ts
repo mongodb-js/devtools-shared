@@ -109,7 +109,7 @@ describe('mongodb-redact', function () {
       expect(res).to.equal(res, 'C:\\Documents and Settings\\<user>\\test');
     });
 
-    it('should redact Windows resource user using forward slash', function () {
+    it('should redact Windows user paths using forward slash', function () {
       const res = redact(
         'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
       );
