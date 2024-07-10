@@ -11,10 +11,21 @@ export const regexes = [
     '<private key>',
   ],
 
-  // Electron app resources specific directories
-  [/(file:\/\/)?\S+\/Contents\/Resources\/app\//gm, '$1/<path>/'],
-  [/(file:\/\/)?([a-zA-Z]:)?\\\S+\\resources\\app\\/gm, '$1\\<path>\\'],
-  [/(file:\/\/)?([a-zA-Z]:)?\/\S+\/resources\/app\//gm, '$1/<path>/'],
+  // User directories
+  [
+    /(file:\/\/|\/)(Users|user|users|user|usr|home|u01|var\/users|export|Documents and Settings|Profiles)\/[^/]*\//gm,
+    '$1$2/<user>/',
+  ],
+  [
+    /(file:\/\/|\\)(Users|user|users|user|usr|home|u01|var\\users|export|Documents and Settings|Profiles)\\[^/]*\\/gm,
+    '$1$2\\<user>\\',
+  ],
+
+  // Email addresses
+  [
+    /(^|[ \t\r\n\v\f])([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?){1,500})/gim,
+    '$1<email>',
+  ],
 
   // Generic user directories
   [/\/(Users?)\/[^/]*\//gm, '/$1/<user>/'],
@@ -23,12 +34,6 @@ export const regexes = [
     '/$1/<user>/',
   ],
   [/\\(Users|Documents and Settings|Profiles)\\[^/\\]*\\/gm, '\\$1\\<user>\\'],
-
-  // Email addresses
-  [
-    /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/gim,
-    '<email>',
-  ],
 
   // IP addresses
   [
