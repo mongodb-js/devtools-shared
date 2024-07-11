@@ -26,7 +26,10 @@ interface ElectronProxyConfig {
 
 export function translateToElectronProxyConfig(
   proxyOptions: DevtoolsProxyOptions
-): ElectronProxyConfig {}
+): ElectronProxyConfig {
+  if (proxyOptions.proxy) {
+  }
+}
 
 // These mirror our secrets extraction/merging logic in Compass
 export function extractProxySecrets(proxyOptions: DevtoolsProxyOptions): {
