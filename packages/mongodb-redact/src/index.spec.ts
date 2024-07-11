@@ -77,6 +77,14 @@ describe('mongodb-redact', function () {
       expect(redact('some.complex+email@somedomain.co.uk')).to.equal('<email>');
     });
 
+    it('should redact emails inside strings', function () {
+      expect(
+        redact(
+          '"db.test.insert({ email: "foo-bar$qwerty@example.sample.org" })"'
+        )
+      ).to.equal('"db.test.insert({ email: "<email>" })"');
+    });
+
     it('should redact ip addresses', function () {
       expect(redact('10.0.0.1')).to.equal('<ip address>');
     });
