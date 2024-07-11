@@ -471,7 +471,8 @@ export function isHumanOidcFlow(
   if (
     (clientOptions.authMechanism &&
       clientOptions.authMechanism !== 'MONGODB-OIDC') ||
-    clientOptions.authMechanismProperties?.PROVIDER_NAME
+    clientOptions.authMechanismProperties?.ENVIRONMENT ||
+    clientOptions.authMechanismProperties?.OIDC_CALLBACK
   ) {
     return false;
   }
@@ -487,7 +488,7 @@ export function isHumanOidcFlow(
   return (
     authMechanism === 'MONGODB-OIDC' &&
     !new CommaAndColonSeparatedRecord(sp.get('authMechanismProperties')).get(
-      'PROVIDER_NAME'
+      'ENVIRONMENT'
     )
   );
 }
