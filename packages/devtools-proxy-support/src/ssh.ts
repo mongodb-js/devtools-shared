@@ -5,10 +5,13 @@ import type { ClientRequest } from 'http';
 import type { Duplex } from 'stream';
 import type { ClientChannel, ConnectConfig } from 'ssh2';
 import { Client as SshClient } from 'ssh2';
-import { once } from 'events';
+import EventEmitter, { once } from 'events';
 import { promises as fs } from 'fs';
+import { promisify } from 'util';
+import type { ProxyLogEmitter } from './logging';
 
 export class SSHAgent extends AgentBase implements AgentWithInitialize {
+  public logger: ProxyLogEmitter;
   private readonly proxyOptions: Readonly<DevtoolsProxyOptions>;
   private readonly url: URL;
   private sshClient: SshClient;
@@ -22,13 +25,17 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     dstPort: number
   ) => Promise<ClientChannel>;
 
-  constructor(options: DevtoolsProxyOptions) {
+  constructor(options: DevtoolsProxyOptions, logger?: ProxyLogEmitter) {
     super();
+    (this as AgentWithInitialize).on?.('error', () => {
+      //Errors should not crash the process
+    });
+    this.logger = logger ?? new EventEmitter();
     this.proxyOptions = options;
     this.url = new URL(options.proxy ?? '');
     this.sshClient = new SshClient();
     this.sshClient.on('close', () => {
-      log.info(mongoLogId(1_001_000_252), this.logCtx, 'sshClient closed');
+      this.logger.emit('ssh:client-closed');
       this.connected = false;
     });
 
@@ -37,12 +44,10 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
 
   async initialize(): Promise<void> {
     if (this.connected) {
-      debug('already connected');
       return;
     }
 
     if (this.connectingPromise) {
-      debug('reusing connectingPromise');
       return this.connectingPromise;
     }
 
@@ -64,11 +69,13 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       passphrase: this.proxyOptions.sshOptions?.identityKeyPassphrase,
     };
 
-    log.info(
-      mongoLogId(1_001_000_257),
-      this.logCtx,
-      'Establishing new SSH connection'
-    );
+    this.logger.emit('ssh:establishing-conection', {
+      host: sshConnectConfig.host,
+      port: sshConnectConfig.port,
+      password: !!sshConnectConfig.passphrase,
+      privateKey: !!sshConnectConfig.privateKey,
+      passphrase: !!sshConnectConfig.passphrase,
+    });
 
     this.connectingPromise = Promise.race([
       once(this.sshClient, 'error').then(([err]) => {
@@ -84,32 +91,54 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     try {
       await this.connectingPromise;
     } catch (err) {
-      this.emit('forwardingError', err);
-      log.error(
-        mongoLogId(1_001_000_258),
-        this.logCtx,
-        'Failed to establish new SSH connection',
-        { error: (err as any)?.stack ?? String(err) }
-      );
+      (this as AgentWithInitialize).emit?.('error', err);
+      this.logger.emit('ssh:failed-connection', {
+        error: (err as any)?.stack ?? String(err),
+      });
       delete this.connectingPromise;
       throw err;
     }
 
     delete this.connectingPromise;
     this.connected = true;
-    log.info(
-      mongoLogId(1_001_000_259),
-      this.logCtx,
-      'Finished establishing new SSH connection'
-    );
+    this.logger.emit('ssh:established-connection');
   }
 
   override async connect(req: ClientRequest): Promise<Duplex> {
-    await this.initialize();
+    return await this._connect(req);
+  }
 
-    const host = req.getHeader('host') as string;
-    const url = new URL(req.path, `tcp://${host}`);
+  private async _connect(req: ClientRequest, retriesLeft = 1): Promise<Duplex> {
+    let host = '';
+    try {
+      // Using the `host` header matches what proxy-agent does
+      host = req.getHeader('host') as string;
+      const url = new URL(req.path, `tcp://${host}`);
 
-    return await this.forwardOut('127.0.0.1', 0, url.hostname, +url.port);
+      await this.initialize();
+
+      return await this.forwardOut('127.0.0.1', 0, url.hostname, +url.port);
+    } catch (err: unknown) {
+      const retryableError = (err as Error).message === 'Not connected';
+      this.logger.emit('ssh:failed-forward', {
+        host,
+        error: String((err as Error).stack),
+        retryableError,
+        retriesLeft,
+      });
+      if (retryableError) {
+        this.connected = false;
+        if (retriesLeft > 0) {
+          await this.initialize();
+          return await this._connect(req, retriesLeft - 1);
+        }
+      }
+      throw err;
+    }
+  }
+
+  destroy(): void {
+    this.closed = true;
+    this.sshClient.end();
   }
 }

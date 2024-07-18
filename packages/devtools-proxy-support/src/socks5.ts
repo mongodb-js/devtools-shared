@@ -1,7 +1,6 @@
 import { EventEmitter, once } from 'events';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import { proxyForUrl } from './proxy-options';
-import type { Agent } from 'https';
 import type { AgentWithInitialize } from './agent';
 import { createAgent } from './agent';
 
@@ -15,6 +14,7 @@ import { isIPv6 } from 'net';
 import type { Socket } from 'net';
 import type { Duplex } from 'stream';
 import type { ClientRequest } from 'http';
+import type { ProxyLogEmitter } from './logging';
 
 export interface TunnelOptions {
   // These can safely be assigned to driver MongoClientOptinos
@@ -37,6 +37,7 @@ function getTunnelOptions(config: Partial<TunnelOptions>): TunnelOptions {
 type ErrorWithOrigin = Error & { origin?: string };
 
 export interface Tunnel {
+  readonly logger: ProxyLogEmitter;
   on(ev: 'forwardingError', cb: (err: Error) => void): void;
   on(ev: 'error', cb: (err: Error) => void): void;
 
@@ -59,22 +60,24 @@ function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
   } as ClientRequest;
 }
 
-let idCounter = 0;
 class Socks5Server extends EventEmitter implements Tunnel {
+  public logger: ProxyLogEmitter = new EventEmitter()
   private readonly agent: AgentWithInitialize;
   private server: any;
   private serverListen: (port?: number, host?: string) => Promise<void>;
   private serverClose: () => Promise<void>;
   private connections: Set<Socket> = new Set();
-  private logCtx = `tunnel-${idCounter++}`;
   private rawConfig: TunnelOptions;
   private closed = false;
   private agentInitialized = false;
   private agentInitPromise?: Promise<void>;
 
-  constructor(agent: Agent, tunnelOptions: Partial<TunnelOptions>) {
+  constructor(agent: AgentWithInitialize, tunnelOptions: Partial<TunnelOptions>) {
     super();
     this.agent = agent;
+    if (agent.logger)
+      this.logger = agent.logger
+    agent.on?.('error', (err: Error) => this.emit('forwardingError', err))
     this.rawConfig = getTunnelOptions(tunnelOptions);
 
     this.server = socks5Server.createServer(this.socks5Request.bind(this));
@@ -86,18 +89,13 @@ class Socks5Server extends EventEmitter implements Tunnel {
             const success =
               this.rawConfig.proxyUsername === user &&
               this.rawConfig.proxyPassword === pass;
-            log.info(
-              mongoLogId(1_001_000_253),
-              this.logCtx,
-              'Validated auth parameters',
-              { success }
-            );
+            this.logger.emit('socks5:authentication-complete', {success});
             queueMicrotask(() => cb(success));
           }
         )
       );
     } else {
-      log.info(mongoLogId(1_001_000_254), this.logCtx, 'Skipping auth setup');
+      this.logger.emit('socks5:skip-auth-setup');
       this.server.useAuth(socks5AuthNone());
     }
 
@@ -123,12 +121,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   async listen(): Promise<void> {
     const { proxyHost, proxyPort } = this.rawConfig;
 
-    log.info(
-      mongoLogId(1_001_000_255),
-      this.logCtx,
-      'Listening for Socks5 connections',
-      { proxyHost, proxyPort }
-    );
+    this.logger.emit('socks5:start-listening', { proxyHost, proxyPort })
 
     const listeningPromise = this.serverListen(proxyPort, proxyHost);
     try {
@@ -146,12 +139,10 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
   private async ensureAgentInitialized() {
     if (this.agentInitialized) {
-      debug('agent already connected');
       return;
     }
 
     if (this.agentInitPromise) {
-      debug('reusing agentInitPromise');
       return this.agentInitPromise;
     }
 
@@ -164,12 +155,8 @@ class Socks5Server extends EventEmitter implements Tunnel {
       await (this.agentInitPromise = this.agent.initialize?.());
     } catch (err) {
       this.emit('forwardingError', err);
-      log.error(
-        mongoLogId(1_001_000_258),
-        this.logCtx,
-        'Failed to establish new SSH connection',
-        { error: (err as any)?.stack ?? String(err) }
-      );
+      this.logger.emit('socks5:forwarding-error',
+      { error: (err as any)?.stack ?? String(err) })
       delete this.agentInitPromise;
       await this.serverClose();
       throw err;
@@ -177,11 +164,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
     delete this.agentInitPromise;
     this.agentInitialized = true;
-    log.info(
-      mongoLogId(1_001_000_259),
-      this.logCtx,
-      'Finished establishing new SSH connection'
-    );
+    this.logger.emit('socks5:agent-initialized')
   }
 
   private async closeOpenConnections() {
@@ -197,7 +180,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   async close(): Promise<void> {
     this.closed = true;
 
-    log.info(mongoLogId(1_001_000_256), this.logCtx, 'Closing SSH tunnel');
+    this.logger.emit('socks5:closing-tunnel')
     const [maybeError] = await Promise.all([
       // If we catch anything, just return the error instead of throwing, we
       // want to await on closing the connections before re-throwing server
@@ -232,92 +215,42 @@ class Socks5Server extends EventEmitter implements Tunnel {
   ): Promise<void> {
     const { srcAddr, srcPort, dstAddr, dstPort } = info;
     const logMetadata = { srcAddr, srcPort, dstAddr, dstPort };
-    log.info(
-      mongoLogId(1_001_000_260),
-      this.logCtx,
-      'Received Socks5 fowarding request',
-      {
-        ...logMetadata,
-      }
-    );
+    this.logger.emit('socks5:got-forwarding-request', {...logMetadata});
     let socket: Socket | null = null;
 
     try {
       await this.ensureAgentInitialized();
 
-      let channel: Duplex;
-      try {
-        channel = await this.forwardOut(dstAddr, dstPort);
-      } catch (err) {
-        // XXXX
-        if ((err as Error).message === 'Not connected') {
-          this.agentInitialized = false;
-          log.error(
-            mongoLogId(1_001_000_261),
-            this.logCtx,
-            'Error forwarding Socks5 request, retrying',
-            {
-              ...logMetadata,
-              error: (err as Error).stack,
-            }
-          );
-          await this.ensureAgentInitialized();
-          channel = await this.forwardOut(dstAddr, dstPort);
-        } else {
-          throw err;
-        }
-      }
+      const channel = await this.forwardOut(dstAddr, dstPort);
 
-      log.info(
-        mongoLogId(1_001_000_262),
-        this.logCtx,
-        'Opened SSH channel and accepting socks5 request',
-        {
-          ...logMetadata,
-        }
-      );
+      this.logger.emit('socks5:accepted-forwarding-request', {...logMetadata})
 
       socket = accept(true);
       this.connections.add(socket);
 
       socket.on('error', (err: ErrorWithOrigin) => {
-        log.error(
-          mongoLogId(1_001_000_263),
-          this.logCtx,
-          'Error on Socks5 stream socket',
-          {
-            ...logMetadata,
-            error: (err as Error).stack,
-          }
-        );
-        err.origin = err.origin ?? 'connection';
+        err.origin ??= 'connection';
+        this.logger.emit('socks5:forwarding-error',
+        {
+          ...logMetadata,
+          error: String((err as Error).stack),
+        })
         this.emit('forwardingError', err);
       });
 
       socket.once('close', () => {
-        log.info(
-          mongoLogId(1_001_000_264),
-          this.logCtx,
-          'Socks5 stream socket closed',
-          {
-            ...logMetadata,
-          }
-        );
+        this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata})
         this.connections.delete(socket as Socket);
       });
 
       socket.pipe(channel).pipe(socket);
     } catch (err) {
+      this.emit('socks5:failed-forwarding-request',
+      {
+        ...logMetadata,
+        error: String((err as Error).stack),
+      });
       this.emit('forwardingError', err);
-      log.error(
-        mongoLogId(1_001_000_265),
-        this.logCtx,
-        'Error establishing SSH channel for Socks5 request',
-        {
-          ...logMetadata,
-          error: (err as Error).stack,
-        }
-      );
       deny();
       if (socket) {
         (err as any).origin = 'ssh-client';
