@@ -61,7 +61,7 @@ function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
 }
 
 class Socks5Server extends EventEmitter implements Tunnel {
-  public logger: ProxyLogEmitter = new EventEmitter()
+  public logger: ProxyLogEmitter = new EventEmitter();
   private readonly agent: AgentWithInitialize;
   private server: any;
   private serverListen: (port?: number, host?: string) => Promise<void>;
@@ -72,12 +72,14 @@ class Socks5Server extends EventEmitter implements Tunnel {
   private agentInitialized = false;
   private agentInitPromise?: Promise<void>;
 
-  constructor(agent: AgentWithInitialize, tunnelOptions: Partial<TunnelOptions>) {
+  constructor(
+    agent: AgentWithInitialize,
+    tunnelOptions: Partial<TunnelOptions>
+  ) {
     super();
     this.agent = agent;
-    if (agent.logger)
-      this.logger = agent.logger
-    agent.on?.('error', (err: Error) => this.emit('forwardingError', err))
+    if (agent.logger) this.logger = agent.logger;
+    agent.on?.('error', (err: Error) => this.emit('forwardingError', err));
     this.rawConfig = getTunnelOptions(tunnelOptions);
 
     this.server = socks5Server.createServer(this.socks5Request.bind(this));
@@ -89,7 +91,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
             const success =
               this.rawConfig.proxyUsername === user &&
               this.rawConfig.proxyPassword === pass;
-            this.logger.emit('socks5:authentication-complete', {success});
+            this.logger.emit('socks5:authentication-complete', { success });
             queueMicrotask(() => cb(success));
           }
         )
@@ -121,7 +123,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   async listen(): Promise<void> {
     const { proxyHost, proxyPort } = this.rawConfig;
 
-    this.logger.emit('socks5:start-listening', { proxyHost, proxyPort })
+    this.logger.emit('socks5:start-listening', { proxyHost, proxyPort });
 
     const listeningPromise = this.serverListen(proxyPort, proxyHost);
     try {
@@ -155,8 +157,9 @@ class Socks5Server extends EventEmitter implements Tunnel {
       await (this.agentInitPromise = this.agent.initialize?.());
     } catch (err) {
       this.emit('forwardingError', err);
-      this.logger.emit('socks5:forwarding-error',
-      { error: (err as any)?.stack ?? String(err) })
+      this.logger.emit('socks5:forwarding-error', {
+        error: (err as any)?.stack ?? String(err),
+      });
       delete this.agentInitPromise;
       await this.serverClose();
       throw err;
@@ -164,7 +167,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
     delete this.agentInitPromise;
     this.agentInitialized = true;
-    this.logger.emit('socks5:agent-initialized')
+    this.logger.emit('socks5:agent-initialized');
   }
 
   private async closeOpenConnections() {
@@ -180,7 +183,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   async close(): Promise<void> {
     this.closed = true;
 
-    this.logger.emit('socks5:closing-tunnel')
+    this.logger.emit('socks5:closing-tunnel');
     const [maybeError] = await Promise.all([
       // If we catch anything, just return the error instead of throwing, we
       // want to await on closing the connections before re-throwing server
@@ -215,7 +218,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   ): Promise<void> {
     const { srcAddr, srcPort, dstAddr, dstPort } = info;
     const logMetadata = { srcAddr, srcPort, dstAddr, dstPort };
-    this.logger.emit('socks5:got-forwarding-request', {...logMetadata});
+    this.logger.emit('socks5:got-forwarding-request', { ...logMetadata });
     let socket: Socket | null = null;
 
     try {
@@ -223,30 +226,30 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
       const channel = await this.forwardOut(dstAddr, dstPort);
 
-      this.logger.emit('socks5:accepted-forwarding-request', {...logMetadata})
+      this.logger.emit('socks5:accepted-forwarding-request', {
+        ...logMetadata,
+      });
 
       socket = accept(true);
       this.connections.add(socket);
 
       socket.on('error', (err: ErrorWithOrigin) => {
         err.origin ??= 'connection';
-        this.logger.emit('socks5:forwarding-error',
-        {
+        this.logger.emit('socks5:forwarding-error', {
           ...logMetadata,
           error: String((err as Error).stack),
-        })
+        });
         this.emit('forwardingError', err);
       });
 
       socket.once('close', () => {
-        this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata})
+        this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata });
         this.connections.delete(socket as Socket);
       });
 
       socket.pipe(channel).pipe(socket);
     } catch (err) {
-      this.emit('socks5:failed-forwarding-request',
-      {
+      this.emit('socks5:failed-forwarding-request', {
         ...logMetadata,
         error: String((err as Error).stack),
       });
