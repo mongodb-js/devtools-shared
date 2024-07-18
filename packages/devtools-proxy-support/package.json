@@ -45,6 +45,12 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
+  "dependencies": {
+    "proxy-agent": "^6.4.0",
+    "agent-base": "^7.1.1",
+    "ssh2": "^1.15.0",
+    "socksv5": "^0.0.6"
+  },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
     "@mongodb-js/mocha-config-devtools": "^1.0.3",

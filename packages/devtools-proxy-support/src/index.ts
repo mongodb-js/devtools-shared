@@ -5,6 +5,6 @@ export {
   extractProxySecrets,
   mergeProxySecrets,
 } from './proxy-options';
-export { Tunnel, setupSocks5Tunnel } from './tunnel';
+export { Tunnel, TunnelOptions, setupSocks5Tunnel } from './tunnel';
 export { createAgent } from './agent';
 export { createFetch } from './fetch';
