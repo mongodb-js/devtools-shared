@@ -39,6 +39,7 @@ export function createAgent(
   const getProxyForUrl = proxyForUrl(proxyOptions);
   return new ProxyAgent({
     getProxyForUrl,
+    ...proxyOptions,
   });
 }
 

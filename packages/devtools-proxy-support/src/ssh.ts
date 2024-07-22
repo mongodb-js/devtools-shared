@@ -10,6 +10,8 @@ import EventEmitter, { once } from 'events';
 import { promises as fs } from 'fs';
 import { promisify } from 'util';
 import type { ProxyLogEmitter } from './logging';
+import { connect as tlsConnect } from 'tls';
+import type { Socket } from 'net';
 
 export class SSHAgent extends AgentBase implements AgentWithInitialize {
   public logger: ProxyLogEmitter;
@@ -68,6 +70,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
         ? await fs.readFile(this.proxyOptions.sshOptions.identityKeyFile)
         : undefined,
       passphrase: this.proxyOptions.sshOptions?.identityKeyPassphrase,
+      // debug: console.log.bind(null, '[client]')
     };
 
     this.logger.emit('ssh:establishing-conection', {
@@ -125,7 +128,20 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
 
       await this.initialize();
 
-      return await this.forwardOut('127.0.0.1', 0, url.hostname, +url.port);
+      let sock: Duplex & Partial<Pick<Socket, 'setTimeout'>> =
+        await this.forwardOut('127.0.0.1', 0, url.hostname, +url.port);
+      (sock as any).setTimeout ??= function () {
+        // noop, required for node-fetch
+        return this;
+      };
+      if (connectOpts.secureEndpoint) {
+        sock = tlsConnect({
+          ...this.proxyOptions,
+          ...connectOpts,
+          socket: sock,
+        });
+      }
+      return sock;
     } catch (err: unknown) {
       const retryableError = (err as Error).message === 'Not connected';
       this.logger.emit('ssh:failed-forward', {

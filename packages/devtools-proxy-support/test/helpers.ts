@@ -13,9 +13,11 @@ import { createServer as createHTTPServer, get as httpGet } from 'http';
 import type { TcpipRequestInfo } from 'ssh2';
 import { Server as SSHServer } from 'ssh2';
 import DuplexPair from 'duplexpair';
+import { promisify } from 'util';
 
 import socks5Server from 'socksv5/lib/server';
-import { promisify } from 'util';
+import socks5AuthNone from 'socksv5/lib/auth/None';
+import socks5AuthUserPassword from 'socksv5/lib/auth/UserPassword';
 
 function parseHTTPAuthHeader(header: string | undefined): [string, string] {
   if (!header?.startsWith('Basic ')) return ['', ''];
@@ -129,6 +131,7 @@ export class HTTPServerProxyTestSetup {
     this.sshServer = new SSHServer(
       {
         hostKeys: [this.tlsOptions.sshdKey],
+        // debug: console.log.bind(null, '[server]')
       },
       (client) => {
         client
@@ -167,7 +170,17 @@ export class HTTPServerProxyTestSetup {
     );
   }
 
-  getRequestedUrls() {
+  socks5AuthNone(): void {
+    this.socks5ProxyServer.useAuth(socks5AuthNone());
+  }
+
+  socks5AuthUsernamePassword(
+    cb: (user: string, pass: string, cb: (success: boolean) => void) => void
+  ): void {
+    this.socks5ProxyServer.useAuth(socks5AuthUserPassword(cb));
+  }
+
+  getRequestedUrls(): string[] {
     return this.requests.map((r) =>
       Object.assign(new URL(`http://_`), {
         pathname: r.url,
@@ -176,7 +189,7 @@ export class HTTPServerProxyTestSetup {
     );
   }
 
-  async teardown() {
+  async teardown(): Promise<void> {
     const closePromises: Promise<unknown>[] = [];
     for (const server of [
       this.httpServer,

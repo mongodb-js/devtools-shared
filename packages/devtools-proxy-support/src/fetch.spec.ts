@@ -3,7 +3,7 @@ import { createFetch } from './';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 
 describe('createFetch', function () {
-  it(`consistency check: plain "import('node-fetch') fails"`, async function () {
+  it("consistency check: plain `import('node-fetch')` fails", async function () {
     let failed = false;
     try {
       await import('node-fetch');
@@ -17,12 +17,12 @@ describe('createFetch', function () {
   context('HTTP calls', function () {
     let setup: HTTPServerProxyTestSetup;
 
-    before(async function () {
+    beforeEach(async function () {
       setup = new HTTPServerProxyTestSetup();
       await setup.listen();
     });
 
-    after(async function () {
+    afterEach(async function () {
       await setup.teardown();
     });
 
@@ -33,12 +33,58 @@ describe('createFetch', function () {
       expect(await response.text()).to.equal('OK /test');
     });
 
-    it.only('makes use of proxy support when instructed to do so', async function () {
-      const response = await createFetch({
+    it('makes use of SSH proxy support when instructed to do so', async function () {
+      const fetch = createFetch({
         proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}`,
-      })(`http://127.0.0.1:${setup.httpServerPort}/test`);
+      });
+      const response = await fetch(
+        `http://localhost:${setup.httpServerPort}/test`
+      );
       expect(await response.text()).to.equal('OK /test');
-      expect(setup.sshTunnelInfos).to.deep.equal([]);
+      expect(setup.sshTunnelInfos).to.deep.equal([
+        {
+          destIP: 'localhost',
+          destPort: setup.httpServerPort,
+          srcIP: '127.0.0.1',
+          srcPort: 0,
+        },
+      ]);
+      fetch.agent?.destroy?.();
+    });
+
+    it('makes use of HTTP proxy support when instructed to do so', async function () {
+      const fetch = createFetch({
+        proxy: `http://127.0.0.1:${setup.httpProxyPort}`,
+      });
+      const response = await fetch(
+        `http://localhost:${setup.httpServerPort}/test`
+      );
+      expect(await response.text()).to.equal('OK /test');
+      fetch.agent?.destroy?.();
+    });
+
+    it('makes use of HTTPS proxy support when instructed to do so', async function () {
+      const fetch = createFetch({
+        proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
+        ca: setup.tlsOptions.ca,
+      });
+      const response = await fetch(
+        `https://localhost:${setup.httpsServerPort}/test`
+      );
+      expect(await response.text()).to.equal('OK /test');
+      fetch.agent?.destroy?.();
+    });
+
+    it('makes use of Socks5 proxy support when instructed to do so', async function () {
+      setup.socks5AuthNone();
+      const fetch = createFetch({
+        proxy: `socks5://127.0.0.1:${setup.socks5ProxyPort}`,
+      });
+      const response = await fetch(
+        `http://localhost:${setup.httpServerPort}/test`
+      );
+      expect(await response.text()).to.equal('OK /test');
+      fetch.agent?.destroy?.();
     });
   });
 });

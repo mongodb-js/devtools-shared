@@ -5,8 +5,6 @@ import { get as httpsGet } from 'https';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
-import socks5AuthNone from 'socksv5/lib/auth/None';
-import socks5AuthUserPassword from 'socksv5/lib/auth/UserPassword';
 
 describe('createAgent', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -47,7 +45,7 @@ describe('createAgent', function () {
 
   context('socks5', function () {
     it('can connect to a socks5 proxy without auth', async function () {
-      setup.socks5ProxyServer.useAuth(socks5AuthNone());
+      setup.socks5AuthNone();
 
       const res = await get(
         'http://example.com/hello',
@@ -61,7 +59,7 @@ describe('createAgent', function () {
 
     it('can connect to a socks5 proxy with successful auth', async function () {
       const authHandler = sinon.stub().yields(true);
-      setup.socks5ProxyServer.useAuth(socks5AuthUserPassword(authHandler));
+      setup.socks5AuthUsernamePassword(authHandler);
 
       const res = await get(
         'http://example.com/hello',
@@ -78,7 +76,7 @@ describe('createAgent', function () {
 
     it('fails to connect to a socks5 proxy with unsuccessful auth', async function () {
       const authHandler = sinon.stub().yields(false);
-      setup.socks5ProxyServer.useAuth(socks5AuthUserPassword(authHandler));
+      setup.socks5AuthUsernamePassword(authHandler);
 
       try {
         await get(
@@ -95,7 +93,7 @@ describe('createAgent', function () {
   });
 
   context('http proxy', function () {
-    it('can connect to a socks5 proxy without auth', async function () {
+    it('can connect to a http proxy without auth', async function () {
       const res = await get(
         'http://example.com/hello',
         createAgent({ proxy: `http://127.0.0.1:${setup.httpProxyPort}` })
@@ -106,7 +104,7 @@ describe('createAgent', function () {
       ]);
     });
 
-    it('can connect to a socks5 proxy with successful auth', async function () {
+    it('can connect to a http proxy with successful auth', async function () {
       setup.authHandler = sinon.stub().returns(true);
 
       const res = await get(
@@ -122,7 +120,7 @@ describe('createAgent', function () {
       expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
     });
 
-    it('fails to connect to a socks5 proxy with unsuccessful auth', async function () {
+    it('fails to connect to a http proxy with unsuccessful auth', async function () {
       setup.authHandler = sinon.stub().returns(false);
 
       const res = await get(
@@ -147,7 +145,7 @@ describe('createAgent', function () {
       ]);
     });
 
-    it('can connect to a socks5 proxy with successful auth', async function () {
+    it('can connect to a https proxy with successful auth', async function () {
       setup.authHandler = sinon.stub().returns(true);
 
       const res = await get(
@@ -163,7 +161,7 @@ describe('createAgent', function () {
       expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
     });
 
-    it('fails to connect to a socks5 proxy with unsuccessful auth', async function () {
+    it('fails to connect to a https proxy with unsuccessful auth', async function () {
       setup.authHandler = sinon.stub().returns(false);
 
       const res = await get(
@@ -177,9 +175,9 @@ describe('createAgent', function () {
   });
 
   context('ssh proxy', function () {
-    it('can connect to a ssh proxy without auth', async function () {
+    it('can connect to an ssh proxy without auth', async function () {
       const res = await get(
-        'https://example.com/hello',
+        'http://example.com/hello',
         createAgent({ proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}` })
       );
       expect(res.body).to.equal('OK /hello');
@@ -187,15 +185,15 @@ describe('createAgent', function () {
         'http://example.com/hello',
       ]);
       expect(setup.sshTunnelInfos).to.deep.equal([
-        { destIP: 'example.com', destPort: 0, srcIP: '127.0.0.1', srcPort: 0 },
+        { destIP: 'example.com', destPort: 80, srcIP: '127.0.0.1', srcPort: 0 },
       ]);
     });
 
-    it('can connect to a ssh proxy with successful auth', async function () {
+    it('can connect to an ssh proxy with successful auth', async function () {
       setup.authHandler = sinon.stub().returns(true);
 
       const res = await get(
-        'https://example.com/hello',
+        'http://example.com/hello',
         createAgent({ proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}` })
       );
       expect(res.body).to.equal('OK /hello');
@@ -205,7 +203,7 @@ describe('createAgent', function () {
       expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
     });
 
-    it('fails to connect to a ssh proxy with unsuccessful auth', async function () {
+    it('fails to connect to an ssh proxy with unsuccessful auth', async function () {
       setup.authHandler = sinon.stub().returns(false);
 
       try {
@@ -223,7 +221,7 @@ describe('createAgent', function () {
       }
     });
 
-    it('fails to connect to a ssh proxy with unavailable tunneling', async function () {
+    it('fails to connect to an ssh proxy with unavailable tunneling', async function () {
       setup.authHandler = sinon.stub().returns(true);
       setup.canTunnel = false;
 

@@ -1,7 +1,9 @@
+import type { ConnectionOptions } from 'tls';
+
 // Should be an opaque type, but TS does not support those.
 export type DevtoolsProxyOptionsSecrets = string;
 
-export interface DevtoolsProxyOptions {
+export type DevtoolsProxyOptions = {
   // Can be an ssh://, socks5://, http://, https:// or pac<...>://  URL
   // Everything besides ssh:// gets forwarded to the `proxy-agent` npm package
   proxy?: string;
@@ -14,7 +16,10 @@ export interface DevtoolsProxyOptions {
     identityKeyFile?: string;
     identityKeyPassphrase?: string;
   };
-}
+} & Pick<
+  ConnectionOptions,
+  'ca' | 'cert' | 'crl' | 'key' | 'passphrase' | 'pfx'
+>;
 
 // https://www.electronjs.org/docs/latest/api/structures/proxy-config
 interface ElectronProxyConfig {
