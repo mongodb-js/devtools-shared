@@ -1,3 +1,4 @@
+import type { AgentConnectOpts } from 'agent-base';
 import { Agent as AgentBase } from 'agent-base';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import type { AgentWithInitialize } from './agent';
@@ -104,16 +105,23 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     this.logger.emit('ssh:established-connection');
   }
 
-  override async connect(req: ClientRequest): Promise<Duplex> {
-    return await this._connect(req);
+  override async connect(
+    req: ClientRequest,
+    connectOpts: AgentConnectOpts
+  ): Promise<Duplex> {
+    return await this._connect(req, connectOpts);
   }
 
-  private async _connect(req: ClientRequest, retriesLeft = 1): Promise<Duplex> {
+  private async _connect(
+    req: ClientRequest,
+    connectOpts: AgentConnectOpts,
+    retriesLeft = 1
+  ): Promise<Duplex> {
     let host = '';
     try {
       // Using the `host` header matches what proxy-agent does
-      host = req.getHeader('host') as string;
-      const url = new URL(req.path, `tcp://${host}`);
+      host = connectOpts.host || (req.getHeader('host') as string);
+      const url = new URL(req.path, `tcp://${host}:${connectOpts.port}`);
 
       await this.initialize();
 
@@ -130,7 +138,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
         this.connected = false;
         if (retriesLeft > 0) {
           await this.initialize();
-          return await this._connect(req, retriesLeft - 1);
+          return await this._connect(req, connectOpts, retriesLeft - 1);
         }
       }
       throw err;
