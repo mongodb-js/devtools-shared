@@ -30,6 +30,9 @@ export type AgentWithInitialize = Agent & {
 export function createAgent(
   proxyOptions: DevtoolsProxyOptions
 ): AgentWithInitialize {
+  // This could be made a bit more flexible by creating an Agent using AgentBase
+  // that will dynamically choose between SSHAgent and ProxyAgent.
+  // Right now, this is a bit simpler in terms of lifetime management for SSHAgent.
   if (proxyOptions.proxy && new URL(proxyOptions.proxy).protocol === 'ssh:') {
     return new SSHAgent(proxyOptions);
   }
@@ -37,4 +40,20 @@ export function createAgent(
   return new ProxyAgent({
     getProxyForUrl,
   });
+}
+
+export function useOrCreateAgent(
+  proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
+  target?: string
+): AgentWithInitialize | undefined {
+  if ('createConnection' in proxyOptions) {
+    return proxyOptions as AgentWithInitialize;
+  } else {
+    if (
+      target !== undefined &&
+      !proxyForUrl(proxyOptions as DevtoolsProxyOptions)(target)
+    )
+      return undefined;
+    return createAgent(proxyOptions as DevtoolsProxyOptions);
+  }
 }

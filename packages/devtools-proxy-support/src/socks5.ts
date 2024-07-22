@@ -1,8 +1,7 @@
 import { EventEmitter, once } from 'events';
 import type { DevtoolsProxyOptions } from './proxy-options';
-import { proxyForUrl } from './proxy-options';
 import type { AgentWithInitialize } from './agent';
-import { createAgent } from './agent';
+import { useOrCreateAgent } from './agent';
 
 // The socksv5 module is not bundle-able by itself, so we get the
 // subpackages directly
@@ -268,14 +267,8 @@ export async function setupSocks5Tunnel(
   tunnelOptions?: Partial<TunnelOptions>,
   target = 'mongodb://'
 ): Promise<Tunnel | undefined> {
-  let agent: AgentWithInitialize;
-  if ('createConnection' in proxyOptions) {
-    agent = proxyOptions as AgentWithInitialize;
-  } else {
-    if (!proxyForUrl(proxyOptions as DevtoolsProxyOptions)(target))
-      return undefined;
-    agent = createAgent(proxyOptions as DevtoolsProxyOptions);
-  }
+  const agent = useOrCreateAgent(proxyOptions, target);
+  if (!agent) return undefined;
 
   const server = new Socks5Server(agent, { ...tunnelOptions });
   await server.listen();
