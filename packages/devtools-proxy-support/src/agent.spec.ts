@@ -93,7 +93,7 @@ describe('createAgent', function () {
   });
 
   context('http proxy', function () {
-    it('can connect to a http proxy without auth', async function () {
+    it('can connect to an http proxy without auth', async function () {
       const res = await get(
         'http://example.com/hello',
         createAgent({ proxy: `http://127.0.0.1:${setup.httpProxyPort}` })
@@ -104,7 +104,7 @@ describe('createAgent', function () {
       ]);
     });
 
-    it('can connect to a http proxy with successful auth', async function () {
+    it('can connect to an http proxy with successful auth', async function () {
       setup.authHandler = sinon.stub().returns(true);
 
       const res = await get(
@@ -120,7 +120,7 @@ describe('createAgent', function () {
       expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
     });
 
-    it('fails to connect to a http proxy with unsuccessful auth', async function () {
+    it('fails to connect to an http proxy with unsuccessful auth', async function () {
       setup.authHandler = sinon.stub().returns(false);
 
       const res = await get(
@@ -134,7 +134,7 @@ describe('createAgent', function () {
   });
 
   context('https/connect proxy', function () {
-    it('can connect to a https proxy without auth', async function () {
+    it('can connect to an https proxy without auth', async function () {
       const res = await get(
         'https://example.com/hello',
         createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` })
@@ -145,7 +145,7 @@ describe('createAgent', function () {
       ]);
     });
 
-    it('can connect to a https proxy with successful auth', async function () {
+    it('can connect to an https proxy with successful auth', async function () {
       setup.authHandler = sinon.stub().returns(true);
 
       const res = await get(
@@ -161,7 +161,7 @@ describe('createAgent', function () {
       expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
     });
 
-    it('fails to connect to a https proxy with unsuccessful auth', async function () {
+    it('fails to connect to an https proxy with unsuccessful auth', async function () {
       setup.authHandler = sinon.stub().returns(false);
 
       const res = await get(

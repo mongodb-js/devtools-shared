@@ -64,12 +64,14 @@
     "chai": "^4.3.6",
     "depcheck": "^1.4.1",
     "duplexpair": "^1.0.2",
+    "electron": "^31.2.1",
     "eslint": "^7.25.0",
     "gen-esm-wrapper": "^1.1.0",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
     "prettier": "^2.3.2",
     "sinon": "^9.2.3",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "xvfb-maybe": "^0.2.1"
   }
 }

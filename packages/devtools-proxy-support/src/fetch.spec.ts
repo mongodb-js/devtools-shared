@@ -15,6 +15,7 @@ describe('createFetch', function () {
   });
 
   context('HTTP calls', function () {
+    let fetch: ReturnType<typeof createFetch>;
     let setup: HTTPServerProxyTestSetup;
 
     beforeEach(async function () {
@@ -24,6 +25,7 @@ describe('createFetch', function () {
 
     afterEach(async function () {
       await setup.teardown();
+      fetch?.agent?.destroy?.();
     });
 
     it('provides a node-fetch-like HTTP functionality', async function () {
@@ -34,7 +36,7 @@ describe('createFetch', function () {
     });
 
     it('makes use of SSH proxy support when instructed to do so', async function () {
-      const fetch = createFetch({
+      fetch = createFetch({
         proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}`,
       });
       const response = await fetch(
@@ -49,22 +51,20 @@ describe('createFetch', function () {
           srcPort: 0,
         },
       ]);
-      fetch.agent?.destroy?.();
     });
 
     it('makes use of HTTP proxy support when instructed to do so', async function () {
-      const fetch = createFetch({
+      fetch = createFetch({
         proxy: `http://127.0.0.1:${setup.httpProxyPort}`,
       });
       const response = await fetch(
         `http://localhost:${setup.httpServerPort}/test`
       );
       expect(await response.text()).to.equal('OK /test');
-      fetch.agent?.destroy?.();
     });
 
     it('makes use of HTTPS proxy support when instructed to do so', async function () {
-      const fetch = createFetch({
+      fetch = createFetch({
         proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
         ca: setup.tlsOptions.ca,
       });
@@ -72,19 +72,37 @@ describe('createFetch', function () {
         `https://localhost:${setup.httpsServerPort}/test`
       );
       expect(await response.text()).to.equal('OK /test');
-      fetch.agent?.destroy?.();
     });
 
     it('makes use of Socks5 proxy support when instructed to do so', async function () {
       setup.socks5AuthNone();
-      const fetch = createFetch({
+      fetch = createFetch({
         proxy: `socks5://127.0.0.1:${setup.socks5ProxyPort}`,
       });
       const response = await fetch(
         `http://localhost:${setup.httpServerPort}/test`
       );
       expect(await response.text()).to.equal('OK /test');
-      fetch.agent?.destroy?.();
+    });
+
+    it('makes use of PAC-based proxy support when instructed to do so', async function () {
+      setup.socks5AuthNone();
+      fetch = createFetch({
+        proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
+      });
+      const response = await fetch(
+        `http://localhost:${setup.httpsServerPort}/test`
+      );
+      expect(await response.text()).to.equal('OK /test');
+
+      try {
+        await fetch(`http://pac-invalidproxy/test`);
+        expect.fail('missed exception');
+      } catch (err) {
+        expect(err.message).to.include(
+          'Failed to establish a socket connection to proxies: ["SOCKS5 127.0.0.1:1"]'
+        );
+      }
     });
   });
 });

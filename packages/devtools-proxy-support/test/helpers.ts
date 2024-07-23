@@ -74,7 +74,11 @@ export class HTTPServerProxyTestSetup {
     const handler: RequestListener = (req, res) => {
       this.requests.push(req);
       res.writeHead(200);
-      res.end(`OK ${req.url ?? ''}`);
+      if (req.url === '/pac') {
+        res.end(this.pacFile());
+      } else {
+        res.end(`OK ${req.url ?? ''}`);
+      }
     };
     this.httpServer = createHTTPServer(handler);
     this.httpsServer = createHTTPSServer({ ...this.tlsOptions }, handler);
@@ -203,5 +207,14 @@ export class HTTPServerProxyTestSetup {
     }
     this.sshServer.close(); // Doesn't emit 'close'
     await Promise.all(closePromises);
+  }
+
+  pacFile() {
+    return `function FindProxyForURL(url, host) {
+      if (host === 'pac-invalidproxy') {
+        return 'SOCKS5 127.0.0.1:1';
+      }
+      return 'SOCKS5 127.0.0.1:${this.socks5ProxyPort}';
+    }`;
   }
 }
