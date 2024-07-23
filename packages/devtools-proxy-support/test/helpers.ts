@@ -18,6 +18,7 @@ import { promisify } from 'util';
 import socks5Server from 'socksv5/lib/server';
 import socks5AuthNone from 'socksv5/lib/auth/None';
 import socks5AuthUserPassword from 'socksv5/lib/auth/UserPassword';
+import type { Duplex } from 'stream';
 
 function parseHTTPAuthHeader(header: string | undefined): [string, string] {
   if (!header?.startsWith('Basic ')) return ['', ''];
@@ -37,7 +38,7 @@ export class HTTPServerProxyTestSetup {
   readonly httpsProxyServer: HTTPServer;
   readonly sshServer: SSHServer;
   readonly sshTunnelInfos: TcpipRequestInfo[] = [];
-  canTunnel = true;
+  canTunnel: () => boolean = () => true;
   authHandler: undefined | ((username: string, password: string) => boolean);
 
   get httpServerPort(): number {
@@ -95,6 +96,25 @@ export class HTTPServerProxyTestSetup {
       }
     );
 
+    const onconnect =
+      (server: HTTPServer) =>
+      (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+        const [username, pw] = parseHTTPAuthHeader(
+          req.headers['proxy-authorization']
+        );
+        if (this.authHandler?.(username, pw) === false) {
+          socket.end('HTTP/1.0 407 Proxy Authentication Required\r\n\r\n');
+          return;
+        }
+        if (req.url === '127.0.0.1:1') {
+          socket.end('HTTP/1.0 502 Bad Gateway\r\n\r\n');
+          return;
+        }
+        socket.unshift(head);
+        server.emit('connection', socket);
+        socket.write('HTTP/1.0 200 OK\r\n\r\n');
+      };
+
     this.httpProxyServer = createHTTPServer((req, res) => {
       const [username, pw] = parseHTTPAuthHeader(
         req.headers['proxy-authorization']
@@ -115,22 +135,11 @@ export class HTTPServerProxyTestSetup {
         },
         (proxyRes) => proxyRes.pipe(res)
       );
-    });
+    }).on('connect', onconnect(this.httpServer));
 
     this.httpsProxyServer = createHTTPServer(() => {
       throw new Error('should not use normal req/res handler');
-    }).on('connect', (req, socket, head) => {
-      const [username, pw] = parseHTTPAuthHeader(
-        req.headers['proxy-authorization']
-      );
-      if (this.authHandler?.(username, pw) === false) {
-        socket.end('HTTP/1.0 407 Proxy Authentication Required\r\n\r\n');
-        return;
-      }
-      socket.unshift(head);
-      this.httpsServer.emit('connection', socket);
-      socket.write('HTTP/1.0 200 OK\r\n\r\n');
-    });
+    }).on('connect', onconnect(this.httpsServer));
 
     this.sshServer = new SSHServer(
       {
@@ -150,7 +159,7 @@ export class HTTPServerProxyTestSetup {
           })
           .on('ready', () => {
             client.on('tcpip', (accept, reject, info) => {
-              if (!this.canTunnel) {
+              if (!this.canTunnel()) {
                 return reject();
               }
               this.sshTunnelInfos.push(info);

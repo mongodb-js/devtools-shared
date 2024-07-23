@@ -143,7 +143,9 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       }
       return sock;
     } catch (err: unknown) {
-      const retryableError = (err as Error).message === 'Not connected';
+      const retryableError = /Not connected|Channel open failure/.test(
+        (err as Error).message
+      );
       this.logger.emit('ssh:failed-forward', {
         host,
         error: String((err as Error).stack),
@@ -164,5 +166,10 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   destroy(): void {
     this.closed = true;
     this.sshClient.end();
+  }
+
+  async interruptForTesting(): Promise<void> {
+    this.sshClient.end();
+    await once(this.sshClient, 'close');
   }
 }

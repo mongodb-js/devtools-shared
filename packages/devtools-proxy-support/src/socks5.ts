@@ -46,17 +46,19 @@ export interface Tunnel {
 }
 
 function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
-  return {
-    host: dstAddr,
+  const headers: Record<string, string> = {
+    host: `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`,
+    upgrade: 'websocket', // hack to make proxy-agent prefer CONNECT over HTTP proxying
+  };
+  return Object.assign(new EventEmitter() as ClientRequest, {
+    host: headers.host,
     protocol: 'http',
     method: 'GET',
     path: '/',
-    getHeader(name) {
-      return name === 'host'
-        ? `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`
-        : undefined;
+    getHeader(name: string) {
+      return headers[name];
     },
-  } as ClientRequest;
+  });
 }
 
 class Socks5Server extends EventEmitter implements Tunnel {
@@ -126,14 +128,14 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
     const listeningPromise = this.serverListen(proxyPort, proxyHost);
     try {
-      await Promise.all([listeningPromise, this.ensureAgentInitialized()]);
+      await Promise.all([
+        listeningPromise,
+        once(this, 'listening'),
+        this.ensureAgentInitialized(),
+      ]);
       this.agentInitialized = true;
     } catch (err: unknown) {
-      try {
-        await listeningPromise;
-      } finally {
-        await this.close();
-      }
+      await this.close();
       throw err;
     }
   }
@@ -192,19 +194,36 @@ class Socks5Server extends EventEmitter implements Tunnel {
       this.closeOpenConnections(),
     ]);
 
-    if (maybeError) {
+    if (
+      maybeError &&
+      !('code' in maybeError && maybeError.code === 'ERR_SERVER_NOT_RUNNING')
+    ) {
       throw maybeError;
     }
   }
 
   private async forwardOut(dstAddr: string, dstPort: number): Promise<Duplex> {
-    const channel = await promisify(this.agent.createSocket.bind(this.agent))(
-      createFakeHttpClientRequest(dstAddr, dstPort),
-      {
-        host: dstAddr,
-        port: dstPort,
-      }
-    );
+    const channel = await new Promise<Duplex>((resolve, reject) => {
+      const req = createFakeHttpClientRequest(dstAddr, dstPort);
+      req.onSocket = (sock) => {
+        if (sock) resolve(sock);
+      };
+      this.agent.createSocket(
+        req,
+        {
+          host: dstAddr,
+          port: dstPort,
+        },
+        (err, sock) => {
+          // Ideally, we would always be using this callback for retrieving the `sock`
+          // instance. However, agent-base does not call the callback at all if
+          // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
+          if (err) reject(err);
+          else if (sock) resolve(sock);
+        }
+      );
+    });
+
     if (!channel)
       throw new Error(`Could not create channel to ${dstAddr}:${dstPort}`);
     return channel;
@@ -231,15 +250,19 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
       socket = accept(true);
       this.connections.add(socket);
-
-      socket.on('error', (err: ErrorWithOrigin) => {
+      const forwardingErrorHandler = (err: ErrorWithOrigin) => {
+        if (!socket?.writableEnded) socket?.end();
+        if (!channel?.writableEnded) channel?.end();
         err.origin ??= 'connection';
         this.logger.emit('socks5:forwarding-error', {
           ...logMetadata,
           error: String((err as Error).stack),
         });
         this.emit('forwardingError', err);
-      });
+      };
+
+      channel.on('error', forwardingErrorHandler);
+      socket.on('error', forwardingErrorHandler);
 
       socket.once('close', () => {
         this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata });
@@ -265,7 +288,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
 export async function setupSocks5Tunnel(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
   tunnelOptions?: Partial<TunnelOptions>,
-  target = 'mongodb://'
+  target?: string | undefined
 ): Promise<Tunnel | undefined> {
   const agent = useOrCreateAgent(proxyOptions, target);
   if (!agent) return undefined;

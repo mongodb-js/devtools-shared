@@ -18,6 +18,7 @@ export interface DevtoolsProxyOptions {
   };
 
   // Not being honored by the translate-to-electron functionality
+  // TODO(COMPASS-8077): Integrate system CA here
   ca?: ConnectionOptions['ca'];
 
   // Mostly intended for testing, defaults to `process.env`.

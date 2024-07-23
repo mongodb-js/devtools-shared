@@ -223,7 +223,7 @@ describe('createAgent', function () {
 
     it('fails to connect to an ssh proxy with unavailable tunneling', async function () {
       setup.authHandler = sinon.stub().returns(true);
-      setup.canTunnel = false;
+      setup.canTunnel = sinon.stub().returns(false);
 
       try {
         await get(
