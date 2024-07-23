@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "3.0.2",
+  "version": "3.0.5",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
@@ -47,7 +47,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@mongodb-js/oidc-http-server-pages": "1.1.1",
+    "@mongodb-js/oidc-http-server-pages": "1.1.2",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.0",
     "socks": "^2.7.3",
@@ -55,12 +55,12 @@
   },
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^1.0.0",
-    "mongodb": "^5.8.1 || ^6.0.0",
+    "mongodb": "^6.8.0",
     "mongodb-log-writer": "^1.4.2"
   },
   "devDependencies": {
     "@mongodb-js/oidc-plugin": "^1.0.0",
-    "@mongodb-js/saslprep": "^1.1.7",
+    "@mongodb-js/saslprep": "^1.1.8",
     "@types/lodash.merge": "^4.6.7",
     "@types/mocha": "^9.0.0",
     "@types/node": "^17.0.35",
@@ -75,7 +75,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "gen-esm-wrapper": "^1.1.0",
     "mocha": "^8.4.0",
-    "mongodb": "^5.8.1 || ^6.0.0",
+    "mongodb": "^6.8.0",
     "mongodb-log-writer": "^1.4.2",
     "nyc": "^15.1.0",
     "os-dns-native": "^1.2.0",
@@ -87,7 +87,7 @@
   },
   "optionalDependencies": {
     "kerberos": "^2.1.0",
-    "mongodb-client-encryption": "^6.0.0",
+    "mongodb-client-encryption": "^6.0.0 || ^6.1.0-alpha.0",
     "os-dns-native": "^1.2.0",
     "resolve-mongodb-srv": "^1.1.1"
   }

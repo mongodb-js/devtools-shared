@@ -429,20 +429,20 @@ describe('devtools connect', function () {
       ).to.equal(true);
     });
 
-    it('returns false if the PROVIDER_NAME JS option is set', function () {
+    it('returns false if the ENVIRONMENT JS option is set', function () {
       expect(
         isHumanOidcFlow('mongodb://example/?authMechanism=MONGODB-OIDC', {
           authMechanismProperties: {
-            PROVIDER_NAME: 'aws',
+            ENVIRONMENT: 'azure',
           },
         })
       ).to.equal(false);
     });
 
-    it('returns false if the PROVIDER_NAME url option is set', function () {
+    it('returns false if the ENVIRONMENT url option is set', function () {
       expect(
         isHumanOidcFlow(
-          'mongodb://example/?authMechanism=MONGODB-OIDC&authMechanismProperties=PROVIDER_NAME:aws',
+          'mongodb://example/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:azure',
           {}
         )
       ).to.equal(false);

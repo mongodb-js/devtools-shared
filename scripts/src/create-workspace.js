@@ -255,6 +255,7 @@ async function main(argv) {
       compilerOptions: {
         outDir: 'dist',
         allowJs: true,
+        strict: true,
       },
       include: ['src/**/*'],
       exclude: ['./src/**/*.spec.*'],
