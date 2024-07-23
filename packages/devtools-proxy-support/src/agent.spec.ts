@@ -14,7 +14,8 @@ describe('createAgent', function () {
     url: string,
     agent: Agent
   ): Promise<IncomingMessage & { body: string }> => {
-    const getFn = new URL(url).protocol === 'https:' ? httpsGet : httpGet;
+    const nodeJSBuiltinGet =
+      new URL(url).protocol === 'https:' ? httpsGet : httpGet;
     const options = {
       agent,
       ca: setup.tlsOptions.ca,
@@ -22,7 +23,7 @@ describe('createAgent', function () {
     };
     agents.push(agent);
     const res = await new Promise<IncomingMessage>((resolve, reject) =>
-      getFn(url, options, resolve).once('error', reject)
+      nodeJSBuiltinGet(url, options, resolve).once('error', reject)
     );
     let body = '';
     res.setEncoding('utf8');

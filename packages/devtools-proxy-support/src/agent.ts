@@ -10,6 +10,9 @@ import { SSHAgent } from './ssh';
 import type { ProxyLogEmitter } from './logging';
 import type { EventEmitter } from 'events';
 
+// Helper type that represents an https.Agent (= connection factory)
+// with some custom properties that TS does not know about and/or
+// that we add for our own purposes.
 export type AgentWithInitialize = Agent & {
   // This is genuinely custom for our usage (to allow establishing an SSH tunnel
   // first before starting to push connections through it)
@@ -24,7 +27,7 @@ export type AgentWithInitialize = Agent & {
     cb: (err: Error | null, s?: Duplex) => void
   ): void;
 
-  // http.Agent is an EventEmitter
+  // http.Agent is an EventEmitter, just missing from @types/node
 } & Partial<EventEmitter>;
 
 export function createAgent(

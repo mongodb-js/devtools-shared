@@ -13,6 +13,8 @@ import type { ProxyLogEmitter } from './logging';
 import { connect as tlsConnect } from 'tls';
 import type { Socket } from 'net';
 
+// The original version of this code was largely taken from
+// https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 export class SSHAgent extends AgentBase implements AgentWithInitialize {
   public logger: ProxyLogEmitter;
   private readonly proxyOptions: Readonly<DevtoolsProxyOptions>;
@@ -31,7 +33,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   constructor(options: DevtoolsProxyOptions, logger?: ProxyLogEmitter) {
     super();
     (this as AgentWithInitialize).on?.('error', () => {
-      //Errors should not crash the process
+      // Errors here should not crash the process
     });
     this.logger = logger ?? new EventEmitter();
     this.proxyOptions = options;

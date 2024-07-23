@@ -61,6 +61,8 @@ function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
   });
 }
 
+// The original version of this code was largely taken from
+// https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 class Socks5Server extends EventEmitter implements Tunnel {
   public logger: ProxyLogEmitter = new EventEmitter();
   private readonly agent: AgentWithInitialize;

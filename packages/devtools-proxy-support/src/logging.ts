@@ -1,3 +1,8 @@
+// Most mongoLogId() calls here come from code that was
+// previously part of the MongoDB Compass monorepo, hence the specific
+// values used here; in particular,
+// https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
+
 interface BaseSocks5RequestMetadata {
   srcAddr: string;
   srcPort: number;

@@ -6,6 +6,8 @@ import type { DevtoolsProxyOptions } from './proxy-options';
 
 declare const __webpack_require__: unknown;
 
+// The original version of this code was largely taken from
+// https://github.com/mongodb-js/mongosh/blob/8e6962432397154941f593c847d8f774bfd49f1c/packages/import-node-fetch/src/index.ts
 async function importNodeFetch(): Promise<typeof fetch> {
   // Node-fetch is an ESM module from 3.x
   // Importing ESM modules to CommonJS is possible with a dynamic import.

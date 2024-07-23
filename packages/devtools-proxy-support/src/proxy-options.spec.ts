@@ -18,7 +18,7 @@ import { HTTPServerProxyTestSetup } from '../test/helpers';
 
 describe('proxy options handling', function () {
   describe('proxyConfForEnvVars', function () {
-    it('should return a map of proxies and noProxy', function () {
+    it('should return a map listing configured proxies and no-proxy hosts', function () {
       const env = {
         HTTP_PROXY: 'http://proxy.example.com',
         HTTPS_PROXY: 'https://proxy.example.com',
@@ -145,7 +145,12 @@ describe('proxy options handling', function () {
         ).to.deep.equal({});
       });
     });
+
     context('integration tests', function () {
+      // These are some integration tests that leverage the fact that
+      // Electron can be used as a script runner to verify that our generated
+      // Electron proxyh configuration actually behaves the way it is intended to.
+
       let childProcess: ChildProcess;
       let exitPromise: Promise<unknown>;
       let server: Server;
@@ -164,6 +169,8 @@ describe('proxy options handling', function () {
         setup = new HTTPServerProxyTestSetup();
         await setup.listen();
 
+        // Use a TCP connection for communication with the electron process;
+        // see electron-test-server.js for details.
         server = createServer();
         server.listen(0);
         await once(server, 'listening');
@@ -185,7 +192,7 @@ describe('proxy options handling', function () {
           }
         );
         exitPromise = once(childProcess, 'exit').catch(() => {
-          /* ignore */
+          // ignore unhandledRejection warning/error
         });
         await once(childProcess, 'spawn');
 
@@ -205,6 +212,8 @@ describe('proxy options handling', function () {
         };
 
         testResolveProxy = async (proxyOptions, url) => {
+          // https://www.electronjs.org/docs/latest/api/app#appsetproxyconfig
+          // https://www.electronjs.org/docs/latest/api/app#appresolveproxyurl
           return await runJS(`app.setProxy(${JSON.stringify(
             translateToElectronProxyConfig(proxyOptions)
           )}).then(_ => {

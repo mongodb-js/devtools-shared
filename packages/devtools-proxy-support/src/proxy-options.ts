@@ -35,6 +35,7 @@ interface ElectronProxyConfig {
   proxyBypassRules?: string;
 }
 
+// Reads through all environment variables and gathers proxy settings from them
 export function proxyConfForEnvVars(env: Record<string, string | undefined>): {
   map: Map<string, string>;
   noProxy: string;
@@ -52,6 +53,7 @@ export function proxyConfForEnvVars(env: Record<string, string | undefined>): {
   return { map, noProxy };
 }
 
+// Whether a given URL should be proxied or not, according to `noProxy`
 function shouldProxy(noProxy: string, url: URL): boolean {
   if (!noProxy) return true;
   if (noProxy === '*') return false;
@@ -72,6 +74,8 @@ function shouldProxy(noProxy: string, url: URL): boolean {
   return true;
 }
 
+// Create a function which returns the proxy URL for a given target URL,
+// based on the proxy config passed to it.
 export function proxyForUrl(
   proxyOptions: DevtoolsProxyOptions
 ): (url: string) => string {
@@ -109,6 +113,17 @@ export function proxyForUrl(
 
 function validateElectronProxyURL(url: URL | string): string {
   url = new URL(url.toString());
+  // ssh and authenticated proxies are not supported by Electron/Chromium currently.
+  // (See https://issues.chromium.org/issues/40829748, https://bugs.chromium.org/p/chromium/issues/detail?id=1309413
+  // and related tickets for history.)
+  // If we do want to support them at some point, a possible way to achieve this would be
+  // to use a local in-application Socks5 proxy server which reaches out to the
+  // actual target proxy (or directly connects, depending on the configuration),
+  // and then passing the local proxy's information to Electron.
+  // A core downside with this approach, however, is that because the proxy cannot be
+  // authenticated, it would be available to any local application, which is problematic
+  // when running on multi-user machine where the proxy would then be available to
+  // arbitraty users.
   if (url.protocol === 'ssh:') {
     throw new Error(
       `Using ssh:// proxies for generic browser proxy usage is not supported (translating '${redactUrl(
@@ -150,11 +165,13 @@ function validateElectronProxyURL(url: URL | string): string {
   return url.toString().replace(/\/$/, '');
 }
 
+// Convert our own `DevtoolsProxyOptions` to the format used by Electron.
 export function translateToElectronProxyConfig(
   proxyOptions: DevtoolsProxyOptions
 ): ElectronProxyConfig {
   if (proxyOptions.proxy) {
     let url = proxyOptions.proxy;
+    // https://en.wikipedia.org/wiki/Proxy_auto-config
     if (new URL(url).protocol.startsWith('pac+')) {
       url = url.replace('pac+', '');
       return {
