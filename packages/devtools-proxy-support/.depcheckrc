@@ -4,5 +4,6 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ - 'xvfb-maybe'
 ignore-patterns:
  - 'dist'
