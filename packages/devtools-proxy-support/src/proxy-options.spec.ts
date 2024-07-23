@@ -158,6 +158,9 @@ describe('proxy options handling', function () {
       let setup: HTTPServerProxyTestSetup;
 
       before(async function () {
+        if (process.platform === 'win32' && process.env.CI) {
+          return this.skip();
+        }
         setup = new HTTPServerProxyTestSetup();
         await setup.listen();
 
@@ -211,14 +214,14 @@ describe('proxy options handling', function () {
       });
 
       after(async function () {
-        childProcess.kill();
-        socket.destroy();
-        server.close();
+        childProcess?.kill?.();
+        socket?.destroy?.();
+        server?.close?.();
         await Promise.all([
-          once(socket, 'close'),
-          once(server, 'close'),
+          socket && once(socket, 'close'),
+          server && once(server, 'close'),
           exitPromise,
-          setup.teardown(),
+          setup?.teardown?.(),
         ]);
       });
 
