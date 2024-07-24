@@ -74,7 +74,7 @@ interface MongoLogWriter {
   mongoLogId(this: void, id: number): unknown;
 }
 
-let alreadyHooked: WeakMap<ProxyLogEmitter, WeakSet<MongoLogWriter>>;
+const alreadyHooked = new WeakMap<ProxyLogEmitter, WeakSet<MongoLogWriter>>();
 let idCounter = 0;
 export function hookLogger(
   emitter: ProxyLogEmitter,
