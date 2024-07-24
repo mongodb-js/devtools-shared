@@ -218,7 +218,7 @@ export function translateToElectronProxyConfig(
 }
 
 // Return the Socks5 tunnel configuration, if proxyOptions always resolves to one.
-// This is used by setupSocks5Tunnel() to avoid creating a local Socks5 tunnel
+// This is used by createSocks5Tunnel() to avoid creating a local Socks5 tunnel
 // that would just forward to another Socks5 tunnel anyway.
 export function getSocks5OnlyProxyOptions(
   proxyOptions: DevtoolsProxyOptions,

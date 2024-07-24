@@ -8,14 +8,11 @@ import type {
   ServerHeartbeatSucceededEvent,
   TopologyDescription,
 } from 'mongodb';
-import type {
-  ConnectDnsResolutionDetail,
-  ConnectEventArgs,
-  ConnectEventMap,
-} from './types';
+import type { ConnectDnsResolutionDetail } from './types';
 import { systemCertsAsync } from 'system-ca';
 import type { Options as SystemCAOptions } from 'system-ca';
 import type {
+  HttpOptions as OIDCHTTPOptions,
   MongoDBOIDCPlugin,
   MongoDBOIDCPluginOptions,
 } from '@mongodb-js/oidc-plugin';
@@ -26,7 +23,15 @@ import { StateShareClient, StateShareServer } from './ipc-rpc-state-share';
 import ConnectionString, {
   CommaAndColonSeparatedRecord,
 } from 'mongodb-connection-string-url';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
+import {
+  createSocks5Tunnel,
+  DevtoolsProxyOptions,
+  AgentWithInitialize,
+  useOrCreateAgent,
+  Tunnel,
+} from '@mongodb-js/devtools-proxy-support';
+export type { DevtoolsProxyOptions, AgentWithInitialize };
 
 function isAtlas(str: string): boolean {
   try {
@@ -267,6 +272,30 @@ function detectAndLogMissingOptionalDependencies(logger: ConnectLogEmitter) {
   }
 }
 
+// Override 'from.emit' so that all events also end up being emitted on 'to'
+function copyEventEmitterEvents<M>(
+  from: {
+    emit: <K extends string & keyof M>(
+      event: K,
+      ...args: M[K] extends (...args: infer P) => any ? P : never
+    ) => void;
+  },
+  to: {
+    emit: <K extends string & keyof M>(
+      event: K,
+      ...args: M[K] extends (...args: infer P) => any ? P : never
+    ) => void;
+  }
+) {
+  from.emit = function <K extends string & keyof M>(
+    event: K,
+    ...args: M[K] extends (...args: infer P) => any ? P : never
+  ) {
+    to.emit(event, ...args);
+    return EventEmitter.prototype.emit.call(this, event, ...args);
+  };
+}
+
 // Wrapper for all state that a devtools application may want to share
 // between MongoClient instances. Currently, this is only the OIDC state.
 // There are two ways of sharing this state:
@@ -303,13 +332,7 @@ export class DevtoolsConnectionState {
       // (and not other OIDCPlugin instances that might be running on the same logger).
       const proxyingLogger = new EventEmitter();
       proxyingLogger.setMaxListeners(Infinity);
-      proxyingLogger.emit = function <K extends keyof ConnectEventMap>(
-        event: K,
-        ...args: ConnectEventArgs<K>
-      ) {
-        logger.emit(event, ...args);
-        return EventEmitter.prototype.emit.call(this, event, ...args);
-      };
+      copyEventEmitterEvents(proxyingLogger, logger);
       this.oidcPlugin = createMongoDBOIDCPlugin({
         ...options.oidc,
         logger: proxyingLogger,
@@ -318,7 +341,7 @@ export class DevtoolsConnectionState {
           options
         ),
         ...(systemCA
-          ? addCAToOIDCPluginHttpOptions(options.oidc, systemCA)
+          ? addToOIDCPluginHttpOptions(options.oidc, { ca: systemCA })
           : {}),
       });
     }
@@ -370,6 +393,16 @@ export interface DevtoolsConnectOptions extends MongoClientOptions {
    * extends beyond the lifetime(s) of the respective dependent state instance(s).
    */
   parentHandle?: string;
+  /**
+   * Proxy options or an existing proxy Agent instance that can be shared. These are applied to
+   * both database cluster traffic and, optionally, OIDC HTTP traffic.
+   */
+  proxy?: DevtoolsProxyOptions | AgentWithInitialize;
+  /**
+   * Whether the proxy specified in `.proxy` should be applied to OIDC HTTP traffic as well.
+   * An explicitly specified `agent` in the options for the OIDC plugin will always take precedence.
+   */
+  applyProxyToOIDC?: boolean;
 }
 
 /**
@@ -386,82 +419,159 @@ export async function connectMongoClient(
   client: MongoClient;
   state: DevtoolsConnectionState;
 }> {
+  const cleanupOnClientClose: (() => void | Promise<void>)[] = [];
+  const runClose = async () => {
+    let item: (() => void | Promise<void>) | undefined;
+    while ((item = cleanupOnClientClose.shift())) await item();
+  };
   detectAndLogMissingOptionalDependencies(logger);
 
-  let systemCA: string | undefined;
-  if (clientOptions.useSystemCA) {
-    const systemCAOpts: SystemCAOptions = { includeNodeCertificates: true };
-    const ca = await systemCertsAsync(systemCAOpts);
-    logger.emit('devtools-connect:used-system-ca', {
-      caCount: ca.length,
-      asyncFallbackError: systemCAOpts.asyncFallbackError,
-    });
-    systemCA = ca.join('\n');
-  }
+  try {
+    let systemCA: string | undefined;
+    // TODO(COMPASS-8077): Remove this option and enable it by default
+    if (clientOptions.useSystemCA) {
+      const systemCAOpts: SystemCAOptions = { includeNodeCertificates: true };
+      const ca = await systemCertsAsync(systemCAOpts);
+      logger.emit('devtools-connect:used-system-ca', {
+        caCount: ca.length,
+        asyncFallbackError: systemCAOpts.asyncFallbackError,
+      });
+      systemCA = ca.join('\n');
+    }
 
-  // If PROVIDER_NAME was specified to the MongoClient options, adding callbacks would conflict
-  // with that; we should omit them so that e.g. mongosh users can leverage the non-human OIDC
-  // auth flows by specifying PROVIDER_NAME.
-  const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
-  const state =
-    clientOptions.parentState ??
-    new DevtoolsConnectionState(clientOptions, logger, systemCA);
-  const mongoClientOptions: MongoClientOptions &
-    Partial<DevtoolsConnectOptions> = merge(
-    {},
-    clientOptions,
-    shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
-    systemCA ? { ca: systemCA } : {}
-  );
+    // Create a proxy agent, if requested. `useOrCreateAgent()` takes a target argument
+    // that can be used to select a proxy for a specific procotol or host;
+    // here we specify 'mongodb://' if we only intend to use the proxy for database
+    // connectivity.
+    const proxyAgent =
+      clientOptions.proxy &&
+      useOrCreateAgent(
+        'createConnection' in clientOptions.proxy
+          ? clientOptions.proxy
+          : {
+              ...(clientOptions.proxy as DevtoolsProxyOptions),
+              // TODO(COMPASS-8077): Always use explicit CA from either system CA or
+              // tlsCAFile option, including one potentially coming from the command line
+              ...(systemCA ? { ca: systemCA } : {}),
+            },
+        clientOptions.applyProxyToOIDC ? undefined : 'mongodb://'
+      );
+    cleanupOnClientClose.push(() => proxyAgent?.destroy());
 
-  // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
-  // Refs https://github.com/microsoft/vscode/issues/189805
-  mongoClientOptions.lookup = (hostname, options, callback) => {
-    return dns.lookup(hostname, { verbatim: false, ...options }, callback);
-  };
+    if (clientOptions.applyProxyToOIDC) {
+      clientOptions.oidc = {
+        ...clientOptions.oidc,
+        ...addToOIDCPluginHttpOptions(clientOptions.oidc, {
+          agent: proxyAgent,
+        }),
+      };
+    }
 
-  delete mongoClientOptions.useSystemCA;
-  delete mongoClientOptions.productDocsLink;
-  delete mongoClientOptions.productName;
-  delete mongoClientOptions.oidc;
-  delete mongoClientOptions.parentState;
-  delete mongoClientOptions.parentHandle;
+    let tunnel: Tunnel | undefined;
+    if (proxyAgent && !hasProxyHostOption(uri, clientOptions)) {
+      tunnel = createSocks5Tunnel(proxyAgent, 'generate-credentials');
+      cleanupOnClientClose.push(() => tunnel?.close());
+    }
+    for (const proxyLogger of new Set([tunnel?.logger, proxyAgent?.logger])) {
+      if (proxyLogger) {
+        copyEventEmitterEvents(proxyLogger, logger);
+      }
+    }
+    if (tunnel) {
+      // Should happen after attaching loggers
+      await tunnel?.listen();
+      clientOptions = {
+        ...clientOptions,
+        ...tunnel?.config,
+      };
+    }
 
-  if (
-    mongoClientOptions.autoEncryption !== undefined &&
-    !mongoClientOptions.autoEncryption.bypassAutoEncryption &&
-    !mongoClientOptions.autoEncryption.bypassQueryAnalysis
-  ) {
-    // connect first without autoEncryption and serverApi options.
-    const optionsWithoutFLE = { ...mongoClientOptions };
-    delete optionsWithoutFLE.autoEncryption;
-    delete optionsWithoutFLE.serverApi;
-    const client = new MongoClientClass(uri, optionsWithoutFLE);
+    // If PROVIDER_NAME was specified to the MongoClient options, adding callbacks would conflict
+    // with that; we should omit them so that e.g. mongosh users can leverage the non-human OIDC
+    // auth flows by specifying PROVIDER_NAME.
+    const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
+    const state =
+      clientOptions.parentState ??
+      new DevtoolsConnectionState(clientOptions, logger, systemCA);
+    const mongoClientOptions: MongoClientOptions &
+      Partial<DevtoolsConnectOptions> = merge(
+      {},
+      clientOptions,
+      shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
+      systemCA ? { ca: systemCA } : {}
+    );
+
+    // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
+    // Refs https://github.com/microsoft/vscode/issues/189805
+    mongoClientOptions.lookup = (hostname, options, callback) => {
+      return dns.lookup(hostname, { verbatim: false, ...options }, callback);
+    };
+
+    delete mongoClientOptions.useSystemCA;
+    delete mongoClientOptions.productDocsLink;
+    delete mongoClientOptions.productName;
+    delete mongoClientOptions.oidc;
+    delete mongoClientOptions.parentState;
+    delete mongoClientOptions.parentHandle;
+    delete mongoClientOptions.proxy;
+    delete mongoClientOptions.applyProxyToOIDC;
+
+    if (
+      mongoClientOptions.autoEncryption !== undefined &&
+      !mongoClientOptions.autoEncryption.bypassAutoEncryption &&
+      !mongoClientOptions.autoEncryption.bypassQueryAnalysis
+    ) {
+      // connect first without autoEncryption and serverApi options.
+      const optionsWithoutFLE = { ...mongoClientOptions };
+      delete optionsWithoutFLE.autoEncryption;
+      delete optionsWithoutFLE.serverApi;
+      const client = new MongoClientClass(uri, optionsWithoutFLE);
+      closeMongoClientWhenAuthFails(state, client);
+      await connectWithFailFast(uri, client, logger);
+      const buildInfo = await client
+        .db('admin')
+        .admin()
+        .command({ buildInfo: 1 });
+      await client.close();
+      if (
+        !buildInfo.modules?.includes('enterprise') &&
+        !buildInfo.gitVersion?.match(/enterprise/)
+      ) {
+        throw new MongoAutoencryptionUnavailable();
+      }
+    }
+    uri = await resolveMongodbSrv(uri, logger);
+    const client = new MongoClientClass(uri, mongoClientOptions);
+    client.once('close', runClose);
     closeMongoClientWhenAuthFails(state, client);
     await connectWithFailFast(uri, client, logger);
-    const buildInfo = await client
-      .db('admin')
-      .admin()
-      .command({ buildInfo: 1 });
-    await client.close();
-    if (
-      !buildInfo.modules?.includes('enterprise') &&
-      !buildInfo.gitVersion?.match(/enterprise/)
-    ) {
-      throw new MongoAutoencryptionUnavailable();
+    if ((client as any).autoEncrypter) {
+      // Enable Devtools-specific CSFLE result decoration.
+      (client as any).autoEncrypter[
+        Symbol.for('@@mdb.decorateDecryptionResult')
+      ] = true;
     }
+    return { client, state };
+  } catch (err: unknown) {
+    await runClose();
+    throw err;
   }
-  uri = await resolveMongodbSrv(uri, logger);
-  const client = new MongoClientClass(uri, mongoClientOptions);
-  closeMongoClientWhenAuthFails(state, client);
-  await connectWithFailFast(uri, client, logger);
-  if ((client as any).autoEncrypter) {
-    // Enable Devtools-specific CSFLE result decoration.
-    (client as any).autoEncrypter[
-      Symbol.for('@@mdb.decorateDecryptionResult')
-    ] = true;
+}
+
+function hasProxyHostOption(
+  uri: string,
+  clientOptions: MongoClientOptions
+): boolean {
+  if (clientOptions.proxyHost || clientOptions.proxyPort) return true;
+  let cs: ConnectionString;
+  try {
+    cs = new ConnectionString(uri, { looseValidation: true });
+  } catch {
+    return false;
   }
-  return { client, state };
+
+  const sp = cs.typedSearchParams<MongoClientOptions>();
+  return sp.has('proxyHost') || sp.has('proxyPort');
 }
 
 export function isHumanOidcFlow(
@@ -530,16 +640,20 @@ function closeMongoClientWhenAuthFails(
   );
 }
 
-function addCAToOIDCPluginHttpOptions(
+function addToOIDCPluginHttpOptions(
   existingOIDCPluginOptions: MongoDBOIDCPluginOptions | undefined,
-  ca: string
+  addedOptions: Partial<OIDCHTTPOptions>
 ): Pick<MongoDBOIDCPluginOptions, 'customHttpOptions'> {
   const existingCustomOptions = existingOIDCPluginOptions?.customHttpOptions;
   if (typeof existingCustomOptions === 'function') {
     return {
       customHttpOptions: (url, options, ...restArgs) =>
-        existingCustomOptions(url, { ...options, ca }, ...restArgs),
+        existingCustomOptions(
+          url,
+          { ...options, ...addedOptions },
+          ...restArgs
+        ),
     };
   }
-  return { customHttpOptions: { ...existingCustomOptions, ca } };
+  return { customHttpOptions: { ...existingCustomOptions, ...addedOptions } };
 }

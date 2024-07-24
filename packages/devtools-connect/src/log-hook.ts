@@ -11,6 +11,7 @@ import type {
 } from './types';
 
 import { hookLoggerToMongoLogWriter as oidcHookLogger } from '@mongodb-js/oidc-plugin';
+import { hookLogger as proxyHookLogger } from '@mongodb-js/devtools-proxy-support';
 
 interface MongoLogWriter {
   info(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
@@ -26,6 +27,7 @@ export function hookLogger(
   redactURICredentials: (uri: string) => string
 ): void {
   oidcHookLogger(emitter, log, contextPrefix);
+  proxyHookLogger(emitter, log, contextPrefix);
 
   const { mongoLogId } = log;
   emitter.on(

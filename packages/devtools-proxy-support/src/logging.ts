@@ -78,8 +78,8 @@ let alreadyHooked: WeakMap<ProxyLogEmitter, WeakSet<MongoLogWriter>>;
 let idCounter = 0;
 export function hookLogger(
   emitter: ProxyLogEmitter,
-  logCtx: string,
-  log: MongoLogWriter
+  log: MongoLogWriter,
+  logCtx: string
 ): void {
   // This helps avoid unintentionally attaching the same logging twice in devtools-connet
   if (alreadyHooked.get(emitter)?.has(log)) return;

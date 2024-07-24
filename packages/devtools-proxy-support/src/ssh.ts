@@ -35,7 +35,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     (this as AgentWithInitialize).on?.('error', () => {
       // Errors here should not crash the process
     });
-    this.logger = logger ?? new EventEmitter();
+    this.logger = logger ?? new EventEmitter().setMaxListeners(Infinity);
     this.proxyOptions = options;
     this.url = new URL(options.proxy ?? '');
     this.sshClient = new SshClient();

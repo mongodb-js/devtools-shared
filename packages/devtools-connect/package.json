@@ -48,6 +48,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@mongodb-js/oidc-http-server-pages": "1.1.2",
+    "@mongodb-js/devtools-proxy-support": "^0.1.0",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.0",
     "socks": "^2.7.3",

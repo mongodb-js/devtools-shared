@@ -15,6 +15,9 @@ import type { Socket } from 'net';
 import type { Duplex } from 'stream';
 import type { ClientRequest } from 'http';
 import type { ProxyLogEmitter } from './logging';
+import crypto from 'crypto';
+
+const randomBytes = promisify(crypto.randomBytes);
 
 export interface TunnelOptions {
   // These can safely be assigned to driver MongoClientOptinos
@@ -41,6 +44,7 @@ export interface Tunnel {
   on(ev: 'forwardingError', cb: (err: Error) => void): void;
   on(ev: 'error', cb: (err: Error) => void): void;
 
+  listen(): Promise<void>;
   close(): Promise<void>;
 
   readonly config: Readonly<TunnelOptions>;
@@ -51,59 +55,49 @@ function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
     host: `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`,
     upgrade: 'websocket', // hack to make proxy-agent prefer CONNECT over HTTP proxying
   };
-  return Object.assign(new EventEmitter() as ClientRequest, {
-    host: headers.host,
-    protocol: 'http',
-    method: 'GET',
-    path: '/',
-    getHeader(name: string) {
-      return headers[name];
-    },
-  });
+  return Object.assign(
+    new EventEmitter().setMaxListeners(Infinity) as ClientRequest,
+    {
+      host: headers.host,
+      protocol: 'http',
+      method: 'GET',
+      path: '/',
+      getHeader(name: string) {
+        return headers[name];
+      },
+    }
+  );
 }
 
 // The original version of this code was largely taken from
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 class Socks5Server extends EventEmitter implements Tunnel {
-  public logger: ProxyLogEmitter = new EventEmitter();
+  public logger: ProxyLogEmitter = new EventEmitter().setMaxListeners(Infinity);
   private readonly agent: AgentWithInitialize;
   private server: any;
   private serverListen: (port?: number, host?: string) => Promise<void>;
   private serverClose: () => Promise<void>;
   private connections: Set<Socket> = new Set();
   private rawConfig: TunnelOptions;
-  private closed = false;
+  private generateCredentials: boolean;
+  private closed = true;
   private agentInitialized = false;
   private agentInitPromise?: Promise<void>;
 
   constructor(
     agent: AgentWithInitialize,
-    tunnelOptions: Partial<TunnelOptions>
+    tunnelOptions: Partial<TunnelOptions>,
+    generateCredentials: boolean
   ) {
     super();
+    this.setMaxListeners(Infinity);
     this.agent = agent;
+    this.generateCredentials = generateCredentials;
     if (agent.logger) this.logger = agent.logger;
     agent.on?.('error', (err: Error) => this.emit('forwardingError', err));
     this.rawConfig = getTunnelOptions(tunnelOptions);
 
     this.server = socks5Server.createServer(this.socks5Request.bind(this));
-
-    if (this.rawConfig.proxyUsername) {
-      this.server.useAuth(
-        socks5AuthUserPassword(
-          (user: string, pass: string, cb: (success: boolean) => void) => {
-            const success =
-              this.rawConfig.proxyUsername === user &&
-              this.rawConfig.proxyPassword === pass;
-            this.logger.emit('socks5:authentication-complete', { success });
-            queueMicrotask(() => cb(success));
-          }
-        )
-      );
-    } else {
-      this.logger.emit('socks5:skip-auth-setup');
-      this.server.useAuth(socks5AuthNone());
-    }
 
     this.serverListen = promisify(this.server.listen.bind(this.server));
     this.serverClose = promisify(this.server.close.bind(this.server));
@@ -125,6 +119,33 @@ class Socks5Server extends EventEmitter implements Tunnel {
   }
 
   async listen(): Promise<void> {
+    this.closed = false;
+    if (this.generateCredentials) {
+      const credentialsSource = await randomBytes(64);
+      this.rawConfig = {
+        ...this.rawConfig,
+        proxyUsername: credentialsSource.slice(0, 32).toString('base64url'),
+        proxyPassword: credentialsSource.slice(32).toString('base64url'),
+      };
+    }
+
+    if (this.rawConfig.proxyUsername) {
+      this.server.useAuth(
+        socks5AuthUserPassword(
+          (user: string, pass: string, cb: (success: boolean) => void) => {
+            const success =
+              this.rawConfig.proxyUsername === user &&
+              this.rawConfig.proxyPassword === pass;
+            this.logger.emit('socks5:authentication-complete', { success });
+            queueMicrotask(() => cb(success));
+          }
+        )
+      );
+    } else {
+      this.logger.emit('socks5:skip-auth-setup');
+      this.server.useAuth(socks5AuthNone());
+    }
+
     const { proxyHost, proxyPort } = this.rawConfig;
 
     this.logger.emit('socks5:start-listening', { proxyHost, proxyPort });
@@ -185,6 +206,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   }
 
   async close(): Promise<void> {
+    if (this.closed) return;
     this.closed = true;
 
     this.logger.emit('socks5:closing-tunnel');
@@ -289,12 +311,17 @@ class Socks5Server extends EventEmitter implements Tunnel {
 }
 
 class ExistingTunnel extends EventEmitter {
-  logger = new EventEmitter();
+  logger = new EventEmitter().setMaxListeners(Infinity);
   readonly config: TunnelOptions;
 
   constructor(config: TunnelOptions) {
     super();
+    this.setMaxListeners(Infinity);
     this.config = config;
+  }
+
+  async listen() {
+    // nothing to do if we didn't start a server
   }
 
   async close() {
@@ -302,11 +329,11 @@ class ExistingTunnel extends EventEmitter {
   }
 }
 
-export async function setupSocks5Tunnel(
+export function createSocks5Tunnel(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
-  tunnelOptions?: Partial<TunnelOptions>,
+  tunnelOptions?: Partial<TunnelOptions> | 'generate-credentials',
   target?: string | undefined
-): Promise<Tunnel | undefined> {
+): Tunnel | undefined {
   const socks5OnlyProxyOptions = getSocks5OnlyProxyOptions(
     ('proxyOptions' in proxyOptions
       ? proxyOptions.proxyOptions
@@ -320,7 +347,11 @@ export async function setupSocks5Tunnel(
   const agent = useOrCreateAgent(proxyOptions, target);
   if (!agent) return undefined;
 
-  const server = new Socks5Server(agent, { ...tunnelOptions });
-  await server.listen();
-  return server;
+  let generateCredentials = false;
+  if (tunnelOptions === 'generate-credentials') {
+    tunnelOptions = {};
+    generateCredentials = true;
+  }
+
+  return new Socks5Server(agent, { ...tunnelOptions }, generateCredentials);
 }

@@ -1,3 +1,4 @@
+import { ProxyEventMap } from '@mongodb-js/devtools-proxy-support';
 import type { MongoDBOIDCLogEventsMap } from '@mongodb-js/oidc-plugin';
 
 export interface ConnectAttemptInitializedEvent {
@@ -55,7 +56,9 @@ export interface ConnectUsedSystemCAEvent {
   asyncFallbackError: Error | undefined;
 }
 
-export interface ConnectEventMap extends MongoDBOIDCLogEventsMap {
+export interface ConnectEventMap
+  extends MongoDBOIDCLogEventsMap,
+    ProxyEventMap {
   /** Signals that a connection attempt is about to be performed. */
   'devtools-connect:connect-attempt-initialized': (
     ev: ConnectAttemptInitializedEvent

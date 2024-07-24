@@ -1,14 +1,21 @@
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 import type { Tunnel, TunnelOptions } from './socks5';
-import { setupSocks5Tunnel } from './socks5';
+import { createSocks5Tunnel } from './socks5';
 import { expect } from 'chai';
 import { createFetch } from './fetch';
 import type { DevtoolsProxyOptions } from './proxy-options';
 
-describe('setupSocks5Tunnel', function () {
+describe('createSocks5Tunnel', function () {
   let setup: HTTPServerProxyTestSetup;
   let tunnel: Tunnel | undefined;
+  const setupSocks5Tunnel = async (
+    ...args: Parameters<typeof createSocks5Tunnel>
+  ): Promise<ReturnType<typeof createSocks5Tunnel>> => {
+    const tunnel = createSocks5Tunnel(...args);
+    await tunnel?.listen();
+    return tunnel;
+  };
 
   beforeEach(async function () {
     setup = new HTTPServerProxyTestSetup();
@@ -138,5 +145,37 @@ describe('setupSocks5Tunnel', function () {
         'mongodb://'
       )
     ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
+  });
+
+  it('can generate access credentials on demand', async function () {
+    tunnel = await setupSocks5Tunnel(
+      {
+        proxy: `http://foo:bar@127.0.0.1:${setup.httpProxyPort}`,
+      },
+      'generate-credentials'
+    );
+    if (!tunnel) {
+      // regular conditional instead of assertion so that TS can follow it
+      expect.fail('failed to create Socks5 tunnel');
+    }
+
+    const fetch = createFetch({
+      proxy: `socks5://${encodeURIComponent(
+        tunnel.config.proxyUsername!
+      )}:${encodeURIComponent(tunnel.config.proxyPassword!)}@127.0.0.1:${
+        tunnel.config.proxyPort
+      }`,
+    });
+    const response = await fetch('http://example.com/hello');
+    expect(await response.text()).to.equal('OK /hello');
+
+    try {
+      await createFetch({
+        proxy: `socks5://AzureDiamond:hunter2@127.0.0.1:${tunnel.config.proxyPort}`,
+      })('http://localhost:1234/hello');
+      expect.fail('missed exception');
+    } catch (err) {
+      expect(err.message).to.include('Socks5 Authentication failed');
+    }
   });
 });
