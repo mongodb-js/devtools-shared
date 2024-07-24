@@ -1,4 +1,5 @@
 import { EventEmitter, once } from 'events';
+import { getSocks5OnlyProxyOptions } from './proxy-options';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import type { AgentWithInitialize } from './agent';
 import { useOrCreateAgent } from './agent';
@@ -287,11 +288,35 @@ class Socks5Server extends EventEmitter implements Tunnel {
   }
 }
 
+class ExistingTunnel extends EventEmitter {
+  logger = new EventEmitter();
+  readonly config: TunnelOptions;
+
+  constructor(config: TunnelOptions) {
+    super();
+    this.config = config;
+  }
+
+  async close() {
+    // nothing to do if we didn't start a server
+  }
+}
+
 export async function setupSocks5Tunnel(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
   tunnelOptions?: Partial<TunnelOptions>,
   target?: string | undefined
 ): Promise<Tunnel | undefined> {
+  const socks5OnlyProxyOptions = getSocks5OnlyProxyOptions(
+    ('proxyOptions' in proxyOptions
+      ? proxyOptions.proxyOptions
+      : proxyOptions) as DevtoolsProxyOptions,
+    target
+  );
+  if (socks5OnlyProxyOptions) {
+    return new ExistingTunnel(socks5OnlyProxyOptions);
+  }
+
   const agent = useOrCreateAgent(proxyOptions, target);
   if (!agent) return undefined;
 

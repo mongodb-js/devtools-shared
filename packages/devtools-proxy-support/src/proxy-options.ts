@@ -1,4 +1,5 @@
 import type { ConnectionOptions } from 'tls';
+import type { TunnelOptions } from './socks5';
 
 // Should be an opaque type, but TS does not support those.
 export type DevtoolsProxyOptionsSecrets = string;
@@ -214,6 +215,27 @@ export function translateToElectronProxyConfig(
   }
 
   return {};
+}
+
+// Return the Socks5 tunnel configuration, if proxyOptions always resolves to one.
+// This is used by setupSocks5Tunnel() to avoid creating a local Socks5 tunnel
+// that would just forward to another Socks5 tunnel anyway.
+export function getSocks5OnlyProxyOptions(
+  proxyOptions: DevtoolsProxyOptions,
+  target?: string
+): TunnelOptions | undefined {
+  let proxyUrl: string | undefined;
+  if (target !== undefined) proxyUrl = proxyForUrl(proxyOptions)(target);
+  else if (!proxyOptions.noProxyHosts) proxyUrl = proxyOptions.proxy;
+  if (!proxyUrl) return undefined;
+  const url = new URL(proxyUrl);
+  if (url.protocol !== 'socks5:') return undefined;
+  return {
+    proxyHost: decodeURIComponent(url.hostname),
+    proxyPort: +(url.port || 1080),
+    proxyUsername: decodeURIComponent(url.username) || undefined,
+    proxyPassword: decodeURIComponent(url.password) || undefined,
+  };
 }
 
 interface DevtoolsProxyOptionsSecretsInternal {

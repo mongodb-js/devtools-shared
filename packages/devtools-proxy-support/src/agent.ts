@@ -18,6 +18,7 @@ export type AgentWithInitialize = Agent & {
   // first before starting to push connections through it)
   initialize?(): Promise<void>;
   logger?: ProxyLogEmitter;
+  readonly proxyOptions?: Readonly<DevtoolsProxyOptions>;
 
   // This is just part of the regular Agent interface, used by Node.js itself,
   // but missing from @types/node
@@ -40,10 +41,13 @@ export function createAgent(
     return new SSHAgent(proxyOptions);
   }
   const getProxyForUrl = proxyForUrl(proxyOptions);
-  return new ProxyAgent({
-    getProxyForUrl,
-    ...proxyOptions,
-  });
+  return Object.assign(
+    new ProxyAgent({
+      getProxyForUrl,
+      ...proxyOptions,
+    }),
+    { proxyOptions }
+  );
 }
 
 export function useOrCreateAgent(

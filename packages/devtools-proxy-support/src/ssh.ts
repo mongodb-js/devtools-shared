@@ -17,7 +17,7 @@ import type { Socket } from 'net';
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 export class SSHAgent extends AgentBase implements AgentWithInitialize {
   public logger: ProxyLogEmitter;
-  private readonly proxyOptions: Readonly<DevtoolsProxyOptions>;
+  public readonly proxyOptions: Readonly<DevtoolsProxyOptions>;
   private readonly url: URL;
   private sshClient: SshClient;
   private connected = false;

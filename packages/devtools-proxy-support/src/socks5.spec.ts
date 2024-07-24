@@ -1,9 +1,10 @@
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
-import type { Tunnel } from './socks5';
+import type { Tunnel, TunnelOptions } from './socks5';
 import { setupSocks5Tunnel } from './socks5';
 import { expect } from 'chai';
 import { createFetch } from './fetch';
+import type { DevtoolsProxyOptions } from './proxy-options';
 
 describe('setupSocks5Tunnel', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -96,5 +97,46 @@ describe('setupSocks5Tunnel', function () {
     } catch (err) {
       expect(err.code).to.equal('EADDRNOTAVAIL');
     }
+  });
+
+  it('does not start an actual server if the proxy config already specifies socks5', async function () {
+    async function existingTunnelConfig(
+      options: DevtoolsProxyOptions,
+      target?: string
+    ): Promise<TunnelOptions | undefined> {
+      const tunnel = await setupSocks5Tunnel(options, undefined, target);
+      expect(tunnel?.constructor.name).to.equal('ExistingTunnel');
+      return JSON.parse(JSON.stringify(tunnel?.config)); // filter out undefined values
+    }
+
+    expect(
+      await existingTunnelConfig({ proxy: 'socks5://example.com:123' })
+    ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
+    expect(
+      await existingTunnelConfig({ proxy: 'socks5://example.com' })
+    ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 1080 });
+    expect(
+      await existingTunnelConfig({ proxy: 'socks5://foo:bar@example.com' })
+    ).to.deep.equal({
+      proxyHost: 'example.com',
+      proxyPort: 1080,
+      proxyUsername: 'foo',
+      proxyPassword: 'bar',
+    });
+    expect(
+      await existingTunnelConfig(
+        { proxy: 'socks5://example.com:123' },
+        'mongodb://'
+      )
+    ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
+    expect(
+      await existingTunnelConfig(
+        {
+          useEnvironmentVariableProxies: true,
+          env: { MONGODB_PROXY: 'socks5://example.com:123' },
+        },
+        'mongodb://'
+      )
+    ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
   });
 });
