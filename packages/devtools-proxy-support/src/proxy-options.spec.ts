@@ -221,12 +221,12 @@ describe('proxy options handling', function () {
         };
 
         testResolveProxy = async (proxyOptions, url, expectation) => {
-          const config = translateToElectronProxyConfig(proxyOptions);
+          const config = JSON.stringify(
+            translateToElectronProxyConfig(proxyOptions)
+          );
           // https://www.electronjs.org/docs/latest/api/app#appsetproxyconfig
           // https://www.electronjs.org/docs/latest/api/app#appresolveproxyurl
-          const actual = await runJS(`app.setProxy(${JSON.stringify(
-            config
-          )}).then(_ => {
+          const actual = await runJS(`app.setProxy(${config}).then(_ => {
             return app.resolveProxy(${JSON.stringify(url)});
           })`);
           expect({ actual, config }).to.have.property('actual', expectation);
