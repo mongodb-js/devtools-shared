@@ -55,12 +55,12 @@
     "system-ca": "^2.0.0"
   },
   "peerDependencies": {
-    "@mongodb-js/oidc-plugin": "^1.0.0",
+    "@mongodb-js/oidc-plugin": "^1.1.0",
     "mongodb": "^6.8.0",
     "mongodb-log-writer": "^1.4.2"
   },
   "devDependencies": {
-    "@mongodb-js/oidc-plugin": "^1.0.0",
+    "@mongodb-js/oidc-plugin": "^1.1.0",
     "@mongodb-js/saslprep": "^1.1.8",
     "@types/lodash.merge": "^4.6.7",
     "@types/mocha": "^9.0.0",
