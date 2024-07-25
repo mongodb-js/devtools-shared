@@ -166,8 +166,9 @@ describe('proxy options handling', function () {
       let runJS: (js: string) => Promise<any>;
       let testResolveProxy: (
         proxyOptions: DevtoolsProxyOptions,
-        url: string
-      ) => Promise<string>;
+        url: string,
+        expectation: string
+      ) => Promise<void>;
       let setup: HTTPServerProxyTestSetup;
 
       before(async function () {
@@ -219,14 +220,16 @@ describe('proxy options handling', function () {
           return JSON.parse(response);
         };
 
-        testResolveProxy = async (proxyOptions, url) => {
+        testResolveProxy = async (proxyOptions, url, expectation) => {
+          const config = translateToElectronProxyConfig(proxyOptions);
           // https://www.electronjs.org/docs/latest/api/app#appsetproxyconfig
           // https://www.electronjs.org/docs/latest/api/app#appresolveproxyurl
-          return await runJS(`app.setProxy(${JSON.stringify(
-            translateToElectronProxyConfig(proxyOptions)
+          const actual = await runJS(`app.setProxy(${JSON.stringify(
+            config
           )}).then(_ => {
             return app.resolveProxy(${JSON.stringify(url)});
           })`);
+          expect({ actual, config }).to.have.property('actual', expectation);
         };
       });
 
@@ -243,68 +246,73 @@ describe('proxy options handling', function () {
       });
 
       it('correctly handles explicit proxies', async function () {
-        expect(
-          await testResolveProxy(
-            {
-              proxy: 'http://example.com:12345',
-            },
-            'http://example.net'
-          )
-        ).to.equal('PROXY example.com:12345');
-        expect(
-          await testResolveProxy(
-            {
-              proxy: 'http://example.com:12345',
-              noProxyHosts: 'localhost',
-            },
-            'http://example.net'
-          )
-        ).to.equal('PROXY example.com:12345');
-        expect(
-          await testResolveProxy(
-            {
-              proxy: 'http://example.com:12345',
-              noProxyHosts: 'localhost',
-            },
-            'http://localhost'
-          )
-        ).to.equal('DIRECT');
-        expect(
-          await testResolveProxy(
-            {
-              proxy: 'http://example.com:12345',
-              noProxyHosts: 'localhost',
-            },
-            'http://localhost:1234'
-          )
-        ).to.equal('DIRECT');
-        expect(
-          await testResolveProxy(
-            {
-              proxy: 'socks5://example.com:12345',
-            },
-            'http://example.net'
-          )
-        ).to.equal('SOCKS5 example.com:12345');
+        await testResolveProxy(
+          {
+            proxy: 'http://example.com:12345',
+          },
+          'http://example.net',
+
+          'PROXY example.com:12345'
+        );
+
+        await testResolveProxy(
+          {
+            proxy: 'http://example.com:12345',
+            noProxyHosts: 'localhost',
+          },
+          'http://example.net',
+
+          'PROXY example.com:12345'
+        );
+
+        await testResolveProxy(
+          {
+            proxy: 'http://example.com:12345',
+            noProxyHosts: 'localhost',
+          },
+          'http://localhost',
+
+          'DIRECT'
+        );
+
+        await testResolveProxy(
+          {
+            proxy: 'http://example.com:12345',
+            noProxyHosts: 'localhost',
+          },
+          'http://localhost:1234',
+
+          'DIRECT'
+        );
+
+        await testResolveProxy(
+          {
+            proxy: 'socks5://example.com:12345',
+          },
+          'http://example.net',
+
+          'SOCKS5 example.com:12345'
+        );
       });
 
       it('correctly handles pac-script-specified proxies', async function () {
-        expect(
-          await testResolveProxy(
-            {
-              proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
-            },
-            'http://example.com'
-          )
-        ).to.equal(`SOCKS5 127.0.0.1:${setup.socks5ProxyPort}`);
-        expect(
-          await testResolveProxy(
-            {
-              proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
-            },
-            'http://pac-invalidproxy/test'
-          )
-        ).to.equal(`SOCKS5 127.0.0.1:1`);
+        await testResolveProxy(
+          {
+            proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
+          },
+          'http://example.com',
+
+          `SOCKS5 127.0.0.1:${setup.socks5ProxyPort}`
+        );
+
+        await testResolveProxy(
+          {
+            proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
+          },
+          'http://pac-invalidproxy/test',
+
+          `SOCKS5 127.0.0.1:1`
+        );
       });
 
       it('correctly handles environment-specified proxies', async function () {
@@ -317,39 +325,40 @@ describe('proxy options handling', function () {
           noProxyHosts: 'example.net:4567',
           useEnvironmentVariableProxies: true,
         };
-        expect(await testResolveProxy(config, 'http://localhost')).to.equal(
-          'DIRECT'
-        );
-        expect(await testResolveProxy(config, 'http://example.net')).to.equal(
+        await testResolveProxy(config, 'http://localhost', 'DIRECT');
+        await testResolveProxy(
+          config,
+          'http://example.net',
           'HTTPS http-proxy.example.net:443'
         );
-        expect(await testResolveProxy(config, 'https://example.net')).to.equal(
+        await testResolveProxy(
+          config,
+          'https://example.net',
           'PROXY https-proxy.example.net:80'
         );
-        expect(
-          await testResolveProxy(config, 'https://example.net:1234')
-        ).to.equal('DIRECT');
-        expect(
-          await testResolveProxy(config, 'https://example.net:4567')
-        ).to.equal('DIRECT');
-        expect(
-          await testResolveProxy(config, 'https://example.net:9801')
-        ).to.equal('PROXY https-proxy.example.net:80');
-        expect(await testResolveProxy(config, 'https://example.com')).to.equal(
-          'DIRECT'
+
+        await testResolveProxy(config, 'https://example.net:1234', 'DIRECT');
+
+        await testResolveProxy(config, 'https://example.net:4567', 'DIRECT');
+
+        await testResolveProxy(
+          config,
+          'https://example.net:9801',
+          'PROXY https-proxy.example.net:80'
         );
-        expect(
-          await testResolveProxy(
-            {
-              ...config,
-              env: {
-                ...config.env,
-                ALL_PROXY: 'http://fallback.example.com:1',
-              },
+        await testResolveProxy(config, 'https://example.com', 'DIRECT');
+        await testResolveProxy(
+          {
+            ...config,
+            env: {
+              ...config.env,
+              ALL_PROXY: 'http://fallback.example.com:1',
             },
-            'ftp://mongodb.net'
-          )
-        ).to.equal('PROXY fallback.example.com:1');
+          },
+          'ftp://mongodb.net',
+
+          'PROXY fallback.example.com:1'
+        );
       });
     });
   });
