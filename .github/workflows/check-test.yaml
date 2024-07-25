@@ -74,6 +74,8 @@ jobs:
           npm ci
           npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
           npm run bootstrap-ci -- --stream --since ${SINCE_REF} --include-dependencies
+
+          git checkout -- packages/saslprep/src/code-points-data.ts
         shell: bash
 
       - name: Info
