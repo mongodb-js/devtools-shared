@@ -2,13 +2,14 @@ import { ProxyAgent } from 'proxy-agent';
 import type { Agent } from 'https';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import { proxyForUrl } from './proxy-options';
-import type { ClientRequest } from 'http';
+import type { ClientRequest, Agent as HTTPAgent } from 'http';
 import type { TcpNetConnectOpts } from 'net';
 import type { ConnectionOptions } from 'tls';
 import type { Duplex } from 'stream';
 import { SSHAgent } from './ssh';
 import type { ProxyLogEmitter } from './logging';
 import type { EventEmitter } from 'events';
+import type { AgentConnectOpts } from 'agent-base';
 
 // Helper type that represents an https.Agent (= connection factory)
 // with some custom properties that TS does not know about and/or
@@ -31,23 +32,71 @@ export type AgentWithInitialize = Agent & {
   // http.Agent is an EventEmitter, just missing from @types/node
 } & Partial<EventEmitter>;
 
+class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
+  readonly proxyOptions: DevtoolsProxyOptions;
+  private sshAgent: SSHAgent | undefined;
+
+  // Store the current ClientRequest for the time between connect() first
+  // being called and the corresponding _getProxyForUrl() being called.
+  // In practice, this is instantaneous, but that is not guaranteed by
+  // the `ProxyAgent` API contract.
+  // We use a Promise lock/mutex to avoid concurrent accesses.
+  private _req: ClientRequest | undefined;
+  private _reqLock: Promise<void> | undefined;
+  private _reqLockResolve: (() => void) | undefined;
+
+  constructor(proxyOptions: DevtoolsProxyOptions) {
+    super({
+      getProxyForUrl: (url: string) => this._getProxyForUrl(url),
+      ...proxyOptions,
+    });
+    this.proxyOptions = proxyOptions;
+    // This could be made a bit more flexible by actually dynamically picking
+    // ssh vs. other proxy protocols as part of connect(), if we want that at some point.
+    if (proxyOptions.proxy && new URL(proxyOptions.proxy).protocol === 'ssh:') {
+      this.sshAgent = new SSHAgent(proxyOptions);
+    }
+  }
+
+  _getProxyForUrl = (url: string): string => {
+    if (!this._reqLockResolve || !this._req) {
+      throw new Error('getProxyForUrl() called without pending request');
+    }
+    this._reqLockResolve();
+    const req = this._req;
+    this._req = undefined;
+    this._reqLock = undefined;
+    this._reqLockResolve = undefined;
+    return proxyForUrl(this.proxyOptions, url, req);
+  };
+
+  async initialize(): Promise<void> {
+    await this.sshAgent?.initialize();
+  }
+
+  override async connect(
+    req: ClientRequest,
+    opts: AgentConnectOpts
+  ): Promise<HTTPAgent> {
+    if (this.sshAgent) return this.sshAgent;
+    while (this._reqLock) {
+      await this._reqLock;
+    }
+    this._req = req;
+    this._reqLock = new Promise((resolve) => (this._reqLockResolve = resolve));
+    return await super.connect(req, opts);
+  }
+
+  destroy(): void {
+    this.sshAgent?.destroy();
+    super.destroy();
+  }
+}
+
 export function createAgent(
   proxyOptions: DevtoolsProxyOptions
 ): AgentWithInitialize {
-  // This could be made a bit more flexible by creating an Agent using AgentBase
-  // that will dynamically choose between SSHAgent and ProxyAgent.
-  // Right now, this is a bit simpler in terms of lifetime management for SSHAgent.
-  if (proxyOptions.proxy && new URL(proxyOptions.proxy).protocol === 'ssh:') {
-    return new SSHAgent(proxyOptions);
-  }
-  const getProxyForUrl = proxyForUrl(proxyOptions);
-  return Object.assign(
-    new ProxyAgent({
-      getProxyForUrl,
-      ...proxyOptions,
-    }),
-    { proxyOptions }
-  );
+  return new DevtoolsProxyAgent(proxyOptions);
 }
 
 export function useOrCreateAgent(
@@ -59,7 +108,7 @@ export function useOrCreateAgent(
   } else {
     if (
       target !== undefined &&
-      !proxyForUrl(proxyOptions as DevtoolsProxyOptions)(target)
+      !proxyForUrl(proxyOptions as DevtoolsProxyOptions, target)
     )
       return undefined;
     return createAgent(proxyOptions as DevtoolsProxyOptions);

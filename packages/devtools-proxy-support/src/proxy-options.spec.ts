@@ -37,7 +37,9 @@ describe('proxy options handling', function () {
 
   describe('proxyForUrl', function () {
     it('should return a proxy function for a specified proxy URL', function () {
-      const getProxy = proxyForUrl({ proxy: 'http://proxy.example.com' });
+      const getProxy = proxyForUrl.bind(null, {
+        proxy: 'http://proxy.example.com',
+      });
 
       expect(getProxy('http://target.com')).to.equal(
         'http://proxy.example.com'
@@ -45,7 +47,7 @@ describe('proxy options handling', function () {
     });
 
     it('should respect noProxyHosts', function () {
-      const getProxy = proxyForUrl({
+      const getProxy = proxyForUrl.bind(null, {
         proxy: 'http://proxy.example.com',
         noProxyHosts: 'localhost',
       });
@@ -57,11 +59,12 @@ describe('proxy options handling', function () {
     });
 
     it('should use environment variables as a fallback', function () {
-      const getProxy = proxyForUrl({
+      const getProxy = proxyForUrl.bind(null, {
         useEnvironmentVariableProxies: true,
         env: {
           HTTP_PROXY: 'socks5://env-proxy.example.com',
           NO_PROXY: 'localhost',
+          ALL_PROXY: 'http://fallback.example.com',
         },
       });
 
@@ -69,6 +72,9 @@ describe('proxy options handling', function () {
       expect(getProxy('http://localhost:12345')).to.equal('');
       expect(getProxy('http://example.com')).to.equal(
         'socks5://env-proxy.example.com'
+      );
+      expect(getProxy('mongodb://example.com')).to.equal(
+        'http://fallback.example.com'
       );
     });
   });
@@ -127,12 +133,14 @@ describe('proxy options handling', function () {
             env: {
               HTTP_PROXY: 'socks5://env-proxy.example.com',
               NO_PROXY: 'zombo.com',
+              ALL_PROXY: 'http://fallback.example.com',
             },
           })
         ).to.deep.equal({
           mode: 'fixed_servers',
           proxyBypassRules: 'localhost,example.com,zombo.com',
-          proxyRules: 'http=socks5://env-proxy.example.com',
+          proxyRules:
+            'http=socks5://env-proxy.example.com;https=http://fallback.example.com;ftp=http://fallback.example.com',
         });
       });
       it('translates an empty config to an empty config', function () {
@@ -330,6 +338,18 @@ describe('proxy options handling', function () {
         expect(await testResolveProxy(config, 'https://example.com')).to.equal(
           'DIRECT'
         );
+        expect(
+          await testResolveProxy(
+            {
+              ...config,
+              env: {
+                ...config.env,
+                ALL_PROXY: 'http://fallback.example.com:1',
+              },
+            },
+            'ftp://mongodb.net'
+          )
+        ).to.equal('PROXY fallback.example.com:1');
       });
     });
   });

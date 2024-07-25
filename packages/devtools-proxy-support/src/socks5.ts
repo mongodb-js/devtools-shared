@@ -50,7 +50,11 @@ export interface Tunnel {
   readonly config: Readonly<TunnelOptions>;
 }
 
-function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
+function createFakeHttpClientRequest(
+  dstAddr: string,
+  dstPort: number,
+  overrideProtocol: string | undefined
+) {
   const headers: Record<string, string> = {
     host: `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`,
     upgrade: 'websocket', // hack to make proxy-agent prefer CONNECT over HTTP proxying
@@ -65,6 +69,7 @@ function createFakeHttpClientRequest(dstAddr: string, dstPort: number) {
       getHeader(name: string) {
         return headers[name];
       },
+      overrideProtocol,
     }
   );
 }
@@ -80,6 +85,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   private connections: Set<Socket> = new Set();
   private rawConfig: TunnelOptions;
   private generateCredentials: boolean;
+  private overrideProtocol: string | undefined;
   private closed = true;
   private agentInitialized = false;
   private agentInitPromise?: Promise<void>;
@@ -87,12 +93,15 @@ class Socks5Server extends EventEmitter implements Tunnel {
   constructor(
     agent: AgentWithInitialize,
     tunnelOptions: Partial<TunnelOptions>,
-    generateCredentials: boolean
+    generateCredentials: boolean,
+    overrideProtocol: string | undefined
   ) {
     super();
     this.setMaxListeners(Infinity);
     this.agent = agent;
     this.generateCredentials = generateCredentials;
+    this.overrideProtocol = overrideProtocol;
+
     if (agent.logger) this.logger = agent.logger;
     agent.on?.('error', (err: Error) => this.emit('forwardingError', err));
     this.rawConfig = getTunnelOptions(tunnelOptions);
@@ -229,7 +238,11 @@ class Socks5Server extends EventEmitter implements Tunnel {
 
   private async forwardOut(dstAddr: string, dstPort: number): Promise<Duplex> {
     const channel = await new Promise<Duplex>((resolve, reject) => {
-      const req = createFakeHttpClientRequest(dstAddr, dstPort);
+      const req = createFakeHttpClientRequest(
+        dstAddr,
+        dstPort,
+        this.overrideProtocol
+      );
       req.onSocket = (sock) => {
         if (sock) resolve(sock);
       };
@@ -329,6 +342,13 @@ class ExistingTunnel extends EventEmitter {
   }
 }
 
+// Open a local Socks5 server, which accepts incoming connections and forwards them
+// using the proxy specified in `proxyOptions`. `tunnelOptions` may specify an
+// address to listen on, as well as credentials for the server. Passing
+// `generate-credentials` will lead to random credentials being generated as part of
+// `server.listen()`. `target` should specify an URL which is used for determining
+// which proxy to use, and in particular the protocol specified will be used
+// for determining this proxy.
 export function createSocks5Tunnel(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
   tunnelOptions?: Partial<TunnelOptions> | 'generate-credentials',
@@ -353,5 +373,10 @@ export function createSocks5Tunnel(
     generateCredentials = true;
   }
 
-  return new Socks5Server(agent, { ...tunnelOptions }, generateCredentials);
+  return new Socks5Server(
+    agent,
+    { ...tunnelOptions },
+    generateCredentials,
+    target ? new URL(target).protocol : undefined
+  );
 }

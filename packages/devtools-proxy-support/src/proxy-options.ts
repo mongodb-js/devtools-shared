@@ -1,5 +1,6 @@
 import type { ConnectionOptions } from 'tls';
 import type { TunnelOptions } from './socks5';
+import type { ClientRequest } from 'http';
 
 // Should be an opaque type, but TS does not support those.
 export type DevtoolsProxyOptionsSecrets = string;
@@ -78,38 +79,36 @@ function shouldProxy(noProxy: string, url: URL): boolean {
 // Create a function which returns the proxy URL for a given target URL,
 // based on the proxy config passed to it.
 export function proxyForUrl(
-  proxyOptions: DevtoolsProxyOptions
-): (url: string) => string {
+  proxyOptions: DevtoolsProxyOptions,
+  target: string,
+  req?: ClientRequest & { overrideProtocol?: string }
+): string {
   if (proxyOptions.proxy) {
     const proxyUrl = proxyOptions.proxy;
-    if (new URL(proxyUrl).protocol === 'direct:') return () => '';
-    return (target: string) => {
-      if (shouldProxy(proxyOptions.noProxyHosts || '', new URL(target))) {
-        return proxyUrl;
-      }
-      return '';
-    };
+    if (new URL(proxyUrl).protocol === 'direct:') return '';
+    if (shouldProxy(proxyOptions.noProxyHosts || '', new URL(target))) {
+      return proxyUrl;
+    }
+    return '';
   }
 
   if (proxyOptions.useEnvironmentVariableProxies) {
     const { map, noProxy } = proxyConfForEnvVars(
       proxyOptions.env ?? process.env
     );
-    return (target: string) => {
-      const url = new URL(target);
-      const protocol = url.protocol.replace(/:$/, '');
-      const combinedNoProxyRules = [noProxy, proxyOptions.noProxyHosts]
-        .filter(Boolean)
-        .join(',');
-      const proxyForProtocol = map.get(protocol);
-      if (proxyForProtocol && shouldProxy(combinedNoProxyRules, url)) {
-        return proxyForProtocol;
-      }
-      return '';
-    };
+    const url = new URL(target);
+    const protocol = (req?.overrideProtocol ?? url.protocol).replace(/:$/, '');
+    const combinedNoProxyRules = [noProxy, proxyOptions.noProxyHosts]
+      .filter(Boolean)
+      .join(',');
+    const proxyForProtocol = map.get(protocol) || map.get('all');
+    if (proxyForProtocol && shouldProxy(combinedNoProxyRules, url)) {
+      return proxyForProtocol;
+    }
+    return '';
   }
 
-  return () => '';
+  return '';
 }
 
 function validateElectronProxyURL(url: URL | string): string {
@@ -194,8 +193,12 @@ export function translateToElectronProxyConfig(
     const { map, noProxy } = proxyConfForEnvVars(
       proxyOptions.env ?? process.env
     );
-    for (const [key, value] of map)
+    for (const key of ['http', 'https', 'ftp']) {
+      // supported protocols for Electron proxying
+      const value = map.get(key) || map.get('all');
+      if (!value) continue;
       proxyRulesList.push(`${key}=${validateElectronProxyURL(value)}`);
+    }
     proxyBypassRulesList.push(noProxy);
 
     const proxyRules = proxyRulesList.join(';');
@@ -225,7 +228,7 @@ export function getSocks5OnlyProxyOptions(
   target?: string
 ): TunnelOptions | undefined {
   let proxyUrl: string | undefined;
-  if (target !== undefined) proxyUrl = proxyForUrl(proxyOptions)(target);
+  if (target !== undefined) proxyUrl = proxyForUrl(proxyOptions, target);
   else if (!proxyOptions.noProxyHosts) proxyUrl = proxyOptions.proxy;
   if (!proxyUrl) return undefined;
   const url = new URL(proxyUrl);

@@ -178,4 +178,27 @@ describe('createSocks5Tunnel', function () {
       expect(err.message).to.include('Socks5 Authentication failed');
     }
   });
+
+  it('picks the proxy specified by the target protocol, if any', async function () {
+    tunnel = await setupSocks5Tunnel(
+      {
+        useEnvironmentVariableProxies: true,
+        env: {
+          MONGODB_PROXY: `http://foo:bar@127.0.0.1:${setup.httpProxyPort}`,
+        },
+      },
+      {},
+      'mongodb://'
+    );
+    if (!tunnel) {
+      // regular conditional instead of assertion so that TS can follow it
+      expect.fail('failed to create Socks5 tunnel');
+    }
+
+    const fetch = createFetch({
+      proxy: `socks5://@127.0.0.1:${tunnel.config.proxyPort}`,
+    });
+    const response = await fetch('http://example.com/hello');
+    expect(await response.text()).to.equal('OK /hello');
+  });
 });

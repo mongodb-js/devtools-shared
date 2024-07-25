@@ -469,7 +469,11 @@ export async function connectMongoClient(
 
     let tunnel: Tunnel | undefined;
     if (proxyAgent && !hasProxyHostOption(uri, clientOptions)) {
-      tunnel = createSocks5Tunnel(proxyAgent, 'generate-credentials');
+      tunnel = createSocks5Tunnel(
+        proxyAgent,
+        'generate-credentials',
+        'mongodb://'
+      );
       cleanupOnClientClose.push(() => tunnel?.close());
     }
     for (const proxyLogger of new Set([tunnel?.logger, proxyAgent?.logger])) {
