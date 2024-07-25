@@ -75,6 +75,9 @@ jobs:
           npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
           npm run bootstrap-ci -- --stream --since ${SINCE_REF} --include-dependencies
 
+          # saslprep source code may have been modified by bootstrapping,
+          # depending on the OS, so undo that change if it has happened
+          # (since it can influence subsequent lerna invocations)
           git checkout -- packages/saslprep/src/code-points-data.ts
         shell: bash
 
