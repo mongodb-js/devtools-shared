@@ -25,8 +25,6 @@ const { connect } = require('net');
         } catch (err) {
           result = { message: err.message, stack: err.stack, ...err };
         }
-        // eslint-disable-next-line no-console
-        console.error({ result, readyToExecute });
         socket.write(JSON.stringify(result) + '\0');
       }
     }
