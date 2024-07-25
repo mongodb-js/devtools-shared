@@ -246,6 +246,8 @@ describe('proxy options handling', function () {
       });
 
       it('correctly handles explicit proxies', async function () {
+        await testResolveProxy({}, 'http://example.net', 'DIRECT');
+
         await testResolveProxy(
           {
             proxy: 'http://example.com:12345',
