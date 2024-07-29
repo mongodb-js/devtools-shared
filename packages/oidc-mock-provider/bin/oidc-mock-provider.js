@@ -6,6 +6,7 @@ const { OIDCMockProvider } = require('..');
 
 const DEFAULT_PORT = 28200;
 const DEFAULT_HOST = 'localhost';
+const DEFAULT_BIND_IP_ALL = false;
 
 const argv = require('yargs')
   .option('port', {
@@ -17,6 +18,10 @@ const argv = require('yargs')
     alias: 'h',
     type: 'string',
     desc: 'Hostname for the server to listen upon. Defaults to localhost.',
+  })
+  .option('bind_ip_all', {
+    type: 'boolean',
+    desc: 'Bind to all IPv4 and IPv6 addresses',
   })
   .example(
     '$0 -p 28200',
@@ -41,6 +46,7 @@ const DEFAULT_TOKEN_PAYLOAD = {
     },
     port: argv.port ?? DEFAULT_PORT,
     hostname: argv.host ?? DEFAULT_HOST,
+    bindIpAll: argv.bind_ip_all ?? DEFAULT_BIND_IP_ALL,
   };
   const mockIdentityProvider = await OIDCMockProvider.create(
     oidcMockProviderConfig

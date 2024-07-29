@@ -61,6 +61,11 @@ export interface OIDCMockProviderConfig {
   hostname?: string;
 
   /**
+   * Optional bind to all IPv4 and IPv6 addresses.
+   */
+  bindIpAll?: boolean;
+
+  /**
    * Optional additional fields to be returned when the OIDC configuration is accessed.
    */
   additionalIssuerMetadata?: () => Record<string, unknown>;
@@ -102,7 +107,10 @@ export class OIDCMockProvider {
   }
 
   private async init(): Promise<this> {
-    this.httpServer.listen(this.config.port ?? 0, this.config.hostname);
+    this.httpServer.listen(
+      this.config.port ?? 0,
+      this.config.bindIpAll ? '::,0.0.0.0' : this.config.hostname
+    );
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
     this.issuer = `${
