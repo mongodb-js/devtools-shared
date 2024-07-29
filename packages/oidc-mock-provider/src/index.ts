@@ -109,7 +109,7 @@ export class OIDCMockProvider {
   private async init(): Promise<this> {
     this.httpServer.listen(
       this.config.port ?? 0,
-      this.config.bindIpAll ? '::,0.0.0.0' : this.config.hostname
+      this.config.bindIpAll ? '::' : this.config.hostname
     );
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
