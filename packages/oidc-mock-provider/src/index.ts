@@ -34,10 +34,13 @@ export interface OIDCMockProviderConfig {
    * This should include e.g. `sub` and any other OIDC claims that are relevant.
    *
    * skipIdToken: Exclude ID Token
+   *
+   * customIdTokenPayload: Custom overrides in payload data for the ID token
    */
   getTokenPayload(metadata: TokenMetadata): MaybePromise<{
     expires_in: number;
     payload: Record<string, unknown>;
+    customIdTokenPayload?: Record<string, unknown>;
     skipIdToken?: boolean;
   }>;
 
@@ -325,7 +328,7 @@ export class OIDCMockProvider {
     access_token: string;
     id_token: string | undefined;
   }> {
-    const { expires_in, payload, skipIdToken } =
+    const { expires_in, payload, skipIdToken, customIdTokenPayload } =
       await this.config.getTokenPayload(metadata);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     const header = {
@@ -360,7 +363,11 @@ export class OIDCMockProvider {
       // In an ID Token, aud === client_id, in an Access Token, not necessarily
       id_token: skipIdToken
         ? undefined
-        : makeToken({ ...fullPayload, aud: metadata.client_id }),
+        : makeToken({
+            ...fullPayload,
+            aud: metadata.client_id,
+            ...customIdTokenPayload,
+          }),
     };
   }
 
