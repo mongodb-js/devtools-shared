@@ -47,8 +47,8 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
 
   constructor(proxyOptions: DevtoolsProxyOptions) {
     super({
-      getProxyForUrl: (url: string) => this._getProxyForUrl(url),
       ...proxyOptions,
+      getProxyForUrl: (url: string) => this._getProxyForUrl(url),
     });
     this.proxyOptions = proxyOptions;
     // This could be made a bit more flexible by actually dynamically picking
@@ -109,8 +109,9 @@ export function useOrCreateAgent(
     if (
       target !== undefined &&
       !proxyForUrl(proxyOptions as DevtoolsProxyOptions, target)
-    )
+    ) {
       return undefined;
+    }
     return createAgent(proxyOptions as DevtoolsProxyOptions);
   }
 }
