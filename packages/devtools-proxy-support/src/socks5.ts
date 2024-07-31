@@ -258,6 +258,12 @@ class Socks5Server extends EventEmitter implements Tunnel {
           // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
           if (err) reject(err);
           else if (sock) resolve(sock);
+          else
+            reject(
+              new Error(
+                'Received neither error object nor socket from agent.createSocket()'
+              )
+            );
         }
       );
     });
