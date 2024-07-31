@@ -38,6 +38,7 @@ export class HTTPServerProxyTestSetup {
   readonly httpsProxyServer: HTTPServer;
   readonly sshServer: SSHServer;
   readonly sshTunnelInfos: TcpipRequestInfo[] = [];
+  readonly connections: Duplex[] = [];
   canTunnel: () => boolean = () => true;
   authHandler: undefined | ((username: string, password: string) => boolean);
 
@@ -179,7 +180,10 @@ export class HTTPServerProxyTestSetup {
         this.httpProxyServer,
         this.httpsProxyServer,
         this.sshServer,
-      ].map((server) => promisify(server.listen.bind(server))(0))
+      ].map(async (server) => {
+        await promisify(server.listen.bind(server))(0);
+        server.on('connection', (conn) => this.connections.push(conn));
+      })
     );
   }
 
@@ -203,6 +207,7 @@ export class HTTPServerProxyTestSetup {
   }
 
   async teardown(): Promise<void> {
+    for (const conn of this.connections) if (!conn.destroyed) conn.destroy?.();
     const closePromises: Promise<unknown>[] = [];
     for (const server of [
       this.httpServer,

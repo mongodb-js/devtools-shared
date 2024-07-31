@@ -54,6 +54,7 @@ export interface ConnectMissingOptionalDependencyEvent {
 export interface ConnectUsedSystemCAEvent {
   caCount: number;
   asyncFallbackError: Error | undefined;
+  systemCertsError: Error | undefined;
 }
 
 export interface ConnectEventMap

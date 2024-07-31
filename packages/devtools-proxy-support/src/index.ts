@@ -15,3 +15,4 @@ export {
   RequestInit,
 } from './fetch';
 export { ProxyEventMap, ProxyLogEmitter, hookLogger } from './logging';
+export { systemCA, resetSystemCACache } from './system-ca';

@@ -9,8 +9,6 @@ import type {
   TopologyDescription,
 } from 'mongodb';
 import type { ConnectDnsResolutionDetail } from './types';
-import { systemCertsAsync } from 'system-ca';
-import type { Options as SystemCAOptions } from 'system-ca';
 import type {
   HttpOptions as OIDCHTTPOptions,
   MongoDBOIDCPlugin,
@@ -30,6 +28,7 @@ import {
   AgentWithInitialize,
   useOrCreateAgent,
   Tunnel,
+  systemCA,
 } from '@mongodb-js/devtools-proxy-support';
 export type { DevtoolsProxyOptions, AgentWithInitialize };
 
@@ -319,7 +318,7 @@ export class DevtoolsConnectionState {
       'productDocsLink' | 'productName' | 'oidc' | 'parentHandle'
     >,
     logger: ConnectLogEmitter,
-    systemCA: string | undefined
+    ca: string
   ) {
     this.productName = options.productName;
     if (options.parentHandle) {
@@ -340,9 +339,7 @@ export class DevtoolsConnectionState {
           null,
           options
         ),
-        ...(systemCA
-          ? addToOIDCPluginHttpOptions(options.oidc, { ca: systemCA })
-          : {}),
+        ...addToOIDCPluginHttpOptions(options.oidc, { ca }),
       });
     }
   }
@@ -359,11 +356,6 @@ export class DevtoolsConnectionState {
 }
 
 export interface DevtoolsConnectOptions extends MongoClientOptions {
-  /**
-   * Whether to read the system certificate store and pass that as the `ca` option
-   * to the driver for certificate validation.
-   */
-  useSystemCA?: boolean;
   /**
    * An URL that refers to the documentation for the current product.
    */
@@ -427,17 +419,17 @@ export async function connectMongoClient(
   detectAndLogMissingOptionalDependencies(logger);
 
   try {
-    let systemCA: string | undefined;
-    // TODO(COMPASS-8077): Remove this option and enable it by default
-    if (clientOptions.useSystemCA) {
-      const systemCAOpts: SystemCAOptions = { includeNodeCertificates: true };
-      const ca = await systemCertsAsync(systemCAOpts);
-      logger.emit('devtools-connect:used-system-ca', {
-        caCount: ca.length,
-        asyncFallbackError: systemCAOpts.asyncFallbackError,
+    const { ca, asyncFallbackError, systemCertsError, systemCACount } =
+      await systemCA({
+        ca: clientOptions.ca,
+        tlsCAFile:
+          clientOptions.tlsCAFile || getConnectionStringParam(uri, 'tlsCAFile'),
       });
-      systemCA = ca.join('\n');
-    }
+    logger.emit('devtools-connect:used-system-ca', {
+      caCount: systemCACount,
+      asyncFallbackError,
+      systemCertsError,
+    });
 
     // Create a proxy agent, if requested. `useOrCreateAgent()` takes a target argument
     // that can be used to select a proxy for a specific procotol or host;
@@ -450,9 +442,7 @@ export async function connectMongoClient(
           ? clientOptions.proxy
           : {
               ...(clientOptions.proxy as DevtoolsProxyOptions),
-              // TODO(COMPASS-8077): Always use explicit CA from either system CA or
-              // tlsCAFile option, including one potentially coming from the command line
-              ...(systemCA ? { ca: systemCA } : {}),
+              ca,
             },
         clientOptions.applyProxyToOIDC ? undefined : 'mongodb://'
       );
@@ -496,13 +486,13 @@ export async function connectMongoClient(
     const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
     const state =
       clientOptions.parentState ??
-      new DevtoolsConnectionState(clientOptions, logger, systemCA);
+      new DevtoolsConnectionState(clientOptions, logger, ca);
     const mongoClientOptions: MongoClientOptions &
       Partial<DevtoolsConnectOptions> = merge(
       {},
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
-      systemCA ? { ca: systemCA } : {}
+      { ca }
     );
 
     // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
@@ -511,7 +501,7 @@ export async function connectMongoClient(
       return dns.lookup(hostname, { verbatim: false, ...options }, callback);
     };
 
-    delete mongoClientOptions.useSystemCA;
+    delete (mongoClientOptions as any).useSystemCA; // can be removed once no product uses this anymore
     delete mongoClientOptions.productDocsLink;
     delete mongoClientOptions.productName;
     delete mongoClientOptions.oidc;
@@ -562,20 +552,33 @@ export async function connectMongoClient(
   }
 }
 
+function getMaybeConectionString(uri: string): ConnectionString | null {
+  try {
+    return new ConnectionString(uri, { looseValidation: true });
+  } catch {
+    return null;
+  }
+}
+
+function getConnectionStringParam<K extends keyof MongoClientOptions>(
+  uri: string,
+  key: K
+): string | null {
+  return (
+    getMaybeConectionString(uri)
+      ?.typedSearchParams<MongoClientOptions>()
+      .get(key) ?? null
+  );
+}
+
 function hasProxyHostOption(
   uri: string,
   clientOptions: MongoClientOptions
 ): boolean {
   if (clientOptions.proxyHost || clientOptions.proxyPort) return true;
-  let cs: ConnectionString;
-  try {
-    cs = new ConnectionString(uri, { looseValidation: true });
-  } catch {
-    return false;
-  }
-
-  const sp = cs.typedSearchParams<MongoClientOptions>();
-  return sp.has('proxyHost') || sp.has('proxyPort');
+  const sp =
+    getMaybeConectionString(uri)?.typedSearchParams<MongoClientOptions>();
+  return sp?.has('proxyHost') || sp?.has('proxyPort') || false;
 }
 
 export function isHumanOidcFlow(
@@ -590,18 +593,13 @@ export function isHumanOidcFlow(
   ) {
     return false;
   }
-  let cs: ConnectionString;
-  try {
-    cs = new ConnectionString(uri, { looseValidation: true });
-  } catch {
-    return false;
-  }
 
-  const sp = cs.typedSearchParams<MongoClientOptions>();
-  const authMechanism = clientOptions.authMechanism ?? sp.get('authMechanism');
+  const sp =
+    getMaybeConectionString(uri)?.typedSearchParams<MongoClientOptions>();
+  const authMechanism = clientOptions.authMechanism ?? sp?.get('authMechanism');
   return (
     authMechanism === 'MONGODB-OIDC' &&
-    !new CommaAndColonSeparatedRecord(sp.get('authMechanismProperties')).get(
+    !new CommaAndColonSeparatedRecord(sp?.get('authMechanismProperties')).get(
       'ENVIRONMENT'
     )
   );

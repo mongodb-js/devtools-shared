@@ -77,6 +77,7 @@ describe('Logging setup', function () {
     emitter.emit('devtools-connect:used-system-ca', {
       caCount: 1234,
       asyncFallbackError: new Error('had to fallback to sync'),
+      systemCertsError: new Error('could not load system certs at all'),
     });
 
     await log.flush();
@@ -207,7 +208,11 @@ describe('Logging setup', function () {
         id: 1000000049,
         ctx: 'prefix-connect',
         msg: 'Loaded system CA list',
-        attr: { caCount: 1234, asyncFallbackError: 'had to fallback to sync' },
+        attr: {
+          caCount: 1234,
+          asyncFallbackError: 'had to fallback to sync',
+          systemCertsError: 'could not load system certs at all',
+        },
       },
     ]);
   });
