@@ -79,6 +79,8 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
     opts: AgentConnectOpts
   ): Promise<HTTPAgent> {
     if (this.sshAgent) return this.sshAgent;
+    // Ensure that multiple concurrent invocations of connect() are processed
+    // sequentially until they reach _getProxyForUrl() each
     while (this._reqLock) {
       await this._reqLock;
     }
