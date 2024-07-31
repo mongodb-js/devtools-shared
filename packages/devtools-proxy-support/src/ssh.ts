@@ -88,7 +88,9 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
         throw err;
       }),
       (() => {
-        const waitForReady = once(this.sshClient, 'ready').then(() => undefined);
+        const waitForReady = once(this.sshClient, 'ready').then(
+          () => undefined
+        );
         this.sshClient.connect(sshConnectConfig);
         return waitForReady;
       })(),
