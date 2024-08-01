@@ -46,11 +46,12 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "proxy-agent": "^6.4.0",
     "agent-base": "^7.1.1",
+    "node-fetch": "^3.3.2",
+    "proxy-agent": "^6.4.0",
     "ssh2": "^1.15.0",
     "socksv5": "^0.0.6",
-    "node-fetch": "^3.3.2"
+    "system-ca": "^2.0.0"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
