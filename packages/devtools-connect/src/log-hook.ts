@@ -168,6 +168,7 @@ export function hookLogger(
         {
           caCount: ev.caCount,
           asyncFallbackError: ev.asyncFallbackError?.message,
+          systemCertsError: ev.systemCertsError?.message,
         }
       );
     }

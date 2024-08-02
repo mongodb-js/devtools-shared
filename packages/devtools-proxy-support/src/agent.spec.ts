@@ -1,10 +1,12 @@
-import { createAgent } from './';
+import { createAgent, resetSystemCACache } from './';
 import type { Agent, IncomingMessage } from 'http';
 import { get as httpGet } from 'http';
+import type { RequestOptions } from 'https';
 import { get as httpsGet } from 'https';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
+import path from 'path';
 
 describe('createAgent', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -12,7 +14,8 @@ describe('createAgent', function () {
 
   const get = async (
     url: string,
-    agent: Agent
+    agent: Agent,
+    customOptions: RequestOptions = {}
   ): Promise<IncomingMessage & { body: string }> => {
     const nodeJSBuiltinGet =
       new URL(url).protocol === 'https:' ? httpsGet : httpGet;
@@ -20,6 +23,7 @@ describe('createAgent', function () {
       agent,
       ca: setup.tlsOptions.ca,
       checkServerIdentity: () => undefined, // allow hostname mismatches
+      ...customOptions,
     };
     agents.push(agent);
     const res = await new Promise<IncomingMessage>((resolve, reject) =>
@@ -172,6 +176,115 @@ describe('createAgent', function () {
         })
       );
       expect(res.statusCode).to.equal(407);
+    });
+
+    context('ca support', function () {
+      beforeEach(function () {
+        resetSystemCACache();
+      });
+      afterEach(function () {
+        resetSystemCACache();
+      });
+
+      it('can connect using CA as part of the request options', async function () {
+        // get() helpfully sets the CA for us
+        const res = await get(
+          'https://example.com/hello',
+          createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` })
+        );
+        expect(res.body).to.equal('OK /hello');
+        expect(setup.getRequestedUrls()).to.deep.equal([
+          'http://example.com/hello',
+        ]);
+      });
+      it('can connect using CA as part of the agent options (no explicit CA set)', async function () {
+        const res = await get(
+          'https://example.com/hello',
+          createAgent({
+            proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
+            ca: setup.tlsOptions.ca,
+          }),
+          { ca: undefined }
+        );
+        expect(res.body).to.equal('OK /hello');
+        expect(setup.getRequestedUrls()).to.deep.equal([
+          'http://example.com/hello',
+        ]);
+      });
+      it('can connect using CA as part of the agent options (different explicit CA set)', async function () {
+        const res = await get(
+          'https://example.com/hello',
+          createAgent({
+            proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
+            ca: setup.tlsOptions.ca,
+          }),
+          {
+            ca: `-----BEGIN CERTIFICATE-----
+MIIECTCCA3KgAwIBAgIUDnU7Oa0fU9GFOwU7EWJP3HsRchEwDQYJKoZIhvcNAQEL
+BQAwgZkxCzAJBgNVBAYTAlVTMRAwDgYDVQQIDAdNb250YW5hMRAwDgYDVQQHDAdC
+b3plbWFuMREwDwYDVQQKDAhTYXd0b290aDEYMBYGA1UECwwPQ29uc3VsdGluZ18x
+MDI0MRgwFgYDVQQDDA93d3cud29sZnNzbC5jb20xHzAdBgkqhkiG9w0BCQEWEGlu
+Zm9Ad29sZnNzbC5jb20wHhcNMjIxMjE2MjExNzQ5WhcNMjUwOTExMjExNzQ5WjCB
+mTELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB01vbnRhbmExEDAOBgNVBAcMB0JvemVt
+YW4xETAPBgNVBAoMCFNhd3Rvb3RoMRgwFgYDVQQLDA9Db25zdWx0aW5nXzEwMjQx
+GDAWBgNVBAMMD3d3dy53b2xmc3NsLmNvbTEfMB0GCSqGSIb3DQEJARYQaW5mb0B3
+b2xmc3NsLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAzazdR+y+tyTD
+YxtUmHnhxzEWWdadd52N4ovtBBeyxuvkm5G+MVBil1i1fynes3EkC7+XCX8m3C3s
+qC6yZCt6KzUZLaKAy5n9lHEbI41U2y5ijYEILfQkcids+cmO20x1upsB+D8Y9OZ/
++1eUksyIxLQAwqrU5YgYsxEvc8DWKQkCAwEAAaOCAUowggFGMB0GA1UdDgQWBBTT
+Io8oLOAF7tPtw3E9ybI2Oh2/qDCB2QYDVR0jBIHRMIHOgBTTIo8oLOAF7tPtw3E9
+ybI2Oh2/qKGBn6SBnDCBmTELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB01vbnRhbmEx
+EDAOBgNVBAcMB0JvemVtYW4xETAPBgNVBAoMCFNhd3Rvb3RoMRgwFgYDVQQLDA9D
+b25zdWx0aW5nXzEwMjQxGDAWBgNVBAMMD3d3dy53b2xmc3NsLmNvbTEfMB0GCSqG
+SIb3DQEJARYQaW5mb0B3b2xmc3NsLmNvbYIUDnU7Oa0fU9GFOwU7EWJP3HsRchEw
+DAYDVR0TBAUwAwEB/zAcBgNVHREEFTATggtleGFtcGxlLmNvbYcEfwAAATAdBgNV
+HSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDQYJKoZIhvcNAQELBQADgYEAuIC/
+svWDlVGBan5BhynXw8nGm2DkZaEElx0bO+kn+kPWiWo8nr8o0XU3IfMNZBeyoy2D
+Uv9X8EKpSKrYhOoNgAVxCqojtGzG1n8TSvSCueKBrkaMWfvDjG1b8zLshvBu2ip4
+q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
+-----END CERTIFICATE-----`,
+          }
+        );
+        expect(res.body).to.equal('OK /hello');
+        expect(setup.getRequestedUrls()).to.deep.equal([
+          'http://example.com/hello',
+        ]);
+      });
+      it('can connect using CA in the system CA list', async function () {
+        if (process.platform !== 'linux') return this.skip(); // only really mock-able on Linux
+        resetSystemCACache({
+          env: {
+            SSL_CERT_FILE: path.resolve(
+              __dirname,
+              '..',
+              'test',
+              'fixtures',
+              'ca.crt'
+            ),
+          },
+        });
+        const res = await get(
+          'https://example.com/hello',
+          createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` }),
+          { ca: undefined }
+        );
+        expect(res.body).to.equal('OK /hello');
+        expect(setup.getRequestedUrls()).to.deep.equal([
+          'http://example.com/hello',
+        ]);
+      });
+      it('consistency check: fails without a CA option set', async function () {
+        try {
+          await get(
+            'https://example.com/hello',
+            createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` }),
+            { ca: undefined }
+          );
+          expect.fail('missed exception');
+        } catch (err) {
+          expect(err.code).to.equal('SELF_SIGNED_CERT_IN_CHAIN');
+        }
+      });
     });
   });
 

@@ -49,10 +49,9 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
-      expect(Object.keys(mClientType.getCalls()[0].args[1])).to.have.lengthOf(
-        1
-      );
-      expect(mClientType.getCalls()[0].args[1]).to.have.property('lookup');
+      expect(
+        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+      ).to.deep.equal(['ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -72,13 +71,12 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
-      expect(Object.keys(mClientType.getCalls()[0].args[1])).to.have.lengthOf(
-        2
-      );
+      expect(
+        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+      ).to.deep.equal(['autoEncryption', 'ca', 'lookup']);
       expect(mClientType.getCalls()[0].args[1].autoEncryption).to.deep.equal(
         opts.autoEncryption
       );
-      expect(mClientType.getCalls()[0].args[1]).to.have.property('lookup');
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -114,8 +112,9 @@ describe('devtools connect', function () {
       expect(calls.length).to.equal(2);
       expect(calls[0].args).to.have.lengthOf(2);
       expect(calls[0].args[0]).to.equal(uri);
-      expect(Object.keys(calls[0].args[1])).to.have.lengthOf(1);
-      expect(calls[0].args[1]).to.have.property('lookup');
+      expect(
+        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+      ).to.deep.equal(['ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -191,13 +190,9 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
-      expect(Object.keys(mClientType.getCalls()[0].args[1])).to.have.lengthOf(
-        2
-      );
-      expect(mClientType.getCalls()[0].args[1].autoEncryption).to.deep.equal(
-        opts.autoEncryption
-      );
-      expect(mClientType.getCalls()[0].args[1]).to.have.property('lookup');
+      expect(
+        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+      ).to.deep.equal(['autoEncryption', 'ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -233,10 +228,9 @@ describe('devtools connect', function () {
       expect(calls.length).to.equal(2);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
-      expect(Object.keys(mClientType.getCalls()[0].args[1])).to.have.lengthOf(
-        1
-      );
-      expect(mClientType.getCalls()[0].args[1]).to.have.property('lookup');
+      expect(
+        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+      ).to.deep.equal(['ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -333,15 +327,14 @@ describe('devtools connect', function () {
       expect.fail('Failed to throw expected error');
     });
 
-    it('connects once when using the system CA has been requested', async function () {
-      this.timeout(30_000); // useSystemCA is slow on Windows
+    it('connects once using the system CA', async function () {
       const uri = 'localhost:27017';
       const mClient = stubConstructor(FakeMongoClient);
       const mClientType = sinon.stub().returns(mClient);
       mClient.connect.onFirstCall().resolves(mClient);
       const result = await connectMongoClient(
         uri,
-        { ...defaultOpts, useSystemCA: true },
+        defaultOpts,
         bus,
         mClientType as any
       );
@@ -350,29 +343,6 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[1].ca).to.include(
         '-----BEGIN CERTIFICATE-----'
       );
-      expect(mClientType.getCalls()[0].args[1]).to.not.have.property(
-        'useSystemCA'
-      );
-      expect(mClient.connect.getCalls()).to.have.lengthOf(1);
-      expect(result.client).to.equal(mClient);
-    });
-
-    it('does not pass useSystemCA: false to the driver', async function () {
-      const uri = 'localhost:27017';
-      const mClient = stubConstructor(FakeMongoClient);
-      const mClientType = sinon.stub().returns(mClient);
-      mClient.connect.onFirstCall().resolves(mClient);
-      const result = await connectMongoClient(
-        uri,
-        { ...defaultOpts, useSystemCA: false },
-        bus,
-        mClientType as any
-      );
-      expect(mClientType.getCalls()).to.have.lengthOf(1);
-      expect(mClientType.getCalls()[0].args[1]).to.not.have.property(
-        'useSystemCA'
-      );
-      expect(mClientType.getCalls()[0].args[1]).to.have.property('lookup');
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });

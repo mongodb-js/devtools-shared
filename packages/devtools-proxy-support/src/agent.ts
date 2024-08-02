@@ -4,12 +4,14 @@ import type { DevtoolsProxyOptions } from './proxy-options';
 import { proxyForUrl } from './proxy-options';
 import type { ClientRequest, Agent as HTTPAgent } from 'http';
 import type { TcpNetConnectOpts } from 'net';
-import type { ConnectionOptions } from 'tls';
+import type { ConnectionOptions, SecureContextOptions } from 'tls';
 import type { Duplex } from 'stream';
 import { SSHAgent } from './ssh';
 import type { ProxyLogEmitter } from './logging';
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import type { AgentConnectOpts } from 'agent-base';
+import { Agent as AgentBase } from 'agent-base';
+import { mergeCA, systemCA } from './system-ca';
 
 // Helper type that represents an https.Agent (= connection factory)
 // with some custom properties that TS does not know about and/or
@@ -34,6 +36,7 @@ export type AgentWithInitialize = Agent & {
 
 class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   readonly proxyOptions: DevtoolsProxyOptions;
+  logger: ProxyLogEmitter;
   private sshAgent: SSHAgent | undefined;
 
   // Store the current ClientRequest for the time between connect() first
@@ -45,16 +48,23 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   private _reqLock: Promise<void> | undefined;
   private _reqLockResolve: (() => void) | undefined;
 
-  constructor(proxyOptions: DevtoolsProxyOptions) {
+  constructor(proxyOptions: DevtoolsProxyOptions, logger: ProxyLogEmitter) {
+    // We remove .ca because the Node.js HTTP agent implementation overrides
+    // request options with agent options, but we want to merge them instead
+    // https://github.com/nodejs/node/blob/014dad5953a632f44e668f9527f546c6e1bb8b86/lib/_http_agent.js#L239
+    const { ca, ...proxyOptionsWithoutCA } = proxyOptions;
+    void ca;
     super({
-      ...proxyOptions,
+      ...proxyOptionsWithoutCA,
       getProxyForUrl: (url: string) => this._getProxyForUrl(url),
     });
+
+    this.logger = logger;
     this.proxyOptions = proxyOptions;
     // This could be made a bit more flexible by actually dynamically picking
     // ssh vs. other proxy protocols as part of connect(), if we want that at some point.
     if (proxyOptions.proxy && new URL(proxyOptions.proxy).protocol === 'ssh:') {
-      this.sshAgent = new SSHAgent(proxyOptions);
+      this.sshAgent = new SSHAgent(proxyOptions, logger);
     }
   }
 
@@ -76,11 +86,10 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
 
   override async connect(
     req: ClientRequest,
-    opts: AgentConnectOpts
+    opts: AgentConnectOpts & Partial<SecureContextOptions>
   ): Promise<HTTPAgent> {
+    opts.ca = mergeCA(this.proxyOptions.ca, opts.ca); // see constructor
     if (this.sshAgent) return this.sshAgent;
-    // Ensure that multiple concurrent invocations of connect() are processed
-    // sequentially until they reach _getProxyForUrl() each
     while (this._reqLock) {
       await this._reqLock;
     }
@@ -95,10 +104,42 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   }
 }
 
+// Wraps DevtoolsProxyAgent with async CA resolution via systemCA()
+class DevtoolsProxyAgentWithSystemCA extends AgentBase {
+  readonly proxyOptions: DevtoolsProxyOptions;
+  logger: ProxyLogEmitter = new EventEmitter();
+  private agent: Promise<DevtoolsProxyAgent>;
+
+  constructor(proxyOptions: DevtoolsProxyOptions) {
+    super();
+    this.proxyOptions = proxyOptions;
+    this.agent = (async () => {
+      const { ca } = await systemCA({ ca: proxyOptions.ca });
+      return new DevtoolsProxyAgent({ ...proxyOptions, ca }, this.logger);
+    })();
+    this.agent.catch(() => {
+      /* handled later */
+    });
+  }
+
+  async initialize(): Promise<void> {
+    const agent = await this.agent;
+    await agent.initialize?.();
+  }
+
+  override async connect(): Promise<DevtoolsProxyAgent> {
+    return await this.agent;
+  }
+
+  async destroy(): Promise<void> {
+    (await this.agent).destroy();
+  }
+}
+
 export function createAgent(
   proxyOptions: DevtoolsProxyOptions
 ): AgentWithInitialize {
-  return new DevtoolsProxyAgent(proxyOptions);
+  return new DevtoolsProxyAgentWithSystemCA(proxyOptions);
 }
 
 export function useOrCreateAgent(
