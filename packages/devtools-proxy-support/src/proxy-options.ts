@@ -287,8 +287,9 @@ export function mergeProxySecrets({
   proxyOptions: Readonly<DevtoolsProxyOptions>;
   secrets: DevtoolsProxyOptionsSecrets;
 }): DevtoolsProxyOptions {
-  const parsedSecrets: DevtoolsProxyOptionsSecretsInternal =
-    JSON.parse(secrets);
+  const parsedSecrets: DevtoolsProxyOptionsSecretsInternal = JSON.parse(
+    secrets || '{}'
+  );
   if (
     (parsedSecrets.username || parsedSecrets.password) &&
     proxyOptions.proxy
