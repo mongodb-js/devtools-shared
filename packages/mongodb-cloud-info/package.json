@@ -48,7 +48,6 @@
   },
   "dependencies": {
     "cross-fetch": "^3.1.6",
-    "gce-ips": "^1.0.2",
     "ipaddr.js": "^2.1.0"
   },
   "devDependencies": {
@@ -64,6 +63,7 @@
     "cheerio": "^1.0.0-rc.12",
     "depcheck": "^1.4.1",
     "eslint": "^7.25.0",
+    "gce-ips": "^1.0.2",
     "gen-esm-wrapper": "^1.1.0",
     "mocha": "^8.4.0",
     "nock": "^13.3.1",
