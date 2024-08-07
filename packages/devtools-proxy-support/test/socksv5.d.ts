@@ -1,12 +1,12 @@
-declare module 'socksv5/lib/server' {
+declare module '@mongodb-js/socksv5/lib/server' {
   const mod: any;
   export = mod;
 }
-declare module 'socksv5/lib/auth/None' {
+declare module '@mongodb-js/socksv5/lib/auth/None' {
   const mod: any;
   export = mod;
 }
-declare module 'socksv5/lib/auth/UserPassword' {
+declare module '@mongodb-js/socksv5/lib/auth/UserPassword' {
   const mod: any;
   export = mod;
 }

@@ -15,9 +15,9 @@ import { Server as SSHServer } from 'ssh2';
 import DuplexPair from 'duplexpair';
 import { promisify } from 'util';
 
-import socks5Server from 'socksv5/lib/server';
-import socks5AuthNone from 'socksv5/lib/auth/None';
-import socks5AuthUserPassword from 'socksv5/lib/auth/UserPassword';
+import socks5Server from '@mongodb-js/socksv5/lib/server';
+import socks5AuthNone from '@mongodb-js/socksv5/lib/auth/None';
+import socks5AuthUserPassword from '@mongodb-js/socksv5/lib/auth/UserPassword';
 import type { Duplex } from 'stream';
 
 function parseHTTPAuthHeader(header: string | undefined): [string, string] {
