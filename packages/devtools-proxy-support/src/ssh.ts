@@ -18,7 +18,7 @@ function ssh2(): typeof import('ssh2') {
   if (getFips()) {
     // ssh2 uses a WASM implementation of the non-FIPS-compliant Poly1305 hash algorithm
     throw new Error(
-      'Using `ssh2` features in FIPS mode is currently not available'
+      'devtools-proxy-support: Using `ssh2` features in FIPS mode is currently not available'
     );
   }
   // Lazily loading this package because it uses WebAssembly and therefore cannot
