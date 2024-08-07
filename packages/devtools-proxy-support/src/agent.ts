@@ -1,4 +1,4 @@
-import { ProxyAgent } from 'proxy-agent';
+import { ProxyAgent } from './proxy-agent';
 import type { Agent } from 'https';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import { proxyForUrl } from './proxy-options';

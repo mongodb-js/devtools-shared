@@ -4,14 +4,28 @@ import type { DevtoolsProxyOptions } from './proxy-options';
 import type { AgentWithInitialize } from './agent';
 import type { ClientRequest } from 'http';
 import type { Duplex } from 'stream';
-import type { ClientChannel, ConnectConfig } from 'ssh2';
-import { Client as SshClient } from 'ssh2';
+import type { ClientChannel, ConnectConfig, Client as SshClient } from 'ssh2';
 import EventEmitter, { once } from 'events';
 import { promises as fs } from 'fs';
 import { promisify } from 'util';
 import type { ProxyLogEmitter } from './logging';
 import { connect as tlsConnect } from 'tls';
 import type { Socket } from 'net';
+import { getFips } from 'crypto';
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+function ssh2(): typeof import('ssh2') {
+  if (getFips()) {
+    // ssh2 uses a WASM implementation of the non-FIPS-compliant Poly1305 hash algorithm
+    throw new Error(
+      'devtools-proxy-support: Using `ssh2` features in FIPS mode is currently not available'
+    );
+  }
+  // Lazily loading this package because it uses WebAssembly and therefore cannot
+  // be included in startup snapshots, and generally adds unnecessary loading time
+  // to the application.
+  return require('ssh2');
+}
 
 // The original version of this code was largely taken from
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
@@ -38,7 +52,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     this.logger = logger ?? new EventEmitter().setMaxListeners(Infinity);
     this.proxyOptions = options;
     this.url = new URL(options.proxy ?? '');
-    this.sshClient = new SshClient();
+    this.sshClient = new (ssh2().Client)();
     this.sshClient.on('close', () => {
       this.logger.emit('ssh:client-closed');
       this.connected = false;
