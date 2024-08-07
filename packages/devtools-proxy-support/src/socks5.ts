@@ -6,9 +6,9 @@ import { useOrCreateAgent } from './agent';
 
 // The socksv5 module is not bundle-able by itself, so we get the
 // subpackages directly
-import socks5Server from 'socksv5/lib/server';
-import socks5AuthNone from 'socksv5/lib/auth/None';
-import socks5AuthUserPassword from 'socksv5/lib/auth/UserPassword';
+import socks5Server from '@mongodb-js/socksv5/lib/server';
+import socks5AuthNone from '@mongodb-js/socksv5/lib/auth/None';
+import socks5AuthUserPassword from '@mongodb-js/socksv5/lib/auth/UserPassword';
 import { promisify } from 'util';
 import { isIPv6 } from 'net';
 import type { Socket } from 'net';
