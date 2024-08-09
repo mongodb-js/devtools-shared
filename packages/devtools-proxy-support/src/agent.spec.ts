@@ -21,7 +21,6 @@ describe('createAgent', function () {
       new URL(url).protocol === 'https:' ? httpsGet : httpGet;
     const options = {
       agent,
-      ca: setup.tlsOptions.ca,
       checkServerIdentity: () => undefined, // allow hostname mismatches
       ...customOptions,
     };
@@ -142,7 +141,10 @@ describe('createAgent', function () {
     it('can connect to an https proxy without auth', async function () {
       const res = await get(
         'https://example.com/hello',
-        createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` })
+        createAgent({
+          proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
+          ca: setup.tlsOptions.ca,
+        })
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -157,6 +159,7 @@ describe('createAgent', function () {
         'https://example.com/hello',
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpsProxyPort}`,
+          ca: setup.tlsOptions.ca,
         })
       );
       expect(res.body).to.equal('OK /hello');
@@ -173,6 +176,7 @@ describe('createAgent', function () {
         'https://example.com/hello',
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpsProxyPort}`,
+          ca: setup.tlsOptions.ca,
         })
       );
       expect(res.statusCode).to.equal(407);
@@ -186,17 +190,6 @@ describe('createAgent', function () {
         resetSystemCACache();
       });
 
-      it('can connect using CA as part of the request options', async function () {
-        // get() helpfully sets the CA for us
-        const res = await get(
-          'https://example.com/hello',
-          createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` })
-        );
-        expect(res.body).to.equal('OK /hello');
-        expect(setup.getRequestedUrls()).to.deep.equal([
-          'http://example.com/hello',
-        ]);
-      });
       it('can connect using CA as part of the agent options (no explicit CA set)', async function () {
         const res = await get(
           'https://example.com/hello',

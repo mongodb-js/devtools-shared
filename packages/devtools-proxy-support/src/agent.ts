@@ -49,13 +49,14 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   private _reqLockResolve: (() => void) | undefined;
 
   constructor(proxyOptions: DevtoolsProxyOptions, logger: ProxyLogEmitter) {
-    // We remove .ca because the Node.js HTTP agent implementation overrides
-    // request options with agent options, but we want to merge them instead
+    // NB: The Node.js HTTP agent implementation overrides request options
+    // with agent options. Ideally, we'd want to merge them, but it seems like
+    // there is little we can do about it at this point.
+    // None of our products need the ability to specify per-request CA options
+    // currently anyway.
     // https://github.com/nodejs/node/blob/014dad5953a632f44e668f9527f546c6e1bb8b86/lib/_http_agent.js#L239
-    const { ca, ...proxyOptionsWithoutCA } = proxyOptions;
-    void ca;
     super({
-      ...proxyOptionsWithoutCA,
+      ...proxyOptions,
       getProxyForUrl: (url: string) => this._getProxyForUrl(url),
     });
 
