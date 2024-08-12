@@ -1,10 +1,16 @@
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 import type { Tunnel, TunnelOptions } from './socks5';
-import { createSocks5Tunnel } from './socks5';
+import { connectThroughAgent, createSocks5Tunnel } from './socks5';
 import { expect } from 'chai';
 import { createFetch } from './fetch';
 import type { DevtoolsProxyOptions } from './proxy-options';
+import { createAgent } from './agent';
+import type { AddressInfo, Server } from 'net';
+import { createConnection, createServer } from 'net';
+import { once } from 'events';
+import type { IncomingMessage } from 'http';
+import type { Duplex } from 'stream';
 
 describe('createSocks5Tunnel', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -200,5 +206,66 @@ describe('createSocks5Tunnel', function () {
     });
     const response = await fetch('http://example.com/hello');
     expect(await response.text()).to.equal('OK /hello');
+  });
+
+  context('with a non-HTTP target', function () {
+    let netServer: Server;
+    beforeEach(async function () {
+      netServer = createServer((sock) =>
+        sock.once('data', (chk) => sock.end('hello, ' + chk.toString() + '!'))
+      );
+      netServer.listen(0);
+      await once(netServer, 'listening');
+    });
+
+    afterEach(async function () {
+      netServer.close();
+      await once(netServer, 'close');
+    });
+
+    // This simulates a number of aspects of using a PAC proxy with an actual MongoDB server
+    it('can be used with a PAC proxy and a non-HTTP target', async function () {
+      setup.pacFile = () => {
+        return `function FindProxyForURL() { return 'HTTP 127.0.0.1:${setup.httpProxyPort}'; }`;
+      };
+      setup.httpProxyServer.removeAllListeners('connect');
+      setup.httpProxyServer.on(
+        'connect',
+        (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+          socket.unshift(head);
+          const [host, port] = req.url!.split(':');
+          const outgoing = createConnection(+port, host);
+          socket.write('HTTP/1.0 200 OK\r\n\r\n');
+          socket.pipe(outgoing).pipe(socket);
+        }
+      );
+      tunnel = await setupSocks5Tunnel(
+        {
+          useEnvironmentVariableProxies: true,
+          env: {
+            MONGODB_PROXY: `pac+http://foo:bar@127.0.0.1:${setup.httpServerPort}/pac`,
+          },
+        },
+        {},
+        'mongodb://'
+      );
+      if (!tunnel) {
+        // regular conditional instead of assertion so that TS can follow it
+        expect.fail('failed to create Socks5 tunnel');
+      }
+
+      const agent = createAgent({
+        proxy: `socks5://127.0.0.1:${tunnel.config.proxyPort}`,
+      });
+      const socket = await connectThroughAgent({
+        dstAddr: 'localhost',
+        dstPort: (netServer.address() as AddressInfo).port,
+        agent,
+      });
+      socket.write('world');
+      let received = '';
+      for await (const chunk of socket.setEncoding('utf8')) received += chunk;
+      expect(received).to.equal('hello, world!');
+    });
   });
 });

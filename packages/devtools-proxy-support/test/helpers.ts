@@ -223,12 +223,12 @@ export class HTTPServerProxyTestSetup {
     await Promise.all(closePromises);
   }
 
-  pacFile() {
+  pacFile = () => {
     return `function FindProxyForURL(url, host) {
       if (host === 'pac-invalidproxy') {
         return 'SOCKS5 127.0.0.1:1';
       }
       return 'SOCKS5 127.0.0.1:${this.socks5ProxyPort}';
     }`;
-  }
+  };
 }
