@@ -69,9 +69,59 @@ function createFakeHttpClientRequest(
       getHeader(name: string) {
         return headers[name];
       },
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+      _implicitHeader() {
+        // Even some internal/non-public properties like this are required by http-proxy-agent:
+        // https://github.com/TooTallNate/proxy-agents/blob/5555794b6d9e4b0a36fac80a2d3acea876a8f7dc/packages/http-proxy-agent/src/index.ts#L36
+      },
       overrideProtocol,
     }
   );
+}
+
+export async function connectThroughAgent({
+  dstAddr,
+  dstPort,
+  agent,
+  overrideProtocol,
+}: {
+  dstAddr: string;
+  dstPort: number;
+  agent: AgentWithInitialize;
+  overrideProtocol?: string | undefined;
+}): Promise<Duplex> {
+  const channel = await new Promise<Duplex | undefined>((resolve, reject) => {
+    const req = createFakeHttpClientRequest(dstAddr, dstPort, overrideProtocol);
+    req.onSocket = (sock) => {
+      if (sock) resolve(sock);
+    };
+    agent.createSocket(
+      req,
+      {
+        host: dstAddr,
+        port: dstPort,
+      },
+      (err, sock) => {
+        // Ideally, we would always be using this callback for retrieving the `sock`
+        // instance. However, agent-base does not call the callback at all if
+        // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
+        if (err) reject(err);
+        else if (sock) resolve(sock);
+        else
+          reject(
+            new Error(
+              'Received neither error object nor socket from agent.createSocket()'
+            )
+          );
+      }
+    );
+  });
+
+  if (!channel)
+    throw new Error(`Could not create channel to ${dstAddr}:${dstPort}`);
+  return channel;
 }
 
 // The original version of this code was largely taken from
@@ -237,40 +287,12 @@ class Socks5Server extends EventEmitter implements Tunnel {
   }
 
   private async forwardOut(dstAddr: string, dstPort: number): Promise<Duplex> {
-    const channel = await new Promise<Duplex>((resolve, reject) => {
-      const req = createFakeHttpClientRequest(
-        dstAddr,
-        dstPort,
-        this.overrideProtocol
-      );
-      req.onSocket = (sock) => {
-        if (sock) resolve(sock);
-      };
-      this.agent.createSocket(
-        req,
-        {
-          host: dstAddr,
-          port: dstPort,
-        },
-        (err, sock) => {
-          // Ideally, we would always be using this callback for retrieving the `sock`
-          // instance. However, agent-base does not call the callback at all if
-          // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
-          if (err) reject(err);
-          else if (sock) resolve(sock);
-          else
-            reject(
-              new Error(
-                'Received neither error object nor socket from agent.createSocket()'
-              )
-            );
-        }
-      );
+    return await connectThroughAgent({
+      dstAddr,
+      dstPort,
+      agent: this.agent,
+      overrideProtocol: this.overrideProtocol,
     });
-
-    if (!channel)
-      throw new Error(`Could not create channel to ${dstAddr}:${dstPort}`);
-    return channel;
   }
 
   private async socks5Request(
@@ -309,8 +331,12 @@ class Socks5Server extends EventEmitter implements Tunnel {
       socket.on('error', forwardingErrorHandler);
 
       socket.once('close', () => {
+        if (!channel?.destroyed) channel.destroy();
         this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata });
         this.connections.delete(socket as Socket);
+      });
+      channel.once('close', () => {
+        if (!socket?.destroyed) socket?.destroy();
       });
 
       socket.pipe(channel).pipe(socket);
@@ -370,7 +396,7 @@ export function createSocks5Tunnel(
     return new ExistingTunnel(socks5OnlyProxyOptions);
   }
 
-  const agent = useOrCreateAgent(proxyOptions, target);
+  const agent = useOrCreateAgent(proxyOptions, target, true);
   if (!agent) return undefined;
 
   let generateCredentials = false;

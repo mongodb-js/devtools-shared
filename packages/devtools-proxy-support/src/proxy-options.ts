@@ -1,3 +1,4 @@
+// Only use browser-compatible imports or type imports here
 import type { ConnectionOptions } from 'tls';
 import type { TunnelOptions } from './socks5';
 import type { ClientRequest } from 'http';

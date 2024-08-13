@@ -24,14 +24,22 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./proxy-options": {
+      "require": "./dist/proxy-options-public.js",
+      "import": "./dist/.esm-wrapper-po.mjs",
+      "types": "./dist/proxy-options-public.d.ts"
+    }
   },
   "types": "./dist/index.d.ts",
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs && gen-esm-wrapper ./dist/proxy-options-public ./dist/.esm-wrapper-po.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
@@ -48,9 +56,10 @@
   "dependencies": {
     "@mongodb-js/socksv5": "^0.0.10",
     "agent-base": "^7.1.1",
+    "debug": "^4.3.6",
     "lru-cache": "^11.0.0",
     "node-fetch": "^3.3.2",
-    "pac-proxy-agent": "7.0.2",
+    "pac-proxy-agent": "^7.0.2",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
     "socks-proxy-agent": "^8.0.4",

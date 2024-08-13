@@ -41,6 +41,7 @@ import type { HttpsProxyAgentOptions } from 'https-proxy-agent';
 import type { HttpsProxyAgent } from 'https-proxy-agent';
 import type { SocksProxyAgentOptions } from 'socks-proxy-agent';
 import type { SocksProxyAgent } from 'socks-proxy-agent';
+import { createRequire } from 'module';
 
 const debug = createDebug('proxy-agent');
 
@@ -180,6 +181,10 @@ export class ProxyAgent extends Agent {
     debug('Request URL: %o', url);
     debug('Proxy URL: %o', proxy);
 
+    if (proxy.startsWith('pac+')) {
+      installPacHttpsHack();
+    }
+
     // attempt to get a cached `http.Agent` instance first
     const cacheKey = `${protocol}+${proxy}`;
     let agent = this.cache.get(cacheKey);
@@ -207,4 +212,52 @@ export class ProxyAgent extends Agent {
     }
     super.destroy();
   }
+}
+
+declare const __webpack_require__: unknown;
+
+// Work around https://github.com/TooTallNate/proxy-agents/pull/329
+// While the proxy-agent package implementation in this file,
+// and in the original, properly check whether an 'upgrade' header
+// is present and set to 'websocket', the pac-proxy-agent performs
+// a similar 'CONNECT vs regular HTTP proxy' selection and doesn't
+// account for this. We monkey-patch in this behavior ourselves.
+function installPacHttpsHack() {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  let HttpProxyAgent: typeof import('http-proxy-agent').HttpProxyAgent;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  let HttpsProxyAgent: typeof import('https-proxy-agent').HttpsProxyAgent;
+  if (typeof __webpack_require__ === 'undefined') {
+    const pacProxyAgentPath = require.resolve('pac-proxy-agent');
+    const pacRequire = createRequire(pacProxyAgentPath);
+    HttpProxyAgent = pacRequire('http-proxy-agent').HttpProxyAgent;
+    HttpsProxyAgent = pacRequire('https-proxy-agent').HttpsProxyAgent;
+  } else {
+    // No such thing as require.resolve() in webpack, just need to assume
+    // that everything is hoisted :(
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    HttpProxyAgent = require('http-proxy-agent').HttpProxyAgent;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
+  }
+
+  const kCompanionHttpsProxyAgent = Symbol('kCompanionHttpsProxyAgent');
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const originalConnect = HttpProxyAgent.prototype.connect;
+  HttpProxyAgent.prototype.connect = function (req, ...args) {
+    if (req.getHeader('upgrade') === 'websocket') {
+      let companionHttpsAgent: HttpsProxyAgent<string> = (this as any)[
+        kCompanionHttpsProxyAgent
+      ];
+      if (!companionHttpsAgent) {
+        companionHttpsAgent = new HttpsProxyAgent(
+          this.proxy.href,
+          this.options
+        );
+        (this as any)[kCompanionHttpsProxyAgent] = companionHttpsAgent;
+      }
+      return companionHttpsAgent.connect(req, ...args);
+    }
+    return originalConnect.call(this, req, ...args);
+  };
 }

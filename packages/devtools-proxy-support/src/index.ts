@@ -1,10 +1,4 @@
-export {
-  DevtoolsProxyOptions,
-  DevtoolsProxyOptionsSecrets,
-  translateToElectronProxyConfig,
-  extractProxySecrets,
-  mergeProxySecrets,
-} from './proxy-options';
+export * from './proxy-options-public';
 export { Tunnel, TunnelOptions, createSocks5Tunnel } from './socks5';
 export { createAgent, useOrCreateAgent, AgentWithInitialize } from './agent';
 export {

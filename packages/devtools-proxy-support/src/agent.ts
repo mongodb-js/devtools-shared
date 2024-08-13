@@ -145,10 +145,20 @@ export function createAgent(
 
 export function useOrCreateAgent(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
-  target?: string
+  target?: string,
+  useTargetRegardlessOfExistingAgent = false
 ): AgentWithInitialize | undefined {
   if ('createConnection' in proxyOptions) {
-    return proxyOptions as AgentWithInitialize;
+    const agent = proxyOptions as AgentWithInitialize;
+    if (
+      useTargetRegardlessOfExistingAgent &&
+      target !== undefined &&
+      agent.proxyOptions &&
+      !proxyForUrl(agent.proxyOptions, target)
+    ) {
+      return undefined;
+    }
+    return agent;
   } else {
     if (
       target !== undefined &&
