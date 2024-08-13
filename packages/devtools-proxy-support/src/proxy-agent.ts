@@ -214,6 +214,8 @@ export class ProxyAgent extends Agent {
   }
 }
 
+declare const __webpack_require__: unknown;
+
 // Work around https://github.com/TooTallNate/proxy-agents/pull/329
 // While the proxy-agent package implementation in this file,
 // and in the original, properly check whether an 'upgrade' header
@@ -221,16 +223,23 @@ export class ProxyAgent extends Agent {
 // a similar 'CONNECT vs regular HTTP proxy' selection and doesn't
 // account for this. We monkey-patch in this behavior ourselves.
 function installPacHttpsHack() {
-  const pacProxyAgentPath = require.resolve('pac-proxy-agent');
-  const pacRequire = createRequire(pacProxyAgentPath);
-  const { HttpProxyAgent } = pacRequire(
-    'http-proxy-agent'
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  ) as typeof import('http-proxy-agent');
-  const { HttpsProxyAgent } = pacRequire(
-    'https-proxy-agent'
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  ) as typeof import('https-proxy-agent');
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  let HttpProxyAgent: typeof import('http-proxy-agent').HttpProxyAgent;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  let HttpsProxyAgent: typeof import('https-proxy-agent').HttpsProxyAgent;
+  if (typeof __webpack_require__ === 'undefined') {
+    const pacProxyAgentPath = require.resolve('pac-proxy-agent');
+    const pacRequire = createRequire(pacProxyAgentPath);
+    HttpProxyAgent = pacRequire('http-proxy-agent').HttpProxyAgent;
+    HttpsProxyAgent = pacRequire('https-proxy-agent').HttpsProxyAgent;
+  } else {
+    // No such thing as require.resolve() in webpack, just need to assume
+    // that everything is hoisted :(
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    HttpProxyAgent = require('http-proxy-agent').HttpProxyAgent;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
+  }
 
   const kCompanionHttpsProxyAgent = Symbol('kCompanionHttpsProxyAgent');
   // eslint-disable-next-line @typescript-eslint/unbound-method
