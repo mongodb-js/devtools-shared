@@ -24,14 +24,22 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./proxy-options": {
+      "require": "./dist/proxy-options-public.js",
+      "import": "./dist/.esm-wrapper-po.mjs",
+      "types": "./dist/proxy-options-public.d.ts"
+    }
   },
   "types": "./dist/index.d.ts",
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs && gen-esm-wrapper ./dist/proxy-options-public ./dist/.esm-wrapper-po.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
