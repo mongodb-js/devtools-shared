@@ -331,8 +331,12 @@ class Socks5Server extends EventEmitter implements Tunnel {
       socket.on('error', forwardingErrorHandler);
 
       socket.once('close', () => {
+        if (!channel?.destroyed) channel.destroy();
         this.logger.emit('socks5:forwarded-socket-closed', { ...logMetadata });
         this.connections.delete(socket as Socket);
+      });
+      channel.once('close', () => {
+        if (!socket?.destroyed) socket?.destroy();
       });
 
       socket.pipe(channel).pipe(socket);
@@ -392,7 +396,7 @@ export function createSocks5Tunnel(
     return new ExistingTunnel(socks5OnlyProxyOptions);
   }
 
-  const agent = useOrCreateAgent(proxyOptions, target);
+  const agent = useOrCreateAgent(proxyOptions, target, true);
   if (!agent) return undefined;
 
   let generateCredentials = false;
