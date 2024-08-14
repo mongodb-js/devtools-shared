@@ -345,4 +345,21 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
       }
     });
   });
+
+  context('invalid arguments', function () {
+    it('does not receive unhandled rejections when using invalid options', async function () {
+      // This test may seem contrived, but it mimics FIPS mode without a valid system FIPS config
+      // (i.e. OpenSSL cannot load ciphers) -- this should result in a handled rejection, rather than
+      // an unhandled one.
+      try {
+        await get(
+          'https://example.com/hello',
+          createAgent({ ciphers: 'unknown' } as any)
+        );
+        expect.fail('missed exception');
+      } catch (err: any) {
+        expect(err.message).to.include('no cipher match');
+      }
+    });
+  });
 });

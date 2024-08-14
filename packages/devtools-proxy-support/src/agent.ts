@@ -1,8 +1,9 @@
 import { ProxyAgent } from './proxy-agent';
-import type { Agent } from 'https';
+import type { Agent as HTTPSAgent } from 'https';
 import type { DevtoolsProxyOptions } from './proxy-options';
 import { proxyForUrl } from './proxy-options';
-import type { ClientRequest, Agent as HTTPAgent } from 'http';
+import type { ClientRequest } from 'http';
+import { Agent as HTTPAgent } from 'http';
 import type { TcpNetConnectOpts } from 'net';
 import type { ConnectionOptions, SecureContextOptions } from 'tls';
 import type { Duplex } from 'stream';
@@ -16,7 +17,7 @@ import { mergeCA, systemCA } from './system-ca';
 // Helper type that represents an https.Agent (= connection factory)
 // with some custom properties that TS does not know about and/or
 // that we add for our own purposes.
-export type AgentWithInitialize = Agent & {
+export type AgentWithInitialize = HTTPSAgent & {
   // This is genuinely custom for our usage (to allow establishing an SSH tunnel
   // first before starting to push connections through it)
   initialize?(): Promise<void>;
@@ -96,7 +97,18 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
     }
     this._req = req;
     this._reqLock = new Promise((resolve) => (this._reqLockResolve = resolve));
-    return await super.connect(req, opts);
+    const agent = await super.connect(req, opts);
+    // Work around https://github.com/TooTallNate/proxy-agents/pull/330
+    if ('addRequest' in agent && typeof agent.addRequest === 'function') {
+      const dummyHttpAgent = Object.assign(new HTTPAgent(), {
+        addRequest() {
+          //ignore
+        },
+      });
+      agent.addRequest(req, opts);
+      return dummyHttpAgent;
+    }
+    return agent;
   }
 
   destroy(): void {
