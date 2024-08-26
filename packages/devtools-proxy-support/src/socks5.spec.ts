@@ -208,6 +208,33 @@ describe('createSocks5Tunnel', function () {
     expect(await response.text()).to.equal('OK /hello');
   });
 
+  it('properly handles forwarding failures', async function () {
+    tunnel = await setupSocks5Tunnel(
+      {
+        useEnvironmentVariableProxies: true,
+        env: {
+          MONGODB_PROXY: `http://foo:bar@127.0.0.1:1`,
+        },
+      },
+      {},
+      'mongodb://'
+    );
+    if (!tunnel) {
+      // regular conditional instead of assertion so that TS can follow it
+      expect.fail('failed to create Socks5 tunnel');
+    }
+
+    try {
+      const fetch = createFetch({
+        proxy: `socks5://@127.0.0.1:${tunnel.config.proxyPort}`,
+      });
+      await fetch('http://example.com/hello');
+      expect.fail('missed exception');
+    } catch (err: any) {
+      expect(err.message).to.include('Socket closed');
+    }
+  });
+
   context('with a non-HTTP target', function () {
     let netServer: Server;
     beforeEach(async function () {

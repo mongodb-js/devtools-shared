@@ -94,8 +94,28 @@ export async function connectThroughAgent({
 }): Promise<Duplex> {
   const channel = await new Promise<Duplex | undefined>((resolve, reject) => {
     const req = createFakeHttpClientRequest(dstAddr, dstPort, overrideProtocol);
-    req.onSocket = (sock) => {
-      if (sock) resolve(sock);
+    req.on('error', reject);
+    const done = (
+      error: Error | null | undefined,
+      sock: Duplex | undefined
+    ) => {
+      req.off('error', reject);
+      if (error) reject(error);
+      else if (sock) resolve(sock);
+      else
+        reject(
+          new Error(
+            'Received neither error object nor socket from agent.createSocket()'
+          )
+        );
+    };
+
+    // err isn't actually optional but not part of the Node.js typings
+    req.onSocket = (
+      sock: Duplex | undefined,
+      err?: Error | null | undefined
+    ) => {
+      done(err, sock);
     };
     agent.createSocket(
       req,
@@ -107,14 +127,7 @@ export async function connectThroughAgent({
         // Ideally, we would always be using this callback for retrieving the `sock`
         // instance. However, agent-base does not call the callback at all if
         // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
-        if (err) reject(err);
-        else if (sock) resolve(sock);
-        else
-          reject(
-            new Error(
-              'Received neither error object nor socket from agent.createSocket()'
-            )
-          );
+        done(err, sock);
       }
     );
   });
