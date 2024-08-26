@@ -117,7 +117,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_259),
       `socks5-${logCtx}`,
-      'Failed to establish new SSH connection',
+      'Failed to establish new outgoing connection from Socks5 proxy',
       { ...ev }
     );
   });
@@ -221,7 +221,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_261),
       `ssh-${logCtx}`,
-      'Error forwarding Socks5 request, retrying',
+      'Error forwarding outbound SSH connection, potentially retrying',
       {
         ...ev,
       }
