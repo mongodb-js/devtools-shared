@@ -107,7 +107,8 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     return new bson.Timestamp(low);
   },
   ISODate: function (input?: string): Date {
-    if (!input) input = new Date().toISOString();
+    if (input === undefined) return new Date();
+    if (typeof input !== 'string') return new Date(input);
     const isoDateRegex =
       /^(?<Y>\d{4})-?(?<M>\d{2})-?(?<D>\d{2})([T ](?<h>\d{2})(:?(?<m>\d{2})(:?((?<s>\d{2})(\.(?<ms>\d+))?))?)?(?<tz>Z|([+-])(\d{2}):?(\d{2})?)?)?$/;
     const match = input.match(isoDateRegex);
