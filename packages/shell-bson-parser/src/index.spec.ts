@@ -365,13 +365,29 @@ describe('@mongodb-js/shell-bson-parser', function () {
         });
       });
 
-      for (const dateFn of ['new Date', 'new ISODate', 'ISODate']) {
+      function* isoDateTests(): Iterable<{ dateFn: string; args: any[] }> {
+        for (const dateFn of ['new Date', 'new ISODate', 'ISODate']) {
+          for (const args of [
+            [],
+            [0],
+            [1234567890000],
+            [null],
+            ['1996-02-24T23:01:59.001Z'],
+          ])
+            yield { dateFn, args };
+        }
+      }
+
+      for (const { dateFn, args } of isoDateTests()) {
         context(
-          `Date allow using member methods with "${dateFn}"`,
+          `Date allow using member methods with "${dateFn}" and args ${JSON.stringify(
+            args
+          )}`,
           function () {
             it('should allow member expressions', function () {
-              const isoString = '1996-02-24T23:01:59.001Z';
-              const newDate = `${dateFn}('${isoString}')`;
+              const newDate = `${dateFn}(${args
+                .map((val) => JSON.stringify(val))
+                .join(',')})`;
               const input = `{
           getDate: (${newDate}).getDate(),
           getDay: (${newDate}).getDay(),
@@ -411,42 +427,48 @@ describe('@mongodb-js/shell-bson-parser', function () {
           toISOString: (${newDate}).toISOString(),
        }`;
               expect(parse(input, options)).to.deep.equal({
-                getDate: new Date(isoString).getDate(),
-                getDay: new Date(isoString).getDay(),
-                getFullYear: new Date(isoString).getFullYear(),
-                getHours: new Date(isoString).getHours(),
-                getMilliseconds: new Date(isoString).getMilliseconds(),
-                getMinutes: new Date(isoString).getMinutes(),
-                getMonth: new Date(isoString).getMonth(),
-                getSeconds: new Date(isoString).getSeconds(),
-                getTime: new Date(isoString).getTime(),
-                getTimezoneOffset: new Date(isoString).getTimezoneOffset(),
-                getUTCDate: new Date(isoString).getUTCDate(),
-                getUTCDay: new Date(isoString).getUTCDay(),
-                getUTCFullYear: new Date(isoString).getUTCFullYear(),
-                getUTCHours: new Date(isoString).getUTCHours(),
-                getUTCMilliseconds: new Date(isoString).getUTCMilliseconds(),
-                getUTCMinutes: new Date(isoString).getUTCMinutes(),
-                getUTCMonth: new Date(isoString).getUTCMonth(),
-                getUTCSeconds: new Date(isoString).getUTCSeconds(),
-                getYear: (new Date(isoString) as any).getYear(), // getYear is deprecated
-                setDate: new Date(isoString).setDate(24),
-                setFullYear: new Date(isoString).setFullYear(2010),
-                setHours: new Date(isoString).setHours(23),
-                setMilliseconds: new Date(isoString).setMilliseconds(1),
-                setMinutes: new Date(isoString).setMinutes(1),
-                setMonth: new Date(isoString).setMonth(1),
-                setSeconds: new Date(isoString).setSeconds(59),
-                setTime: new Date(isoString).setTime(10),
-                setUTCDate: new Date(isoString).setUTCDate(24),
-                setUTCFullYear: new Date(isoString).setUTCFullYear(2010),
-                setUTCHours: new Date(isoString).setUTCHours(23),
-                setUTCMilliseconds: new Date(isoString).setUTCMilliseconds(1),
-                setUTCMinutes: new Date(isoString).setUTCMinutes(1),
-                setUTCMonth: new Date(isoString).setUTCMonth(1),
-                setUTCSeconds: new Date(isoString).setUTCSeconds(59),
-                setYear: (new Date(isoString) as any).setYear(96), // setYear is deprecated
-                toISOString: new Date(isoString).toISOString(),
+                getDate: new (Date as any)(...args).getDate(),
+                getDay: new (Date as any)(...args).getDay(),
+                getFullYear: new (Date as any)(...args).getFullYear(),
+                getHours: new (Date as any)(...args).getHours(),
+                getMilliseconds: new (Date as any)(...args).getMilliseconds(),
+                getMinutes: new (Date as any)(...args).getMinutes(),
+                getMonth: new (Date as any)(...args).getMonth(),
+                getSeconds: new (Date as any)(...args).getSeconds(),
+                getTime: new (Date as any)(...args).getTime(),
+                getTimezoneOffset: new (Date as any)(
+                  ...args
+                ).getTimezoneOffset(),
+                getUTCDate: new (Date as any)(...args).getUTCDate(),
+                getUTCDay: new (Date as any)(...args).getUTCDay(),
+                getUTCFullYear: new (Date as any)(...args).getUTCFullYear(),
+                getUTCHours: new (Date as any)(...args).getUTCHours(),
+                getUTCMilliseconds: new (Date as any)(
+                  ...args
+                ).getUTCMilliseconds(),
+                getUTCMinutes: new (Date as any)(...args).getUTCMinutes(),
+                getUTCMonth: new (Date as any)(...args).getUTCMonth(),
+                getUTCSeconds: new (Date as any)(...args).getUTCSeconds(),
+                getYear: new (Date as any)(...args).getYear(), // getYear is deprecated
+                setDate: new (Date as any)(...args).setDate(24),
+                setFullYear: new (Date as any)(...args).setFullYear(2010),
+                setHours: new (Date as any)(...args).setHours(23),
+                setMilliseconds: new (Date as any)(...args).setMilliseconds(1),
+                setMinutes: new (Date as any)(...args).setMinutes(1),
+                setMonth: new (Date as any)(...args).setMonth(1),
+                setSeconds: new (Date as any)(...args).setSeconds(59),
+                setTime: new (Date as any)(...args).setTime(10),
+                setUTCDate: new (Date as any)(...args).setUTCDate(24),
+                setUTCFullYear: new (Date as any)(...args).setUTCFullYear(2010),
+                setUTCHours: new (Date as any)(...args).setUTCHours(23),
+                setUTCMilliseconds: new (Date as any)(
+                  ...args
+                ).setUTCMilliseconds(1),
+                setUTCMinutes: new (Date as any)(...args).setUTCMinutes(1),
+                setUTCMonth: new (Date as any)(...args).setUTCMonth(1),
+                setUTCSeconds: new (Date as any)(...args).setUTCSeconds(59),
+                setYear: new (Date as any)(...args).setYear(96), // setYear is deprecated
+                toISOString: new (Date as any)(...args).toISOString(),
               });
             });
 
