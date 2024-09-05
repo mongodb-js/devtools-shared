@@ -53,7 +53,10 @@ export function mergeCA(...args: (NodeJSCAOption | undefined)[]): string {
 
 const pemWithParsedCache = new WeakMap<
   string[],
-  { pem: string; parsed: X509Certificate | null }[]
+  {
+    ca: string[];
+    messages: string[];
+  }
 >();
 // TODO(COMPASS-8253): Remove this in favor of OpenSSL's X509_V_FLAG_PARTIAL_CHAIN
 // See linked tickets for details on why we need this (tl;dr: the system certificate
@@ -63,25 +66,29 @@ export function removeCertificatesWithoutIssuer(ca: string[]): {
   ca: string[];
   messages: string[];
 } {
-  const messages: string[] = [];
-  let caWithParsedCerts =
-    pemWithParsedCache.get(ca) ??
-    ca.map((pem) => {
-      let parsed: X509Certificate | null = null;
-      try {
-        parsed = new X509Certificate(pem);
-      } catch (err: unknown) {
-        messages.push(
-          `Unable to parse certificate: ${
-            err && typeof err === 'object' && 'message' in err
-              ? String(err.message)
-              : String(err)
-          }`
-        );
+  let result:
+    | {
+        ca: string[];
+        messages: string[];
       }
-      return { pem, parsed };
-    });
-  pemWithParsedCache.set(ca, caWithParsedCerts);
+    | undefined = pemWithParsedCache.get(ca);
+
+  const messages: string[] = [];
+  let caWithParsedCerts = ca.map((pem) => {
+    let parsed: X509Certificate | null = null;
+    try {
+      parsed = new X509Certificate(pem);
+    } catch (err: unknown) {
+      messages.push(
+        `Unable to parse certificate: ${
+          err && typeof err === 'object' && 'message' in err
+            ? String(err.message)
+            : String(err)
+        }`
+      );
+    }
+    return { pem, parsed };
+  });
   caWithParsedCerts = caWithParsedCerts.filter(({ parsed }) => {
     const keep =
       !parsed ||
@@ -96,7 +103,9 @@ export function removeCertificatesWithoutIssuer(ca: string[]): {
     }
     return keep;
   });
-  return { ca: caWithParsedCerts.map(({ pem }) => pem), messages };
+  result = { ca: caWithParsedCerts.map(({ pem }) => pem), messages };
+  pemWithParsedCache.set(ca, result);
+  return result;
 }
 
 // Thin wrapper around system-ca, which merges:
