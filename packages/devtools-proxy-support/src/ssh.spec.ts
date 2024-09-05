@@ -41,6 +41,19 @@ describe('SSHAgent', function () {
     expect(setup.authHandler).to.have.been.calledOnceWith('foo', 'bar');
   });
 
+  it('handles special characters in username and password', async function () {
+    setup.authHandler = sinon.stub().returns(true);
+    agent = new SSHAgent({
+      proxy: `ssh://foo%5E:ba%26r@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    const fetch = createFetch(agent);
+    await Promise.all([
+      fetch('http://example.com/hello'),
+      fetch('http://example.com/hello'),
+    ]);
+    expect(setup.authHandler).to.have.been.calledOnceWith('foo^', 'ba&r');
+  });
+
   it('allows explicitly initializing the connection', async function () {
     setup.authHandler = sinon.stub().returns(true);
     agent = new SSHAgent({

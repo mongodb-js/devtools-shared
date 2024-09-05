@@ -78,10 +78,10 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     const sshConnectConfig: ConnectConfig = {
       readyTimeout: 20000,
       keepaliveInterval: 20000,
-      host: this.url.hostname,
+      host: decodeURIComponent(this.url.hostname),
       port: +this.url.port || 22,
-      username: this.url.username || undefined,
-      password: this.url.password || undefined,
+      username: decodeURIComponent(this.url.username) || undefined,
+      password: decodeURIComponent(this.url.password) || undefined,
       privateKey: this.proxyOptions.sshOptions?.identityKeyFile
         ? await fs.readFile(this.proxyOptions.sshOptions.identityKeyFile)
         : undefined,
@@ -92,7 +92,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     this.logger.emit('ssh:establishing-conection', {
       host: sshConnectConfig.host,
       port: sshConnectConfig.port,
-      password: !!sshConnectConfig.passphrase,
+      password: !!sshConnectConfig.password,
       privateKey: !!sshConnectConfig.privateKey,
       passphrase: !!sshConnectConfig.passphrase,
     });
