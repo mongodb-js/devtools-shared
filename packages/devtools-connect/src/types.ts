@@ -55,6 +55,7 @@ export interface ConnectUsedSystemCAEvent {
   caCount: number;
   asyncFallbackError: Error | undefined;
   systemCertsError: Error | undefined;
+  messages: string[];
 }
 
 export interface ConnectEventMap
