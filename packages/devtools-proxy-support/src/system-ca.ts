@@ -2,6 +2,7 @@ import { systemCertsAsync } from 'system-ca';
 import type { Options as SystemCAOptions } from 'system-ca';
 import { promises as fs } from 'fs';
 import { rootCertificates } from 'tls';
+import { X509Certificate } from 'crypto';
 
 // A bit more generic than SecureContextOptions['ca'] because of Uint8Array -> Buffer + readonly
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
@@ -50,6 +51,54 @@ export function mergeCA(...args: (NodeJSCAOption | undefined)[]): string {
   return [...ca].join('\n');
 }
 
+const pemWithParsedCache = new WeakMap<
+  string[],
+  { pem: string; parsed: X509Certificate | null }[]
+>();
+// TODO(COMPASS-8253): Remove this in favor of OpenSSL's X509_V_FLAG_PARTIAL_CHAIN
+// See linked tickets for details on why we need this (tl;dr: the system certificate
+// store may contain intermediate certficiates without the corresponding trusted root,
+// and OpenSSL does not seem to accept that)
+export function removeCertificatesWithoutIssuer(ca: string[]): {
+  ca: string[];
+  messages: string[];
+} {
+  const messages: string[] = [];
+  let caWithParsedCerts =
+    pemWithParsedCache.get(ca) ??
+    ca.map((pem) => {
+      let parsed: X509Certificate | null = null;
+      try {
+        parsed = new X509Certificate(pem);
+      } catch (err: unknown) {
+        messages.push(
+          `Unable to parse certificate: ${
+            err && typeof err === 'object' && 'message' in err
+              ? String(err.message)
+              : String(err)
+          }`
+        );
+      }
+      return { pem, parsed };
+    });
+  pemWithParsedCache.set(ca, caWithParsedCerts);
+  caWithParsedCerts = caWithParsedCerts.filter(({ parsed }) => {
+    const keep =
+      !parsed ||
+      parsed.checkIssued(parsed) ||
+      caWithParsedCerts.find(
+        ({ parsed: issuer }) => issuer && parsed.checkIssued(issuer)
+      );
+    if (!keep) {
+      messages.push(
+        `Removing certificate for '${parsed.subject}' because issuer '${parsed.issuer}' could not be found (serial no '${parsed.serialNumber}')`
+      );
+    }
+    return keep;
+  });
+  return { ca: caWithParsedCerts.map(({ pem }) => pem), messages };
+}
+
 // Thin wrapper around system-ca, which merges:
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
@@ -58,12 +107,14 @@ export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
     tlsCAFile?: string | null | undefined;
-  } = {}
+  } = {},
+  allowCertificatesWithoutIssuer?: boolean // defaults to false
 ): Promise<{
   ca: string;
   systemCACount: number;
   asyncFallbackError?: Error;
   systemCertsError?: Error;
+  messages: string[];
 }> {
   let readTLSCAFilePromise: Promise<string> | undefined;
   if (existingOptions.tlsCAFile) {
@@ -76,11 +127,23 @@ export async function systemCA(
   let systemCertsError: Error | undefined;
   let asyncFallbackError: Error | undefined;
   let systemCerts: string[] = [];
+  let messages: string[] = [];
 
   try {
     ({ certs: systemCerts, asyncFallbackError } = await systemCertsCached());
   } catch (err: any) {
     systemCertsError = err;
+  }
+
+  if (
+    !(
+      allowCertificatesWithoutIssuer ??
+      !!process.env.DEVTOOLS_ALLOW_CERTIFICATES_WITHOUT_ISSUER
+    )
+  ) {
+    const reducedList = removeCertificatesWithoutIssuer(systemCerts);
+    systemCerts = reducedList.ca;
+    messages = messages.concat(reducedList.messages);
   }
 
   return {
@@ -93,5 +156,6 @@ export async function systemCA(
     asyncFallbackError: asyncFallbackError,
     systemCertsError,
     systemCACount: systemCerts.length + rootCertificates.length,
+    messages,
   };
 }

@@ -419,16 +419,22 @@ export async function connectMongoClient(
   detectAndLogMissingOptionalDependencies(logger);
 
   try {
-    const { ca, asyncFallbackError, systemCertsError, systemCACount } =
-      await systemCA({
-        ca: clientOptions.ca,
-        tlsCAFile:
-          clientOptions.tlsCAFile || getConnectionStringParam(uri, 'tlsCAFile'),
-      });
+    const {
+      ca,
+      asyncFallbackError,
+      systemCertsError,
+      systemCACount,
+      messages,
+    } = await systemCA({
+      ca: clientOptions.ca,
+      tlsCAFile:
+        clientOptions.tlsCAFile || getConnectionStringParam(uri, 'tlsCAFile'),
+    });
     logger.emit('devtools-connect:used-system-ca', {
       caCount: systemCACount,
       asyncFallbackError,
       systemCertsError,
+      messages,
     });
 
     // Create a proxy agent, if requested. `useOrCreateAgent()` takes a target argument

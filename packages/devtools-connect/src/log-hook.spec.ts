@@ -78,6 +78,7 @@ describe('Logging setup', function () {
       caCount: 1234,
       asyncFallbackError: new Error('had to fallback to sync'),
       systemCertsError: new Error('could not load system certs at all'),
+      messages: ['A diagnostic message'],
     });
 
     await log.flush();
@@ -212,6 +213,7 @@ describe('Logging setup', function () {
           caCount: 1234,
           asyncFallbackError: 'had to fallback to sync',
           systemCertsError: 'could not load system certs at all',
+          messages: ['A diagnostic message'],
         },
       },
     ]);
