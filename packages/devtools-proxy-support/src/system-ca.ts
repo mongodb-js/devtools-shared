@@ -70,7 +70,7 @@ export function parseCACerts(
     } catch (err: unknown) {
       // Most definitely should happen never or extremely rarely, in case it
       // does, if this cert will affect the TLS connection verification, the
-      // connection will most definitely fail and we'll se it in the logs. For
+      // connection will most definitely fail and we'll see it in the logs. For
       // that reason we're just logging, but not throwing an error here
       messages.push(
         `Unable to parse certificate: ${
