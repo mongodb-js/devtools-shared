@@ -87,7 +87,7 @@ Dfvp7OOGAN6dEOM4+qR9sdjoSYKEBpsr6GtPAQw4dy753ec5
   });
 
   describe('sortByExpirationDate', function () {
-    it('pushes all expired certs to the bottom', function () {
+    it('sorts certs by expiration date in descending order (higher expiration date on top)', function () {
       const mockCerts = [
         {
           serialNumber: '01',
