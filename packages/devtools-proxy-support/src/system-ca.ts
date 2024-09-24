@@ -68,6 +68,10 @@ export function parseCACerts(
     try {
       parsed = new X509Certificate(pem);
     } catch (err: unknown) {
+      // Most definitely should happen never or extremely rarely, in case it
+      // does, if this cert will affect the TLS connection verification, the
+      // connection will most definitely fail and we'll se it in the logs. For
+      // that reason we're just logging, but not throwing an error here
       messages.push(
         `Unable to parse certificate: ${
           err && typeof err === 'object' && 'message' in err
@@ -80,15 +84,14 @@ export function parseCACerts(
   });
 }
 
-function doesCertificateHasMatchingIssuer(
-  { parsed }: ParsedX509Cert,
+function certificateHasMatchingIssuer(
+  cert: X509Certificate,
   certs: ParsedX509Cert[]
 ) {
   return (
-    !parsed ||
-    parsed.checkIssued(parsed) ||
+    cert.checkIssued(cert) ||
     certs.some(({ parsed: issuer }) => {
-      return issuer && parsed.checkIssued(issuer);
+      return issuer && cert.checkIssued(issuer);
     })
   );
 }
@@ -123,7 +126,11 @@ export function removeCertificatesWithoutIssuer(
 
   const _messages: string[] = [];
   const filteredCAlist = ca.filter((cert) => {
-    const keep = doesCertificateHasMatchingIssuer(cert, ca);
+    // If cert was not parsed, we want to keep it in the list. The case should
+    // be generally very rare, but in case it happens and this cert will affect
+    // the TLS handshake, it will show up in the logs as the connection error
+    // anyway, so it's safe to keep it
+    const keep = !cert.parsed || certificateHasMatchingIssuer(cert.parsed, ca);
     if (!keep && cert.parsed) {
       const { parsed } = cert;
       _messages.push(
