@@ -31,54 +31,47 @@ function systemCertsCached(systemCAOpts: SystemCAOptions = {}): Promise<{
   return systemCertsCachePromise;
 }
 
+function certToString(cert: string | Uint8Array) {
+  return typeof cert === 'string'
+    ? cert
+    : Buffer.from(cert.buffer, cert.byteOffset, cert.byteLength).toString(
+        'utf8'
+      );
+}
+
 export function mergeCA(...args: (NodeJSCAOption | undefined)[]): string {
   const ca = new Set<string>();
   for (const item of args) {
     if (!item) continue;
-    const caList: readonly (string | Uint8Array)[] = Array.isArray(item)
-      ? item
-      : [item];
+    const caList = Array.isArray(item) ? item : [item];
     for (const cert of caList) {
-      const asString =
-        typeof cert === 'string'
-          ? cert
-          : Buffer.from(cert.buffer, cert.byteOffset, cert.byteLength).toString(
-              'utf8'
-            );
-      ca.add(asString);
+      ca.add(certToString(cert));
     }
   }
   return [...ca].join('\n');
 }
 
-const pemWithParsedCache = new WeakMap<
-  string[],
-  {
-    ca: string[];
-    messages: string[];
-  }
->();
-// TODO(COMPASS-8253): Remove this in favor of OpenSSL's X509_V_FLAG_PARTIAL_CHAIN
-// See linked tickets for details on why we need this (tl;dr: the system certificate
-// store may contain intermediate certficiates without the corresponding trusted root,
-// and OpenSSL does not seem to accept that)
-export function removeCertificatesWithoutIssuer(ca: string[]): {
-  ca: string[];
-  messages: string[];
-} {
-  let result:
-    | {
-        ca: string[];
-        messages: string[];
-      }
-    | undefined = pemWithParsedCache.get(ca);
+export type ParsedX509Cert = { pem: string; parsed: X509Certificate | null };
 
-  const messages: string[] = [];
-  let caWithParsedCerts = ca.map((pem) => {
+/**
+ * Safely parse provided certs, push any encountered errors to the provided
+ * messages array
+ */
+export function parseCACerts(
+  ca: NodeJSCAOption,
+  messages: string[]
+): ParsedX509Cert[] {
+  ca = Array.isArray(ca) ? ca : [ca];
+  return ca.map((cert) => {
+    const pem = certToString(cert);
     let parsed: X509Certificate | null = null;
     try {
       parsed = new X509Certificate(pem);
     } catch (err: unknown) {
+      // Most definitely should happen never or extremely rarely, in case it
+      // does, if this cert will affect the TLS connection verification, the
+      // connection will most definitely fail and we'll see it in the logs. For
+      // that reason we're just logging, but not throwing an error here
       messages.push(
         `Unable to parse certificate: ${
           err && typeof err === 'object' && 'message' in err
@@ -89,23 +82,87 @@ export function removeCertificatesWithoutIssuer(ca: string[]): {
     }
     return { pem, parsed };
   });
-  caWithParsedCerts = caWithParsedCerts.filter(({ parsed }) => {
-    const keep =
-      !parsed ||
-      parsed.checkIssued(parsed) ||
-      caWithParsedCerts.find(
-        ({ parsed: issuer }) => issuer && parsed.checkIssued(issuer)
-      );
-    if (!keep) {
-      messages.push(
+}
+
+function certificateHasMatchingIssuer(
+  cert: X509Certificate,
+  certs: ParsedX509Cert[]
+) {
+  return (
+    cert.checkIssued(cert) ||
+    certs.some(({ parsed: issuer }) => {
+      return issuer && cert.checkIssued(issuer);
+    })
+  );
+}
+
+const withRemovedMissingIssuerCache = new WeakMap<
+  ParsedX509Cert[],
+  {
+    ca: ParsedX509Cert[];
+    messages: string[];
+  }
+>();
+
+// TODO(COMPASS-8253): Remove this in favor of OpenSSL's X509_V_FLAG_PARTIAL_CHAIN
+// See linked tickets for details on why we need this (tl;dr: the system certificate
+// store may contain intermediate certficiates without the corresponding trusted root,
+// and OpenSSL does not seem to accept that)
+export function removeCertificatesWithoutIssuer(
+  ca: ParsedX509Cert[],
+  messages: string[]
+): ParsedX509Cert[] {
+  const result:
+    | {
+        ca: ParsedX509Cert[];
+        messages: string[];
+      }
+    | undefined = withRemovedMissingIssuerCache.get(ca);
+
+  if (result) {
+    messages.push(...result.messages);
+    return result.ca;
+  }
+
+  const _messages: string[] = [];
+  const filteredCAlist = ca.filter((cert) => {
+    // If cert was not parsed, we want to keep it in the list. The case should
+    // be generally very rare, but in case it happens and this cert will affect
+    // the TLS handshake, it will show up in the logs as the connection error
+    // anyway, so it's safe to keep it
+    const keep = !cert.parsed || certificateHasMatchingIssuer(cert.parsed, ca);
+    if (!keep && cert.parsed) {
+      const { parsed } = cert;
+      _messages.push(
         `Removing certificate for '${parsed.subject}' because issuer '${parsed.issuer}' could not be found (serial no '${parsed.serialNumber}')`
       );
     }
     return keep;
   });
-  result = { ca: caWithParsedCerts.map(({ pem }) => pem), messages };
-  pemWithParsedCache.set(ca, result);
-  return result;
+  withRemovedMissingIssuerCache.set(ca, {
+    ca: filteredCAlist,
+    messages: _messages,
+  });
+  messages.push(..._messages);
+  return filteredCAlist;
+}
+
+/**
+ * Sorts cerificates by the Not After value. Items that are higher in the list
+ * get picked up first by the CA issuer finding logic
+ *
+ * @see {@link https://jira.mongodb.org/browse/COMPASS-8322}
+ */
+export function sortByExpirationDate(ca: ParsedX509Cert[]) {
+  return ca.slice().sort((a, b) => {
+    if (!a.parsed || !b.parsed) {
+      return 0;
+    }
+    return (
+      new Date(b.parsed.validTo).getTime() -
+      new Date(a.parsed.validTo).getTime()
+    );
+  });
 }
 
 // Thin wrapper around system-ca, which merges:
@@ -135,11 +192,14 @@ export async function systemCA(
 
   let systemCertsError: Error | undefined;
   let asyncFallbackError: Error | undefined;
-  let systemCerts: string[] = [];
-  let messages: string[] = [];
+  let systemCerts: ParsedX509Cert[] = [];
+
+  const messages: string[] = [];
 
   try {
-    ({ certs: systemCerts, asyncFallbackError } = await systemCertsCached());
+    const systemCertsResult = await systemCertsCached();
+    asyncFallbackError = systemCertsResult.asyncFallbackError;
+    systemCerts = parseCACerts(systemCertsResult.certs, messages);
   } catch (err: any) {
     systemCertsError = err;
   }
@@ -150,14 +210,14 @@ export async function systemCA(
       !!process.env.DEVTOOLS_ALLOW_CERTIFICATES_WITHOUT_ISSUER
     )
   ) {
-    const reducedList = removeCertificatesWithoutIssuer(systemCerts);
-    systemCerts = reducedList.ca;
-    messages = messages.concat(reducedList.messages);
+    systemCerts = removeCertificatesWithoutIssuer(systemCerts, messages);
   }
 
   return {
     ca: mergeCA(
-      systemCerts,
+      sortByExpirationDate(systemCerts).map((cert) => {
+        return cert.pem;
+      }),
       rootCertificates,
       existingOptions.ca,
       await readTLSCAFilePromise

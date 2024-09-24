@@ -1,10 +1,16 @@
 import { expect } from 'chai';
-import { removeCertificatesWithoutIssuer } from './system-ca';
+import type { ParsedX509Cert } from './system-ca';
+import {
+  parseCACerts,
+  removeCertificatesWithoutIssuer,
+  sortByExpirationDate,
+} from './system-ca';
 
-describe('removeCertificatesWithoutIssuer', function () {
-  it('removes certificates that do not have an issuer', function () {
-    const certs = [
-      `-----BEGIN CERTIFICATE-----
+describe('system-ca helpers', function () {
+  describe('removeCertificatesWithoutIssuer', function () {
+    it('removes certificates that do not have an issuer', function () {
+      const certs = [
+        `-----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAwTzELMAkG
 A1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2VhcmNoIEdyb3VwMRUw
 EwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4WhcNMzUwNjA0MTEwNDM4WjBP
@@ -32,7 +38,7 @@ qKOJ2qxq4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
 mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57demyPxgcY
 xn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----`,
-      `-----BEGIN CERTIFICATE-----
+        `-----BEGIN CERTIFICATE-----
 MIIFYDCCBEigAwIBAgIQQAF3ITfU6UK47naqPGQKtzANBgkqhkiG9w0BAQsFADA/
 MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT
 DkRTVCBSb290IENBIFgzMB4XDTIxMDEyMDE5MTQwM1oXDTI0MDkzMDE4MTQwM1ow
@@ -63,12 +69,63 @@ WCLKTVXkcGdtwlfFRjlBz4pYg1htmf5X6DYO8A4jqv2Il9DjXA6USbW1FzXSLr9O
 he8Y4IWS6wY7bCkjCWDcRQJMEhg76fsO3txE+FiYruq9RUWhiF1myv4Q6W+CyBFC
 Dfvp7OOGAN6dEOM4+qR9sdjoSYKEBpsr6GtPAQw4dy753ec5
 -----END CERTIFICATE-----`,
-    ];
-    expect(removeCertificatesWithoutIssuer(certs)).to.deep.equal({
-      ca: [certs[0]],
-      messages: [
+      ];
+      const messages = [];
+      const filtered = removeCertificatesWithoutIssuer(
+        parseCACerts(certs, messages),
+        messages
+      );
+      expect(
+        filtered.map((cert) => {
+          return cert.pem;
+        })
+      ).to.deep.equal([certs[0]]);
+      expect(messages).to.deep.eq([
         `Removing certificate for 'C=US\nO=Internet Security Research Group\nCN=ISRG Root X1' because issuer 'O=Digital Signature Trust Co.\nCN=DST Root CA X3' could not be found (serial no '4001772137D4E942B8EE76AA3C640AB7')`,
-      ],
+      ]);
+    });
+  });
+
+  describe('sortByExpirationDate', function () {
+    it('sorts certs by expiration date in descending order (higher expiration date on top)', function () {
+      const mockCerts = [
+        {
+          serialNumber: '01',
+          validTo: new Date(Date.now() + 10_000).toUTCString(),
+        },
+        {
+          serialNumber: '02',
+          validTo: new Date(Date.now() - 60_000).toUTCString(),
+        },
+        {
+          serialNumber: '03',
+          validTo: new Date(Date.now() - 50_000).toUTCString(),
+        },
+        {
+          serialNumber: '04',
+          validTo: new Date(Date.now() + 30_000).toUTCString(),
+        },
+        {
+          serialNumber: '05',
+          validTo: new Date(Date.now() + 20_000).toUTCString(),
+        },
+        {
+          serialNumber: '06',
+          validTo: new Date(Date.now() + 20_000).toUTCString(),
+        },
+      ];
+
+      const sorted = sortByExpirationDate(
+        mockCerts.map((parsed) => {
+          return { pem: '', parsed } as ParsedX509Cert;
+        })
+      );
+
+      expect(
+        sorted.map((cert) => {
+          return cert.parsed?.serialNumber;
+        })
+      ).to.deep.eq(['04', '05', '06', '01', '03', '02']);
     });
   });
 });
