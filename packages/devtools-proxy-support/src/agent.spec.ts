@@ -7,6 +7,11 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 import path from 'path';
+import type { Server as TLSServer } from 'tls';
+import { createServer as createTLSServer } from 'tls';
+import { promises as fs } from 'fs';
+import type { AddressInfo } from 'net';
+import { tlsSupportsAllowPartialTrustChainFlag } from './system-ca';
 
 describe('createAgent', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -38,9 +43,11 @@ describe('createAgent', function () {
     agents = [];
     setup = new HTTPServerProxyTestSetup();
     await setup.listen();
+    resetSystemCACache();
   });
 
   afterEach(async function () {
+    resetSystemCACache();
     await setup.teardown();
     for (const agent of new Set(agents)) {
       agent.destroy();
@@ -183,13 +190,6 @@ describe('createAgent', function () {
     });
 
     context('ca support', function () {
-      beforeEach(function () {
-        resetSystemCACache();
-      });
-      afterEach(function () {
-        resetSystemCACache();
-      });
-
       it('can connect using CA as part of the agent options (no explicit CA set)', async function () {
         const res = await get(
           'https://example.com/hello',
@@ -362,4 +362,55 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
       }
     });
   });
+
+  // This mirrors https://github.com/nodejs/node/blob/1b3420274ea8d8cca339a1f10301d2e80f577c4c/test/parallel/test-tls-client-allow-partial-trust-chain.js
+  context(
+    'TLS with partial trust chain in system certificate list',
+    function () {
+      const fixtures = path.resolve(
+        __dirname,
+        '..',
+        'test',
+        'fixtures',
+        'partial-trust-chain'
+      );
+      let server: TLSServer;
+
+      beforeEach(async function () {
+        server = createTLSServer(
+          {
+            ca: await fs.readFile(path.join(fixtures, 'ca.pem')),
+            key: await fs.readFile(path.join(fixtures, 'key.pem')),
+            cert: await fs.readFile(path.join(fixtures, 'cert.pem')),
+          },
+          (socket) => socket.end('HTTP/1.0 200 OK\r\n\r\nOK /hello')
+        );
+        server.listen(0);
+      });
+
+      afterEach(function () {
+        server?.close();
+      });
+
+      it('can connect using partial trust chains in the system CA list', async function () {
+        if (
+          process.platform !== 'linux' ||
+          !tlsSupportsAllowPartialTrustChainFlag()
+        )
+          return this.skip(); // only really mock-able on Linux
+        resetSystemCACache({
+          env: {
+            SSL_CERT_FILE: path.join(fixtures, 'ca.pem'),
+            SSL_CERT_DIR: '/nonexistent',
+          },
+        });
+
+        const res = await get(
+          `https://localhost:${(server.address() as AddressInfo).port}/hello`,
+          createAgent({})
+        );
+        expect(res.body).to.equal('OK /hello');
+      });
+    }
+  );
 });
