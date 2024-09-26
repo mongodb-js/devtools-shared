@@ -55,7 +55,7 @@
   },
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^1.1.0",
-    "mongodb": "^6.8.0",
+    "mongodb": "^6.9.0",
     "mongodb-log-writer": "^1.4.2"
   },
   "devDependencies": {
@@ -75,7 +75,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "gen-esm-wrapper": "^1.1.0",
     "mocha": "^8.4.0",
-    "mongodb": "^6.8.0",
+    "mongodb": "^6.9.0",
     "mongodb-log-writer": "^1.4.2",
     "nyc": "^15.1.0",
     "os-dns-native": "^1.2.0",

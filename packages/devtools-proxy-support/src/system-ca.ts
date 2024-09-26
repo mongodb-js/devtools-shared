@@ -11,7 +11,7 @@ let systemCertsCachePromise:
   | Promise<{ certs: string[]; asyncFallbackError?: Error }>
   | undefined;
 
-export function resetSystemCACache(systemCAOpts: SystemCAOptions = {}) {
+export function resetSystemCACache(systemCAOpts: SystemCAOptions = {}): void {
   systemCertsCachePromise = undefined;
   systemCertsCached(systemCAOpts).catch(() => undefined);
 }
@@ -165,6 +165,18 @@ export function sortByExpirationDate(ca: ParsedX509Cert[]) {
   });
 }
 
+const nodeVersion = process.versions.node.slice(1).split('.').map(Number);
+
+export function tlsSupportsAllowPartialTrustChainFlag(): boolean {
+  // TODO: Remove this flag and all X.509 parsing here once all our products
+  // are at least on these Node.js versions
+  return (
+    !!(process as any).__tlsSupportsAllowPartialTrustChainFlag || // for mongosh patch
+    (nodeVersion[0] >= 22 && nodeVersion[1] >= 9) || // https://github.com/nodejs/node/commit/c2bf0134c
+    (nodeVersion[0] === 20 && nodeVersion[1] >= 18)
+  ); // https://github.com/nodejs/node/commit/1b3420274
+}
+
 // Thin wrapper around system-ca, which merges:
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
@@ -196,10 +208,19 @@ export async function systemCA(
 
   const messages: string[] = [];
 
+  const _tlsSupportsAllowPartialTrustChainFlag =
+    tlsSupportsAllowPartialTrustChainFlag();
   try {
     const systemCertsResult = await systemCertsCached();
     asyncFallbackError = systemCertsResult.asyncFallbackError;
-    systemCerts = parseCACerts(systemCertsResult.certs, messages);
+    if (_tlsSupportsAllowPartialTrustChainFlag) {
+      systemCerts = systemCertsResult.certs.map((pem) => ({
+        pem,
+        parsed: null,
+      }));
+    } else {
+      systemCerts = parseCACerts(systemCertsResult.certs, messages);
+    }
   } catch (err: any) {
     systemCertsError = err;
   }
@@ -208,16 +229,18 @@ export async function systemCA(
     !(
       allowCertificatesWithoutIssuer ??
       !!process.env.DEVTOOLS_ALLOW_CERTIFICATES_WITHOUT_ISSUER
-    )
+    ) &&
+    !_tlsSupportsAllowPartialTrustChainFlag
   ) {
     systemCerts = removeCertificatesWithoutIssuer(systemCerts, messages);
   }
 
   return {
     ca: mergeCA(
-      sortByExpirationDate(systemCerts).map((cert) => {
-        return cert.pem;
-      }),
+      (_tlsSupportsAllowPartialTrustChainFlag
+        ? systemCerts
+        : sortByExpirationDate(systemCerts)
+      ).map(({ pem }) => pem),
       rootCertificates,
       existingOptions.ca,
       await readTLSCAFilePromise

@@ -51,7 +51,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort()
-      ).to.deep.equal(['ca', 'lookup']);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -73,7 +73,12 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort()
-      ).to.deep.equal(['autoEncryption', 'ca', 'lookup']);
+      ).to.deep.equal([
+        'allowPartialTrustChain',
+        'autoEncryption',
+        'ca',
+        'lookup',
+      ]);
       expect(mClientType.getCalls()[0].args[1].autoEncryption).to.deep.equal(
         opts.autoEncryption
       );
@@ -114,7 +119,7 @@ describe('devtools connect', function () {
       expect(calls[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort()
-      ).to.deep.equal(['ca', 'lookup']);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -192,7 +197,12 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort()
-      ).to.deep.equal(['autoEncryption', 'ca', 'lookup']);
+      ).to.deep.equal([
+        'allowPartialTrustChain',
+        'autoEncryption',
+        'ca',
+        'lookup',
+      ]);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -230,7 +240,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort()
-      ).to.deep.equal(['ca', 'lookup']);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });

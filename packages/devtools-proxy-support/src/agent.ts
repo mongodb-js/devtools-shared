@@ -49,7 +49,11 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   private _reqLock: Promise<void> | undefined;
   private _reqLockResolve: (() => void) | undefined;
 
-  constructor(proxyOptions: DevtoolsProxyOptions, logger: ProxyLogEmitter) {
+  // allowPartialTrustChain listed here until the Node.js types have it
+  constructor(
+    proxyOptions: DevtoolsProxyOptions & { allowPartialTrustChain?: boolean },
+    logger: ProxyLogEmitter
+  ) {
     // NB: The Node.js HTTP agent implementation overrides request options
     // with agent options. Ideally, we'd want to merge them, but it seems like
     // there is little we can do about it at this point.
@@ -128,7 +132,10 @@ class DevtoolsProxyAgentWithSystemCA extends AgentBase {
     this.proxyOptions = proxyOptions;
     this.agent = (async () => {
       const { ca } = await systemCA({ ca: proxyOptions.ca });
-      return new DevtoolsProxyAgent({ ...proxyOptions, ca }, this.logger);
+      return new DevtoolsProxyAgent(
+        { ...proxyOptions, ca, allowPartialTrustChain: true },
+        this.logger
+      );
     })();
     this.agent.catch(() => {
       /* handled later */

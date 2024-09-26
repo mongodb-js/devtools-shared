@@ -498,7 +498,7 @@ export async function connectMongoClient(
       {},
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
-      { ca }
+      { ca, allowPartialTrustChain: true }
     );
 
     // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
