@@ -425,6 +425,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
           setUTCSeconds: (${newDate}).setUTCSeconds(59),
           setYear: (${newDate}).setYear(96),
           toISOString: (${newDate}).toISOString(),
+          valueOf: (${newDate}.valueOf()),
        }`;
               expect(parse(input, options)).to.deep.equal({
                 getDate: new (Date as any)(...args).getDate(),
@@ -469,6 +470,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
                 setUTCSeconds: new (Date as any)(...args).setUTCSeconds(59),
                 setYear: new (Date as any)(...args).setYear(96), // setYear is deprecated
                 toISOString: new (Date as any)(...args).toISOString(),
+                valueOf: new (Date as any)(...args).valueOf(),
               });
             });
 
