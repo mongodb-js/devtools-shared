@@ -165,13 +165,12 @@ export function sortByExpirationDate(ca: ParsedX509Cert[]) {
   });
 }
 
-const nodeVersion = process.versions.node.slice(1).split('.').map(Number);
+const nodeVersion = process.versions.node.split('.').map(Number);
 
 export function tlsSupportsAllowPartialTrustChainFlag(): boolean {
   // TODO: Remove this flag and all X.509 parsing here once all our products
   // are at least on these Node.js versions
   return (
-    !!(process as any).__tlsSupportsAllowPartialTrustChainFlag || // for mongosh patch
     (nodeVersion[0] >= 22 && nodeVersion[1] >= 9) || // https://github.com/nodejs/node/commit/c2bf0134c
     (nodeVersion[0] === 20 && nodeVersion[1] >= 18)
   ); // https://github.com/nodejs/node/commit/1b3420274
