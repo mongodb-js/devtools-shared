@@ -233,6 +233,7 @@ const ALLOWED_CLASS_EXPRESSIONS: ClassExpressions = lookupMap({
       setUTCSeconds: true,
       setYear: true,
       toISOString: true,
+      valueOf: true,
     }),
   }),
   ISODate: lookupMap({
