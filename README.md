@@ -26,3 +26,6 @@ To create a new workspace:
 npm run create-workspace
 ```
 
+## Contributing
+
+For contributing, please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
