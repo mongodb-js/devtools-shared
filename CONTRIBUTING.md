@@ -33,6 +33,13 @@ After bootstrap is finished, you should be able to run `npm run start` and see C
 
 This monorepo is powered by [`npm workspaces`](https://docs.npmjs.com/cli/v7/using-npm/workspaces) and [`lerna`](https://github.com/lerna/lerna#readme), although not necessary, it might be helpful to have a high level understanding of those tools.
 
+### Publishing Packages
+
+Packages in the monorepo are automatically published when a change is merged into the `main` branch. This is done with a CI workflow. Each change to the `main` branch is analyzed to calculate new versions for impacted packages. A pr with the new versions of each changed package is created by a bot and merged on each new change.
+
+The version of packages is calculated following conventional bumps: https://www.conventionalcommits.org/en/v1.0.0/ 
+See https://github.com/mongodb-js/devtools-shared/blob/main/packages/monorepo-tools/src/bump-packages.ts for details.
+
 ### Add / Update / Remove Dependencies in Packages
 
 To add, remove, or update a dependency in any workspace you can use the usual `npm install` with a `--workspace` argument added, e.g. to add `react-aria` dependency to compass-aggregations and compass-query-bar plugins you can run `npm install --save react-aria --workspace @mongodb-js/compass-aggregations --workspace @mongodb-js/compass-query-bar`.
