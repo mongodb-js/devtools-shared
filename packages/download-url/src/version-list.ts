@@ -77,11 +77,13 @@ function defaultCachePath(): string {
 let fullJSON: FullJSON | undefined;
 let fullJSONFetchTime = 0;
 async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
-  const versionListUrl = opts.versionListUrl ?? 'https://downloads.mongodb.org/full.json';
+  const versionListUrl =
+    opts.versionListUrl ?? 'https://downloads.mongodb.org/full.json';
   const cachePath = opts.cachePath ?? defaultCachePath();
   const cacheTimeMs = opts.cacheTimeMs ?? 24 * 3600 * 1000;
   let tryWriteCache = cacheTimeMs > 0;
-  const inMemoryCopyUpToDate = () => fullJSONFetchTime >= new Date().getTime() - cacheTimeMs;
+  const inMemoryCopyUpToDate = () =>
+    fullJSONFetchTime >= new Date().getTime() - cacheTimeMs;
 
   try {
     if ((!fullJSON || !inMemoryCopyUpToDate()) && cacheTimeMs > 0) {
@@ -89,9 +91,14 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
       const fh = await fs.open(cachePath, 'r');
       try {
         const stat = await fh.stat();
-        if (process.getuid && (stat.uid !== process.getuid() || (stat.mode & 0o022) !== 0)) {
+        if (
+          process.getuid &&
+          (stat.uid !== process.getuid() || (stat.mode & 0o022) !== 0)
+        ) {
           tryWriteCache = false;
-          debug('cannot use cache because it is not a file or we do not own it');
+          debug(
+            'cannot use cache because it is not a file or we do not own it'
+          );
           throw new Error();
         }
         if (stat.mtime.getTime() < new Date().getTime() - cacheTimeMs) {
@@ -106,12 +113,17 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
         await fh.close();
       }
     }
-  } catch {}
+  } catch {
+    // Ignore errors
+  }
+
   if (!fullJSON || !inMemoryCopyUpToDate()) {
     debug('trying to load versions from source', versionListUrl);
     const response = await fetch(versionListUrl);
     if (!response.ok) {
-      throw new Error(`Could not get mongodb versions from ${versionListUrl}: ${response.statusText}`);
+      throw new Error(
+        `Could not get mongodb versions from ${versionListUrl}: ${response.statusText}`
+      );
     }
     fullJSON = await response.json();
     fullJSONFetchTime = new Date().getTime();
@@ -120,17 +132,22 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
       await fs.mkdir(path.dirname(cachePath), { recursive: true });
       try {
         const compressed = await gzip(JSON.stringify(fullJSON), { level: 9 });
-        await fs.writeFile(partialFilePath, compressed, { mode: 0o644, flag: 'wx' });
+        await fs.writeFile(partialFilePath, compressed, {
+          mode: 0o644,
+          flag: 'wx',
+        });
         await fs.rename(partialFilePath, cachePath);
         debug('wrote cache', cachePath);
       } catch {
         try {
           await fs.unlink(partialFilePath);
-        } catch {}
+        } catch {
+          // Ignore errors
+        }
       }
     }
   }
-  return fullJSON;
+  return fullJSON!;
 }
 
 export async function getVersion(opts: VersionListOpts): Promise<VersionInfo> {
@@ -138,12 +155,18 @@ export async function getVersion(opts: VersionListOpts): Promise<VersionInfo> {
   let versions = fullJSON.versions;
   versions = versions.filter((info: VersionInfo) => info.downloads.length > 0);
   if (opts.allowedTags && !opts.allowedTags.includes('*')) {
-    versions = versions.filter((info: VersionInfo) => opts.allowedTags.some(tag => !!info[tag]));
+    versions = versions.filter((info: VersionInfo) =>
+      opts.allowedTags!.some((tag) => !!info[tag as Exclude<ReleaseTag, '*'>])
+    );
   }
   if (opts.version && opts.version !== '*') {
-    versions = versions.filter((info: VersionInfo) => semver.satisfies(info.version, opts.version));
+    versions = versions.filter((info: VersionInfo) =>
+      semver.satisfies(info.version, opts.version!)
+    );
   }
-  versions = versions.sort((a: VersionInfo, b: VersionInfo) => semver.rcompare(a.version, b.version));
+  versions = versions.sort((a: VersionInfo, b: VersionInfo) =>
+    semver.rcompare(a.version, b.version)
+  );
   return versions[0];
 }
 
@@ -154,7 +177,7 @@ export async function clearCache(cachePath?: string): Promise<void> {
   if (cachePath !== '') {
     try {
       await fs.unlink(cachePath ?? defaultCachePath());
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === 'ENOENT') return;
       throw err;
     }

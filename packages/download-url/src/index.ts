@@ -1,13 +1,14 @@
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
-import { getVersion, DownloadInfo, VersionListOpts, clearCache } from './version-list';
+import type { DownloadInfo, VersionListOpts } from './version-list';
+import { getVersion, clearCache } from './version-list';
 import { getCurrentLinuxDistro } from './linux-distro';
 import { inspect } from 'util';
 import _debug from 'debug';
 const debug = _debug('mongodb-download-url');
 
-type PriorityValue<T> = { value: T; priority: number; }
+type PriorityValue<T> = { value: T; priority: number };
 
 type ArtifactOptions = {
   /**
@@ -51,7 +52,7 @@ type ArtifactOptions = {
   /**
    * @deprecated Use arch instead.
    */
-  bits?: '32' | '64' | 32 | 64
+  bits?: '32' | '64' | 32 | 64;
 };
 
 export type Options = ArtifactOptions & VersionListOpts;
@@ -121,7 +122,12 @@ function parseArch(arch: string): string[] {
   return [arch];
 }
 
-async function parseTarget(distro: string | undefined, platform: string, archs: string[], version: string): Promise<PriorityValue<string>[]> {
+async function parseTarget(
+  distro: string | undefined,
+  platform: string,
+  archs: string[],
+  version: string
+): Promise<PriorityValue<string>[]> {
   if (platform === 'linux') {
     const results: PriorityValue<string>[] = [];
     if (distro) {
@@ -145,15 +151,17 @@ async function parseTarget(distro: string | undefined, platform: string, archs: 
 
     let distroResultsErr;
     try {
-      results.push(...await getCurrentLinuxDistro());
+      results.push(...(await getCurrentLinuxDistro()));
     } catch (err) {
       distroResultsErr = err;
     }
-    if (distro === undefined &&
-        distroResultsErr &&
-        (version === '*' ||
-         version === 'latest-alpha' ||
-         semver.gte(version, '4.0.0'))) {
+    if (
+      distro === undefined &&
+      distroResultsErr &&
+      (version === '*' ||
+        version === 'latest-alpha' ||
+        semver.gte(version, '4.0.0'))
+    ) {
       throw distroResultsErr;
     }
     return results;
@@ -163,7 +171,7 @@ async function parseTarget(distro: string | undefined, platform: string, archs: 
     if (archs.includes('i686')) {
       return [
         { value: 'windows', priority: 1 },
-        { value: 'windows_i686', priority: 10 }
+        { value: 'windows_i686', priority: 10 },
       ];
     } else {
       return [
@@ -171,7 +179,7 @@ async function parseTarget(distro: string | undefined, platform: string, archs: 
         { value: 'windows_x86_64', priority: 10 },
         { value: 'windows_x86_64-2008plus', priority: 10 },
         { value: 'windows_x86_64-2008plus-ssl', priority: 100 },
-        { value: 'windows_x86_64-2012plus', priority: 100 }
+        { value: 'windows_x86_64-2012plus', priority: 100 },
       ];
     }
   } else if (['darwin', 'osx', 'macos'].includes(platform)) {
@@ -179,23 +187,23 @@ async function parseTarget(distro: string | undefined, platform: string, archs: 
       { value: 'osx', priority: 1 },
       { value: 'osx-ssl', priority: 10 },
       { value: 'darwin', priority: 1 },
-      { value: 'macos', priority: 1 }
+      { value: 'macos', priority: 1 },
     ];
   }
   return [{ value: platform, priority: 1 }];
 }
 
 async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
-  let download: DownloadInfo;
+  let download: DownloadInfo | undefined;
   if (opts.version === 'latest-alpha' && opts.enterprise) {
     const targets = opts.target.map(({ value }) => value);
     const arch = opts.arch.includes('arm64') ? 'arm64' : 'x86_64';
-    let url, target;
+    let url, target: string | undefined;
     if (targets.includes('macos')) {
       url = `https://downloads.mongodb.com/osx/mongodb-macos-${arch}-enterprise-latest.tgz`;
       target = 'macos';
     } else if (targets.includes('linux_x86_64')) {
-      target = maximizer(opts.target, candidate => candidate.priority).value;
+      target = maximizer(opts.target, (candidate) => candidate.priority)!.value;
       url = `https://downloads.mongodb.com/linux/mongodb-linux-${arch}-enterprise-${target}-latest.tgz`;
     } else if (targets.includes('windows_x86_64')) {
       target = 'windows';
@@ -210,8 +218,8 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
           url,
           sha1: '',
           sha256: '',
-          debug_symbols: ''
-        }
+          debug_symbols: '',
+        },
       };
     }
   }
@@ -222,44 +230,59 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
     if (!version) {
       throw new Error(`Could not find version matching ${inspect(opts)}`);
     }
-    const bestDownload = maximizer(version.downloads.map((candidate: DownloadInfo) => {
-      if (opts.enterprise) {
-        if (candidate.edition !== 'enterprise') {
+    const bestDownload = maximizer(
+      version.downloads.map((candidate: DownloadInfo) => {
+        if (opts.enterprise) {
+          if (candidate.edition !== 'enterprise') {
+            return { value: candidate, priority: 0 };
+          }
+        } else {
+          if (
+            candidate.edition !== 'targeted' &&
+            candidate.edition !== 'base'
+          ) {
+            return { value: candidate, priority: 0 };
+          }
+        }
+
+        if (!candidate.arch || !opts.arch.includes(candidate.arch)) {
           return { value: candidate, priority: 0 };
         }
-      } else {
-        if (candidate.edition !== 'targeted' && candidate.edition !== 'base') {
-          return { value: candidate, priority: 0 };
-        }
-      }
 
-      if (!opts.arch.includes(candidate.arch)) {
-        return { value: candidate, priority: 0 };
-      }
+        const targetPriority = getPriority(opts.target, candidate.target);
+        return { value: candidate, priority: targetPriority };
+      }),
+      (candidate: PriorityValue<DownloadInfo>) => candidate.priority
+    );
 
-      const targetPriority = getPriority(opts.target, candidate.target);
-      return { value: candidate, priority: targetPriority };
-    }), (candidate: PriorityValue<DownloadInfo>) => candidate.priority);
-    if (bestDownload.priority > 0) {
+    if (bestDownload && bestDownload.priority > 0) {
       download = bestDownload.value;
     }
   }
   if (!download) {
-    throw new Error(`Could not find download URL for version ${version?.version} ${inspect(opts)}`);
+    throw new Error(
+      `Could not find download URL for version ${version?.version} ${inspect(
+        opts
+      )}`
+    );
   }
 
   const wantsCryptd = opts.cryptd && download.target;
   const wantsCryptShared = opts.crypt_shared && download.target;
 
   if (wantsCryptShared && !download.crypt_shared && !download.csfle) {
-    throw new Error(`No crypt_shared library download for version ${version?.version} available ${inspect(opts)}`);
+    throw new Error(
+      `No crypt_shared library download for version ${
+        version?.version
+      } available ${inspect(opts)}`
+    );
   }
 
   debug('fully resolved', JSON.stringify(opts, null, 2), download);
   // mongocryptd is contained in the regular enterprise archive, the csfle lib is not
   let { url } = wantsCryptShared
-    ? (download.crypt_shared ?? download.csfle)
-    : ((wantsCryptd ? download.cryptd : null) ?? download.archive);
+    ? (download.crypt_shared ?? download.csfle)!
+    : (wantsCryptd ? download.cryptd : null) ?? download.archive;
   if (wantsCryptd) {
     // cryptd package on Windows was buggy: https://jira.mongodb.org/browse/BUILD-13653
     url = url.replace('mongodb-shell-windows', 'mongodb-cryptd-windows');
@@ -269,24 +292,26 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
     ...opts,
     name: 'mongodb',
     url: url,
-    arch: download.arch,
-    distro: download.target,
-    platform: download.target,
-    filenamePlatform: download.target,
+    arch: download.arch!,
+    distro: download.target!,
+    platform: download.target!,
+    filenamePlatform: download.target!,
     version: version?.version ?? '*',
     artifact: path.basename(url),
     debug: false,
     enterprise: download.edition === 'enterprise',
     branch: 'master',
-    bits: ['i386', 'i686'].includes(download.arch) ? '32' : '64',
-    ext: url.match(/\.([^.]+)$/)?.[1] ?? 'tgz'
+    bits: ['i386', 'i686'].includes(download.arch!) ? '32' : '64',
+    ext: url.match(/\.([^.]+)$/)?.[1] ?? 'tgz',
   };
 }
 
-async function options(opts: Options | string = {}): Promise<ProcessedOptions & VersionListOpts> {
+async function options(
+  opts: Options | string = {}
+): Promise<ProcessedOptions & VersionListOpts> {
   if (typeof opts === 'string') {
     opts = {
-      version: opts
+      version: opts,
     };
   } else {
     opts = { ...opts };
@@ -314,10 +339,15 @@ async function options(opts: Options | string = {}): Promise<ProcessedOptions & 
     opts.allowedTags = ['production_release'];
   }
 
-  if (opts.version === 'stable' || opts.version === 'latest' || opts.version === '*') {
+  if (
+    opts.version === 'stable' ||
+    opts.version === 'latest' ||
+    opts.version === '*'
+  ) {
     opts.version = '*';
     opts.allowedTags ??= ['production_release'];
-  } else if (opts.version === 'rapid' || opts.version === 'continuous') { // a.k.a. quarterly etc.
+  } else if (opts.version === 'rapid' || opts.version === 'continuous') {
+    // a.k.a. quarterly etc.
     opts.version = '*';
     opts.allowedTags ??= ['production_release', 'continuous_release'];
   } else if (opts.version === 'unstable') {
@@ -332,17 +362,20 @@ async function options(opts: Options | string = {}): Promise<ProcessedOptions & 
     enterprise: !!opts.enterprise,
     cryptd: !!opts.cryptd,
     crypt_shared: !!opts.crypt_shared,
-    version: opts.version as string
+    version: opts.version,
   };
   processedOptions.target = await parseTarget(
     opts.distro,
     opts.platform,
     processedOptions.arch,
-    processedOptions.version);
+    processedOptions.version
+  );
   return processedOptions;
 }
 
-export async function getDownloadURL(opts?: Options | string): Promise<DownloadArtifactInfo> {
+export async function getDownloadURL(
+  opts?: Options | string
+): Promise<DownloadArtifactInfo> {
   const parsedOptions = await options(opts);
 
   debug('Building URL for options `%j`', parsedOptions);
