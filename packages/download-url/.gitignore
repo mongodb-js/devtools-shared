@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+.dist/
+.build/
+npm-debug.log
+coverage/
+
+package-lock.json
+.esm-wrapper.mjs
+lib/
+.nyc_output
+tmp-*/

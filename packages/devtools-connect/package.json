@@ -11,7 +11,7 @@
     "access": "public"
   },
   "bugs": {
-    "url": "https://github.com/mongodb-js/devtools-connect/issues"
+    "url": "https://github.com/mongodb-js/devtools-shared/issues"
   },
   "main": "dist/index.js",
   "exports": {
@@ -81,7 +81,7 @@
     "os-dns-native": "^1.2.0",
     "resolve-mongodb-srv": "^1.1.1",
     "sinon-chai": "^3.7.0",
-    "ts-node": "^10.2.1",
+    "ts-node": "^10.9.2",
     "ts-sinon": "^2.0.1",
     "typescript": "^5.0.4"
   },

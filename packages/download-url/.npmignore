@@ -1,0 +1,12 @@
+test/
+coverage/
+.eslintrc
+.jsfmtrc
+.travis.yml
+.DS_Store
+.dist/
+.build/
+npm-debug.log
+coverage/
+.nyc_output
+tmp-*/
