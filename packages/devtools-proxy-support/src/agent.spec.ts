@@ -11,7 +11,6 @@ import type { Server as TLSServer } from 'tls';
 import { createServer as createTLSServer } from 'tls';
 import { promises as fs } from 'fs';
 import type { AddressInfo } from 'net';
-import { tlsSupportsAllowPartialTrustChainFlag } from './system-ca';
 
 describe('createAgent', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -393,11 +392,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
       });
 
       it('can connect using partial trust chains in the system CA list', async function () {
-        if (
-          process.platform !== 'linux' ||
-          !tlsSupportsAllowPartialTrustChainFlag()
-        )
-          return this.skip(); // only really mock-able on Linux
+        if (process.platform !== 'linux') return this.skip(); // only really mock-able on Linux
         resetSystemCACache({
           env: {
             SSL_CERT_FILE: path.join(fixtures, 'ca.pem'),
