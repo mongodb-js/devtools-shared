@@ -12,11 +12,12 @@ async function importNodeFetch(): Promise<typeof fetch> {
   // Node-fetch is an ESM module from 3.x
   // Importing ESM modules to CommonJS is possible with a dynamic import.
   // However, once this is transpiled with TS, `await import()` changes to `require()`, which fails to load
-  // the package at runtime.
+  // the package at runtime for Node < 23.
   // The alternative, to transpile with "moduleResolution": "NodeNext", is not always feasible.
   // Use this function to safely import the node-fetch package
   let module: typeof fetch | { default: typeof fetch };
   try {
+    suppressExperimentalWarningsIfNecessary();
     module = await import('node-fetch');
   } catch (err: unknown) {
     if (
@@ -37,6 +38,35 @@ async function importNodeFetch(): Promise<typeof fetch> {
 
   return typeof module === 'function' ? module : module.default;
 }
+
+let warningsSuppressed = false;
+
+// In Node.js 23 require()ing ESM modules will work, but emit an experimental warning like
+// CommonJS module ABC is loading ES Module XYZ using require().
+// This function suppresses experimental warnings to avoid those leaking into end users' output.
+function suppressExperimentalWarningsIfNecessary() {
+  const nodeMajorVersion = process.versions.node.split('.').map(Number)[0];
+  if (nodeMajorVersion >= 23 && !warningsSuppressed) {
+    const originalEmit = process.emitWarning;
+    process.emitWarning = (warning, ...args: any[]): void => {
+      if (args[0] === 'ExperimentalWarning') {
+        return;
+      }
+
+      if (
+        typeof args[0] === 'object' &&
+        args[0].type === 'ExperimentalWarning'
+      ) {
+        return;
+      }
+
+      originalEmit(warning, ...args);
+    };
+
+    warningsSuppressed = true;
+  }
+}
+
 let cachedFetch: Promise<typeof fetch> | undefined;
 
 export type { Request, Response, RequestInfo, RequestInit };
