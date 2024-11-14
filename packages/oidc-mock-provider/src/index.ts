@@ -24,6 +24,7 @@ export interface TokenMetadata {
   // parameters that are defined this way.
   client_id: string;
   scope: string;
+  nonce?: string;
 }
 
 export type MaybePromise<T> = T | PromiseLike<T>;
@@ -205,6 +206,7 @@ export class OIDCMockProvider {
             code_challenge,
             code_challenge_method,
             state,
+            nonce,
           } = Object.fromEntries(url.searchParams);
           if (response_type !== 'code') {
             throw new Error(`unknown response_type ${response_type}`);
@@ -216,6 +218,7 @@ export class OIDCMockProvider {
               scope,
               code_challenge,
               code_challenge_method,
+              nonce,
             }),
             state,
           }).toString();
@@ -235,6 +238,7 @@ export class OIDCMockProvider {
             code_challenge,
             code_challenge_method,
             isDeviceCode,
+            nonce,
           } = this.retrieveFromStorage(device_code ?? code);
 
           if (!isDeviceCode) {
@@ -267,6 +271,7 @@ export class OIDCMockProvider {
           const { access_token, id_token, expires_in } = await this.issueToken({
             client_id,
             scope,
+            nonce,
           });
 
           // Issue a token response:
@@ -344,6 +349,7 @@ export class OIDCMockProvider {
       scope: metadata.scope,
       iss: this.issuer,
       aud: metadata.client_id,
+      nonce: metadata.nonce,
       ...payload,
     };
     const makeToken = (payload: Record<string, unknown>) => {
