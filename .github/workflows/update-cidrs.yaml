@@ -18,6 +18,10 @@ jobs:
           private-key: ${{ secrets.DEVTOOLS_BOT_PRIVATE_KEY }}
 
       - uses: actions/checkout@v4
+        with:
+          # don't checkout a detatched HEAD
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -27,7 +31,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm -v
-          npm i
+          npm ci
           # make sure precommit.js is compiled
           npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
 
