@@ -1,10 +1,10 @@
 name: Setup app bot
 description: Gets a github app token and configures git with the app's user
 inputs:
-  app_id:
+  app-id:
     description: The app id
     required: true
-  app_private_key:
+  private-key:
     description: The app private key
     required: true
 outputs:
@@ -17,8 +17,8 @@ runs:
     - uses: actions/create-github-app-token@v1
       id: app-token
       with:
-        app-id: ${{ inputs.app_id }}
-        private-key: ${{ inputs.app_private_key }}
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
 
     - name: Get GitHub App User ID
       id: get-user-id
