@@ -1,0 +1,34 @@
+name: Setup app bot
+description: Gets a github app token and configures git with the app's user
+inputs:
+  app-id:
+    description: The app id
+    required: true
+  private-key:
+    description: The app private key
+    required: true
+outputs:
+  token:
+    description: The token to use for the GitHub App
+    value: ${{ steps.app-token.outputs.token }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+
+    - name: Get GitHub App User ID
+      id: get-user-id
+      run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+    - name: Set up Git
+      run: |
+        git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+        git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+      shell: bash
