@@ -8,6 +8,7 @@ import type {
   ConnectMissingOptionalDependencyEvent,
   ConnectUsedSystemCAEvent,
   ConnectLogEmitter,
+  ConnectRetryAfterTLSErrorEvent,
 } from './types';
 
 import { hookLoggerToMongoLogWriter as oidcHookLogger } from '@mongodb-js/oidc-plugin';
@@ -170,6 +171,21 @@ export function hookLogger(
           asyncFallbackError: ev.asyncFallbackError?.message,
           systemCertsError: ev.systemCertsError?.message,
           messages: ev.messages,
+        }
+      );
+    }
+  );
+
+  emitter.on(
+    'devtools-connect:retry-after-tls-error',
+    function (ev: ConnectRetryAfterTLSErrorEvent) {
+      log.info(
+        'DEVTOOLS-CONNECT',
+        mongoLogId(1_000_000_054),
+        `${contextPrefix}-connect`,
+        'Restarting connection attempt after TLS error',
+        {
+          error: ev.error,
         }
       );
     }

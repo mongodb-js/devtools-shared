@@ -1,6 +1,9 @@
 import type { ConnectLogEmitter } from './index';
 import dns from 'dns';
-import { isFastFailureConnectionError } from './fast-failure-connect';
+import {
+  isFastFailureConnectionError,
+  isPotentialTLSCertificateError,
+} from './fast-failure-connect';
 import type {
   MongoClient,
   MongoClientOptions,
@@ -318,7 +321,7 @@ export class DevtoolsConnectionState {
       'productDocsLink' | 'productName' | 'oidc' | 'parentHandle'
     >,
     logger: ConnectLogEmitter,
-    ca: string
+    ca: string | undefined
   ) {
     this.productName = options.productName;
     if (options.parentHandle) {
@@ -339,7 +342,7 @@ export class DevtoolsConnectionState {
           null,
           options
         ),
-        ...addToOIDCPluginHttpOptions(options.oidc, { ca }),
+        ...addToOIDCPluginHttpOptions(options.oidc, ca ? { ca } : {}),
       });
     }
   }
@@ -397,6 +400,11 @@ export interface DevtoolsConnectOptions extends MongoClientOptions {
   applyProxyToOIDC?: boolean;
 }
 
+export type ConnectMongoClientResult = {
+  client: MongoClient;
+  state: DevtoolsConnectionState;
+};
+
 /**
  * Connect a MongoClient. If AutoEncryption is requested, first connect without the encryption options and verify that
  * the connection is to an enterprise cluster. If not, then error, otherwise close the connection and reconnect with the
@@ -407,35 +415,73 @@ export async function connectMongoClient(
   clientOptions: DevtoolsConnectOptions,
   logger: ConnectLogEmitter,
   MongoClientClass: typeof MongoClient
-): Promise<{
-  client: MongoClient;
-  state: DevtoolsConnectionState;
-}> {
+): Promise<ConnectMongoClientResult> {
+  detectAndLogMissingOptionalDependencies(logger);
+
+  const options = { uri, clientOptions, logger, MongoClientClass };
+  // Connect once with the system certificate store added, and if that fails with
+  // a TLS error, try again. In theory adding certificates into the certificate store
+  // should not cause failures, but in practice we have observed some, hence this
+  // double connection establishment logic.
+  // We treat TLS errors as fail-fast errors, so in typical situations (even typical
+  // failure situations) we do not spend an unreasonable amount of time in the first
+  // connection attempt.
+  try {
+    return await connectMongoClientImpl({ ...options, useSystemCA: true });
+  } catch (error: unknown) {
+    if (isPotentialTLSCertificateError(error)) {
+      logger.emit('devtools-connect:retry-after-tls-error', {
+        error: String(error),
+      });
+      try {
+        return await connectMongoClientImpl({ ...options, useSystemCA: false });
+      } catch {}
+    }
+    throw error;
+  }
+}
+
+async function connectMongoClientImpl({
+  uri,
+  clientOptions,
+  logger,
+  MongoClientClass,
+  useSystemCA,
+}: {
+  uri: string;
+  clientOptions: DevtoolsConnectOptions;
+  logger: ConnectLogEmitter;
+  MongoClientClass: typeof MongoClient;
+  useSystemCA: boolean;
+}): Promise<ConnectMongoClientResult> {
   const cleanupOnClientClose: (() => void | Promise<void>)[] = [];
   const runClose = async () => {
     let item: (() => void | Promise<void>) | undefined;
     while ((item = cleanupOnClientClose.shift())) await item();
   };
-  detectAndLogMissingOptionalDependencies(logger);
 
+  let ca: string | undefined;
   try {
-    const {
-      ca,
-      asyncFallbackError,
-      systemCertsError,
-      systemCACount,
-      messages,
-    } = await systemCA({
-      ca: clientOptions.ca,
-      tlsCAFile:
-        clientOptions.tlsCAFile || getConnectionStringParam(uri, 'tlsCAFile'),
-    });
-    logger.emit('devtools-connect:used-system-ca', {
-      caCount: systemCACount,
-      asyncFallbackError,
-      systemCertsError,
-      messages,
-    });
+    if (useSystemCA) {
+      const {
+        ca: caWithSystemCerts,
+        asyncFallbackError,
+        systemCertsError,
+        systemCACount,
+        messages,
+      } = await systemCA({
+        ca: clientOptions.ca,
+        tlsCAFile:
+          clientOptions.tlsCAFile || getConnectionStringParam(uri, 'tlsCAFile'),
+      });
+      logger.emit('devtools-connect:used-system-ca', {
+        caCount: systemCACount,
+        asyncFallbackError,
+        systemCertsError,
+        messages,
+      });
+      ca = caWithSystemCerts;
+    }
 
     // Create a proxy agent, if requested. `useOrCreateAgent()` takes a target argument
     // that can be used to select a proxy for a specific procotol or host;
@@ -448,7 +494,7 @@ export async function connectMongoClient(
           ? clientOptions.proxy
           : {
               ...(clientOptions.proxy as DevtoolsProxyOptions),
-              ca,
+              ...(ca ? { ca } : {}),
             },
         clientOptions.applyProxyToOIDC ? undefined : 'mongodb://'
       );
@@ -498,7 +544,8 @@ export async function connectMongoClient(
       {},
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
-      { ca, allowPartialTrustChain: true }
+      { allowPartialTrustChain: true },
+      ca ? { ca } : {}
     );
 
     // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
