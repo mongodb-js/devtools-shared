@@ -356,6 +356,54 @@ describe('devtools connect', function () {
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
+
+    describe('retryable TLS errors', function () {
+      it('retries TLS errors without system CA integration enabled', async function () {
+        const uri = 'localhost:27017';
+        const mClient = new FakeMongoClient();
+        const mClientType = sinon.stub().returns(mClient);
+        const failure = new (Error as any)('blahblah', {
+          cause: Object.assign(new Error('self-signed cert'), {
+            code: 'SELF_SIGNED_CERT_IN_CHAIN',
+          }),
+        });
+        let earlyFailures = 0;
+        bus.on('devtools-connect:connect-fail-early', () => earlyFailures++);
+
+        mClient.connect = sinon.stub().callsFake(async () => {
+          await new Promise(setImmediate);
+          mClient.emit('serverHeartbeatFailed', {
+            failure,
+            connectionId: uri,
+          });
+          await new Promise(setImmediate);
+          throw failure;
+        });
+        mClient.topology = {
+          description: {
+            servers: new Map([['localhost:27017', {}]]),
+          },
+        };
+
+        try {
+          await connectMongoClient(uri, defaultOpts, bus, mClientType as any);
+          expect.fail('missed exception');
+        } catch (err) {
+          expect(err).to.equal(failure);
+        }
+
+        expect(mClientType.getCalls()).to.have.lengthOf(2);
+        expect(
+          Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
+        expect(
+          Object.keys(mClientType.getCalls()[1].args[1]).sort()
+        ).to.deep.equal(['allowPartialTrustChain', 'lookup']);
+        expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
+
+        expect(earlyFailures).to.equal(2);
+      });
+    });
   });
 
   describe('integration', function () {

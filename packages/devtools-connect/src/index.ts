@@ -5,6 +5,7 @@ export type {
   DevtoolsConnectionState,
   DevtoolsProxyOptions,
   AgentWithInitialize,
+  ConnectMongoClientResult,
 } from './connect';
 export { hookLogger } from './log-hook';
 export { oidcServerRequestHandler } from './oidc/handler';

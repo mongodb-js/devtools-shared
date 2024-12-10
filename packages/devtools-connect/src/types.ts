@@ -58,6 +58,10 @@ export interface ConnectUsedSystemCAEvent {
   messages: string[];
 }
 
+export interface ConnectRetryAfterTLSErrorEvent {
+  error: string;
+}
+
 export interface ConnectEventMap
   extends MongoDBOIDCLogEventsMap,
     ProxyEventMap {
@@ -93,6 +97,10 @@ export interface ConnectEventMap
   ) => void;
   /** Signals that the list of system certificates has been loaded and used for connecting. */
   'devtools-connect:used-system-ca': (ev: ConnectUsedSystemCAEvent) => void;
+  /** Signals that a connection attempt was restarted after a TLS error */
+  'devtools-connect:retry-after-tls-error': (
+    ev: ConnectRetryAfterTLSErrorEvent
+  ) => void;
 }
 
 export type ConnectEventArgs<K extends keyof ConnectEventMap> =
