@@ -11,6 +11,9 @@ outputs:
   token:
     description: The token to use for the GitHub App
     value: ${{ steps.app-token.outputs.token }}
+  app-slug:
+    description: GitHub App slug
+    value: ${{ steps.app-token.outputs.app-slug }}
 runs:
   using: "composite"
   steps:
