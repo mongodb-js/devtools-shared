@@ -45,9 +45,6 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
-  "dependencies": {
-    "lodash": "^4.17.21"
-  },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
     "@mongodb-js/mocha-config-devtools": "^1.0.4",
