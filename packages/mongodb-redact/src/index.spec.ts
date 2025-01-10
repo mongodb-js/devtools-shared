@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import redact from './';
+import { runInNewContext } from 'vm';
 
 /* eslint no-multi-str:0 */
 const PRIVATE_KEY =
@@ -189,6 +190,45 @@ describe('mongodb-redact', function () {
           path: '/Users/thomas/something.txt',
         },
       });
+      expect(res).to.deep.equal({
+        obj: {
+          path: '/Users/<user>/something.txt',
+        },
+      });
+    });
+
+    it('should work on objects with a null prototype', function () {
+      const res = redact({
+        obj: {
+          path: '/Users/thomas/something.txt',
+          __proto__: null,
+        },
+      });
+      expect(res).to.deep.equal({
+        obj: {
+          path: '/Users/<user>/something.txt',
+        },
+      });
+    });
+
+    it('should ignore class instances', function () {
+      const obj = new (class Foo {
+        path = '/Users/thomas/something.txt';
+      })();
+      const res = redact({
+        obj,
+      });
+      expect(res.obj).to.equal(obj);
+    });
+
+    it('should work on objects from another vm context', function () {
+      const res = redact(
+        runInNewContext(`({
+        obj: {
+          path: '/Users/thomas/something.txt',
+        },
+      })`)
+      );
       expect(res).to.deep.equal({
         obj: {
           path: '/Users/<user>/something.txt',

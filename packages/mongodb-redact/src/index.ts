@@ -1,14 +1,35 @@
-import _ from 'lodash';
 import { regexes } from './regexes';
 
-export function redact<T>(message: T): T {
-  if (_.isPlainObject(message)) {
-    // recursively walk through all values of an object
-    return _.mapValues(message as any, redact);
+const plainObjectTag = Object.prototype.toString.call({});
+function isPlainObject(val: unknown): val is object {
+  if (
+    typeof val !== 'object' ||
+    !val ||
+    Object.prototype.toString.call(val) !== plainObjectTag
+  ) {
+    return false;
   }
-  if (_.isArray(message)) {
+  const proto = Object.getPrototypeOf(val);
+  if (proto === null) return true;
+  if (!Object.prototype.hasOwnProperty.call(proto, 'constructor')) return false;
+  const ctor = proto.constructor;
+  if (typeof ctor !== 'function') return ctor;
+  // `ctor === Object` but this works across contexts
+  // (Object is special because Object.__proto__.__proto__ === Object.prototype),
+  const ctorPrototype = Object.getPrototypeOf(ctor);
+  return Object.getPrototypeOf(ctorPrototype) === ctor.prototype;
+}
+
+export function redact<T>(message: T): T {
+  if (isPlainObject(message)) {
+    // recursively walk through all values of an object
+    return Object.fromEntries(
+      Object.entries(message).map(([key, value]) => [key, redact(value)])
+    ) as T;
+  }
+  if (Array.isArray(message)) {
     // walk through array and redact each value
-    return _.map(message, redact) as T;
+    return message.map(redact) as T;
   }
   if (typeof message !== 'string') {
     // all non-string types can be safely returned
