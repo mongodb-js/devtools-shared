@@ -1,0 +1,90 @@
+{
+  "name": "mongodb-log-writer",
+  "description": "A library for writing MongoDB logv2 messages",
+  "version": "2.0.0",
+  "author": {
+    "name": "MongoDB Inc",
+    "email": "compass@mongodb.com"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://jira.mongodb.org/projects/COMPASS/issues",
+    "email": "compass@mongodb.com"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "keywords": [
+    "mongodb",
+    "log",
+    "logv2"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": {
+        "default": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "import": {
+        "default": "./.esm-wrapper.mjs",
+        "types": "./dist/index.d.ts"
+      }
+    },
+    "./mongo-log-writer": {
+      "default": "./dist/mongo-log-writer.js",
+      "types": "./dist/mongo-log-writer.d.ts"
+    },
+    "./mongo-log-manager": {
+      "default": "./dist/mongo-log-manager.js",
+      "types": "./dist/mongo-log-manager.d.ts"
+    }
+  },
+  "files": [
+    "LICENSE",
+    "dist",
+    "package.json",
+    "README.md",
+    ".esm-wrapper.mjs"
+  ],
+  "scripts": {
+    "lint": "eslint src/**/*.ts",
+    "test-only": "nyc mocha --colors -r ts-node/register src/**.spec.ts",
+    "test": "npm run lint && npm run build && npm run test-only",
+    "build": "npm run compile-ts && gen-esm-wrapper . ./.esm-wrapper.mjs",
+    "prepack": "npm run build",
+    "compile-ts": "tsc -p tsconfig.json"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "heap-js": "^2.3.0"
+  },
+  "peerDependencies": {
+    "bson": "6.x"
+  },
+  "devDependencies": {
+    "@mongodb-js/eslint-config-devtools": "0.9.10",
+    "@mongodb-js/mocha-config-devtools": "^1.0.4",
+    "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@mongodb-js/tsconfig-devtools": "^1.0.2",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
+    "@types/semver": "^7.5.0",
+    "@types/sinon-chai": "^3.2.5",
+    "acorn": "^8.8.0",
+    "chai": "^4.3.6",
+    "depcheck": "^1.4.1",
+    "eslint": "^7.25.0",
+    "gen-esm-wrapper": "^1.1.0",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
+    "prettier": "2.3.2",
+    "sinon": "^9.2.3",
+    "typescript": "^5.0.4"
+  }
+}
