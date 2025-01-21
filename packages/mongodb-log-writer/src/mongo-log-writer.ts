@@ -63,6 +63,10 @@ function validateLogEntry(info: MongoLogEntry): Error | null {
   return null;
 }
 
+export type MongoLogWriterOptions = {
+  isDisabled?: boolean;
+};
+
 /**
  * A helper class for writing formatted log information to an output stream.
  * This class itself is an object-mode Writable stream to which
@@ -72,10 +76,11 @@ function validateLogEntry(info: MongoLogEntry): Error | null {
  * the target stream.
  */
 export class MongoLogWriter extends Writable {
-  _logId: string;
-  _logFilePath: string | null;
-  _target: PlainWritable;
-  _now: () => Date;
+  private _logId: string;
+  private _logFilePath: string | null;
+  private _target: PlainWritable;
+  private _now: () => Date;
+  private _isDisabled: boolean;
 
   /**
    * @param logId A unique identifier for this log file. This is not used outside the `logId` getter.
@@ -87,13 +92,15 @@ export class MongoLogWriter extends Writable {
     logId: string,
     logFilePath: string | null,
     target: PlainWritable,
-    now?: () => Date
+    now?: () => Date,
+    { isDisabled = false }: MongoLogWriterOptions = {}
   ) {
     super({ objectMode: true });
     this._logId = logId;
     this._logFilePath = logFilePath;
     this._target = target;
     this._now = now ?? (() => new Date());
+    this._isDisabled = isDisabled;
   }
 
   /** Return the logId passed to the constructor. */
@@ -109,6 +116,21 @@ export class MongoLogWriter extends Writable {
   /** Return the target stream that was used to create this MongoLogWriter instance. */
   get target(): PlainWritable {
     return this._target;
+  }
+
+  /**
+   * Return whether the logger is currently disabled.
+   */
+  get isDisabled() {
+    return this._isDisabled;
+  }
+
+  disable(): void {
+    this._isDisabled = true;
+  }
+
+  enable(): void {
+    this._isDisabled = false;
   }
 
   _write(
@@ -186,6 +208,13 @@ export class MongoLogWriter extends Writable {
     await new Promise((resolve) => this._target.write('', resolve));
   }
 
+  writeIfEnabled(chunk: Parameters<typeof this.write>[0]): void {
+    if (this._isDisabled) {
+      return;
+    }
+    this.write(chunk);
+  }
+
   /**
    * Write a log entry with severity 'I'.
    */
@@ -204,7 +233,7 @@ export class MongoLogWriter extends Writable {
       msg: message,
       attr: attr,
     };
-    this.write(logEntry);
+    this.writeIfEnabled(logEntry);
   }
 
   /**
@@ -225,7 +254,7 @@ export class MongoLogWriter extends Writable {
       msg: message,
       attr: attr,
     };
-    this.write(logEntry);
+    this.writeIfEnabled(logEntry);
   }
 
   /**
@@ -246,7 +275,7 @@ export class MongoLogWriter extends Writable {
       msg: message,
       attr: attr,
     };
-    this.write(logEntry);
+    this.writeIfEnabled(logEntry);
   }
 
   /**
@@ -267,7 +296,7 @@ export class MongoLogWriter extends Writable {
       msg: message,
       attr: attr,
     };
-    this.write(logEntry);
+    this.writeIfEnabled(logEntry);
   }
 
   /**
@@ -289,7 +318,7 @@ export class MongoLogWriter extends Writable {
       msg: message,
       attr: attr,
     };
-    this.write(logEntry);
+    this.writeIfEnabled(logEntry);
   }
 
   /**

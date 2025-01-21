@@ -5,11 +5,107 @@ import stream from 'stream';
 import { inspect } from 'util';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
+import sinon from 'sinon';
 chai.use(sinonChai);
 
 describe('MongoLogWriter', function () {
+  const now = new Date(1628591965386);
+
+  describe('enabling and disabling', function () {
+    let writer: MongoLogWriter;
+    let target: stream.PassThrough;
+    let writeSpy: sinon.SinonSpy;
+
+    const SEVERITIES_COUNT = 5;
+
+    function logAllSeverities(writer: MongoLogWriter) {
+      writer.info('component', mongoLogId(12345), 'context', 'message', {});
+      writer.warn('component', mongoLogId(12345), 'context', 'message', {});
+      writer.error('component', mongoLogId(12345), 'context', 'message', {});
+      writer.debug('component', mongoLogId(12345), 'context', 'message', {});
+      writer.fatal('component', mongoLogId(12345), 'context', 'message', {});
+    }
+
+    beforeEach(function () {
+      target = new stream.PassThrough().setEncoding('utf8');
+      writer = new MongoLogWriter('logid', null, target, () => now);
+      writeSpy = sinon.spy(writer, 'write');
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it('is enabled by default', async function () {
+      expect(writer.isDisabled).to.equal(false);
+
+      writer.info('component', mongoLogId(12345), 'context', 'message', {});
+
+      await writer.flush();
+
+      expect(target.read()).is.not.null;
+      expect(writeSpy).callCount(1);
+    });
+
+    it('can be disabled on initialization', async function () {
+      const disabledWriter = new MongoLogWriter(
+        'logid',
+        null,
+        target,
+        () => now,
+        {
+          isDisabled: true,
+        }
+      );
+
+      expect(disabledWriter.isDisabled).to.equal(true);
+      logAllSeverities(disabledWriter);
+
+      await disabledWriter.flush();
+
+      expect(target.read()).is.null;
+      expect(writeSpy).not.called;
+    });
+
+    it('can run disable() to disable logging across all severities', function () {
+      expect(writer.isDisabled).to.equal(false);
+
+      logAllSeverities(writer);
+
+      expect(writeSpy).callCount(SEVERITIES_COUNT);
+
+      writer.disable();
+
+      expect(writer.isDisabled).to.equal(true);
+
+      logAllSeverities(writer);
+
+      expect(writeSpy).callCount(SEVERITIES_COUNT);
+    });
+
+    it('can run enable() after being disabled', async function () {
+      expect(writer.isDisabled).to.equal(false);
+
+      writer.disable();
+      expect(writer.isDisabled).to.equal(true);
+
+      logAllSeverities(writer);
+
+      expect(writeSpy).not.called;
+
+      writer.enable();
+      expect(writer.isDisabled).to.equal(false);
+
+      logAllSeverities(writer);
+
+      await writer.flush();
+
+      expect(target.read()).not.null;
+      expect(writeSpy).callCount(SEVERITIES_COUNT);
+    });
+  });
+
   it('allows writing log messages to a stream', async function () {
-    const now = new Date(1628591965386);
     const target = new stream.PassThrough().setEncoding('utf8');
     const writer = new MongoLogWriter('logid', null, target, () => now);
     const logEvents: MongoLogEntry[] = [];
