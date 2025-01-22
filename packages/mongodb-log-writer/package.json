@@ -56,6 +56,7 @@
     "lint": "eslint src/**/*.ts",
     "test-only": "nyc mocha --colors -r ts-node/register src/**.spec.ts",
     "test": "npm run lint && npm run build && npm run test-only",
+    "test-ci": "npm run test",
     "build": "npm run compile-ts && gen-esm-wrapper . ./.esm-wrapper.mjs",
     "prepack": "npm run build",
     "compile-ts": "tsc -p tsconfig.json"
