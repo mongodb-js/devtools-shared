@@ -222,8 +222,11 @@ describe('MongoLogManager', function () {
       onerror,
       gzip: true,
     });
-    const logWriter = await manager.createLogWriter({ isDisabled: true });
+    const writer = await manager.createLogWriter({ isDisabled: true });
 
-    expect(logWriter.isDisabled).is.true;
+    expect(writer.isDisabled).is.true;
+
+    writer.end();
+    await once(writer, 'finish');
   });
 });

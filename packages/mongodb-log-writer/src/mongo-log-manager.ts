@@ -143,7 +143,12 @@ export class MongoLogManager {
       });
     }
     if (!logWriter) {
-      logWriter = new MongoLogWriter({ logId, logFilePath, target: stream });
+      logWriter = new MongoLogWriter({
+        ...writerOptions,
+        logId,
+        logFilePath,
+        target: stream,
+      });
     }
 
     // We use 'log-finish' to give consumers an event that they can

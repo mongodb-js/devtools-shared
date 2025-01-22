@@ -2,6 +2,7 @@ import type { MongoLogEntry } from '.';
 import { MongoLogWriter, mongoLogId } from '.';
 import { EJSON } from 'bson';
 import stream from 'stream';
+import { once } from 'events';
 import { inspect } from 'util';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
@@ -37,7 +38,9 @@ describe('MongoLogWriter', function () {
       writeSpy = sinon.spy(writer, 'write');
     });
 
-    afterEach(function () {
+    afterEach(async function () {
+      writer.end();
+      await once(writer, 'finish');
       sinon.restore();
     });
 
@@ -58,6 +61,7 @@ describe('MongoLogWriter', function () {
         logFilePath: null,
         target,
         now: () => now,
+        isDisabled: true,
       });
 
       expect(disabledWriter.isDisabled).to.equal(true);

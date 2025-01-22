@@ -1,5 +1,5 @@
-import { hookLogger } from '../';
-import type { ConnectLogEmitter } from '../';
+import { hookLogger } from './';
+import type { ConnectLogEmitter } from './';
 import { EventEmitter } from 'events';
 import { MongoLogWriter } from 'mongodb-log-writer';
 import { redactConnectionString } from 'mongodb-connection-string-url';
@@ -9,12 +9,12 @@ import { expect } from 'chai';
 describe('Logging setup', function () {
   it('logs events', async function () {
     const pt = new PassThrough();
-    const log = new MongoLogWriter(
-      'logid',
-      null,
-      pt,
-      () => new Date('2021-12-16T14:35:08.763Z')
-    );
+    const log = new MongoLogWriter({
+      logId: 'logid',
+      logFilePath: null,
+      target: pt,
+      now: () => new Date('2021-12-16T14:35:08.763Z'),
+    });
     const emitter: ConnectLogEmitter = new EventEmitter();
 
     hookLogger(emitter, log, 'prefix', redactConnectionString);
