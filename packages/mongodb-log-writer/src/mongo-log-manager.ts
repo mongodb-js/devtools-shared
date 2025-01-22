@@ -4,11 +4,12 @@ import { once } from 'events';
 import { createWriteStream, promises as fs } from 'fs';
 import { createGzip, constants as zlibConstants } from 'zlib';
 import { Heap } from 'heap-js';
+import type { MongoLogWriterOptions } from './mongo-log-writer';
 import { MongoLogWriter } from './mongo-log-writer';
 import { Writable } from 'stream';
 
 /** Options used by MongoLogManager instances. */
-interface MongoLogOptions {
+export interface MongoLogManagerOptions {
   /** A base directory in which log files are stored. */
   directory: string;
   /** Whether to write files as .gz files or not. */
@@ -29,9 +30,9 @@ interface MongoLogOptions {
  * naming convention `${logId}_log`.
  */
 export class MongoLogManager {
-  _options: MongoLogOptions;
+  _options: MongoLogManagerOptions;
 
-  constructor(options: MongoLogOptions) {
+  constructor(options: MongoLogManagerOptions) {
     this._options = options;
   }
 
@@ -97,7 +98,9 @@ export class MongoLogManager {
   }
 
   /** Create a MongoLogWriter stream for a new log file. */
-  async createLogWriter(): Promise<MongoLogWriter> {
+  async createLogWriter(
+    writerOptions: Pick<MongoLogWriterOptions, 'isDisabled'> = {}
+  ): Promise<MongoLogWriter> {
     const logId = new ObjectId().toString();
     const doGzip = !!this._options.gzip;
     const logFilePath = path.join(
@@ -132,10 +135,15 @@ export class MongoLogManager {
         },
       });
       originalTarget = stream;
-      logWriter = new MongoLogWriter(logId, null, stream);
+      logWriter = new MongoLogWriter({
+        ...writerOptions,
+        logId,
+        logFilePath: null,
+        target: stream,
+      });
     }
     if (!logWriter) {
-      logWriter = new MongoLogWriter(logId, logFilePath, stream);
+      logWriter = new MongoLogWriter({ logId, logFilePath, target: stream });
     }
 
     // We use 'log-finish' to give consumers an event that they can

@@ -28,7 +28,12 @@ describe('MongoLogWriter', function () {
 
     beforeEach(function () {
       target = new stream.PassThrough().setEncoding('utf8');
-      writer = new MongoLogWriter('logid', null, target, () => now);
+      writer = new MongoLogWriter({
+        logId: 'logid',
+        logFilePath: null,
+        target,
+        now: () => now,
+      });
       writeSpy = sinon.spy(writer, 'write');
     });
 
@@ -48,15 +53,12 @@ describe('MongoLogWriter', function () {
     });
 
     it('can be disabled on initialization', async function () {
-      const disabledWriter = new MongoLogWriter(
-        'logid',
-        null,
+      const disabledWriter = new MongoLogWriter({
+        logId: 'logid',
+        logFilePath: null,
         target,
-        () => now,
-        {
-          isDisabled: true,
-        }
-      );
+        now: () => now,
+      });
 
       expect(disabledWriter.isDisabled).to.equal(true);
       logAllSeverities(disabledWriter);
@@ -107,7 +109,12 @@ describe('MongoLogWriter', function () {
 
   it('allows writing log messages to a stream', async function () {
     const target = new stream.PassThrough().setEncoding('utf8');
-    const writer = new MongoLogWriter('logid', null, target, () => now);
+    const writer = new MongoLogWriter({
+      logId: 'logid',
+      logFilePath: null,
+      target,
+      now: () => now,
+    });
     const logEvents: MongoLogEntry[] = [];
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     writer.on('log', (entry) => logEvents.push(entry));
@@ -207,7 +214,12 @@ describe('MongoLogWriter', function () {
   it('can log error object as data as-is', async function () {
     const now = new Date(1628591965386);
     const target = new stream.PassThrough().setEncoding('utf8');
-    const writer = new MongoLogWriter('logid', null, target, () => now);
+    const writer = new MongoLogWriter({
+      logId: 'logid',
+      logFilePath: null,
+      target,
+      now: () => now,
+    });
     writer.error(
       'component',
       mongoLogId(12345),
@@ -233,7 +245,12 @@ describe('MongoLogWriter', function () {
   it('can log non-trivial data', async function () {
     const now = new Date(1628591965386);
     const target = new stream.PassThrough().setEncoding('utf8');
-    const writer = new MongoLogWriter('logid', null, target, () => now);
+    const writer = new MongoLogWriter({
+      logId: 'logid',
+      logFilePath: null,
+      target,
+      now: () => now,
+    });
 
     const cyclic: any = {};
     cyclic.cyclic = cyclic;
@@ -256,7 +273,11 @@ describe('MongoLogWriter', function () {
     const errors: Error[] = [];
     function tryWrite(input: any) {
       const target = new stream.PassThrough().setEncoding('utf8');
-      const writer = new MongoLogWriter('logid', null, target);
+      const writer = new MongoLogWriter({
+        logId: 'logid',
+        logFilePath: null,
+        target,
+      });
       writer.on('error', (err) => errors.push(err));
       writer.write(input);
     }

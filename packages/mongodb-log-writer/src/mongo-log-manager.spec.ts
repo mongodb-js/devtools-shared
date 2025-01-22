@@ -213,4 +213,17 @@ describe('MongoLogManager', function () {
     writer.end();
     await once(writer, 'finish');
   });
+
+  it('can create a disabled writer', async function () {
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      onwarn,
+      onerror,
+      gzip: true,
+    });
+    const logWriter = await manager.createLogWriter({ isDisabled: true });
+
+    expect(logWriter.isDisabled).is.true;
+  });
 });

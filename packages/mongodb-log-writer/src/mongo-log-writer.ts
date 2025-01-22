@@ -65,6 +65,10 @@ function validateLogEntry(info: MongoLogEntry): Error | null {
 
 export type MongoLogWriterOptions = {
   isDisabled?: boolean;
+  logId: string;
+  logFilePath: string | null;
+  target: PlainWritable;
+  now?: () => Date;
 };
 
 /**
@@ -88,13 +92,13 @@ export class MongoLogWriter extends Writable {
    * @param target The Writable stream to write data to.
    * @param now An optional function that overrides computation of the current time. This is used for testing.
    */
-  constructor(
-    logId: string,
-    logFilePath: string | null,
-    target: PlainWritable,
-    now?: () => Date,
-    { isDisabled = false }: MongoLogWriterOptions = {}
-  ) {
+  constructor({
+    logId,
+    logFilePath,
+    target,
+    now,
+    isDisabled = false,
+  }: MongoLogWriterOptions) {
     super({ objectMode: true });
     this._logId = logId;
     this._logFilePath = logFilePath;
