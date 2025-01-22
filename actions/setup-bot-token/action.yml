@@ -15,7 +15,7 @@ outputs:
     description: GitHub App slug
     value: ${{ steps.app-token.outputs.app-slug }}
   app-email:
-    description: The generated email for the Github App
+    description: The generated email for the GitHub App
     value: ${{ steps.get-user-email.outputs.user-email }}
 runs:
   using: "composite"
@@ -33,7 +33,7 @@ runs:
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
-    - name: Get Github app User email
+    - name: Get GitHub App User email
       id: get-user-email
       run: echo "user-email=${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com" >> "$GITHUB_OUTPUT"
       shell: bash
