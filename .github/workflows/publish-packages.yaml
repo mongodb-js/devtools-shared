@@ -7,6 +7,9 @@ on:
     types:
       - completed
 
+permissions:
+  contents: none # we use the github app's token to checkout and push
+
 jobs:
   publish:
     if: |

@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: none # we use the github app's token to checkout and push
+
 jobs:
   update_generated_files:
     name: Bump packages
