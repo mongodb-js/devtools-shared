@@ -170,9 +170,11 @@ async function resolveMongodbSrv(
         error,
         duringLoad: true,
         resolutionDetails,
+        durationMs: null,
       });
     }
     if (resolveDnsHelpers !== undefined) {
+      const dnsResolutionStart = Date.now();
       try {
         const {
           wasNativelyLookedUp,
@@ -181,6 +183,7 @@ async function resolveMongodbSrv(
         const resolved = await resolveDnsHelpers.resolve(uri, {
           dns: {
             resolveSrv(hostname: string, cb: Parameters<typeof resolveSrv>[1]) {
+              const start = Date.now();
               resolveSrv(
                 hostname,
                 (...args: Parameters<Parameters<typeof resolveSrv>[1]>) => {
@@ -189,6 +192,7 @@ async function resolveMongodbSrv(
                     hostname,
                     error: args[0]?.message,
                     wasNativelyLookedUp: wasNativelyLookedUp(args[1]),
+                    durationMs: Date.now() - start,
                   });
                   cb(...args);
                 }
@@ -198,11 +202,13 @@ async function resolveMongodbSrv(
               resolveTxt(
                 hostname,
                 (...args: Parameters<Parameters<typeof resolveTxt>[1]>) => {
+                  const start = Date.now();
                   resolutionDetails.push({
                     query: 'TXT',
                     hostname,
                     error: args[0]?.message,
                     wasNativelyLookedUp: wasNativelyLookedUp(args[1]),
+                    durationMs: Date.now() - start,
                   });
                   cb(...args);
                 }
@@ -214,6 +220,7 @@ async function resolveMongodbSrv(
           from: uri,
           to: resolved,
           resolutionDetails,
+          durationMs: Date.now() - dnsResolutionStart,
         });
         return resolved;
       } catch (error: any) {
@@ -222,6 +229,7 @@ async function resolveMongodbSrv(
           error,
           duringLoad: false,
           resolutionDetails,
+          durationMs: Date.now() - dnsResolutionStart,
         });
         throw error;
       }

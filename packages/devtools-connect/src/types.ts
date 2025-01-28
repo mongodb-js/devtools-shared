@@ -31,6 +31,7 @@ export interface ConnectDnsResolutionDetail {
   hostname: string;
   error?: string;
   wasNativelyLookedUp?: boolean;
+  durationMs: number;
 }
 
 export interface ConnectResolveSrvErrorEvent {
@@ -38,12 +39,14 @@ export interface ConnectResolveSrvErrorEvent {
   error: Error;
   duringLoad: boolean;
   resolutionDetails: ConnectDnsResolutionDetail[];
+  durationMs: number | null;
 }
 
 export interface ConnectResolveSrvSucceededEvent {
   from: string;
   to: string;
   resolutionDetails: ConnectDnsResolutionDetail[];
+  durationMs: number | null;
 }
 
 export interface ConnectMissingOptionalDependencyEvent {

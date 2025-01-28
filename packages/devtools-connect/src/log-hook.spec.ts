@@ -55,8 +55,10 @@ describe('Logging setup', function () {
           hostname: 'hello.world',
           error: 'failed',
           wasNativelyLookedUp: false,
+          durationMs: 1,
         },
       ],
+      durationMs: 2,
     });
     emitter.emit('devtools-connect:resolve-srv-succeeded', {
       from: 'mongodb+srv://foo:bar@hello.world/',
@@ -67,8 +69,10 @@ describe('Logging setup', function () {
           hostname: 'hello.world',
           error: undefined,
           wasNativelyLookedUp: true,
+          durationMs: 3,
         },
       ],
+      durationMs: 4,
     });
     emitter.emit('devtools-connect:missing-optional-dependency', {
       name: 'kerberos',
@@ -169,8 +173,10 @@ describe('Logging setup', function () {
               error: 'failed',
               hostname: 'hello.world',
               wasNativelyLookedUp: false,
+              durationMs: 1,
             },
           ],
+          durationMs: 2,
         },
       },
       {
@@ -189,8 +195,10 @@ describe('Logging setup', function () {
               error: null,
               hostname: 'hello.world',
               wasNativelyLookedUp: true,
+              durationMs: 3,
             },
           ],
+          durationMs: 4,
         },
       },
       {

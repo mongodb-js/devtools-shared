@@ -120,6 +120,7 @@ export function hookLogger(
           error: ev.error?.message,
           duringLoad: ev.duringLoad,
           resolutionDetails: ev.resolutionDetails,
+          durationMs: ev.durationMs,
         }
       );
     }
@@ -137,6 +138,7 @@ export function hookLogger(
           from: redactURICredentials(ev.from),
           to: redactURICredentials(ev.to),
           resolutionDetails: ev.resolutionDetails,
+          durationMs: ev.durationMs,
         }
       );
     }
