@@ -61,6 +61,19 @@ describe('MongoLogManager', function () {
     expect(log[0].t.$date).to.be.a('string');
   });
 
+  it('can take a custom prefix for log files', async function () {
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      prefix: 'custom_',
+      onwarn,
+      onerror,
+    });
+
+    const writer = await manager.createLogWriter();
+    expect(writer.logFilePath as string).to.match(/custom_/);
+  });
+
   it('cleans up old log files when requested', async function () {
     retentionDays = 0.000001; // 86.4 ms
     const manager = new MongoLogManager({
@@ -131,8 +144,8 @@ describe('MongoLogManager', function () {
       directory,
       retentionDays,
       retentionGB: 3,
-      onwarn,
       onerror,
+      onwarn,
     });
 
     const offset = Math.floor(Date.now() / 1000);
@@ -178,7 +191,57 @@ describe('MongoLogManager', function () {
     expect(leftoverFiles).deep.equals([faultyFile, ...validFiles.slice(3)]);
   });
 
-  it('cleans up least recent log files when over a storage limit', async function () {
+  it('cleanup only applies to files with the prefix, if set', async function () {
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      maxLogFileCount: 7,
+      prefix: 'custom_',
+      onwarn,
+      onerror,
+    });
+
+    const paths: string[] = [];
+    const offset = Math.floor(Date.now() / 1000);
+
+    // Create 4 files: 2 with a different prefix and 2 with no prefix
+    for (let i = 1; i >= 0; i--) {
+      const withoutPrefix = path.join(
+        directory,
+        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+      );
+      await fs.writeFile(withoutPrefix, '');
+      paths.push(withoutPrefix);
+
+      const withDifferentPrefix = path.join(
+        directory,
+        'different_' +
+          ObjectId.createFromTime(offset - i).toHexString() +
+          '_log'
+      );
+      await fs.writeFile(withDifferentPrefix, '');
+      paths.push(withDifferentPrefix);
+    }
+
+    // Create 10 files with the prefix
+    for (let i = 9; i >= 0; i--) {
+      const filename = path.join(
+        directory,
+        `custom_${ObjectId.createFromTime(offset - i).toHexString()}_log`
+      );
+      await fs.writeFile(filename, '');
+      paths.push(filename);
+    }
+
+    expect(await getFilesState(paths)).to.equal('11111111111111');
+    await manager.cleanupOldLogFiles();
+
+    // The first 4 files without the right prefix should still be there.
+    // The next (oldest) 3 files with the prefix should be deleted.
+    expect(await getFilesState(paths)).to.equal('11110001111111');
+  });
+
+  it('cleans up least recent log files when requested with a storage limit', async function () {
     const manager = new MongoLogManager({
       directory,
       retentionDays,
