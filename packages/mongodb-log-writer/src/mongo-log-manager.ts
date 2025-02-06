@@ -17,6 +17,8 @@ interface MongoLogOptions {
   retentionDays: number;
   /** The maximal number of log files which are kept. */
   maxLogFileCount?: number;
+  /** The maximal GB of log files which are kept. */
+  logRetentionGB?: number;
   /** A handler for warnings related to a specific filesystem path. */
   onerror: (err: Error, path: string) => unknown | Promise<void>;
   /** A handler for errors related to a specific filesystem path. */
@@ -54,7 +56,14 @@ export class MongoLogManager {
     const leastRecentFileHeap = new Heap<{
       fileTimestamp: number;
       fullPath: string;
+      fileSize?: number;
     }>((a, b) => a.fileTimestamp - b.fileTimestamp);
+
+    const storageSizeLimit = this._options.logRetentionGB
+      ? this._options.logRetentionGB * 1024 * 1024 * 1024
+      : Infinity;
+    let usedStorageSize = this._options.logRetentionGB ? 0 : -Infinity;
+    // eslint-disable-next-line no-console
 
     for await (const dirent of dirHandle) {
       // Cap the overall time spent inside this function. Consider situations like
@@ -69,23 +78,53 @@ export class MongoLogManager {
       if (!id) continue;
       const fileTimestamp = +new ObjectId(id).getTimestamp();
       const fullPath = path.join(dir, dirent.name);
-      let toDelete: string | undefined;
+      let toDelete:
+        | {
+            fullPath: string;
+            /** If the file wasn't deleted right away and there is a
+             *  retention size limit, its size should be accounted */
+            fileSize?: number;
+          }
+        | undefined;
 
       // If the file is older than expected, delete it. If the file is recent,
       // add it to the list of seen files, and if that list is too large, remove
       // the least recent file we've seen so far.
       if (fileTimestamp < deletionCutoffTimestamp) {
-        toDelete = fullPath;
-      } else if (this._options.maxLogFileCount) {
-        leastRecentFileHeap.push({ fullPath, fileTimestamp });
-        if (leastRecentFileHeap.size() > this._options.maxLogFileCount) {
-          toDelete = leastRecentFileHeap.pop()?.fullPath;
+        toDelete = {
+          fullPath,
+        };
+      } else if (
+        this._options.logRetentionGB ||
+        this._options.maxLogFileCount
+      ) {
+        const fileSize = (await fs.stat(fullPath)).size;
+        if (this._options.logRetentionGB) {
+          usedStorageSize += fileSize;
+        }
+
+        leastRecentFileHeap.push({
+          fullPath,
+          fileTimestamp,
+          fileSize,
+        });
+
+        const reachedMaxStorageSize = usedStorageSize > storageSizeLimit;
+        const reachedMaxFileCount =
+          this._options.maxLogFileCount &&
+          leastRecentFileHeap.size() > this._options.maxLogFileCount;
+
+        if (reachedMaxStorageSize || reachedMaxFileCount) {
+          toDelete = leastRecentFileHeap.pop();
         }
       }
 
       if (!toDelete) continue;
       try {
-        await fs.unlink(toDelete);
+        await fs.unlink(toDelete.fullPath);
+        if (toDelete.fileSize) {
+          usedStorageSize -= toDelete.fileSize;
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         if (err?.code !== 'ENOENT') {

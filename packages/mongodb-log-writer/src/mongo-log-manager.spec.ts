@@ -86,6 +86,19 @@ describe('MongoLogManager', function () {
     }
   });
 
+  const getFilesState = async (paths: string[]) => {
+    return (
+      await Promise.all(
+        paths.map((path) =>
+          fs.stat(path).then(
+            () => 1,
+            () => 0
+          )
+        )
+      )
+    ).join('');
+  };
+
   it('cleans up least recent log files when requested', async function () {
     const manager = new MongoLogManager({
       directory,
@@ -106,21 +119,38 @@ describe('MongoLogManager', function () {
       paths.unshift(filename);
     }
 
-    const getFiles = async () => {
-      return (
-        await Promise.all(
-          paths.map((path) =>
-            fs.stat(path).then(
-              () => 1,
-              () => 0
-            )
-          )
-        )
-      ).join('');
-    };
-    expect(await getFiles()).to.equal('1111111111');
+    expect(await getFilesState(paths)).to.equal('1111111111');
     await manager.cleanupOldLogFiles();
-    expect(await getFiles()).to.equal('0000011111');
+    expect(await getFilesState(paths)).to.equal('0000011111');
+  });
+
+  it('cleans up least recent log files when requested with a storage limit', async function () {
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      maxLogFileCount: 1000,
+      // 6 KB
+      logRetentionGB: 6 / 1024 / 1024,
+      onwarn,
+      onerror,
+    });
+
+    const paths: string[] = [];
+    const offset = Math.floor(Date.now() / 1000);
+
+    // Create 10 files of 1 KB each.
+    for (let i = 0; i < 10; i++) {
+      const filename = path.join(
+        directory,
+        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+      );
+      await fs.writeFile(filename, '0'.repeat(1024));
+      paths.unshift(filename);
+    }
+
+    expect(await getFilesState(paths)).to.equal('1111111111');
+    await manager.cleanupOldLogFiles();
+    expect(await getFilesState(paths)).to.equal('0000111111');
   });
 
   it('cleaning up old log files is a no-op by default', async function () {
