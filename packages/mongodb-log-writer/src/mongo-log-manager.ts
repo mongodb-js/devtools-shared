@@ -36,7 +36,7 @@ export class MongoLogManager {
   }
 
   /** Clean up log files older than `retentionDays`. */
-  async cleanupOldLogFiles(maxDurationMs = 5_000): Promise<void> {
+  async cleanupOldLogFiles(maxDurationMs = 5_000, remainingRetries = 1): Promise<void> {
     const dir = this._options.directory;
     let dirHandle;
     try {
@@ -56,42 +56,53 @@ export class MongoLogManager {
       fullPath: string;
     }>((a, b) => a.fileTimestamp - b.fileTimestamp);
 
-    for await (const dirent of dirHandle) {
-      // Cap the overall time spent inside this function. Consider situations like
-      // a large number of machines using a shared network-mounted $HOME directory
-      // where lots and lots of log files end up and filesystem operations happen
-      // with network latency.
-      if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
-
-      if (!dirent.isFile()) continue;
-      const { id } =
-        /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
-      if (!id) continue;
-      const fileTimestamp = +new ObjectId(id).getTimestamp();
-      const fullPath = path.join(dir, dirent.name);
-      let toDelete: string | undefined;
-
-      // If the file is older than expected, delete it. If the file is recent,
-      // add it to the list of seen files, and if that list is too large, remove
-      // the least recent file we've seen so far.
-      if (fileTimestamp < deletionCutoffTimestamp) {
-        toDelete = fullPath;
-      } else if (this._options.maxLogFileCount) {
-        leastRecentFileHeap.push({ fullPath, fileTimestamp });
-        if (leastRecentFileHeap.size() > this._options.maxLogFileCount) {
-          toDelete = leastRecentFileHeap.pop()?.fullPath;
+    try {
+      for await (const dirent of dirHandle) {
+        // Cap the overall time spent inside this function. Consider situations like
+        // a large number of machines using a shared network-mounted $HOME directory
+        // where lots and lots of log files end up and filesystem operations happen
+        // with network latency.
+        if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+  
+        if (!dirent.isFile()) continue;
+        const { id } =
+          /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
+        if (!id) continue;
+        const fileTimestamp = +new ObjectId(id).getTimestamp();
+        const fullPath = path.join(dir, dirent.name);
+        let toDelete: string | undefined;
+  
+        // If the file is older than expected, delete it. If the file is recent,
+        // add it to the list of seen files, and if that list is too large, remove
+        // the least recent file we've seen so far.
+        if (fileTimestamp < deletionCutoffTimestamp) {
+          toDelete = fullPath;
+        } else if (this._options.maxLogFileCount) {
+          leastRecentFileHeap.push({ fullPath, fileTimestamp });
+          if (leastRecentFileHeap.size() > this._options.maxLogFileCount) {
+            toDelete = leastRecentFileHeap.pop()?.fullPath;
+          }
+        }
+  
+        if (!toDelete) continue;
+        try {
+          await fs.unlink(toDelete);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+          if (err.code !== 'ENOENT') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            this._options.onerror(err, fullPath);
+          }
         }
       }
-
-      if (!toDelete) continue;
-      try {
-        await fs.unlink(toDelete);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        if (err?.code !== 'ENOENT') {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          this._options.onerror(err, fullPath);
-        }
+    } catch (statErr: any) {
+      // Multiple processes may attempt to clean up log files in parallel.
+      // A situation can arise where one process tries to read a file
+      // that another process has already unlinked (see MONGOSH-1914).
+      // To handle such scenarios, we will catch lstat errors and retry cleaning up
+      // to let different processes reach out to different log files.
+      if (statErr.code === 'ENOENT' && remainingRetries > 0) {
+        await this.cleanupOldLogFiles(maxDurationMs, remainingRetries - 1);
       }
     }
   }
