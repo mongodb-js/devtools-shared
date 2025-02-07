@@ -18,7 +18,7 @@ interface MongoLogOptions {
   /** The maximal number of log files which are kept. */
   maxLogFileCount?: number;
   /** The maximal GB of log files which are kept. */
-  logRetentionGB?: number;
+  retentionGB?: number;
   /** A handler for warnings related to a specific filesystem path. */
   onerror: (err: Error, path: string) => unknown | Promise<void>;
   /** A handler for errors related to a specific filesystem path. */
@@ -59,11 +59,10 @@ export class MongoLogManager {
       fileSize?: number;
     }>((a, b) => a.fileTimestamp - b.fileTimestamp);
 
-    const storageSizeLimit = this._options.logRetentionGB
-      ? this._options.logRetentionGB * 1024 * 1024 * 1024
+    const storageSizeLimit = this._options.retentionGB
+      ? this._options.retentionGB * 1024 * 1024 * 1024
       : Infinity;
-    let usedStorageSize = this._options.logRetentionGB ? 0 : -Infinity;
-    // eslint-disable-next-line no-console
+    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
 
     for await (const dirent of dirHandle) {
       // Cap the overall time spent inside this function. Consider situations like
@@ -94,12 +93,9 @@ export class MongoLogManager {
         toDelete = {
           fullPath,
         };
-      } else if (
-        this._options.logRetentionGB ||
-        this._options.maxLogFileCount
-      ) {
+      } else if (this._options.retentionGB || this._options.maxLogFileCount) {
         const fileSize = (await fs.stat(fullPath)).size;
-        if (this._options.logRetentionGB) {
+        if (this._options.retentionGB) {
           usedStorageSize += fileSize;
         }
 

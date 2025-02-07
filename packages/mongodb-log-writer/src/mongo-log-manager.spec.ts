@@ -130,7 +130,7 @@ describe('MongoLogManager', function () {
       retentionDays,
       maxLogFileCount: 1000,
       // 6 KB
-      logRetentionGB: 6 / 1024 / 1024,
+      retentionGB: 6 / 1024 / 1024,
       onwarn,
       onerror,
     });
