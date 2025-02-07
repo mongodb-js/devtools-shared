@@ -3,7 +3,6 @@ import { ObjectId } from 'bson';
 import { once } from 'events';
 import { createWriteStream, promises as fs } from 'fs';
 import { createGzip, constants as zlibConstants } from 'zlib';
-import { Heap } from 'heap-js';
 import { MongoLogWriter } from './mongo-log-writer';
 import { Writable } from 'stream';
 
@@ -40,9 +39,37 @@ export class MongoLogManager {
   /** Clean up log files older than `retentionDays`. */
   async cleanupOldLogFiles(maxDurationMs = 5_000): Promise<void> {
     const dir = this._options.directory;
-    let dirHandle;
+    const sortedLogFiles: {
+      fullPath: string;
+      id: string;
+      size?: number;
+    }[] = [];
+    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
+
     try {
-      dirHandle = await fs.opendir(dir);
+      const files = await fs.readdir(dir, { withFileTypes: true });
+      for (const file of files) {
+        const { id } =
+          /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(file.name)?.groups ?? {};
+
+        if (!file.isFile() || !id) {
+          continue;
+        }
+
+        const fullPath = path.join(dir, file.name);
+        let size: number | undefined;
+        if (this._options.retentionGB) {
+          try {
+            size = (await fs.stat(fullPath)).size;
+            usedStorageSize += size;
+          } catch (err) {
+            this._options.onerror(err as Error, fullPath);
+            continue;
+          }
+        }
+
+        sortedLogFiles.push({ fullPath, id, size });
+      }
     } catch {
       return;
     }
@@ -51,32 +78,19 @@ export class MongoLogManager {
     // Delete files older than N days
     const deletionCutoffTimestamp =
       deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
-    // Store the known set of least recent files in a heap in order to be able to
-    // delete all but the most recent N files.
-    const leastRecentFileHeap = new Heap<{
-      fileTimestamp: number;
-      fullPath: string;
-      fileSize?: number;
-    }>((a, b) => a.fileTimestamp - b.fileTimestamp);
 
     const storageSizeLimit = this._options.retentionGB
       ? this._options.retentionGB * 1024 * 1024 * 1024
       : Infinity;
-    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
 
-    for await (const dirent of dirHandle) {
+    for await (const { id, fullPath } of [...sortedLogFiles]) {
       // Cap the overall time spent inside this function. Consider situations like
       // a large number of machines using a shared network-mounted $HOME directory
       // where lots and lots of log files end up and filesystem operations happen
       // with network latency.
       if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
 
-      if (!dirent.isFile()) continue;
-      const { id } =
-        /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
-      if (!id) continue;
       const fileTimestamp = +new ObjectId(id).getTimestamp();
-      const fullPath = path.join(dir, dirent.name);
       let toDelete:
         | {
             fullPath: string;
@@ -94,32 +108,13 @@ export class MongoLogManager {
           fullPath,
         };
       } else if (this._options.retentionGB || this._options.maxLogFileCount) {
-        let fileSize: number | undefined;
-
-        if (this._options.retentionGB) {
-          try {
-            fileSize = (await fs.stat(fullPath)).size;
-            if (this._options.retentionGB) {
-              usedStorageSize += fileSize;
-            }
-          } catch (err) {
-            this._options.onerror(err as Error, fullPath);
-          }
-        }
-
-        leastRecentFileHeap.push({
-          fullPath,
-          fileTimestamp,
-          fileSize,
-        });
-
         const reachedMaxStorageSize = usedStorageSize > storageSizeLimit;
         const reachedMaxFileCount =
           this._options.maxLogFileCount &&
-          leastRecentFileHeap.size() > this._options.maxLogFileCount;
+          sortedLogFiles.length > this._options.maxLogFileCount;
 
         if (reachedMaxStorageSize || reachedMaxFileCount) {
-          toDelete = leastRecentFileHeap.pop();
+          toDelete = sortedLogFiles.shift();
         }
       }
 
@@ -132,8 +127,7 @@ export class MongoLogManager {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         if (err?.code !== 'ENOENT') {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          this._options.onerror(err, fullPath);
+          this._options.onerror(err as Error, fullPath);
         }
       }
     }
