@@ -223,9 +223,7 @@ describe('MongoLogManager', function () {
       },
       close: sinon.stub().resolves(),
     };
-
     const opendirStub = sinon.stub(fs, 'opendir').resolves(fakeDirHandle as any);
-    sinon.replace(fs, 'opendir', opendirStub);
 
     retentionDays = 0.000001; // 86.4 ms
     const manager = new MongoLogManager({
