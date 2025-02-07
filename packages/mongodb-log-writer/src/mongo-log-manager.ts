@@ -102,7 +102,7 @@ export class MongoLogManager {
       // To handle such scenarios, we will catch lstat errors and retry cleaning up
       // to let different processes reach out to different log files.
       if (statErr.code === 'ENOENT' && remainingRetries > 0) {
-        await this.cleanupOldLogFiles(maxDurationMs, remainingRetries - 1);
+        await this.cleanupOldLogFiles(maxDurationMs - Date.now() - deletionStartTimestamp, remainingRetries - 1);
       }
     }
   }
