@@ -1,6 +1,7 @@
 import { MongoLogManager, mongoLogId } from '.';
 import { ObjectId } from 'bson';
 import { once } from 'events';
+import type { Stats } from 'fs';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -27,6 +28,7 @@ describe('MongoLogManager', function () {
   });
   afterEach(async function () {
     await fs.rmdir(directory, { recursive: true });
+    sinon.restore();
   });
 
   it('allows creating and writing to log files', async function () {
@@ -122,6 +124,58 @@ describe('MongoLogManager', function () {
     expect(await getFilesState(paths)).to.equal('1111111111');
     await manager.cleanupOldLogFiles();
     expect(await getFilesState(paths)).to.equal('0000011111');
+  });
+
+  it('if fs.stat fails, it errors and is not considered towards the logs limit', async function () {
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      retentionGB: 3,
+      onwarn,
+      onerror,
+    });
+
+    const offset = Math.floor(Date.now() / 1000);
+
+    const faultyFile = path.join(
+      directory,
+      ObjectId.createFromTime(offset - 10).toHexString() + '_log'
+    );
+    await fs.writeFile(faultyFile, '');
+
+    const faultyFileError = new Error('test error');
+
+    const validFiles: string[] = [];
+    // Create 5 valid files.
+    for (let i = 5; i >= 0; i--) {
+      const filename = path.join(
+        directory,
+        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+      );
+      await fs.writeFile(filename, '');
+      validFiles.push(filename);
+    }
+
+    expect(onerror).not.called;
+
+    const fsStatStub = sinon.stub(fs, 'stat');
+
+    fsStatStub.resolves({
+      size: 1024 * 1024 * 1024,
+    } as Stats);
+    fsStatStub.withArgs(faultyFile).rejects(faultyFileError);
+
+    await manager.cleanupOldLogFiles();
+
+    expect(onerror).calledOnceWithExactly(faultyFileError, faultyFile);
+
+    // fs.stat is stubbed so getFilesState will not be accurate.
+    const leftoverFiles = (await fs.readdir(directory))
+      .sort()
+      .map((file) => path.join(directory, file));
+
+    expect(leftoverFiles).to.have.lengthOf(4);
+    expect(leftoverFiles).deep.equals([faultyFile, ...validFiles.slice(3)]);
   });
 
   it('cleans up least recent log files when requested with a storage limit', async function () {

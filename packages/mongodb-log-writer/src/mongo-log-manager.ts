@@ -19,9 +19,9 @@ interface MongoLogOptions {
   maxLogFileCount?: number;
   /** The maximal GB of log files which are kept. */
   retentionGB?: number;
-  /** A handler for warnings related to a specific filesystem path. */
-  onerror: (err: Error, path: string) => unknown | Promise<void>;
   /** A handler for errors related to a specific filesystem path. */
+  onerror: (err: Error, path: string) => unknown | Promise<void>;
+  /** A handler for warnings related to a specific filesystem path. */
   onwarn: (err: Error, path: string) => unknown | Promise<void>;
 }
 
@@ -94,9 +94,17 @@ export class MongoLogManager {
           fullPath,
         };
       } else if (this._options.retentionGB || this._options.maxLogFileCount) {
-        const fileSize = (await fs.stat(fullPath)).size;
+        let fileSize: number | undefined;
+
         if (this._options.retentionGB) {
-          usedStorageSize += fileSize;
+          try {
+            fileSize = (await fs.stat(fullPath)).size;
+            if (this._options.retentionGB) {
+              usedStorageSize += fileSize;
+            }
+          } catch (err) {
+            this._options.onerror(err as Error, fullPath);
+          }
         }
 
         leastRecentFileHeap.push({
