@@ -17,7 +17,7 @@ interface MongoLogOptions {
   retentionDays: number;
   /** The maximal number of log files which are kept. */
   maxLogFileCount?: number;
-  /** The maximal GB of log files which are kept. */
+  /** The maximal size of log files which are kept. */
   retentionGB?: number;
   /** A handler for errors related to a specific filesystem path. */
   onerror: (err: Error, path: string) => unknown | Promise<void>;
@@ -37,7 +37,7 @@ export class MongoLogManager {
     this._options = options;
   }
 
-  private async deleteFile(path: string) {
+  private async deleteFile(path: string): Promise<void> {
     try {
       await fs.unlink(path);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
