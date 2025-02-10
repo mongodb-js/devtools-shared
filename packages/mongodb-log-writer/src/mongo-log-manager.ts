@@ -3,6 +3,7 @@ import { ObjectId } from 'bson';
 import { once } from 'events';
 import { createWriteStream, promises as fs } from 'fs';
 import { createGzip, constants as zlibConstants } from 'zlib';
+import { Heap } from 'heap-js';
 import { MongoLogWriter } from './mongo-log-writer';
 import { Writable } from 'stream';
 
@@ -36,40 +37,23 @@ export class MongoLogManager {
     this._options = options;
   }
 
+  private async deleteFile(path: string) {
+    try {
+      await fs.unlink(path);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err?.code !== 'ENOENT') {
+        this._options.onerror(err as Error, path);
+      }
+    }
+  }
+
   /** Clean up log files older than `retentionDays`. */
   async cleanupOldLogFiles(maxDurationMs = 5_000): Promise<void> {
     const dir = this._options.directory;
-    const sortedLogFiles: {
-      fullPath: string;
-      id: string;
-      size?: number;
-    }[] = [];
-    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
-
+    let dirHandle;
     try {
-      const files = await fs.readdir(dir, { withFileTypes: true });
-      for (const file of files) {
-        const { id } =
-          /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(file.name)?.groups ?? {};
-
-        if (!file.isFile() || !id) {
-          continue;
-        }
-
-        const fullPath = path.join(dir, file.name);
-        let size: number | undefined;
-        if (this._options.retentionGB) {
-          try {
-            size = (await fs.stat(fullPath)).size;
-            usedStorageSize += size;
-          } catch (err) {
-            this._options.onerror(err as Error, fullPath);
-            continue;
-          }
-        }
-
-        sortedLogFiles.push({ fullPath, id, size });
-      }
+      dirHandle = await fs.opendir(dir);
     } catch {
       return;
     }
@@ -78,57 +62,77 @@ export class MongoLogManager {
     // Delete files older than N days
     const deletionCutoffTimestamp =
       deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
+    // Store the known set of least recent files in a heap in order to be able to
+    // delete all but the most recent N files.
+    const leastRecentFileHeap = new Heap<{
+      fileTimestamp: number;
+      fullPath: string;
+      fileSize: number | undefined;
+    }>((a, b) => a.fileTimestamp - b.fileTimestamp);
 
-    const storageSizeLimit = this._options.retentionGB
-      ? this._options.retentionGB * 1024 * 1024 * 1024
-      : Infinity;
+    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
 
-    for await (const { id, fullPath } of [...sortedLogFiles]) {
+    for await (const dirent of dirHandle) {
       // Cap the overall time spent inside this function. Consider situations like
       // a large number of machines using a shared network-mounted $HOME directory
       // where lots and lots of log files end up and filesystem operations happen
       // with network latency.
       if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
 
+      if (!dirent.isFile()) continue;
+      const { id } =
+        /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
+      if (!id) continue;
+
       const fileTimestamp = +new ObjectId(id).getTimestamp();
-      let toDelete:
-        | {
-            fullPath: string;
-            /** If the file wasn't deleted right away and there is a
-             *  retention size limit, its size should be accounted */
-            fileSize?: number;
-          }
-        | undefined;
+      const fullPath = path.join(dir, dirent.name);
 
       // If the file is older than expected, delete it. If the file is recent,
       // add it to the list of seen files, and if that list is too large, remove
       // the least recent file we've seen so far.
       if (fileTimestamp < deletionCutoffTimestamp) {
-        toDelete = {
-          fullPath,
-        };
-      } else if (this._options.retentionGB || this._options.maxLogFileCount) {
-        const reachedMaxStorageSize = usedStorageSize > storageSizeLimit;
-        const reachedMaxFileCount =
-          this._options.maxLogFileCount &&
-          sortedLogFiles.length > this._options.maxLogFileCount;
+        await this.deleteFile(fullPath);
+        continue;
+      }
 
-        if (reachedMaxStorageSize || reachedMaxFileCount) {
-          toDelete = sortedLogFiles.shift();
+      let fileSize: number | undefined;
+      if (this._options.retentionGB) {
+        try {
+          fileSize = (await fs.stat(fullPath)).size;
+          usedStorageSize += fileSize;
+        } catch (err) {
+          this._options.onerror(err as Error, fullPath);
+          continue;
         }
       }
 
-      if (!toDelete) continue;
-      try {
-        await fs.unlink(toDelete.fullPath);
-        if (toDelete.fileSize) {
-          usedStorageSize -= toDelete.fileSize;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        if (err?.code !== 'ENOENT') {
-          this._options.onerror(err as Error, fullPath);
-        }
+      if (this._options.maxLogFileCount || this._options.retentionGB) {
+        leastRecentFileHeap.push({ fullPath, fileTimestamp, fileSize });
+      }
+
+      if (
+        this._options.maxLogFileCount &&
+        leastRecentFileHeap.size() > this._options.maxLogFileCount
+      ) {
+        const toDelete = leastRecentFileHeap.pop();
+        if (!toDelete) continue;
+        await this.deleteFile(toDelete.fullPath);
+        usedStorageSize -= toDelete.fileSize ?? 0;
+      }
+    }
+
+    if (this._options.retentionGB) {
+      const storageSizeLimit = this._options.retentionGB * 1024 * 1024 * 1024;
+
+      for (const file of leastRecentFileHeap) {
+        if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+
+        if (usedStorageSize <= storageSizeLimit) break;
+
+        if (!file.fileSize) continue;
+
+        await this.deleteFile(file.fullPath);
+        usedStorageSize -= file.fileSize;
       }
     }
   }

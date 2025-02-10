@@ -1,7 +1,7 @@
 import { MongoLogManager, mongoLogId } from '.';
 import { ObjectId } from 'bson';
 import { once } from 'events';
-import type { Stats } from 'fs';
+import type { Stats, Dir } from 'fs';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -178,7 +178,7 @@ describe('MongoLogManager', function () {
     expect(leftoverFiles).deep.equals([faultyFile, ...validFiles.slice(3)]);
   });
 
-  it('cleans up least recent log files when requested with a storage limit', async function () {
+  it('cleans up least recent log files when over a storage limit', async function () {
     const manager = new MongoLogManager({
       directory,
       retentionDays,
@@ -205,6 +205,172 @@ describe('MongoLogManager', function () {
     expect(await getFilesState(paths)).to.equal('1111111111');
     await manager.cleanupOldLogFiles();
     expect(await getFilesState(paths)).to.equal('0000111111');
+  });
+
+  describe('with a random file order', function () {
+    let paths: string[] = [];
+    const times = [92, 90, 1, 2, 3, 91];
+
+    beforeEach(async function () {
+      const fileNames: string[] = [];
+      paths = [];
+      const offset = Math.floor(Date.now() / 1000);
+
+      for (const time of times) {
+        const fileName =
+          ObjectId.createFromTime(offset - time).toHexString() + '_log';
+        const fullPath = path.join(directory, fileName);
+        await fs.writeFile(fullPath, '0'.repeat(1024));
+        fileNames.push(fileName);
+        paths.push(fullPath);
+      }
+
+      sinon.replace(fs, 'opendir', async () =>
+        Promise.resolve({
+          [Symbol.asyncIterator]: function* () {
+            for (const fileName of fileNames) {
+              yield {
+                name: fileName,
+                isFile: () => true,
+              };
+            }
+          },
+        } as unknown as Dir)
+      );
+    });
+
+    it('cleans up in the expected order with maxLogFileCount', async function () {
+      const manager = new MongoLogManager({
+        directory,
+        retentionDays,
+        maxLogFileCount: 3,
+        onwarn,
+        onerror,
+      });
+
+      expect(await getFilesState(paths)).to.equal('111111');
+
+      await manager.cleanupOldLogFiles();
+
+      expect(await getFilesState(paths)).to.equal('001110');
+    });
+
+    it('cleans up in the expected order with retentionGB', async function () {
+      const manager = new MongoLogManager({
+        directory,
+        retentionDays,
+        retentionGB: 3 / 1024 / 1024,
+        onwarn,
+        onerror,
+      });
+
+      expect(await getFilesState(paths)).to.equal('111111');
+
+      await manager.cleanupOldLogFiles();
+
+      expect(await getFilesState(paths)).to.equal('001110');
+    });
+  });
+
+  describe('with multiple log retention settings', function () {
+    it('with retention days, file count, and max size maintains all conditions', async function () {
+      const manager = new MongoLogManager({
+        directory,
+        retentionDays: 1,
+        maxLogFileCount: 3,
+        retentionGB: 2 / 1024 / 1024,
+        onwarn,
+        onerror,
+      });
+
+      const paths: string[] = [];
+
+      // Create 4 files which are all older than 1 day and 4 which are from today.
+      for (let i = 0; i < 4; i++) {
+        const today = Math.floor(Date.now() / 1000);
+        const yesterday = today - 25 * 60 * 60;
+        const todayFile = path.join(
+          directory,
+          ObjectId.createFromTime(today - i).toHexString() + '_log'
+        );
+        await fs.writeFile(todayFile, '0'.repeat(1024));
+
+        const yesterdayFile = path.join(
+          directory,
+          ObjectId.createFromTime(yesterday - i).toHexString() + '_log'
+        );
+        await fs.writeFile(yesterdayFile, '0'.repeat(1024));
+
+        paths.unshift(todayFile);
+        paths.unshift(yesterdayFile);
+      }
+
+      expect(await getFilesState(paths)).to.equal('11111111');
+
+      await manager.cleanupOldLogFiles();
+
+      // All yesterdays files, 2 of today's files should be deleted.
+      // (because of file count and file size)
+      expect(await getFilesState(paths)).to.equal('00000101');
+    });
+
+    it('with low GB but high file count maintains both conditions', async function () {
+      const manager = new MongoLogManager({
+        directory,
+        retentionDays,
+        maxLogFileCount: 3,
+        // 2 KB, so 2 files
+        retentionGB: 2 / 1024 / 1024,
+        onwarn,
+        onerror,
+      });
+
+      const paths: string[] = [];
+      const offset = Math.floor(Date.now() / 1000);
+
+      // Create 10 files of 1 KB each.
+      for (let i = 0; i < 10; i++) {
+        const filename = path.join(
+          directory,
+          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        );
+        await fs.writeFile(filename, '0'.repeat(1024));
+        paths.unshift(filename);
+      }
+
+      expect(await getFilesState(paths)).to.equal('1111111111');
+      await manager.cleanupOldLogFiles();
+      expect(await getFilesState(paths)).to.equal('0000000011');
+    });
+
+    it('with high GB but low file count maintains both conditions', async function () {
+      const manager = new MongoLogManager({
+        directory,
+        retentionDays,
+        maxLogFileCount: 2,
+        // 3 KB, so 3 files
+        retentionGB: 3 / 1024 / 1024,
+        onwarn,
+        onerror,
+      });
+
+      const paths: string[] = [];
+      const offset = Math.floor(Date.now() / 1000);
+
+      // Create 10 files of 1 KB each.
+      for (let i = 0; i < 10; i++) {
+        const filename = path.join(
+          directory,
+          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        );
+        await fs.writeFile(filename, '0'.repeat(1024));
+        paths.unshift(filename);
+      }
+
+      expect(await getFilesState(paths)).to.equal('1111111111');
+      await manager.cleanupOldLogFiles();
+      expect(await getFilesState(paths)).to.equal('0000000011');
+    });
   });
 
   it('cleaning up old log files is a no-op by default', async function () {
