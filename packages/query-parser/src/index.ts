@@ -63,7 +63,10 @@ export function parseSort(input: string) {
 }
 
 function _parseFilter(input: string) {
-  return parseShellStringToEJSON(input, { mode: ParseMode.Loose });
+  return parseShellStringToEJSON(input, {
+    mode: ParseMode.Loose,
+    allowMethods: true,
+  });
 }
 
 /** @public */

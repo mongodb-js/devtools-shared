@@ -17,9 +17,11 @@ interface MongoLogOptions {
   retentionDays: number;
   /** The maximal number of log files which are kept. */
   maxLogFileCount?: number;
-  /** A handler for warnings related to a specific filesystem path. */
-  onerror: (err: Error, path: string) => unknown | Promise<void>;
+  /** The maximal size of log files which are kept. */
+  retentionGB?: number;
   /** A handler for errors related to a specific filesystem path. */
+  onerror: (err: Error, path: string) => unknown | Promise<void>;
+  /** A handler for warnings related to a specific filesystem path. */
   onwarn: (err: Error, path: string) => unknown | Promise<void>;
 }
 
@@ -33,6 +35,17 @@ export class MongoLogManager {
 
   constructor(options: MongoLogOptions) {
     this._options = options;
+  }
+
+  private async deleteFile(path: string): Promise<void> {
+    try {
+      await fs.unlink(path);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err?.code !== 'ENOENT') {
+        this._options.onerror(err as Error, path);
+      }
+    }
   }
 
   /** Clean up log files older than `retentionDays`. */
@@ -54,7 +67,10 @@ export class MongoLogManager {
     const leastRecentFileHeap = new Heap<{
       fileTimestamp: number;
       fullPath: string;
+      fileSize: number | undefined;
     }>((a, b) => a.fileTimestamp - b.fileTimestamp);
+
+    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
 
     try {
       for await (const dirent of dirHandle) {
@@ -68,31 +84,56 @@ export class MongoLogManager {
         const { id } =
           /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
         if (!id) continue;
+  
         const fileTimestamp = +new ObjectId(id).getTimestamp();
         const fullPath = path.join(dir, dirent.name);
-        let toDelete: string | undefined;
   
         // If the file is older than expected, delete it. If the file is recent,
         // add it to the list of seen files, and if that list is too large, remove
         // the least recent file we've seen so far.
         if (fileTimestamp < deletionCutoffTimestamp) {
-          toDelete = fullPath;
-        } else if (this._options.maxLogFileCount) {
-          leastRecentFileHeap.push({ fullPath, fileTimestamp });
-          if (leastRecentFileHeap.size() > this._options.maxLogFileCount) {
-            toDelete = leastRecentFileHeap.pop()?.fullPath;
+          await this.deleteFile(fullPath);
+          continue;
+        }
+  
+        let fileSize: number | undefined;
+        if (this._options.retentionGB) {
+          try {
+            fileSize = (await fs.stat(fullPath)).size;
+            usedStorageSize += fileSize;
+          } catch (err) {
+            this._options.onerror(err as Error, fullPath);
+            continue;
           }
         }
   
-        if (!toDelete) continue;
-        try {
-          await fs.unlink(toDelete);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-          if (err.code !== 'ENOENT') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            this._options.onerror(err, fullPath);
-          }
+        if (this._options.maxLogFileCount || this._options.retentionGB) {
+          leastRecentFileHeap.push({ fullPath, fileTimestamp, fileSize });
+        }
+  
+        if (
+          this._options.maxLogFileCount &&
+          leastRecentFileHeap.size() > this._options.maxLogFileCount
+        ) {
+          const toDelete = leastRecentFileHeap.pop();
+          if (!toDelete) continue;
+          await this.deleteFile(toDelete.fullPath);
+          usedStorageSize -= toDelete.fileSize ?? 0;
+        }
+      }
+
+      if (this._options.retentionGB) {
+        const storageSizeLimit = this._options.retentionGB * 1024 * 1024 * 1024;
+  
+        for (const file of leastRecentFileHeap) {
+          if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+  
+          if (usedStorageSize <= storageSizeLimit) break;
+  
+          if (!file.fileSize) continue;
+  
+          await this.deleteFile(file.fullPath);
+          usedStorageSize -= file.fileSize;
         }
       }
     } catch (statErr: any) {

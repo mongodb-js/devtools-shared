@@ -120,6 +120,32 @@ describe('mongodb-query-parser', function () {
         );
       });
 
+      // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
+      it('should support Binary.createFromHexString', function () {
+        assert.deepEqual(
+          convert(
+            `Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`
+          ),
+          {
+            $binary: '3q2+7w==',
+            $type: `0${bson.Binary.SUBTYPE_BYTE_ARRAY}`,
+          }
+        );
+      });
+
+      // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromBase64/
+      it('should support Binary.createFromBase64', function () {
+        assert.deepEqual(
+          convert(
+            `Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`
+          ),
+          {
+            $binary: '3q2+7w==',
+            $type: `0${bson.Binary.SUBTYPE_BYTE_ARRAY}`,
+          }
+        );
+      });
+
       it('should support functions', function () {
         assert.deepEqual(convert('{$match: () => true}'), {
           $match: '() => true',
@@ -618,6 +644,30 @@ e  s`,
         assert.equal(
           stringified,
           "{name: UUID('3b241101-e2bb-4255-8caf-4136c566a962')}"
+        );
+      });
+
+      // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
+      it('should support Binary.createFromHexString', function () {
+        const res = parseFilter(
+          `{name: Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`
+        );
+      });
+
+      // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromBase64/
+      it('should support Binary.createFromBase64', function () {
+        const res = parseFilter(
+          `{name: Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`
         );
       });
     });

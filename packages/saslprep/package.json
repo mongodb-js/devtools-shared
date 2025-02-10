@@ -18,7 +18,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/saslprep",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"

@@ -148,7 +148,7 @@ type AllowedMethods = { [methodName: string]: boolean };
  */
 type ClassExpressions = {
   [member: string]: {
-    class: typeof Math | typeof Date;
+    class: typeof Math | typeof Date | typeof bson.Binary;
     allowedMethods: AllowedMethods | string;
   };
 };
@@ -239,6 +239,13 @@ const ALLOWED_CLASS_EXPRESSIONS: ClassExpressions = lookupMap({
   ISODate: lookupMap({
     class: Date,
     allowedMethods: 'Date',
+  }),
+  Binary: lookupMap({
+    class: bson.Binary,
+    allowedMethods: {
+      createFromHexString: true,
+      createFromBase64: true,
+    },
   }),
 });
 
