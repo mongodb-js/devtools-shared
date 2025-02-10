@@ -30,6 +30,27 @@ describe('@mongodb-js/shell-bson-parser', function () {
     });
   });
 
+  it('should accept Binary.createFromHexString and Binary.createFromBase64 when allowMethods is true', function () {
+    expect(
+      parse(
+        `{
+        BinaryCreateFromHexString: Binary.createFromHexString('deadbeef'),
+        BinaryCreateFromBase64: Binary.createFromBase64('3q2+7w=='),
+        }`,
+        { allowMethods: true }
+      )
+    ).to.deep.equal({
+      BinaryCreateFromHexString: new bson.Binary(
+        Buffer.from('deadbeef', 'hex'),
+        0
+      ),
+      BinaryCreateFromBase64: new bson.Binary(
+        Buffer.from('3q2+7w==', 'base64'),
+        0
+      ),
+    });
+  });
+
   it('should accept a complex query', function () {
     expect(
       parse(`{
