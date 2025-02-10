@@ -21,10 +21,10 @@ interface MongoLogOptions {
   retentionGB?: number;
   /** Prefix to use for the log files */
   prefix?: string;
-  /** A handler for warnings related to a specific filesystem path. */
-  onerror: (err: Error, path: string) => unknown | Promise<void>;
   /** A handler for errors related to a specific filesystem path. */
   onerror: (err: Error, path: string) => unknown | Promise<void>;
+  /** A handler for warnings related to a specific filesystem path. */
+  onwarn: (err: Error, path: string) => unknown | Promise<void>;
 }
 
 /**
@@ -36,6 +36,13 @@ export class MongoLogManager {
   _options: MongoLogOptions;
 
   constructor(options: MongoLogOptions) {
+    if (options.prefix) {
+      if (!/^[a-z0-9_]+$/i.test(options.prefix)) {
+        throw new Error(
+          'Prefix must only contain letters, numbers, and underscores'
+        );
+      }
+    }
     this._options = options;
   }
 

@@ -31,6 +31,48 @@ describe('MongoLogManager', function () {
     sinon.restore();
   });
 
+  it('constructor throws with invalid prefixes', function () {
+    expect(() => {
+      new MongoLogManager({
+        directory,
+        retentionDays,
+        prefix: '%asdabs/',
+        onwarn,
+        onerror,
+      });
+    }).to.throw();
+
+    expect(() => {
+      new MongoLogManager({
+        directory,
+        retentionDays,
+        prefix: '$$$$',
+        onwarn,
+        onerror,
+      });
+    }).to.throw();
+
+    expect(() => {
+      new MongoLogManager({
+        directory,
+        retentionDays,
+        prefix: 'abc_',
+        onwarn,
+        onerror,
+      });
+    }).not.to.throw();
+
+    expect(() => {
+      new MongoLogManager({
+        directory,
+        retentionDays,
+        prefix: 'something',
+        onwarn,
+        onerror,
+      });
+    }).not.to.throw();
+  });
+
   it('allows creating and writing to log files', async function () {
     const manager = new MongoLogManager({
       directory,
@@ -144,8 +186,8 @@ describe('MongoLogManager', function () {
       directory,
       retentionDays,
       retentionGB: 3,
-      onerror,
       onwarn,
+      onerror,
     });
 
     const offset = Math.floor(Date.now() / 1000);
