@@ -28,7 +28,6 @@ describe('MongoLogManager', function () {
   });
 
   afterEach(async function () {
-    sinon.restore();
     await fs.rmdir(directory, { recursive: true });
     sinon.restore();
   });
