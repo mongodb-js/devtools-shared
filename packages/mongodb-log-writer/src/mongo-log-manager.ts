@@ -62,7 +62,12 @@ export class MongoLogManager {
   }
 
   /** Clean up log files older than `retentionDays`. */
-  async cleanupOldLogFiles(maxDurationMs = 5_000): Promise<void> {
+  async cleanupOldLogFiles(maxDurationMs = 5_000, remainingRetries = 1): Promise<void> {
+    const deletionStartTimestamp = Date.now();
+    // Delete files older than N days
+    const deletionCutoffTimestamp =
+      deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
+
     const dir = this._options.directory;
     let dirHandle;
     try {
@@ -71,10 +76,6 @@ export class MongoLogManager {
       return;
     }
 
-    const deletionStartTimestamp = Date.now();
-    // Delete files older than N days
-    const deletionCutoffTimestamp =
-      deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
     // Store the known set of least recent files in a heap in order to be able to
     // delete all but the most recent N files.
     const leastRecentFileHeap = new Heap<{
@@ -85,55 +86,66 @@ export class MongoLogManager {
 
     let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
 
-    for await (const dirent of dirHandle) {
-      // Cap the overall time spent inside this function. Consider situations like
-      // a large number of machines using a shared network-mounted $HOME directory
-      // where lots and lots of log files end up and filesystem operations happen
-      // with network latency.
-      if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
-
-      if (!dirent.isFile()) continue;
-      const logRegExp = new RegExp(
-        `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
-        'i'
-      );
-      const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
-      if (!id) continue;
-
-      const fileTimestamp = +new ObjectId(id).getTimestamp();
-      const fullPath = path.join(dir, dirent.name);
-
-      // If the file is older than expected, delete it. If the file is recent,
-      // add it to the list of seen files, and if that list is too large, remove
-      // the least recent file we've seen so far.
-      if (fileTimestamp < deletionCutoffTimestamp) {
-        await this.deleteFile(fullPath);
-        continue;
-      }
-
-      let fileSize: number | undefined;
-      if (this._options.retentionGB) {
-        try {
-          fileSize = (await fs.stat(fullPath)).size;
-          usedStorageSize += fileSize;
-        } catch (err) {
-          this._options.onerror(err as Error, fullPath);
+    try {
+      for await (const dirent of dirHandle) {
+        // Cap the overall time spent inside this function. Consider situations like
+        // a large number of machines using a shared network-mounted $HOME directory
+        // where lots and lots of log files end up and filesystem operations happen
+        // with network latency.
+        if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+  
+        if (!dirent.isFile()) continue;
+        const logRegExp = new RegExp(
+          `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
+          'i'
+        );
+        const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
+        if (!id) continue;
+  
+        const fileTimestamp = +new ObjectId(id).getTimestamp();
+        const fullPath = path.join(dir, dirent.name);
+  
+        // If the file is older than expected, delete it. If the file is recent,
+        // add it to the list of seen files, and if that list is too large, remove
+        // the least recent file we've seen so far.
+        if (fileTimestamp < deletionCutoffTimestamp) {
+          await this.deleteFile(fullPath);
           continue;
         }
+  
+        let fileSize: number | undefined;
+        if (this._options.retentionGB) {
+          try {
+            fileSize = (await fs.stat(fullPath)).size;
+            usedStorageSize += fileSize;
+          } catch (err) {
+            this._options.onerror(err as Error, fullPath);
+            continue;
+          }
+        }
+  
+        if (this._options.maxLogFileCount || this._options.retentionGB) {
+          leastRecentFileHeap.push({ fullPath, fileTimestamp, fileSize });
+        }
+  
+        if (
+          this._options.maxLogFileCount &&
+          leastRecentFileHeap.size() > this._options.maxLogFileCount
+        ) {
+          const toDelete = leastRecentFileHeap.pop();
+          if (!toDelete) continue;
+          await this.deleteFile(toDelete.fullPath);
+          usedStorageSize -= toDelete.fileSize ?? 0;
+        }
       }
-
-      if (this._options.maxLogFileCount || this._options.retentionGB) {
-        leastRecentFileHeap.push({ fullPath, fileTimestamp, fileSize });
-      }
-
-      if (
-        this._options.maxLogFileCount &&
-        leastRecentFileHeap.size() > this._options.maxLogFileCount
-      ) {
-        const toDelete = leastRecentFileHeap.pop();
-        if (!toDelete) continue;
-        await this.deleteFile(toDelete.fullPath);
-        usedStorageSize -= toDelete.fileSize ?? 0;
+    } catch (statErr: any) {
+      // Multiple processes may attempt to clean up log files in parallel.
+      // A situation can arise where one process tries to read a file
+      // that another process has already unlinked (see MONGOSH-1914).
+      // To handle such scenarios, we will catch lstat errors and retry cleaning up
+      // to let different processes reach out to different log files.
+      if (statErr.code === 'ENOENT' && remainingRetries > 0) {
+        await this.cleanupOldLogFiles(maxDurationMs - (Date.now() - deletionStartTimestamp), remainingRetries - 1);
       }
     }
 

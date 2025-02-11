@@ -26,6 +26,7 @@ describe('MongoLogManager', function () {
     );
     await fs.mkdir(directory, { recursive: true });
   });
+
   afterEach(async function () {
     await fs.rmdir(directory, { recursive: true });
     sinon.restore();
@@ -567,5 +568,26 @@ describe('MongoLogManager', function () {
     // Still clean up here because Windows doesn’t like open files:
     writer.end();
     await once(writer, 'finish');
+  });
+
+  it('retries cleaning up old log files', async function () {
+    const fakeDirHandle = {
+      [Symbol.asyncIterator]: () => {
+        throw Object.assign(new Error('File not found'), { code: 'ENOENT' });
+      },
+      close: sinon.stub().resolves(),
+    };
+    const opendirStub = sinon.stub(fs, 'opendir').resolves(fakeDirHandle as any);
+
+    retentionDays = 0.000001; // 86.4 ms
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      onwarn,
+      onerror,
+    });
+
+    await manager.cleanupOldLogFiles();
+    expect(opendirStub).to.have.been.calledTwice;
   });
 });
