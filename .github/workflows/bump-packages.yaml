@@ -36,7 +36,7 @@ jobs:
           cache: "npm"
 
       - name: Install npm
-        run: npm install -g npm@8
+        run: npm install -g npm@9
 
       - name: Install Dependencies
         run: |
