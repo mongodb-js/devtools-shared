@@ -1,7 +1,7 @@
 {
   "name": "mongodb-log-writer",
   "description": "A library for writing MongoDB logv2 messages",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
