@@ -57,7 +57,7 @@ jsign_sign() {
     -v $directory:$directory \
     -w $directory \
     ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-jsign \
-    /bin/bash -c "jsign -t 'http://timestamp.digicert.com' -a 'mongo-authenticode-2024' '$file'"
+    /bin/bash -c "jsign --verbose --debug -t 'http://timestamp.digicert.com' -a 'mongo-authenticode-2024' '$file'"
 }
 
 rpm_gpg_sign() {
