@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read # we just need to checkout the repo
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   check-and-test:
@@ -60,7 +64,7 @@ jobs:
           cache: "npm"
 
       - name: Install npm
-        run: npm install -g npm@8
+        run: npm install -g npm@9
 
       - name: Use python@3.11
         # Default Python (3.12) doesn't have support for distutils
