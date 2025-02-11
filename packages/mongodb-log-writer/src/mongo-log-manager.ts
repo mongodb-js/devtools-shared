@@ -63,6 +63,11 @@ export class MongoLogManager {
 
   /** Clean up log files older than `retentionDays`. */
   async cleanupOldLogFiles(maxDurationMs = 5_000, remainingRetries = 1): Promise<void> {
+    const deletionStartTimestamp = Date.now();
+    // Delete files older than N days
+    const deletionCutoffTimestamp =
+      deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
+
     const dir = this._options.directory;
     let dirHandle;
     try {
@@ -71,10 +76,6 @@ export class MongoLogManager {
       return;
     }
 
-    const deletionStartTimestamp = Date.now();
-    // Delete files older than N days
-    const deletionCutoffTimestamp =
-      deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
     // Store the known set of least recent files in a heap in order to be able to
     // delete all but the most recent N files.
     const leastRecentFileHeap = new Heap<{
