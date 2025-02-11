@@ -58,7 +58,7 @@
     "test": "npm run lint && npm run compile && npm run test-only",
     "test-ci": "npm run test",
     "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./.esm-wrapper.mjs",
-    "prepack": "npm run build",
+    "prepack": "npm run compile",
     "bootstrap": "npm run compile"
   },
   "license": "Apache-2.0",
