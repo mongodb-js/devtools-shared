@@ -19,6 +19,8 @@ interface MongoLogOptions {
   maxLogFileCount?: number;
   /** The maximal size of log files which are kept. */
   retentionGB?: number;
+  /** Prefix to use for the log files */
+  prefix?: string;
   /** A handler for errors related to a specific filesystem path. */
   onerror: (err: Error, path: string) => unknown | Promise<void>;
   /** A handler for warnings related to a specific filesystem path. */
@@ -34,6 +36,13 @@ export class MongoLogManager {
   _options: MongoLogOptions;
 
   constructor(options: MongoLogOptions) {
+    if (options.prefix) {
+      if (!/^[a-z0-9_]+$/i.test(options.prefix)) {
+        throw new Error(
+          'Prefix must only contain letters, numbers, and underscores'
+        );
+      }
+    }
     this._options = options;
   }
 
@@ -46,6 +55,10 @@ export class MongoLogManager {
         this._options.onerror(err as Error, path);
       }
     }
+  }
+
+  private get prefix() {
+    return this._options.prefix ?? '';
   }
 
   /** Clean up log files older than `retentionDays`. */
@@ -81,8 +94,11 @@ export class MongoLogManager {
         if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
   
         if (!dirent.isFile()) continue;
-        const { id } =
-          /^(?<id>[a-f0-9]{24})_log(\.gz)?$/i.exec(dirent.name)?.groups ?? {};
+        const logRegExp = new RegExp(
+          `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
+          'i'
+        );
+        const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
         if (!id) continue;
   
         const fileTimestamp = +new ObjectId(id).getTimestamp();
@@ -121,21 +137,6 @@ export class MongoLogManager {
           usedStorageSize -= toDelete.fileSize ?? 0;
         }
       }
-
-      if (this._options.retentionGB) {
-        const storageSizeLimit = this._options.retentionGB * 1024 * 1024 * 1024;
-  
-        for (const file of leastRecentFileHeap) {
-          if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
-  
-          if (usedStorageSize <= storageSizeLimit) break;
-  
-          if (!file.fileSize) continue;
-  
-          await this.deleteFile(file.fullPath);
-          usedStorageSize -= file.fileSize;
-        }
-      }
     } catch (statErr: any) {
       // Multiple processes may attempt to clean up log files in parallel.
       // A situation can arise where one process tries to read a file
@@ -146,6 +147,21 @@ export class MongoLogManager {
         await this.cleanupOldLogFiles(maxDurationMs - Date.now() - deletionStartTimestamp, remainingRetries - 1);
       }
     }
+
+    if (this._options.retentionGB) {
+      const storageSizeLimit = this._options.retentionGB * 1024 * 1024 * 1024;
+
+      for (const file of leastRecentFileHeap) {
+        if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+
+        if (usedStorageSize <= storageSizeLimit) break;
+
+        if (!file.fileSize) continue;
+
+        await this.deleteFile(file.fullPath);
+        usedStorageSize -= file.fileSize;
+      }
+    }
   }
 
   /** Create a MongoLogWriter stream for a new log file. */
@@ -154,7 +170,7 @@ export class MongoLogManager {
     const doGzip = !!this._options.gzip;
     const logFilePath = path.join(
       this._options.directory,
-      `${logId}_log${doGzip ? '.gz' : ''}`
+      `${this.prefix}${logId}_log${doGzip ? '.gz' : ''}`
     );
 
     let originalTarget: Writable;
