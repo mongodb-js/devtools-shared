@@ -115,6 +115,9 @@ describe('MongoLogManager', function () {
 
     const writer = await manager.createLogWriter();
     expect(writer.logFilePath as string).to.match(/custom_/);
+
+    writer.end();
+    await once(writer, 'finish');
   });
 
   it('cleans up old log files when requested', async function () {
@@ -577,7 +580,9 @@ describe('MongoLogManager', function () {
       },
       close: sinon.stub().resolves(),
     };
-    const opendirStub = sinon.stub(fs, 'opendir').resolves(fakeDirHandle as any);
+    const opendirStub = sinon
+      .stub(fs, 'opendir')
+      .resolves(fakeDirHandle as any);
 
     retentionDays = 0.000001; // 86.4 ms
     const manager = new MongoLogManager({
