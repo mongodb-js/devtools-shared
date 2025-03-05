@@ -62,7 +62,10 @@ export class MongoLogManager {
   }
 
   /** Clean up log files older than `retentionDays`. */
-  async cleanupOldLogFiles(maxDurationMs = 5_000, remainingRetries = 1): Promise<void> {
+  async cleanupOldLogFiles(
+    maxDurationMs = 5_000,
+    remainingRetries = 1
+  ): Promise<void> {
     const deletionStartTimestamp = Date.now();
     // Delete files older than N days
     const deletionCutoffTimestamp =
@@ -84,7 +87,13 @@ export class MongoLogManager {
       fileSize: number | undefined;
     }>((a, b) => a.fileTimestamp - b.fileTimestamp);
 
-    let usedStorageSize = this._options.retentionGB ? 0 : -Infinity;
+    const hasRetentionGB =
+      !!this._options.retentionGB && isFinite(this._options.retentionGB);
+    const hasMaxLogFileCount =
+      !!this._options.maxLogFileCount &&
+      isFinite(this._options.maxLogFileCount);
+
+    let usedStorageSize = hasRetentionGB ? 0 : -Infinity;
 
     try {
       for await (const dirent of dirHandle) {
@@ -93,7 +102,7 @@ export class MongoLogManager {
         // where lots and lots of log files end up and filesystem operations happen
         // with network latency.
         if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
-  
+
         if (!dirent.isFile()) continue;
         const logRegExp = new RegExp(
           `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
@@ -101,10 +110,10 @@ export class MongoLogManager {
         );
         const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
         if (!id) continue;
-  
+
         const fileTimestamp = +new ObjectId(id).getTimestamp();
         const fullPath = path.join(dir, dirent.name);
-  
+
         // If the file is older than expected, delete it. If the file is recent,
         // add it to the list of seen files, and if that list is too large, remove
         // the least recent file we've seen so far.
@@ -112,9 +121,9 @@ export class MongoLogManager {
           await this.deleteFile(fullPath);
           continue;
         }
-  
+
         let fileSize: number | undefined;
-        if (this._options.retentionGB) {
+        if (hasRetentionGB) {
           try {
             fileSize = (await fs.stat(fullPath)).size;
             usedStorageSize += fileSize;
@@ -123,12 +132,13 @@ export class MongoLogManager {
             continue;
           }
         }
-  
-        if (this._options.maxLogFileCount || this._options.retentionGB) {
+
+        if (hasMaxLogFileCount || hasRetentionGB) {
           leastRecentFileHeap.push({ fullPath, fileTimestamp, fileSize });
         }
-  
+
         if (
+          hasMaxLogFileCount &&
           this._options.maxLogFileCount &&
           leastRecentFileHeap.size() > this._options.maxLogFileCount
         ) {
@@ -145,11 +155,14 @@ export class MongoLogManager {
       // To handle such scenarios, we will catch lstat errors and retry cleaning up
       // to let different processes reach out to different log files.
       if (statErr.code === 'ENOENT' && remainingRetries > 0) {
-        await this.cleanupOldLogFiles(maxDurationMs - (Date.now() - deletionStartTimestamp), remainingRetries - 1);
+        await this.cleanupOldLogFiles(
+          maxDurationMs - (Date.now() - deletionStartTimestamp),
+          remainingRetries - 1
+        );
       }
     }
 
-    if (this._options.retentionGB) {
+    if (hasRetentionGB && this._options.retentionGB) {
       const storageSizeLimit = this._options.retentionGB * 1024 * 1024 * 1024;
 
       for (const file of leastRecentFileHeap) {

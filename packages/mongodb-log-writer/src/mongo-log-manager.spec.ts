@@ -316,6 +316,32 @@ describe('MongoLogManager', function () {
     expect(await getFilesState(paths)).to.equal('0000111111');
   });
 
+  it('skips checking file storage if retentionGB is set to Infinity', async function () {
+    const statStub = sinon.stub(fs, 'stat');
+
+    const manager = new MongoLogManager({
+      directory,
+      retentionDays,
+      maxLogFileCount: 1000,
+      retentionGB: Infinity,
+      onwarn,
+      onerror,
+    });
+
+    const offset = Math.floor(Date.now() / 1000);
+    for (let i = 0; i < 10; i++) {
+      const filename = path.join(
+        directory,
+        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+      );
+      await fs.writeFile(filename, '');
+    }
+
+    await manager.cleanupOldLogFiles();
+
+    expect(statStub).not.called;
+  });
+
   describe('with a random file order', function () {
     let paths: string[] = [];
     const times = [92, 90, 1, 2, 3, 91];
