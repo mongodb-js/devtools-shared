@@ -67,4 +67,59 @@ describe('get-os-info', function () {
       });
     });
   });
+
+  describe('on darwin', function () {
+    it('parses the SystemVersion.plist file', function () {
+      const fixture = `
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+                <key>BuildID</key>
+                <string>2B3829A8-E319-11EF-8892-025514DE0AB1</string>
+                <key>ProductBuildVersion</key>
+                <string>24D70</string>
+                <key>ProductCopyright</key>
+                <string>1983-2025 Apple Inc.</string>
+                <key>ProductName</key>
+                <string>macOS</string>
+                <key>ProductUserVisibleVersion</key>
+                <string>15.3.1</string>
+                <key>ProductVersion</key>
+                <string>15.3.1</string>
+                <key>iOSSupportVersion</key>
+                <string>18.3</string>
+        </dict>
+        </plist>
+      `;
+
+      expect(parseDarwinInfo(fixture)).to.deep.equal({
+        os_darwin_product_name: 'macOS',
+        os_darwin_product_version: '15.3.1',
+        os_darwin_product_build_version: '24D70',
+      });
+    });
+
+    it('returns info from /System/Library/CoreServices/SystemVersion.plist', async function () {
+      if (process.platform !== 'darwin') {
+        this.skip();
+      }
+
+      const systemVersionPlist = await fs.readFile(
+        '/System/Library/CoreServices/SystemVersion.plist',
+        'utf-8'
+      );
+
+      const {
+        os_darwin_product_name,
+        os_darwin_product_version,
+        os_darwin_product_build_version,
+      } = await getOsInfo();
+
+      // Instead of reimplementing the parser, we simply check that the values are present in the original file
+      expect(systemVersionPlist).contains(os_darwin_product_name);
+      expect(systemVersionPlist).contains(os_darwin_product_version);
+      expect(systemVersionPlist).contains(os_darwin_product_build_version);
+    });
+  });
 });

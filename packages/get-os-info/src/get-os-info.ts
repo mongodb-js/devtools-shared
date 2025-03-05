@@ -6,12 +6,19 @@ type LinuxInfo = {
   os_linux_release: string;
 };
 
+type DarwinInfo = {
+  os_darwin_product_name: string;
+  os_darwin_product_version: string;
+  os_darwin_product_build_version: string;
+};
+
 type OsInfo = {
   os_type: string;
   os_version: string;
   os_arch: string;
   os_release: string;
-} & Partial<LinuxInfo>;
+} & Partial<LinuxInfo> &
+  Partial<DarwinInfo>;
 
 async function getLinuxInfo(): Promise<LinuxInfo> {
   try {
@@ -42,6 +49,44 @@ export function parseLinuxInfo(etcRelease: string): LinuxInfo {
   };
 }
 
+async function getDarwinInfo(): Promise<DarwinInfo> {
+  try {
+    const systemVersionPlistPath =
+      '/System/Library/CoreServices/SystemVersion.plist';
+    const systemVersionPlist = await fs.readFile(
+      systemVersionPlistPath,
+      'utf-8'
+    );
+    return parseDarwinInfo(systemVersionPlist);
+  } catch (e) {
+    return {
+      os_darwin_product_name: 'unknown',
+      os_darwin_product_version: 'unknown',
+      os_darwin_product_build_version: 'unknown',
+    };
+  }
+}
+
+export function parseDarwinInfo(systemVersionPlist: string): DarwinInfo {
+  const match = systemVersionPlist.matchAll(
+    /<key>(?<key>[^<]+)<\/key>\s*<string>(?<value>[^<]+)<\/string>/gm
+  );
+
+  const {
+    ProductName: os_darwin_product_name = 'unknown',
+    ProductVersion: os_darwin_product_version = 'unknown',
+    ProductBuildVersion: os_darwin_product_build_version = 'unknown',
+  } = Object.fromEntries(
+    Array.from(match).map((m) => [m.groups?.key, m.groups?.value])
+  );
+
+  return {
+    os_darwin_product_name,
+    os_darwin_product_version,
+    os_darwin_product_build_version,
+  };
+}
+
 export async function getOsInfo(): Promise<OsInfo> {
   return {
     os_type: os.type(),
@@ -49,5 +94,6 @@ export async function getOsInfo(): Promise<OsInfo> {
     os_arch: os.arch(),
     os_release: os.release(),
     ...(process.platform === 'linux' ? await getLinuxInfo() : {}),
+    ...(process.platform === 'darwin' ? await getDarwinInfo() : {}),
   };
 }
