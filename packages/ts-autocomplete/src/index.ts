@@ -15,7 +15,7 @@ function getVirtualLanguageService(): [
     allowJs: true,
   };
 
-  const updateCode = (newDef: Record<TypeFilename, string>) => {
+  const updateCode = (newDef: Record<TypeFilename, string>): void => {
     for (const [key, value] of Object.entries(newDef)) {
       codeHolder[key] = value;
       versions[key] = (versions[key] ?? 1) + 1;
@@ -54,7 +54,13 @@ function getVirtualLanguageService(): [
   ];
 }
 
-function mapCompletions(completions: ts.CompletionInfo) {
+type AutoCompletion = {
+  name: string;
+  kind: ts.ScriptElementKind;
+  type: string;
+};
+
+function mapCompletions(completions: ts.CompletionInfo): AutoCompletion[] {
   return completions.entries.map((entry) => {
     const declarations = entry.symbol?.getDeclarations();
     let type = 'any';
@@ -79,7 +85,7 @@ export default class Autocompleter {
     [this.languageService, this.updateCode] = getVirtualLanguageService();
   }
 
-  autocomplete(code: string, position?: number) {
+  autocomplete(code: string, position?: number): AutoCompletion[] {
     if (typeof position === 'undefined') {
       position = code.length;
     }
