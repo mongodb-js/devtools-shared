@@ -58,7 +58,7 @@ function mapCompletions(completions: ts.CompletionInfo) {
   return completions.entries.map((entry) => {
     const declarations = entry.symbol?.getDeclarations();
     let type = 'any';
-    if (declarations && declarations[0]) {
+    if (declarations?.[0]) {
       const decl = declarations[0];
       type = decl.getChildAt(2)?.getFullText()?.trim() ?? 'any';
     }
