@@ -76,11 +76,15 @@ type AutoCompletion = {
 
 function mapCompletions(completions: ts.CompletionInfo): AutoCompletion[] {
   return completions.entries.map((entry) => {
-    //console.log(entry.symbol?.getDeclarations());
+    // entry.symbol is included because we specify includeSymbol when calling
+    // getCompletionsAtPosition
     const declarations = entry.symbol?.getDeclarations();
     let type = 'any';
-    if (declarations?.[0]) {
-      const decl = declarations[0];
+    const decl = declarations?.[0];
+    if (decl) {
+      // decl's children are things like ['a', ':', 'string'] or ['bb', ':',
+      // '(p1: number) => void']. So the one at position 2 (zero indexed) is the
+      // type.
       type = decl.getChildAt(2)?.getFullText()?.trim() ?? 'any';
     }
 
