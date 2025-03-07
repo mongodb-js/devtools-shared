@@ -1,4 +1,9 @@
 import * as ts from 'typescript';
+import createDebug from 'debug';
+
+const debugLog = createDebug('ts-autocomplete:log');
+const debugTrace = createDebug('ts-autocomplete:trace');
+const debugError = createDebug('ts-autocomplete:error');
 
 type TypeFilename = string;
 
@@ -18,13 +23,17 @@ function getVirtualLanguageService(): [
   const updateCode = (newDef: Record<TypeFilename, string>): void => {
     for (const [key, value] of Object.entries(newDef)) {
       codeHolder[key] = value;
-      versions[key] = (versions[key] ?? 1) + 1;
+      versions[key] = (versions[key] ?? 0) + 1;
     }
   };
 
   const servicesHost: ts.LanguageServiceHost = {
-    getScriptFileNames: () => Object.keys(codeHolder),
-    getScriptVersion: (fileName) => (versions[fileName] ?? 1).toString(),
+    getScriptFileNames: () => {
+      return Object.keys(codeHolder);
+    },
+    getScriptVersion: (fileName) => {
+      return (versions[fileName] ?? 1).toString();
+    },
     getScriptSnapshot: (fileName) => {
       if (fileName in codeHolder) {
         return ts.ScriptSnapshot.fromString(codeHolder[fileName]);
@@ -35,8 +44,9 @@ function getVirtualLanguageService(): [
     getCurrentDirectory: () => process.cwd(),
     getCompilationSettings: () => options,
     getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
-    fileExists: (fileName) =>
-      fileName in codeHolder || ts.sys.fileExists(fileName),
+    fileExists: (fileName) => {
+      return fileName in codeHolder || ts.sys.fileExists(fileName);
+    },
     readFile: (fileName) => {
       if (fileName in codeHolder) {
         return codeHolder[fileName];
@@ -46,6 +56,10 @@ function getVirtualLanguageService(): [
     readDirectory: (...args) => ts.sys.readDirectory(...args),
     directoryExists: (...args) => ts.sys.directoryExists(...args),
     getDirectories: (...args) => ts.sys.getDirectories(...args),
+
+    log: (...args) => debugLog(args),
+    trace: (...args) => debugTrace(args),
+    error: (...args) => debugError(args),
   };
 
   return [
@@ -62,6 +76,7 @@ type AutoCompletion = {
 
 function mapCompletions(completions: ts.CompletionInfo): AutoCompletion[] {
   return completions.entries.map((entry) => {
+    //console.log(entry.symbol?.getDeclarations());
     const declarations = entry.symbol?.getDeclarations();
     let type = 'any';
     if (declarations?.[0]) {
@@ -105,6 +120,18 @@ export default class Autocompleter {
 
     if (completions?.isMemberCompletion) {
       return mapCompletions(completions);
+    } else {
+      /*
+      // TOOD: trying to find examples of things that are not member completions..
+      if (completions) {
+        console.log(completions.entries?.length, 'entries');
+        if (completions.entries?.length > 100) {
+          completions.entries = [];// so I can see something
+        }
+        console.log(completions);
+        //console.log(completions?.entries.map((entry) =>  entry.name).filter((name) => name.includes('param')));
+      }
+        */
     }
 
     return [];
