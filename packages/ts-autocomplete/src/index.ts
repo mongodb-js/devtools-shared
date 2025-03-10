@@ -68,39 +68,94 @@ function getVirtualLanguageService(): [
   ];
 }
 
+function compileSourceFile(code: string): ts.SourceFile {
+  return ts.createSourceFile(
+    '_initial_parsing.ts',
+    code,
+    ts.ScriptTarget.Latest,
+    true
+  );
+}
+
+function getSymbolAtPosition(
+  sourceFile: ts.SourceFile,
+  position: number
+): string | null {
+  function findNodeAtPosition(node: ts.Node): ts.Node | undefined {
+    if (position >= node.getStart(sourceFile) && position <= node.getEnd()) {
+      return ts.forEachChild(node, findNodeAtPosition) || node;
+    }
+
+    return undefined;
+  }
+
+  let node = findNodeAtPosition(sourceFile);
+
+  while (node && !ts.isIdentifier(node)) {
+    if (node.parent) {
+      node = node.parent;
+    } else {
+      break;
+    }
+  }
+
+  return node && ts.isIdentifier(node) ? node.getText(sourceFile) : null;
+}
+
 type AutoCompletion = {
   name: string;
   kind: ts.ScriptElementKind;
   type: string;
 };
 
-function mapCompletions(completions: ts.CompletionInfo): AutoCompletion[] {
-  return completions.entries.map((entry) => {
-    // entry.symbol is included because we specify includeSymbol when calling
-    // getCompletionsAtPosition
-    const declarations = entry.symbol?.getDeclarations();
-    let type = 'any';
-    const decl = declarations?.[0];
-    if (decl) {
-      // decl's children are things like ['a', ':', 'string'] or ['bb', ':',
-      // '(p1: number) => void']. So the one at position 2 (zero indexed) is the
-      // type.
-      type = decl.getChildAt(2)?.getFullText()?.trim() ?? 'any';
-    }
+function mapCompletions(
+  filter: AutocompleteFilterFunction,
+  trigger: string,
+  completions: ts.CompletionInfo
+): AutoCompletion[] {
+  return completions.entries
+    .filter((entry) => filter({ trigger, name: entry.name }))
+    .map((entry) => {
+      // entry.symbol is included because we specify includeSymbol when calling
+      // getCompletionsAtPosition
+      const declarations = entry.symbol?.getDeclarations();
+      let type = 'any';
+      const decl = declarations?.[0];
+      if (decl) {
+        // decl's children are things like ['a', ':', 'string'] or ['bb', ':',
+        // '(p1: number) => void']. So the one at position 2 (zero indexed) is the
+        // type.
+        type = decl.getChildAt(2)?.getFullText()?.trim() ?? 'any';
+      }
 
-    return {
-      name: entry.name,
-      kind: entry.kind,
-      type,
-    };
-  });
+      return {
+        name: entry.name,
+        kind: entry.kind,
+        type,
+      };
+    });
 }
 
+type AutocompleteFilterOptions = {
+  trigger: string;
+  name: string;
+};
+
+type AutocompleteFilterFunction = (
+  filterOptions: AutocompleteFilterOptions
+) => boolean;
+
+type AutocompleterOptions = {
+  filter?: AutocompleteFilterFunction;
+};
+
 export default class Autocompleter {
+  private readonly filter: AutocompleteFilterFunction;
   private readonly languageService: ts.LanguageService;
   readonly updateCode: UpdateDefinitionFunction;
 
-  constructor() {
+  constructor({ filter }: AutocompleterOptions = {}) {
+    this.filter = filter ?? (() => true);
     [this.languageService, this.updateCode] = getVirtualLanguageService();
   }
 
@@ -122,20 +177,10 @@ export default class Autocompleter {
       }
     );
 
-    if (completions?.isMemberCompletion) {
-      return mapCompletions(completions);
-    } else {
-      /*
-      // TOOD: trying to find examples of things that are not member completions..
-      if (completions) {
-        console.log(completions.entries?.length, 'entries');
-        if (completions.entries?.length > 100) {
-          completions.entries = [];// so I can see something
-        }
-        console.log(completions);
-        //console.log(completions?.entries.map((entry) =>  entry.name).filter((name) => name.includes('param')));
-      }
-        */
+    if (completions) {
+      const tsAst = compileSourceFile(code);
+      const symbolAtPosition = getSymbolAtPosition(tsAst, position) ?? '';
+      return mapCompletions(this.filter, symbolAtPosition, completions);
     }
 
     return [];
