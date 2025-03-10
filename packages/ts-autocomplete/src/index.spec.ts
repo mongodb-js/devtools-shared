@@ -1,20 +1,7 @@
+import path from 'path';
+import { promises as fs } from 'fs';
 import Autocompleter from './index';
 import { expect } from 'chai';
-
-const CODE_TS = `
-
-export type MyObject = {
-    stringProp: string,
-    functionProp: (p1: number) => void
-};
-
-export type MyFunctionParams = { param1: string, param2: string };
-
-declare global {
-  declare var myGlobalObject: MyObject;
-  export function myGlobalFunction(params: MyFunctionParams): void {};
-}
-`;
 
 function filterStartingWith({
   name,
@@ -30,6 +17,15 @@ function filterStartingWith({
 }
 
 describe('Autocompleter', function () {
+  let CODE_TS: string;
+
+  before(async function () {
+    CODE_TS = await fs.readFile(
+      path.resolve(__dirname, '..', 'test', 'fixtures', 'code.ts'),
+      'utf8'
+    );
+  });
+
   describe('without filter', function () {
     let autoCompleter: Autocompleter;
 
