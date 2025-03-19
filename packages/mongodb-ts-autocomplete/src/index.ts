@@ -1,4 +1,3 @@
-// TODO: should we have this dependency again or should we export functions from ts-autocomplete?
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type {
   AutocompleterOptions,
