@@ -68,7 +68,7 @@
     "prettier": "^2.3.2",
     "s3rver": "^3.7.1",
     "sinon": "^9.2.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "ajv": "^6.12.5",
