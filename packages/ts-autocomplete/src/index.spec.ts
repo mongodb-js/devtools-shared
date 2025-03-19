@@ -56,7 +56,7 @@ describe('Autocompleter', function () {
       expect(completions).to.deep.include({
         kind: 'function',
         name: 'myGlobalFunction',
-        type: 'myGlobalFunction',
+        type: 'void',
       });
     });
 
@@ -217,7 +217,7 @@ describe('Autocompleter', function () {
         {
           kind: 'function',
           name: 'myGlobalFunction',
-          type: 'myGlobalFunction',
+          type: 'void',
         },
       ]);
     });
