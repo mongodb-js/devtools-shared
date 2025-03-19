@@ -26,29 +26,37 @@ type MongoDBAutocompleterOptions = {
 };
 
 class DatabaseSchema {
-  private collectionNames: string[];
+  private collectionNames: Set<string>;
   private collectionSchemas: Record<string, JSONSchema>;
 
   constructor() {
-    this.collectionNames = [];
+    // TODO: this is kinda the only real reason for this class: So we can keep
+    // track of the known collectionNames for a database. It could be all the
+    // names from a listCollections() or it could just be all the ones we've
+    // auto-completed for. The schemas can come from the autocompletion context.
+    // This can probably be added to the autocompletion context.
+    this.collectionNames = new Set();
     this.collectionSchemas = Object.create(null);
   }
 
   setCollectionNames(collectionNames: string[]): void {
-    this.collectionNames = collectionNames;
+    this.collectionNames = new Set(collectionNames);
   }
 
   setCollectionSchema(collectionName: string, schema: JSONSchema): void {
+    this.collectionNames.add(collectionName);
     this.collectionSchemas[collectionName] = schema;
   }
 
   toTypescriptTypeDefinition(): string {
-    const collectionProperties = this.collectionNames.map((collectionName) => {
-      const def = this.collectionSchemas[collectionName]
-        ? toTypescriptTypeDefinition(this.collectionSchemas[collectionName])
-        : `{}`;
-      return `      '${collectionName}': ShellAPI.Collection<${def}>;`;
-    });
+    const collectionProperties = [...this.collectionNames.values()].map(
+      (collectionName) => {
+        const def = this.collectionSchemas[collectionName]
+          ? toTypescriptTypeDefinition(this.collectionSchemas[collectionName])
+          : `{}`;
+        return `      '${collectionName}': ShellAPI.Collection<${def}>;`;
+      }
+    );
 
     return `{
   ${collectionProperties.join('\n')}
@@ -57,35 +65,28 @@ class DatabaseSchema {
 }
 
 class ConnectionSchema {
-  private readonly databaseNames: string[];
-  private databaseName: string;
+  private readonly databaseNames: Set<string>;
   private readonly databaseSchemas: Record<string, DatabaseSchema>;
 
   constructor() {
-    this.databaseNames = [];
-    this.databaseName = 'test';
+    // TODO: this is kinda the only real reason for this class: So we can keep
+    // track of the known databaseNames for a connection. It could be all the
+    // names from a listDatabases() or it could just be all the ones we've
+    // auto-completed for. The schemas can come from the autocompletion context.
+    // This can probably be added to the autocompletion context.
+    this.databaseNames = new Set();
     this.databaseSchemas = Object.create(null);
-
-    this.addDatabase(this.databaseName);
-  }
-
-  setDatabaseName(databaseName: string) {
-    this.databaseName = databaseName;
-  }
-
-  getCurrentDatabaseName(): string {
-    return this.databaseName;
   }
 
   addDatabase(databaseName: string) {
-    this.databaseNames.push(databaseName);
-    this.databaseSchemas[databaseName] = new DatabaseSchema();
+    this.databaseNames.add(databaseName);
+    if (!this.databaseSchemas[databaseName]) {
+      this.databaseSchemas[databaseName] = new DatabaseSchema();
+    }
   }
 
   setDatabaseCollectionNames(databaseName: string, collectionNames: string[]) {
-    if (!this.databaseSchemas[databaseName]) {
-      throw new Error(`expected ${databaseName} to be known`);
-    }
+    this.addDatabase(databaseName);
     this.databaseSchemas[databaseName].setCollectionNames(collectionNames);
   }
 
@@ -94,9 +95,7 @@ class ConnectionSchema {
     collectionName: string,
     collectionSchema: JSONSchema
   ) {
-    if (!this.databaseSchemas[databaseName]) {
-      throw new Error(`expected ${databaseName} to be known`);
-    }
+    this.addDatabase(databaseName);
     this.databaseSchemas[databaseName].setCollectionSchema(
       collectionName,
       collectionSchema
@@ -104,12 +103,14 @@ class ConnectionSchema {
   }
 
   toTypescriptTypeDefinition(): string {
-    const databaseProperties = this.databaseNames.map((databaseName) => {
-      const def = this.databaseSchemas[databaseName]
-        ? this.databaseSchemas[databaseName].toTypescriptTypeDefinition()
-        : `{}`;
-      return `      '${databaseName}': ShellAPI.Database & ${def}`;
-    });
+    const databaseProperties = [...this.databaseNames.values()].map(
+      (databaseName) => {
+        const def = this.databaseSchemas[databaseName]
+          ? this.databaseSchemas[databaseName].toTypescriptTypeDefinition()
+          : `{}`;
+        return `      '${databaseName}': ShellAPI.Database & ${def}`;
+      }
+    );
 
     return `{
   ${databaseProperties.join('\n')}
@@ -117,10 +118,15 @@ class ConnectionSchema {
   }
 }
 
+type AutocompleteOptions = {
+  connectionId: string;
+  databaseName: string;
+  position?: number;
+};
+
 export default class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
   private connectionSchemas: Record<string, ConnectionSchema>;
-  private currentConnectionKey: string | undefined;
   private readonly autocompleter: Autocompleter;
 
   constructor({ context, autocompleterOptions }: MongoDBAutocompleterOptions) {
@@ -141,30 +147,11 @@ export default class MongoDBAutocompleter {
     this.autocompleter.updateCode({ 'shell-api.d.ts': loadShellAPI() });
   }
 
-  setConnectionKey(connectionKey: string) {
-    this.currentConnectionKey = connectionKey;
-    this.connectionSchemas[this.currentConnectionKey] = new ConnectionSchema();
-    this.autocompleter.updateCode({
-      [`${connectionKey}.d.ts`]: this.getConnectionCode(
-        this.currentConnectionKey
-      ),
-    });
-
-    // do we need this? it will be rewritten before auto-completing anyway
-    //this.autocompleter.updateCode({ 'current-globals.d.ts': this.getCurrentGlobalsCode() });
-  }
-
-  setDatabaseName(databaseName: string): void {
-    this.getActiveConnection().setDatabaseName(databaseName);
-    // do we need this? it will be rewritten before auto-completing anyway
-    //this.autocompleter.updateCode({ 'current-globals.d.ts': this.getCurrentGlobalsCode() });
-  }
-
-  getActiveConnection(): ConnectionSchema {
-    if (!this.currentConnectionKey) {
-      throw new Error('No active connection');
+  addConnection(connectionId: string): ConnectionSchema {
+    if (!this.connectionSchemas[connectionId]) {
+      this.connectionSchemas[connectionId] = new ConnectionSchema();
     }
-    return this.connectionSchemas[this.currentConnectionKey];
+    return this.connectionSchemas[connectionId];
   }
 
   getConnectionCode(connectionKey: string): string {
@@ -183,20 +170,15 @@ declare global {
 `;
   }
 
-  getCurrentGlobalsCode() {
-    if (!this.currentConnectionKey) {
-      throw new Error('No active connection');
-    }
-
-    const databaseName = this.getActiveConnection().getCurrentDatabaseName();
+  getCurrentGlobalsCode(connectionId: string, databaseName: string) {
     return `
 /// <reference path="shell-api.d.ts" />
-/// <reference path="${this.currentConnectionKey}.d.ts" />
+/// <reference path="${connectionId}.d.ts" />
 
 export {}; // turns this into an "external module"
 
 declare global {
-  type CurrentDatabaseSchema = Connection${this.currentConnectionKey}.ServerSchema['${databaseName}'];
+  type CurrentDatabaseSchema = Connection${connectionId}.ServerSchema['${databaseName}'];
 
   var db: CurrentDatabaseSchema;
   var use: (collection: string) => CurrentDatabaseSchema;
@@ -206,12 +188,8 @@ declare global {
 
   async autocomplete(
     code: string,
-    position?: number
+    { connectionId, databaseName, position }: AutocompleteOptions
   ): Promise<AutoCompletion[]> {
-    if (!this.currentConnectionKey) {
-      throw new Error('No active connection');
-    }
-
     if (typeof position === 'undefined') {
       position = code.length;
     }
@@ -237,40 +215,40 @@ declare global {
         [];
 
       schema = await this.context.schemaInformationForAggregation(
-        this.currentConnectionKey,
-        this.getActiveConnection().getCurrentDatabaseName(),
+        connectionId,
+        databaseName,
         collectionName,
         pipelineToDryRun as Pipeline
       );
     } else {
       schema = await this.context.schemaInformationForCollection(
-        this.currentConnectionKey,
-        this.getActiveConnection().getCurrentDatabaseName(),
+        connectionId,
+        databaseName,
         collectionName
       );
     }
 
-    const activeConnection = this.getActiveConnection();
-    const databaseName = this.getActiveConnection().getCurrentDatabaseName();
-    activeConnection.addCollectionSchema(databaseName, collectionName, schema);
+    const connection = this.addConnection(connectionId);
+    connection.addCollectionSchema(databaseName, collectionName, schema);
 
     const collectionNames = await this.context.collectionsForDatabase(
-      this.currentConnectionKey,
+      connectionId,
       databaseName
     );
-    activeConnection.setDatabaseCollectionNames(databaseName, collectionNames);
+    connection.setDatabaseCollectionNames(databaseName, collectionNames);
 
     // TODO: the problem with doing it this way is that, while the collection
     // schema might be cached, we'll be generating TypeScript for it (and every
     // other collection in the db and in fact every db in the server) every
     // time.
     this.autocompleter.updateCode({
-      [`${this.currentConnectionKey}.d.ts`]: this.getConnectionCode(
-        this.currentConnectionKey
-      ),
+      [`${connectionId}.d.ts`]: this.getConnectionCode(connectionId),
     });
     this.autocompleter.updateCode({
-      'current-globals.d.ts': this.getCurrentGlobalsCode(),
+      'current-globals.d.ts': this.getCurrentGlobalsCode(
+        connectionId,
+        databaseName
+      ),
     });
 
     return this.autocompleter.autocomplete(code, position);

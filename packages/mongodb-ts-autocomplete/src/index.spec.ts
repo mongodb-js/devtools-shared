@@ -46,11 +46,13 @@ describe('MongoDBAutocompleter', function () {
     autocompleter = new MongoDBAutocompleter({
       context: autocompleterContext,
     });
-    autocompleter.setConnectionKey('myConnection');
   });
 
   it('completes a bson expression', async function () {
-    const completions = await autocompleter.autocomplete('Ob');
+    const completions = await autocompleter.autocomplete('Ob', {
+      connectionId: 'myConnection',
+      databaseName: 'myDatabase',
+    });
     expect(completions.filter((c) => c.name === 'ObjectId')).to.deep.equal([
       {
         kind: 'function',
@@ -61,7 +63,10 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('completes a collection name', async function () {
-    const completions = await autocompleter.autocomplete('db.fo');
+    const completions = await autocompleter.autocomplete('db.fo', {
+      connectionId: 'myConnection',
+      databaseName: 'myDatabase',
+    });
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(completions).to.deep.equal([
@@ -89,7 +94,10 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('completes a collection field name', async function () {
-    const completions = await autocompleter.autocomplete('db.foo.find({ fo');
+    const completions = await autocompleter.autocomplete('db.foo.find({ fo', {
+      connectionId: 'myConnection',
+      databaseName: 'myDatabase',
+    });
 
     expect(completions).to.deep.equal([
       {
