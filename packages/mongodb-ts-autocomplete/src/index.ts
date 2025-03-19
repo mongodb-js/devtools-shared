@@ -169,7 +169,7 @@ export default class MongoDBAutocompleter {
 
   getConnectionCode(connectionKey: string): string {
     return `
-/// <reference path="/shell-api.d.ts" />
+/// <reference path="shell-api.d.ts" />
 
 export {};
 
@@ -190,8 +190,8 @@ declare global {
 
     const databaseName = this.getActiveConnection().getCurrentDatabaseName();
     return `
-/// <reference path="/shell-api.d.ts" />
-/// <reference path="/${this.currentConnectionKey}.d.ts" />
+/// <reference path="shell-api.d.ts" />
+/// <reference path="${this.currentConnectionKey}.d.ts" />
 
 export {}; // turns this into an "external module"
 
