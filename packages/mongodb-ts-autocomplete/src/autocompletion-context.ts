@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
 
-import type { JSONSchema } from '../type-export';
+import type { JSONSchema } from './type-export';
 
 // TODO: This should probably come from the mql work
 export type Pipeline = any[];

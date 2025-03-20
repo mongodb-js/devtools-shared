@@ -1,6 +1,6 @@
 import type { MongoDBJSONSchema, StandardJSONSchema } from 'mongodb-schema';
 import { analyzeDocuments } from 'mongodb-schema';
-import { toTypescriptTypeDefinition } from '.';
+import { toTypescriptTypeDefinition } from './type-export';
 
 import assert from 'assert/strict';
 
