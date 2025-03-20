@@ -1,7 +1,7 @@
 import type * as bson from 'bson';
+import { FilterOperators } from 'mongodb';
 
-// from Node.js driver
-type Condition<T> = AlternativeType<T>; // misses FilterOperators
+type Condition<T> = AlternativeType<T> | FilterOperators<T>;
 type AlternativeType<T> = T extends ReadonlyArray<infer U>
   ? T | RegExpOrString<U>
   : RegExpOrString<T>;
@@ -15,6 +15,7 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
+type FieldExpression<T> = { [k: string]: FieldPath<T> };
 export namespace AccumulatorOperators {
   /**
    * A type describing the `$accumulator` operator.
@@ -2884,26 +2885,40 @@ export namespace ExpressionOperators {
      * Returns a subset of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/slice/}
      */
-    $slice: [
-      /**
-       * Any valid expression as long as it resolves to an array.
-       */
-      expression: ResolvesToArray<S>,
+    $slice:
+      | [
+          /**
+           * Any valid expression as long as it resolves to an array.
+           */
+          expression: ResolvesToArray<S>,
 
-      /**
-       * Any valid expression as long as it resolves to an integer.
-       * If positive, $slice determines the starting position from the start of the array. If position is greater than the number of elements, the $slice returns an empty array.
-       * If negative, $slice determines the starting position from the end of the array. If the absolute value of the <position> is greater than the number of elements, the starting position is the start of the array.
-       */
-      position?: ResolvesToInt<S>,
+          /**
+           * Any valid expression as long as it resolves to an integer. If position is specified, n must resolve to a positive integer.
+           * If positive, $slice returns up to the first n elements in the array. If the position is specified, $slice returns the first n elements starting from the position.
+           * If negative, $slice returns up to the last n elements in the array. n cannot resolve to a negative number if <position> is specified.
+           */
+          n: ResolvesToInt<S>
+        ]
+      | [
+          /**
+           * Any valid expression as long as it resolves to an array.
+           */
+          expression: ResolvesToArray<S>,
 
-      /**
-       * Any valid expression as long as it resolves to an integer. If position is specified, n must resolve to a positive integer.
-       * If positive, $slice returns up to the first n elements in the array. If the position is specified, $slice returns the first n elements starting from the position.
-       * If negative, $slice returns up to the last n elements in the array. n cannot resolve to a negative number if <position> is specified.
-       */
-      n: ResolvesToInt<S>
-    ];
+          /**
+           * Any valid expression as long as it resolves to an integer.
+           * If positive, $slice determines the starting position from the start of the array. If position is greater than the number of elements, the $slice returns an empty array.
+           * If negative, $slice determines the starting position from the end of the array. If the absolute value of the <position> is greater than the number of elements, the starting position is the start of the array.
+           */
+          position: ResolvesToInt<S>,
+
+          /**
+           * Any valid expression as long as it resolves to an integer. If position is specified, n must resolve to a positive integer.
+           * If positive, $slice returns up to the first n elements in the array. If the position is specified, $slice returns the first n elements starting from the position.
+           * If negative, $slice returns up to the last n elements in the array. n cannot resolve to a negative number if <position> is specified.
+           */
+          n: ResolvesToInt<S>
+        ];
   }
 
   /**
@@ -5304,7 +5319,12 @@ export type TimeUnit =
 export type OutCollection = unknown;
 export type WhenMatched = string;
 export type WhenNotMatched = string;
-export type Expression<S> = C_expression<S> | FieldPath<S> | BsonPrimitive;
+export type Expression<S> =
+  | C_expression<S>
+  | FieldPath<S>
+  | BsonPrimitive
+  | FieldExpression<S>
+  | FieldPath<S>[];
 export type Stage<S> =
   | C_stage<S>
   | StageOperators.$addFields<S>

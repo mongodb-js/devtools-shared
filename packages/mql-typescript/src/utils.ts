@@ -1,5 +1,3 @@
-import { unknown } from 'zod';
-
 export class StringWriter {
   private buffer: string = '';
 
@@ -10,4 +8,12 @@ export class StringWriter {
   public toString() {
     return this.buffer;
   }
+}
+
+export function capitalize(str: string): string {
+  return str[0].toUpperCase() + str.slice(1);
+}
+
+export function removeNewlines(str: string): string {
+  return str.replace(/\r?\n|\r/gm, '');
 }

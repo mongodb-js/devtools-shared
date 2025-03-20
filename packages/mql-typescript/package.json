@@ -30,8 +30,9 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
-    "prestart": "npm run extract-metaschema",
-    "start": "ts-node src/index.ts > out/schema.ts && npm run prettier -- --write out/schema.ts",
+    "pregenerate-schema": "npm run extract-metaschema",
+    "generate-schema": "ts-node src/index.ts schema && npm run prettier -- --write out/schema.ts",
+    "generate-tests": "ts-node src/index.ts tests && npm run prettier -- --write tests/**/*.ts",
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
     "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
@@ -55,6 +56,7 @@
     "@mongodb-js/tsconfig-devtools": "^1.0.2",
     "@types/chai": "^5.2.0",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^21.1.7",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
     "@types/sinon-chai": "^4.0.0",
@@ -74,6 +76,11 @@
   "dependencies": {
     "bson": "^6.10.3",
     "js-yaml": "^4.1.0",
+    "jsdom": "^26.0.0",
+    "json5": "^2.2.3",
+    "mongodb": "^6.15.0",
+    "mongodb-schema": "^12.5.2",
+    "yargs": "^17.7.2",
     "zod": "^3.24.2"
   }
 }
