@@ -57,7 +57,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'function',
         name: 'ObjectId',
-        type: 'ShellAPI.ObjectId',
+        type: 'ObjectId',
       },
     ]);
   });
