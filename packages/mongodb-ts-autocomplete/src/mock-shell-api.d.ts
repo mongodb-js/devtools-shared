@@ -2,6 +2,7 @@ export {}; // turns this into an "external module"
 
 declare global {
   namespace ShellAPI {
+    // TODO: most of these are actually MQL
     export interface Document {
       [key: string]: any;
     }
