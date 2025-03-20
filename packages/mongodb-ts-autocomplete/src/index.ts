@@ -3,8 +3,7 @@ import type {
   AutocompleterOptions,
   AutoCompletion,
 } from '@mongodb-js/ts-autocomplete';
-import { loadShellAPI } from './shell-api';
-import { loadBSONExpressions } from './bson-expressions';
+import loadFiles from './autocompleter-types';
 
 import type { JSONSchema } from './type-export';
 import { toTypescriptTypeDefinition } from './type-export';
@@ -136,15 +135,7 @@ export default class MongoDBAutocompleter {
     this.connectionSchemas = Object.create(null);
     this.connectionSchemas;
 
-    // TODO: set the @mongodb-js/mql-typescript definitions (will this be separate or part of shell-api?)
-    // these aren't globals because they are types, so probably only make sense
-    // in combination with either the shell-api or something like a document or
-    // aggregation editor
-
-    this.autocompleter.updateCode({
-      'bson-expressions.d.ts': loadBSONExpressions(),
-    });
-    this.autocompleter.updateCode({ 'shell-api.d.ts': loadShellAPI() });
+    this.autocompleter.updateCode(loadFiles());
   }
 
   addConnection(connectionId: string): ConnectionSchema {

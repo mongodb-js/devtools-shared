@@ -1,7 +1,12 @@
+// TODO: everything in here is just a very minimal stub until we can generate
+// this file from the work in MONGOSH-2030
+
 export {}; // turns this into an "external module"
 
+// this has to be global otherwise the other files won't be able to use the
+// namespace
 declare global {
-  namespace ShellAPI {
+  export namespace MQL {
     // TODO: most of these are actually MQL
     export interface Document {
       [key: string]: any;
@@ -37,23 +42,5 @@ declare global {
     };
 
     export type Pipeline<T> = Array<Match<T> | Project<T> | Lookup<T, any>>;
-
-    export interface Collection<T> {
-      find(query: Filter<T>): Cursor<T>;
-      findOne(query: Filter<T>): T;
-      aggregate(pipeline: Pipeline<T>): Cursor<T>;
-      insertOne(value: T): void;
-      insertMany(value: Array<T>): void;
-      updateOne(query: Filter<T>, modifier: Partial<T> | Pipeline<T>): void;
-      updateMany(query: Filter<T>, modifier: Partial<T> | Pipeline<T>): void;
-    }
-
-    export interface Database {
-      runCommand(cmd: string | Document, options: Document): Document;
-    }
   }
 }
-
-// NOTE: there are no globals declared yet. db and others will be generated
-// separately based on the the current database/collection/aggregation/whatever
-// that's being accessed. Those just use these types.

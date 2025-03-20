@@ -57,7 +57,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'function',
         name: 'ObjectId',
-        type: 'ObjectId',
+        type: 'BSON.ObjectId',
       },
     ]);
   });
@@ -88,7 +88,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'method',
         name: 'runCommand',
-        type: 'Document',
+        type: 'MQL.Document',
       },
     ]);
   });
