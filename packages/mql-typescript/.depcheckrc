@@ -6,3 +6,4 @@ ignores:
  - 'sinon'
 ignore-patterns:
  - 'dist'
+ - 'mongo-php-library'

@@ -2,9 +2,8 @@ import type * as bson from 'bson';
 import { FilterOperators } from 'mongodb';
 
 type Condition<T> = AlternativeType<T> | FilterOperators<T>;
-type AlternativeType<T> = T extends ReadonlyArray<infer U>
-  ? T | RegExpOrString<U>
-  : RegExpOrString<T>;
+type AlternativeType<T> =
+  T extends ReadonlyArray<infer U> ? T | RegExpOrString<U> : RegExpOrString<T>;
 type RegExpOrString<T> = T extends string ? bson.BSONRegExp | RegExp | T : T;
 type KeysOfAType<T, Type> = {
   [k in keyof T]: NonNullable<T[k]> extends Type ? k : never;
@@ -169,7 +168,7 @@ export namespace AccumulatorOperators {
      */
     $covariancePop: [
       expression1: ResolvesToNumber<S>,
-      expression2: ResolvesToNumber<S>
+      expression2: ResolvesToNumber<S>,
     ];
   }
 
@@ -185,7 +184,7 @@ export namespace AccumulatorOperators {
      */
     $covarianceSamp: [
       expression1: ResolvesToNumber<S>,
-      expression2: ResolvesToNumber<S>
+      expression2: ResolvesToNumber<S>,
     ];
   }
 
@@ -733,7 +732,7 @@ export namespace ExpressionOperators {
       /**
        * The arguments can be any valid expression as long as they resolve to either all numbers or to numbers and a date.
        */
-      ...(ResolvesToNumber<S> | ResolvesToDate<S>)[]
+      ...(ResolvesToNumber<S> | ResolvesToDate<S>)[],
     ];
   }
 
@@ -765,7 +764,7 @@ export namespace ExpressionOperators {
         | ResolvesToNumber<S>
         | ResolvesToString<S>
         | ResolvesToNull<S>
-      )[]
+      )[],
     ];
   }
 
@@ -857,7 +856,7 @@ export namespace ExpressionOperators {
        * By default $atan returns values as a double. $atan2 can also return values as a 128-bit decimal as long as the expression resolves to a 128-bit decimal value.
        */
       y: ResolvesToNumber<S>,
-      x: ResolvesToNumber<S>
+      x: ResolvesToNumber<S>,
     ];
   }
 
@@ -1501,7 +1500,7 @@ export namespace ExpressionOperators {
        * The first argument is the dividend, and the second argument is the divisor; i.e. the first argument is divided by the second argument.
        */
       dividend: ResolvesToNumber<S>,
-      divisor: ResolvesToNumber<S>
+      divisor: ResolvesToNumber<S>,
     ];
   }
 
@@ -1731,7 +1730,7 @@ export namespace ExpressionOperators {
       /**
        * Any valid expression that resolves to an array.
        */
-      array: ResolvesToArray<S>
+      array: ResolvesToArray<S>,
     ];
   }
 
@@ -1763,7 +1762,7 @@ export namespace ExpressionOperators {
        * An integer, or a number that can be represented as integers (such as 2.0), that specifies the ending index position for the search. Can be any valid expression that resolves to a non-negative integral number. If you specify a <end> index value, you should also specify a <start> index value; otherwise, $indexOfArray uses the <end> value as the <start> index value instead of the <end> value.
        * If unspecified, the ending index position for the search is the end of the string.
        */
-      end?: ResolvesToInt<S>
+      end?: ResolvesToInt<S>,
     ];
   }
 
@@ -1799,7 +1798,7 @@ export namespace ExpressionOperators {
        * An integer, or a number that can be represented as integers (such as 2.0), that specifies the ending index position for the search. Can be any valid expression that resolves to a non-negative integral number. If you specify a <end> index value, you should also specify a <start> index value; otherwise, $indexOfArray uses the <end> value as the <start> index value instead of the <end> value.
        * If unspecified, the ending index position for the search is the end of the string.
        */
-      end?: ResolvesToInt<S>
+      end?: ResolvesToInt<S>,
     ];
   }
 
@@ -1835,7 +1834,7 @@ export namespace ExpressionOperators {
        * An integer, or a number that can be represented as integers (such as 2.0), that specifies the ending index position for the search. Can be any valid expression that resolves to a non-negative integral number. If you specify a <end> index value, you should also specify a <start> index value; otherwise, $indexOfArray uses the <end> value as the <start> index value instead of the <end> value.
        * If unspecified, the ending index position for the search is the end of the string.
        */
-      end?: ResolvesToInt<S>
+      end?: ResolvesToInt<S>,
     ];
   }
 
@@ -2032,7 +2031,7 @@ export namespace ExpressionOperators {
       /**
        * Any valid expression as long as it resolves to a positive number greater than 1.
        */
-      base: ResolvesToNumber<S>
+      base: ResolvesToNumber<S>,
     ];
   }
 
@@ -2199,7 +2198,7 @@ export namespace ExpressionOperators {
       /**
        * Any valid expression that resolves to a document.
        */
-      ...ResolvesToObject<S>[]
+      ...ResolvesToObject<S>[],
     ];
   }
 
@@ -2308,7 +2307,7 @@ export namespace ExpressionOperators {
        * The first argument is the dividend, and the second argument is the divisor; i.e. first argument is divided by the second argument.
        */
       dividend: ResolvesToNumber<S>,
-      divisor: ResolvesToNumber<S>
+      divisor: ResolvesToNumber<S>,
     ];
   }
 
@@ -2348,7 +2347,7 @@ export namespace ExpressionOperators {
        * The arguments can be any valid expression as long as they resolve to numbers.
        * Starting in MongoDB 6.1 you can optimize the $multiply operation. To improve performance, group references at the end of the argument list.
        */
-      ...ResolvesToNumber<S>[]
+      ...ResolvesToNumber<S>[],
     ];
   }
 
@@ -2492,7 +2491,7 @@ export namespace ExpressionOperators {
       /**
        * An integer that specifies the increment value. Can be any valid expression that resolves to a non-zero integer. Defaults to 1.
        */
-      step?: ResolvesToInt<S>
+      step?: ResolvesToInt<S>,
     ];
   }
 
@@ -2688,7 +2687,7 @@ export namespace ExpressionOperators {
       /**
        * Can be any valid expression that resolves to an integer between -20 and 100, exclusive.
        */
-      place?: ResolvesToInt<S>
+      place?: ResolvesToInt<S>,
     ];
   }
 
@@ -2756,7 +2755,7 @@ export namespace ExpressionOperators {
       /**
        * The arguments can be any valid expression as long as they each resolve to an array.
        */
-      expression2: ResolvesToArray<S>
+      expression2: ResolvesToArray<S>,
     ];
   }
 
@@ -2824,7 +2823,7 @@ export namespace ExpressionOperators {
      */
     $setIsSubset: [
       expression1: ResolvesToArray<S>,
-      expression2: ResolvesToArray<S>
+      expression2: ResolvesToArray<S>,
     ];
   }
 
@@ -2897,7 +2896,7 @@ export namespace ExpressionOperators {
            * If positive, $slice returns up to the first n elements in the array. If the position is specified, $slice returns the first n elements starting from the position.
            * If negative, $slice returns up to the last n elements in the array. n cannot resolve to a negative number if <position> is specified.
            */
-          n: ResolvesToInt<S>
+          n: ResolvesToInt<S>,
         ]
       | [
           /**
@@ -2917,7 +2916,7 @@ export namespace ExpressionOperators {
            * If positive, $slice returns up to the first n elements in the array. If the position is specified, $slice returns the first n elements starting from the position.
            * If negative, $slice returns up to the last n elements in the array. n cannot resolve to a negative number if <position> is specified.
            */
-          n: ResolvesToInt<S>
+          n: ResolvesToInt<S>,
         ];
   }
 
@@ -2963,7 +2962,7 @@ export namespace ExpressionOperators {
       /**
        * The delimiter to use when splitting the string expression. delimiter can be any valid expression as long as it resolves to a string.
        */
-      delimiter: ResolvesToString<S>
+      delimiter: ResolvesToString<S>,
     ];
   }
 
@@ -3041,7 +3040,7 @@ export namespace ExpressionOperators {
      */
     $strcasecmp: [
       expression1: ResolvesToString<S>,
-      expression2: ResolvesToString<S>
+      expression2: ResolvesToString<S>,
     ];
   }
 
@@ -3065,7 +3064,7 @@ export namespace ExpressionOperators {
       /**
        * If length is a negative number, $substr returns a substring that starts at the specified index and includes the rest of the string.
        */
-      length: ResolvesToInt<S>
+      length: ResolvesToInt<S>,
     ];
   }
 
@@ -3089,7 +3088,7 @@ export namespace ExpressionOperators {
       /**
        * If length is a negative number, $substr returns a substring that starts at the specified index and includes the rest of the string.
        */
-      length: ResolvesToInt<S>
+      length: ResolvesToInt<S>,
     ];
   }
 
@@ -3113,7 +3112,7 @@ export namespace ExpressionOperators {
       /**
        * If length is a negative number, $substr returns a substring that starts at the specified index and includes the rest of the string.
        */
-      length: ResolvesToInt<S>
+      length: ResolvesToInt<S>,
     ];
   }
 
@@ -3128,7 +3127,7 @@ export namespace ExpressionOperators {
      */
     $subtract: [
       expression1: ResolvesToNumber<S> | ResolvesToDate<S>,
-      expression2: ResolvesToNumber<S> | ResolvesToDate<S>
+      expression2: ResolvesToNumber<S> | ResolvesToDate<S>,
     ];
   }
 
@@ -3379,7 +3378,7 @@ export namespace ExpressionOperators {
       /**
        * Can be any valid expression that resolves to an integer between -20 and 100, exclusive. e.g. -20 < place < 100. Defaults to 0.
        */
-      place?: ResolvesToInt<S>
+      place?: ResolvesToInt<S>,
     ];
   }
 

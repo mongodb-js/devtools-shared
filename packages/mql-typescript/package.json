@@ -19,8 +19,12 @@
     "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
+  "bin": {
+    "mql-typescript": "bin/runner.js"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "exports": {
@@ -29,10 +33,6 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
-    "pregenerate-schema": "npm run extract-metaschema",
-    "generate-schema": "ts-node src/index.ts schema && npm run prettier -- --write out/schema.ts",
-    "generate-tests": "ts-node src/index.ts tests && npm run prettier -- --write tests/**/*.ts",
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
     "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
@@ -47,7 +47,12 @@
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
-    "reformat": "npm run prettier -- --write ."
+    "reformat": "npm run prettier -- --write .",
+    "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
+    "pregenerate-schema": "npm run extract-metaschema",
+    "generate-schema": "ts-node src/cli.ts schema && npm run prettier -- --write out/schema.ts",
+    "pregenerate-tests": "npm run extract-metaschema",
+    "generate-tests": "ts-node src/cli.ts tests && npm run prettier -- --write tests/**/*.ts"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",

@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@mongodb-js/prettier-config-devtools": "^1.0.0",
-    "prettier": "^2.3.2",
+    "prettier": "^3.5.3",
     "react": ">=16"
   },
   "peerDependencies": {

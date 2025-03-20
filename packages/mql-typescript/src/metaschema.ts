@@ -32,7 +32,7 @@ export const Operator = z
         'resolvesToLong',
         'resolvesToDecimal',
         'searchOperator',
-      ])
+      ]),
     ),
     encode: z.enum(['array', 'object', 'single']),
     description: z.string(),
@@ -116,7 +116,7 @@ export const Operator = z
                 'searchPath',
                 'searchScore',
                 'searchOperator',
-              ])
+              ]),
             ),
             description: z.string().optional(),
             optional: z.boolean().optional(),
@@ -129,7 +129,7 @@ export const Operator = z
               .optional(),
             mergeObject: z.boolean().default(false),
           })
-          .strict()
+          .strict(),
       )
       .optional(),
     tests: z
@@ -140,7 +140,7 @@ export const Operator = z
             link: z.string().url().regex(new RegExp('^https://')).optional(),
             pipeline: z.array(z.record(z.any())).optional(),
           })
-          .strict()
+          .strict(),
       )
       .optional(),
   })
