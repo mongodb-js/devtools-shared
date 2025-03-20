@@ -28,12 +28,7 @@ describe('MongoDBAutocompleter', function () {
       schemaInformationForAggregation: async () => {
         const docs = [
           {
-            foo: 'foo',
-            bar: 1,
-            baz: {
-              a: 1,
-              b: 'b',
-            },
+            aggField: 'foo',
           },
         ];
 
@@ -93,7 +88,7 @@ describe('MongoDBAutocompleter', function () {
     ]);
   });
 
-  it('completes a collection field name', async function () {
+  it('completes a collection field name in a query', async function () {
     const completions = await autocompleter.autocomplete('db.foo.find({ fo', {
       connectionId: 'myConnection',
       databaseName: 'myDatabase',
@@ -115,6 +110,20 @@ describe('MongoDBAutocompleter', function () {
         name: 'foo',
         type: 'string',
       },
+    ]);
+  });
+
+  it('completes a collection field name in an aggregation', async function () {
+    const completions = await autocompleter.autocomplete(
+      'db.foo.aggregate([{ $match: { aggf',
+      {
+        connectionId: 'myConnection',
+        databaseName: 'myDatabase',
+      }
+    );
+
+    expect(completions).to.deep.equal([
+      { name: 'aggField', kind: 'property', type: 'string' },
     ]);
   });
 });
