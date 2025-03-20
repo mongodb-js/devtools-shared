@@ -38,22 +38,6 @@ function evaluateNode(node: ts.Node): any {
   return null;
 }
 
-function findMethodCallNodeAtPosition(
-  node: ts.Node,
-  caret: number
-): ts.CallExpression | undefined {
-  if (ts.isCallExpression(node)) {
-    const methodName = node.expression;
-    if (ts.isPropertyAccessExpression(methodName) && node.getEnd() >= caret) {
-      return node;
-    }
-  }
-
-  return node.forEachChild((child) =>
-    findMethodCallNodeAtPosition(child, caret)
-  );
-}
-
 const QUERY_METHODS = ['aggregate', 'find', 'findOne'];
 
 export function inferCollectionNameFromFunctionCall(
@@ -126,7 +110,7 @@ export function extractPipelineUptoCaret(
 
   function findArrayLiteralExpression(
     node: ts.Node,
-    inArray: boolean = false
+    inArray = false
   ): ts.ArrayLiteralExpression | undefined {
     if (ts.isArrayLiteralExpression(node) && inArray) {
       return node;
@@ -156,7 +140,7 @@ export function extractPipelineUptoCaret(
     return elementsBeforeCaret;
   }
 
-  return null;
+  return [];
 }
 
 export function extractPipelineFromLastAggregate(
