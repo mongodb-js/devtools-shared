@@ -125,5 +125,8 @@ describe('MongoDBAutocompleter', function () {
     expect(completions).to.deep.equal([
       { name: 'aggField', kind: 'property', type: 'string' },
     ]);
+
+    // TODO: have multiple stages, put the cursor somewhere in the middle, spy
+    // on what was send to schemaInformationForAggregation
   });
 });
