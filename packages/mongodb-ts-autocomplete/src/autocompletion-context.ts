@@ -2,9 +2,6 @@ import NodeCache from 'node-cache';
 
 import type { JSONSchema } from './type-export';
 
-// TODO: This should probably come from the mql work
-export type Pipeline = any[];
-
 type CacheOptions = {
   databaseCollectionsTTL: number;
   collectionSchemaTTL: number;
@@ -20,12 +17,6 @@ export interface AutocompletionContext {
     connectionKey: string,
     databaseName: string,
     collectionName: string
-  ): Promise<JSONSchema>;
-  schemaInformationForAggregation(
-    connectionKey: string,
-    databaseName: string,
-    collectionName: string,
-    pipeline: Pipeline
   ): Promise<JSONSchema>;
   cacheOptions?: Partial<CacheOptions>;
 }
@@ -89,30 +80,6 @@ export class CachingAutocompletionContext implements AutocompletionContext {
 
     this.cache.set(cacheKey, result, this.cacheOptions.collectionSchemaTTL);
 
-    return result;
-  }
-
-  async schemaInformationForAggregation(
-    connectionKey: string,
-    databaseName: string,
-    collectionName: string,
-    pipeline: Pipeline
-  ): Promise<JSONSchema> {
-    const cacheKey = `dryRunAggregation::${connectionKey}::${databaseName}.${collectionName}/${JSON.stringify(
-      pipeline
-    )}`;
-    if (this.cache.has(cacheKey)) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      return this.cache.get(cacheKey) as JSONSchema;
-    }
-
-    const result = await this.delegate.schemaInformationForAggregation(
-      connectionKey,
-      databaseName,
-      collectionName,
-      pipeline
-    );
-    this.cache.set(cacheKey, result, this.cacheOptions.aggregationSchemaTTL);
     return result;
   }
 }

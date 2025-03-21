@@ -4,10 +4,11 @@ import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
 
 describe('MongoDBAutocompleter', function () {
+  let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
 
   beforeEach(function () {
-    const autocompleterContext: AutocompletionContext = {
+    autocompleterContext = {
       collectionsForDatabase: () => Promise.resolve(['foo', 'bar', 'baz']),
       schemaInformationForCollection: async () => {
         const docs = [
@@ -18,17 +19,6 @@ describe('MongoDBAutocompleter', function () {
               a: 1,
               b: 'b',
             },
-          },
-        ];
-
-        const analyzedDocuments = await analyzeDocuments(docs);
-        const schema = await analyzedDocuments.getMongoDBJsonSchema();
-        return schema;
-      },
-      schemaInformationForAggregation: async () => {
-        const docs = [
-          {
-            aggField: 'foo',
           },
         ];
 
@@ -111,22 +101,5 @@ describe('MongoDBAutocompleter', function () {
         type: 'string',
       },
     ]);
-  });
-
-  it('completes a collection field name in an aggregation', async function () {
-    const completions = await autocompleter.autocomplete(
-      'db.foo.aggregate([{ $match: { aggf',
-      {
-        connectionId: 'myConnection',
-        databaseName: 'myDatabase',
-      }
-    );
-
-    expect(completions).to.deep.equal([
-      { name: 'aggField', kind: 'property', type: 'string' },
-    ]);
-
-    // TODO: have multiple stages, put the cursor somewhere in the middle, spy
-    // on what was send to schemaInformationForAggregation
   });
 });

@@ -9,15 +9,11 @@ import type { JSONSchema } from './type-export';
 import { toTypescriptTypeDefinition } from './type-export';
 
 import {
-  extractPipelineUptoCaret,
-  extractPipelineFromLastAggregate,
   inferCollectionNameFromFunctionCall,
-  inferMongoDBCommandFromFunctionCall,
-  isInAggregationPipelinePosition,
   compileSourceFile,
 } from './cdt-analyser';
 
-import type { Pipeline, AutocompletionContext } from './autocompletion-context';
+import type { AutocompletionContext } from './autocompletion-context';
 
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
@@ -192,32 +188,12 @@ declare global {
     const tsAst = compileSourceFile(code);
     const collectionName = inferCollectionNameFromFunctionCall(tsAst) || 'test';
 
-    const mdbCmd = inferMongoDBCommandFromFunctionCall(tsAst);
-
-    let schema: JSONSchema;
-
-    if (
-      isInAggregationPipelinePosition(tsAst, position) ||
-      mdbCmd === 'aggregate'
-    ) {
-      const pipelineToDryRun =
-        extractPipelineUptoCaret(tsAst, position) ||
-        extractPipelineFromLastAggregate(tsAst, position) ||
-        [];
-
-      schema = await this.context.schemaInformationForAggregation(
-        connectionId,
-        databaseName,
-        collectionName,
-        pipelineToDryRun as Pipeline
-      );
-    } else {
-      schema = await this.context.schemaInformationForCollection(
+    const schema: JSONSchema =
+      await this.context.schemaInformationForCollection(
         connectionId,
         databaseName,
         collectionName
       );
-    }
 
     const connection = this.addConnection(connectionId);
     connection.addCollectionSchema(databaseName, collectionName, schema);
