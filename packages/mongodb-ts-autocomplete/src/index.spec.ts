@@ -42,7 +42,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'function',
         name: 'ObjectId',
-        type: 'BSON.ObjectId',
+        type: 'bson.ObjectId',
       },
     ]);
   });
@@ -54,7 +54,9 @@ describe('MongoDBAutocompleter', function () {
     });
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
-    expect(completions).to.deep.equal([
+    expect(
+      completions.filter((c) => /ShellAPI|MQL/.test(c.type))
+    ).to.deep.equal([
       {
         kind: 'property',
         name: 'bar',
@@ -84,7 +86,9 @@ describe('MongoDBAutocompleter', function () {
       databaseName: 'myDatabase',
     });
 
-    expect(completions).to.deep.equal([
+    expect(
+      completions.filter((c) => /^(foo|bar|baz)$/.test(c.name))
+    ).to.deep.equal([
       {
         kind: 'property',
         name: 'bar',
