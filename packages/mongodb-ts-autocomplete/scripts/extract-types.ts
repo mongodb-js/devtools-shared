@@ -15,19 +15,30 @@ async function loadSources(sources: Record<string, string>) {
   const result: Record<string, string> = {};
 
   for (const [key, filepath] of Object.entries(sources)) {
-    //result[key] = replaceImports(await fs.readFile(filepath, 'utf8'));
+    result[key] = replaceImports(await fs.readFile(filepath, 'utf8'));
   }
 
   return result;
 }
 
 async function run() {
-  /*
   const input: Record<string, string> = {
     '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
-    '/bson-expressions.ts': path.join(__dirname, 'fixtures', 'bson-expressions.ts'),
-    '/mql.ts': path.join(__dirname, 'fixtures', 'mql.ts'),
-    '/shell-api.ts': path.join(__dirname, 'fixtures', 'shell-api.ts')
+    '/bson-expressions.ts': path.join(
+      __dirname,
+      '..',
+      'src',
+      'fixtures',
+      'bson-expressions.ts'
+    ),
+    '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
+    '/shell-api.ts': path.join(
+      __dirname,
+      '..',
+      'src',
+      'fixtures',
+      'shell-api.ts'
+    ),
   };
   const files = await loadSources(input);
   const code = `
@@ -35,9 +46,14 @@ const files = ${JSON.stringify(files)};
 export default files;
   `;
 
-  const filepath = path.join(__dirname, '..', 'src', 'fixtures', 'autocomplete-types.ts');
+  const filepath = path.join(
+    __dirname,
+    '..',
+    'src',
+    'fixtures',
+    'autocomplete-types.ts'
+  );
   await fs.writeFile(filepath, code, 'utf-8');
-  */
 }
 
 run()

@@ -3,7 +3,7 @@ import type {
   AutocompleterOptions,
   AutoCompletion,
 } from '@mongodb-js/ts-autocomplete';
-import loadFiles from './autocompleter-types';
+import autocompleteTypes from './fixtures/autocomplete-types';
 
 import type { JSONSchema } from './type-export';
 import { toTypescriptTypeDefinition } from './type-export';
@@ -131,7 +131,7 @@ export default class MongoDBAutocompleter {
     this.connectionSchemas = Object.create(null);
     this.connectionSchemas;
 
-    this.autocompleter.updateCode(loadFiles());
+    this.autocompleter.updateCode(autocompleteTypes);
   }
 
   addConnection(connectionId: string): ConnectionSchema {
