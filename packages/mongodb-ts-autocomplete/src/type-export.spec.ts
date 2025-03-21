@@ -103,41 +103,41 @@ describe('toTypescriptTypeDefinition', function () {
     convertAndCompare(
       schema,
       `{
-  _id?: any;
-  array?: number[];
+  _id?: bson.ObjectId;
+  array?: bson.Double | number)[];
   binaries?: {
-    binaryOld?: any;
-    compressedTimeSeries?: any;
-    custom?: any;
-    encrypted?: any;
-    functionData?: any;
-    generic?: any;
-    md5?: any;
-    uuid?: any;
-    uuidOld?: any;
+    binaryOld?: bson.Binary;
+    compressedTimeSeries?: bson.Binary;
+    custom?: bson.Binary;
+    encrypted?: bson.Binary;
+    functionData?: bson.Binary;
+    generic?: bson.Binary;
+    md5?: bson.Binary;
+    uuid?: bson.Binary;
+    uuidOld?: bson.Binary;
   };
-  binData?: any;
+  binData?: bson.Binary;
   boolean?: boolean;
-  date?: any;
-  dbRef?: any;
-  decimal?: any;
-  double?: number;
-  doubleThatIsAlsoAnInteger?: number;
-  int?: number;
-  javascript?: any;
-  javascriptWithScope?: any;
-  long?: number;
-  maxKey?: any;
-  minKey?: any;
+  date?: bson.Date;
+  dbRef?: bson.DBPointer;
+  decimal?: bson.Decimal128;
+  double?: bson.Double | number;
+  doubleThatIsAlsoAnInteger?: bson.Double | number;
+  int?: bson.Int32 | number;
+  javascript?: bson.Code;
+  javascriptWithScope?: bson.Code;
+  long?: bson.Long | number;
+  maxKey?: bson.MaxKey;
+  minKey?: bson.MinKey;
   null?: null;
   object?: {
     key?: string;
   };
-  objectId?: any;
-  regex?: any;
+  objectId?: bson.ObjectId;
+  regex?: bson.BSONRegExp;
   string?: string;
-  symbol?: any;
-  timestamp?: any;
+  symbol?: bson.BSONSymbol;
+  timestamp?: bson.Timestamp;
 }`
     );
   });
@@ -224,7 +224,7 @@ describe('toTypescriptTypeDefinition', function () {
     convertAndCompare(
       schema,
       `{
-  a?: number | string | boolean | null;
+  a?: bson.Double | number | string | boolean | null;
 }`
     );
   });

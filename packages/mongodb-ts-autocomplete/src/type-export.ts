@@ -45,9 +45,6 @@ function toTypeName(type: string): string | string[] {
 
   // BSON types
   // see InternalTypeToBsonTypeMap
-  // TODO: implement once we have the BSON types loaded in, then use whatever
-  // namespace they are under.
-  /*
   if (type === 'double') {
     return ['bson.Double', 'number'];
   }
@@ -93,14 +90,7 @@ function toTypeName(type: string): string | string[] {
   if (type === 'dbPointer') {
     return 'bson.DBPointer';
   }
-  */
 
-  if (type === 'bool') {
-    return 'boolean';
-  }
-  if (type === 'double' || type === 'int' || type === 'long') {
-    return 'number';
-  }
   if (type === 'undefined') {
     return 'undefined';
   }

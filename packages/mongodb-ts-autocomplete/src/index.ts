@@ -143,7 +143,8 @@ export default class MongoDBAutocompleter {
 
   getConnectionCode(connectionKey: string): string {
     return `
-import * as ShellAPI from '/shell-api.ts'
+import * as ShellAPI from '/shell-api.ts';
+import * as bson from '/bson.ts';
 
 export type ServerSchema = ${this.connectionSchemas[
       connectionKey

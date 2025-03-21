@@ -100,12 +100,12 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'property',
         name: 'bar',
-        type: 'number',
+        type: 'bson.Double | number',
       },
       {
         kind: 'property',
         name: 'baz',
-        type: '{\n    a?: number;\n    b?: string;\n  }',
+        type: '{\n    a?: bson.Double | number;\n    b?: string;\n  }',
       },
       {
         kind: 'property',
