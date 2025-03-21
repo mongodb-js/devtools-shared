@@ -43,7 +43,8 @@
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
-    "reformat": "npm run prettier -- --write ."
+    "reformat": "npm run prettier -- --write .",
+    "extract-types": "ts-node scripts/extract-types.ts"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
@@ -67,6 +68,7 @@
     "nyc": "^15.1.0",
     "prettier": "^2.3.2",
     "sinon": "^9.2.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.4"
   }
 }
