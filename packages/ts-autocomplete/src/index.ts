@@ -20,6 +20,7 @@ function getVirtualLanguageService(): [
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
     allowJs: true,
+    //moduleResolution: ts.ModuleResolutionKind.NodeNext
   };
 
   const updateCode = (newDef: Record<TypeFilename, string>): void => {
@@ -216,20 +217,28 @@ export default class Autocompleter {
 
     if (debugLog.enabled) {
       for (const filename of this.listfiles()) {
-        debugLog(
-          'getSyntacticDiagnostics',
-          filename,
-          filterDiagnostics(
-            this.languageService.getSyntacticDiagnostics(filename)
-          )
-        );
-        debugLog(
-          'getSemanticDiagnostics',
-          filename,
-          filterDiagnostics(
-            this.languageService.getSemanticDiagnostics(filename)
-          )
-        );
+        try {
+          debugLog(
+            'getSyntacticDiagnostics',
+            filename,
+            filterDiagnostics(
+              this.languageService.getSyntacticDiagnostics(filename)
+            )
+          );
+        } catch (err: any) {
+          debugLog('getSyntacticDiagnostics', filename, err.stack);
+        }
+        try {
+          debugLog(
+            'getSemanticDiagnostics',
+            filename,
+            filterDiagnostics(
+              this.languageService.getSemanticDiagnostics(filename)
+            )
+          );
+        } catch (err: any) {
+          debugLog('getSemanticDiagnostics', filename, err.stack);
+        }
         //debugLog('getSuggestionDiagnostics', filename, filterDiagnostics(this.languageService.getSuggestionDiagnostics(filename));
       }
     }
