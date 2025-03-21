@@ -143,30 +143,21 @@ export default class MongoDBAutocompleter {
 
   getConnectionCode(connectionKey: string): string {
     return `
-/// <reference path="shell-api.d.ts" />
+import * as ShellAPI from '/shell-api.ts'
 
-export {};
-
-declare global {
-  namespace Connection${connectionKey} {
-    export type ServerSchema = ${this.connectionSchemas[
+export type ServerSchema = ${this.connectionSchemas[
       connectionKey
-    ].toTypescriptTypeDefinition()}
-  }
-}
+    ].toTypescriptTypeDefinition()};
 `;
   }
 
   getCurrentGlobalsCode(connectionId: string, databaseName: string) {
     return `
-/// <reference path="shell-api.d.ts" />
-/// <reference path="${connectionId}.d.ts" />
+import { ServerSchema } from '/${connectionId}.ts';
 
-export {}; // turns this into an "external module"
+type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
 
 declare global {
-  type CurrentDatabaseSchema = Connection${connectionId}.ServerSchema['${databaseName}'];
-
   var db: CurrentDatabaseSchema;
   var use: (collection: string) => CurrentDatabaseSchema;
 }
@@ -209,10 +200,10 @@ declare global {
     // other collection in the db and in fact every db in the server) every
     // time.
     this.autocompleter.updateCode({
-      [`${connectionId}.d.ts`]: this.getConnectionCode(connectionId),
+      [`/${connectionId}.ts`]: this.getConnectionCode(connectionId),
     });
     this.autocompleter.updateCode({
-      'current-globals.d.ts': this.getCurrentGlobalsCode(
+      '/current-globals.ts': this.getCurrentGlobalsCode(
         connectionId,
         databaseName
       ),

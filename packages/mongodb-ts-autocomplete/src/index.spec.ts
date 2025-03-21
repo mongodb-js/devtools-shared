@@ -33,6 +33,14 @@ describe('MongoDBAutocompleter', function () {
     });
   });
 
+  it('does not leak the bson package', async function () {
+    const completions = await autocompleter.autocomplete('bson.', {
+      connectionId: 'myConnection',
+      databaseName: 'myDatabase',
+    });
+    expect(completions).to.deep.equal([]);
+  });
+
   it('completes a bson expression', async function () {
     const completions = await autocompleter.autocomplete('Ob', {
       connectionId: 'myConnection',
@@ -55,7 +63,7 @@ describe('MongoDBAutocompleter', function () {
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(
-      completions.filter((c) => /ShellAPI|MQL/.test(c.type))
+      completions.filter((c) => /ShellAPI|mql/.test(c.type))
     ).to.deep.equal([
       {
         kind: 'property',
@@ -75,7 +83,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'method',
         name: 'runCommand',
-        type: 'MQL.Document',
+        type: 'mql.Document',
       },
     ]);
   });

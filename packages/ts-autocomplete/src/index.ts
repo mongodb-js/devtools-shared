@@ -20,11 +20,14 @@ function getVirtualLanguageService(): [
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
     allowJs: true,
-    //moduleResolution: ts.ModuleResolutionKind.NodeNext
+    moduleResolution: ts.ModuleResolutionKind.NodeNext,
+    typeRoots: [],
+    allowImportingTsExtensions: true,
   };
 
   const updateCode = (newDef: Record<TypeFilename, string>): void => {
     for (const [key, value] of Object.entries(newDef)) {
+      //console.log(key, value);
       codeHolder[key] = value;
       versions[key] = (versions[key] ?? 0) + 1;
     }
@@ -203,11 +206,11 @@ export default class Autocompleter {
     }
 
     this.updateCode({
-      'main.ts': code,
+      '/main.ts': code,
     });
 
     const completions = this.languageService.getCompletionsAtPosition(
-      'main.ts',
+      '/main.ts',
       position,
       {
         allowIncompleteCompletions: true,
@@ -226,7 +229,12 @@ export default class Autocompleter {
             )
           );
         } catch (err: any) {
-          debugLog('getSyntacticDiagnostics', filename, err.stack);
+          debugLog(
+            'getSyntacticDiagnostics',
+            filename,
+            err.stack,
+            err.ProgramFiles
+          );
         }
         try {
           debugLog(
@@ -237,7 +245,12 @@ export default class Autocompleter {
             )
           );
         } catch (err: any) {
-          debugLog('getSemanticDiagnostics', filename, err.stack);
+          debugLog(
+            'getSemanticDiagnostics',
+            filename,
+            err.stack,
+            err.ProgramFiles
+          );
         }
         //debugLog('getSuggestionDiagnostics', filename, filterDiagnostics(this.languageService.getSuggestionDiagnostics(filename));
       }

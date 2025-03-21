@@ -8,43 +8,31 @@ const pathToBSONTypes = path.join(
   'bson.d.ts'
 );
 
-function wrapTypes(code: string, referencePaths: string[] = []) {
-  // This is a bit of a hack. Alternatively we can just import these files?
-
-  const referenceLines = referencePaths.map(
-    (path) => `/// <reference path="${path}" />`
+function replaceImports(code: string) {
+  // This just makes it possible to work on bson-expressions.ts because then the
+  // IDE finds the import.
+  return code.replace(
+    "import type * as bson from 'bson'",
+    "import type * as bson from '/bson.ts'"
   );
-  return `
-${referenceLines.join('\n')}
-
-export {}; // turns this into an "external module"
-
-// this has to be global otherwise the other files won't be able to use the
-// namespace
-declare global {
-  export namespace bson {
-    ${code.replace(/\bdeclare\b /g, '')}
-  }
-}
-`;
 }
 
 // TODO: this file would be generated and include the typescript code as strings
 // rather than reading them from disk
 function loadFiles() {
   return {
-    'bson.d.ts': wrapTypes(fs.readFileSync(pathToBSONTypes, 'utf8')),
-    'bson-expressions.d.ts': fs.readFileSync(
-      path.join(__dirname, 'fixtures', 'bson-expressions.d.ts'),
-      'utf8'
+    '/bson.ts': fs.readFileSync(pathToBSONTypes, 'utf8'),
+    '/bson-expressions.ts': replaceImports(
+      fs.readFileSync(
+        path.join(__dirname, 'fixtures', 'bson-expressions.ts'),
+        'utf8'
+      )
     ),
-    'mql.d.ts': fs.readFileSync(
-      path.join(__dirname, 'fixtures', 'mql.d.ts'),
-      'utf8'
+    '/mql.ts': replaceImports(
+      fs.readFileSync(path.join(__dirname, 'fixtures', 'mql.ts'), 'utf8')
     ),
-    'shell-api.d.ts': fs.readFileSync(
-      path.join(__dirname, 'fixtures', 'shell-api.d.ts'),
-      'utf8'
+    '/shell-api.ts': replaceImports(
+      fs.readFileSync(path.join(__dirname, 'fixtures', 'shell-api.ts'), 'utf8')
     ),
   };
 }
