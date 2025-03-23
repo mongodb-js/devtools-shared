@@ -24,8 +24,8 @@ export type S3BucketConfig = {
   secretAccessKey: string;
 
   /**
-  * The AWS session token
-  */
+   * The AWS session token
+   */
   sessionToken?: string;
 
   /**
