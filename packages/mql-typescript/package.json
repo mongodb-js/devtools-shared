@@ -76,7 +76,7 @@
     "prettier": "^3.5.3",
     "sinon": "^19.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "bson": "^6.10.3",
