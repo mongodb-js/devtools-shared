@@ -15,6 +15,9 @@ import {
 
 import type { AutocompletionContext } from './autocompletion-context';
 
+export { JSONSchema } from './type-export';
+export { AutocompletionContext } from './autocompletion-context';
+
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
   autocompleterOptions?: AutocompleterOptions;
@@ -119,7 +122,7 @@ type AutocompleteOptions = {
   position?: number;
 };
 
-export default class MongoDBAutocompleter {
+export class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
   private connectionSchemas: Record<string, ConnectionSchema>;
   private readonly autocompleter: Autocompleter;
