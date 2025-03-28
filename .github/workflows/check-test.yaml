@@ -99,9 +99,9 @@ jobs:
         # We exclude dependents when running eslint and depchecks because
         # linting and dependency checking is relevant only for packages where
         # the source code was changed
-        run: npm run check-ci -- --stream --since ${SINCE_REF} --exclude-dependents
+        run: npm run check-ci -- --stream
         shell: bash
 
       - name: Run Tests
-        run: npm run test-ci -- --stream --since ${SINCE_REF}
+        run: npm run test-ci -- --stream
         shell: bash
