@@ -25,7 +25,7 @@ const argv = require('yargs')
   })
   .example(
     '$0 -p 28200',
-    'Start the OIDC mock identity provider server on port 28200'
+    'Start the OIDC mock identity provider server on port 28200',
   )
   .help().argv;
 
@@ -49,14 +49,14 @@ const DEFAULT_TOKEN_PAYLOAD = {
     bindIpAll: argv.bind_ip_all ?? DEFAULT_BIND_IP_ALL,
   };
   const mockIdentityProvider = await OIDCMockProvider.create(
-    oidcMockProviderConfig
+    oidcMockProviderConfig,
   );
 
   console.log(
-    `Started OIDC mock identity provider server. Listening on ${oidcMockProviderConfig.hostname}:${oidcMockProviderConfig.port}.`
+    `Started OIDC mock identity provider server. Listening on ${oidcMockProviderConfig.hostname}:${oidcMockProviderConfig.port}.`,
   );
   console.log(
     'OIDC mock identity provider server issuer:',
-    mockIdentityProvider.issuer
+    mockIdentityProvider.issuer,
   );
 })();

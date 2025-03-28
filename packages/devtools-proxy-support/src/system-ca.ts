@@ -34,7 +34,7 @@ function certToString(cert: string | Uint8Array) {
   return typeof cert === 'string'
     ? cert
     : Buffer.from(cert.buffer, cert.byteOffset, cert.byteLength).toString(
-        'utf8'
+        'utf8',
       );
 }
 
@@ -58,7 +58,7 @@ export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
     tlsCAFile?: string | null | undefined;
-  } = {}
+  } = {},
 ): Promise<{
   ca: string;
   systemCACount: number;
@@ -93,7 +93,7 @@ export async function systemCA(
       systemCerts,
       rootCertificates,
       existingOptions.ca,
-      await readTLSCAFilePromise
+      await readTLSCAFilePromise,
     ),
     asyncFallbackError: asyncFallbackError,
     systemCertsError,

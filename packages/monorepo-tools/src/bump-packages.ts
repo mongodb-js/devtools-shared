@@ -38,7 +38,7 @@ async function main() {
   } catch (err: any) {
     if (err.code === 'ENOENT') {
       throw new Error(
-        'this command can only be run from the root of a monorepo'
+        'this command can only be run from the root of a monorepo',
       );
     }
     throw err;
@@ -54,7 +54,7 @@ async function main() {
     await processPackage(
       path.relative(monorepoRootPath, packageInfo.location),
       newVersions,
-      { range }
+      { range },
     );
   }
 
@@ -64,7 +64,7 @@ async function main() {
 main().catch((err) =>
   process.nextTick(() => {
     throw err;
-  })
+  }),
 );
 
 async function getCommits({ path, range }: { path: string; range?: string }) {
@@ -83,7 +83,7 @@ async function getCommits({ path, range }: { path: string; range?: string }) {
 
 function updateDeps(
   packageJson: Record<string, any>,
-  newVersions: Record<string, { version: string; bump: ReleaseType }>
+  newVersions: Record<string, { version: string; bump: ReleaseType }>,
 ) {
   console.debug(`[${packageJson.name as string}]`, 'updateDeps', newVersions);
   const newPackageJson = JSON.parse(JSON.stringify(packageJson));
@@ -102,7 +102,7 @@ function updateDeps(
     }
 
     for (const [depName, { version, bump: depInc }] of Object.entries(
-      newVersions
+      newVersions,
     )) {
       if (!dependenciesSection[depName]) {
         console.debug(
@@ -110,7 +110,7 @@ function updateDeps(
           'updateDeps',
           sectionName,
           depName,
-          'skipping'
+          'skipping',
         );
         continue;
       }
@@ -121,7 +121,7 @@ function updateDeps(
         sectionName,
         depName,
         '->',
-        version
+        version,
       );
 
       const oldDepRange = dependenciesSection[depName];
@@ -132,10 +132,10 @@ function updateDeps(
       const newDepRange = /^\d\.\d\.\d/.exec(oldDepRange)
         ? version
         : oldDepRange === '*'
-        ? '*'
-        : oldDepRange.startsWith('~')
-        ? `~${version}`
-        : `^${version}`;
+          ? '*'
+          : oldDepRange.startsWith('~')
+            ? `~${version}`
+            : `^${version}`;
 
       dependenciesSection[depName] = newDepRange;
 
@@ -159,7 +159,7 @@ function updateDeps(
           depInc,
           oldInc,
           newInc: inc,
-        }
+        },
       );
     }
   }
@@ -171,7 +171,7 @@ function updateDeps(
   console.debug(
     `[${packageJson.name as string}]`,
     'new package json',
-    JSON.stringify(newPackageJson)
+    JSON.stringify(newPackageJson),
   );
 
   return newPackageJson;
@@ -180,7 +180,7 @@ function updateDeps(
 async function bumpVersionBasedOnCommits(
   packagePath: string,
   oldVersion: string,
-  options: { range?: string }
+  options: { range?: string },
 ) {
   const commits = await getCommits({
     path: packagePath,
@@ -191,7 +191,7 @@ async function bumpVersionBasedOnCommits(
     `[${packagePath}]`,
     commits.length,
     'commits found in range',
-    commits.length ? '' : '.. skipping'
+    commits.length ? '' : '.. skipping',
   );
 
   if (!commits.length) {
@@ -212,7 +212,7 @@ async function bumpVersionBasedOnCommits(
     oldVersion,
     'to',
     newVersion,
-    `(${inc as string})`
+    `(${inc as string})`,
   );
 
   return newVersion;
@@ -226,14 +226,14 @@ async function getRangeFromLastBump() {
   console.info('total commits found', allCommits.length);
 
   const lastBumpCommit = allCommits.find((c) =>
-    c.subject.startsWith(LAST_BUMP_COMMIT_MESSAGE)
+    c.subject.startsWith(LAST_BUMP_COMMIT_MESSAGE),
   );
 
   console.info(
     'lastBumpCommit',
     lastBumpCommit
       ? `${lastBumpCommit.commit.long} ${lastBumpCommit.subject}`
-      : '-'
+      : '-',
   );
 
   const range = lastBumpCommit
@@ -249,7 +249,7 @@ async function getRangeFromLastBump() {
 async function processPackage(
   packagePath: string,
   newVersions: Parameters<typeof updateDeps>[1],
-  options: { range?: string }
+  options: { range?: string },
 ) {
   const packageJsonPath = path.join(packagePath, 'package.json');
 
@@ -266,7 +266,7 @@ async function processPackage(
     const conventionalVersion = await bumpVersionBasedOnCommits(
       packagePath,
       packageJson.version,
-      options
+      options,
     );
 
     newVersion = semver.gt(conventionalVersion, packageJsonAfterDepBump.version)
@@ -291,7 +291,7 @@ async function processPackage(
     await fs.writeFile(
       packageJsonPath,
       JSON.stringify(newPackageJson, null, 2) + trailingSpaces,
-      'utf-8'
+      'utf-8',
     );
   }
 }

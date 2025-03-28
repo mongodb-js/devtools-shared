@@ -32,7 +32,7 @@ describe('completer', function () {
     ...args: Parameters<typeof getFilteredCompletions>
   ): string[] {
     return getFilteredCompletions(args[0], args[1] ?? simpleConstants).map(
-      (completion) => completion.value
+      (completion) => completion.value,
     );
   }
 
@@ -46,7 +46,7 @@ describe('completer', function () {
 
   it('should clean up version before comparing', function () {
     expect(getFilteredValues({ serverVersion: '0.200.300-alpha0' })).to.deep.eq(
-      ['foo', 'Foo', 'woof']
+      ['foo', 'Foo', 'woof'],
     );
     expect(getFilteredValues({ serverVersion: '0.0.0---what???' })).to.deep.eq([
       'foo',
@@ -58,13 +58,13 @@ describe('completer', function () {
     expect(getFilteredValues({ serverVersion: '2.0.0' })).to.include('meow');
     expect(getFilteredValues({ serverVersion: '3.6.0' })).to.include('meow');
     expect(getFilteredValues({ serverVersion: '3.0.0' })).to.not.include(
-      'meow'
+      'meow',
     );
   });
 
   it('should use default version when provided version is not valid', function () {
     expect(
-      getFilteredValues({ serverVersion: 'one dot one dot zero' })
+      getFilteredValues({ serverVersion: 'one dot one dot zero' }),
     ).to.deep.eq(['foo', 'Foo', 'bar', 'buz', 'barbar', 'meow', 'honk']);
     expect(getFilteredValues({ serverVersion: '1.2' })).to.deep.eq([
       'foo',
@@ -128,7 +128,7 @@ describe('completer', function () {
 
     it('should filter stages by env', function () {
       expect(
-        getFilteredValues({ stage: { env: ['adl', 'atlas'] } }, stageConstants)
+        getFilteredValues({ stage: { env: ['adl', 'atlas'] } }, stageConstants),
       ).to.deep.eq(['$a', '$c']);
     });
 
@@ -136,14 +136,14 @@ describe('completer', function () {
       expect(
         getFilteredValues(
           { stage: { namespace: 'collection' } },
-          stageConstants
-        )
+          stageConstants,
+        ),
       ).to.deep.eq(['$b']);
     });
 
     it('should filter stages by apiVersion', function () {
       expect(
-        getFilteredValues({ stage: { apiVersion: 1 } }, stageConstants)
+        getFilteredValues({ stage: { apiVersion: 1 } }, stageConstants),
       ).to.deep.eq(['$c']);
     });
   });
@@ -157,7 +157,7 @@ describe('completer', function () {
           { name: 'bar', description: 'Int32' },
         ],
       },
-      []
+      [],
     ).map((completion) => {
       return {
         value: completion.value,
@@ -185,10 +185,10 @@ describe('completer', function () {
       expect(wrapField('foo bar')).to.eq('"foo bar"');
       expect(wrapField('with.a.dot')).to.eq('"with.a.dot"');
       expect(wrapField('bla; process.exit(1); var foo')).to.eq(
-        '"bla; process.exit(1); var foo"'
+        '"bla; process.exit(1); var foo"',
       );
       expect(wrapField('quotes"in"the"middle')).to.eq(
-        '"quotes\\"in\\"the\\"middle"'
+        '"quotes\\"in\\"the\\"middle"',
       );
     });
   });

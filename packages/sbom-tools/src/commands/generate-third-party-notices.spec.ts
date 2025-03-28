@@ -283,7 +283,7 @@ License tags: INVALID
     });
 
     expect(error?.message).to.equal(
-      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.'
+      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.',
     );
   });
 
@@ -303,7 +303,7 @@ License tags: INVALID
     });
 
     expect(error?.message).to.equal(
-      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.'
+      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.',
     );
   });
 
@@ -323,7 +323,7 @@ License tags: INVALID
     });
 
     expect(error?.message).to.equal(
-      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.'
+      'The package "@ignored-org/pkg1@1.0.0" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.',
     );
   });
 });

@@ -11,7 +11,7 @@ type UpdateDefinitionFunction = (newDef: Record<TypeFilename, string>) => void;
 
 function getVirtualLanguageService(): [
   ts.LanguageService,
-  UpdateDefinitionFunction
+  UpdateDefinitionFunction,
 ] {
   const codeHolder: Record<TypeFilename, string> = Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
@@ -73,13 +73,13 @@ function compileSourceFile(code: string): ts.SourceFile {
     '_initial_parsing.ts',
     code,
     ts.ScriptTarget.Latest,
-    true
+    true,
   );
 }
 
 function getSymbolAtPosition(
   sourceFile: ts.SourceFile,
-  position: number
+  position: number,
 ): string | null {
   function findNodeAtPosition(node: ts.Node): ts.Node | undefined {
     if (position >= node.getStart(sourceFile) && position <= node.getEnd()) {
@@ -111,7 +111,7 @@ type AutoCompletion = {
 function mapCompletions(
   filter: AutocompleteFilterFunction,
   trigger: string,
-  completions: ts.CompletionInfo
+  completions: ts.CompletionInfo,
 ): AutoCompletion[] {
   return completions.entries
     .filter((entry) => filter({ trigger, name: entry.name }))
@@ -142,7 +142,7 @@ type AutocompleteFilterOptions = {
 };
 
 type AutocompleteFilterFunction = (
-  filterOptions: AutocompleteFilterOptions
+  filterOptions: AutocompleteFilterOptions,
 ) => boolean;
 
 type AutocompleterOptions = {
@@ -174,7 +174,7 @@ export default class Autocompleter {
       {
         allowIncompleteCompletions: true,
         includeSymbol: true,
-      }
+      },
     );
 
     if (completions) {

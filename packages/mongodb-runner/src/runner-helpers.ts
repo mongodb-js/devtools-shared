@@ -17,7 +17,7 @@ export async function start(
     id?: string;
     runnerDir: string;
   } & MongoClusterOptions,
-  args?: string[]
+  args?: string[],
 ) {
   const id = argv.id || new BSON.UUID().toHexString();
   if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
@@ -34,7 +34,7 @@ export async function start(
 
   await fs.writeFile(
     path.join(argv.runnerDir, `m-${id}.json`),
-    JSON.stringify({ id, serialized, connectionString })
+    JSON.stringify({ id, serialized, connectionString }),
   );
 
   cluster.unref();
@@ -70,7 +70,7 @@ export async function prune(argv: { runnerDir: string }): Promise<void> {
         () => {
           // connect and close
         },
-        { serverSelectionTimeoutMS: 2000 }
+        { serverSelectionTimeoutMS: 2000 },
       );
     } catch (e) {
       await fs.rm(instance.filepath);
@@ -92,6 +92,6 @@ export async function stop(argv: {
     toStop.map(async ({ filepath, serialized }) => {
       await (await MongoCluster.deserialize(serialized)).close();
       await fs.rm(filepath);
-    })
+    }),
   );
 }

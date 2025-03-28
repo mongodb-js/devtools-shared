@@ -3,7 +3,7 @@ import * as bson from 'bson';
 // Returns the same object but frozen and with a null prototype.
 function lookupMap<T extends object>(input: T): Readonly<T> {
   return Object.freeze(
-    Object.create(null, Object.getOwnPropertyDescriptors(input))
+    Object.create(null, Object.getOwnPropertyDescriptors(input)),
   );
 }
 
@@ -266,7 +266,7 @@ export function getScopeFunction(key: string, withNew: boolean): Function {
   }
 
   throw new Error(
-    `Attempted to access scope property '${key}' that doesn't exist`
+    `Attempted to access scope property '${key}' that doesn't exist`,
   );
 }
 

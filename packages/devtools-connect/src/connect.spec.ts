@@ -44,13 +44,13 @@ describe('devtools connect', function () {
         uri,
         defaultOpts,
         bus,
-        mClientType as any
+        mClientType as any,
       );
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
-        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
@@ -66,13 +66,13 @@ describe('devtools connect', function () {
         uri,
         { ...defaultOpts, ...opts },
         bus,
-        mClientType as any
+        mClientType as any,
       );
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
-        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
         'allowPartialTrustChain',
         'autoEncryption',
@@ -80,7 +80,7 @@ describe('devtools connect', function () {
         'lookup',
       ]);
       expect(mClientType.getCalls()[0].args[1].autoEncryption).to.deep.equal(
-        opts.autoEncryption
+        opts.autoEncryption,
       );
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
@@ -103,7 +103,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return { modules: ['enterprise'] };
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -111,14 +111,14 @@ describe('devtools connect', function () {
         uri,
         opts,
         bus,
-        mClientType as any
+        mClientType as any,
       );
       const calls = mClientType.getCalls();
       expect(calls.length).to.equal(2);
       expect(calls[0].args).to.have.lengthOf(2);
       expect(calls[0].args[0]).to.equal(uri);
       expect(
-        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
@@ -138,7 +138,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return { modules: [] };
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -146,7 +146,7 @@ describe('devtools connect', function () {
         await connectMongoClient(uri, opts, bus, mClientType as any);
       } catch (e: any) {
         return expect(e.message.toLowerCase()).to.include(
-          'automatic encryption'
+          'automatic encryption',
         );
       }
       expect.fail('Failed to throw expected error');
@@ -166,7 +166,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return {};
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -174,7 +174,7 @@ describe('devtools connect', function () {
         await connectMongoClient(uri, opts, bus, mClientType as any);
       } catch (e: any) {
         return expect(e.message.toLowerCase()).to.include(
-          'automatic encryption'
+          'automatic encryption',
         );
       }
       expect.fail('Failed to throw expected error');
@@ -190,13 +190,13 @@ describe('devtools connect', function () {
         uri,
         { ...defaultOpts, ...opts },
         bus,
-        mClientType as any
+        mClientType as any,
       );
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
-        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
         'allowPartialTrustChain',
         'autoEncryption',
@@ -224,7 +224,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return { modules: ['enterprise'] };
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -232,14 +232,14 @@ describe('devtools connect', function () {
         uri,
         opts,
         bus,
-        mClientType as any
+        mClientType as any,
       );
       const calls = mClientType.getCalls();
       expect(calls.length).to.equal(2);
       expect(mClientType.getCalls()[0].args).to.have.lengthOf(2);
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
-        Object.keys(mClientType.getCalls()[0].args[1]).sort()
+        Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
@@ -259,7 +259,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return { modules: [] };
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -267,7 +267,7 @@ describe('devtools connect', function () {
         await connectMongoClient(uri, opts, bus, mClientType as any);
       } catch (e: any) {
         return expect(e.message.toLowerCase()).to.include(
-          'automatic encryption'
+          'automatic encryption',
         );
       }
       expect.fail('Failed to throw expected error');
@@ -287,7 +287,7 @@ describe('devtools connect', function () {
               commandSpy(...args);
               return {};
             },
-          } as any),
+          }) as any,
       } as any);
       mClientType.onFirstCall().returns(mClientFirst);
       mClientType.onSecondCall().returns(mClientSecond);
@@ -295,7 +295,7 @@ describe('devtools connect', function () {
         await connectMongoClient(uri, opts, bus, mClientType as any);
       } catch (e: any) {
         return expect(e.message.toLowerCase()).to.include(
-          'automatic encryption'
+          'automatic encryption',
         );
       }
       expect.fail('Failed to throw expected error');
@@ -346,12 +346,12 @@ describe('devtools connect', function () {
         uri,
         defaultOpts,
         bus,
-        mClientType as any
+        mClientType as any,
       );
       expect(mClientType.getCalls()).to.have.lengthOf(1);
       expect(mClientType.getCalls()[0].args[1].ca).to.be.a('string');
       expect(mClientType.getCalls()[0].args[1].ca).to.include(
-        '-----BEGIN CERTIFICATE-----'
+        '-----BEGIN CERTIFICATE-----',
       );
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
@@ -394,10 +394,10 @@ describe('devtools connect', function () {
 
         expect(mClientType.getCalls()).to.have.lengthOf(2);
         expect(
-          Object.keys(mClientType.getCalls()[0].args[1]).sort()
+          Object.keys(mClientType.getCalls()[0].args[1]).sort(),
         ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
         expect(
-          Object.keys(mClientType.getCalls()[1].args[1]).sort()
+          Object.keys(mClientType.getCalls()[1].args[1]).sort(),
         ).to.deep.equal(['allowPartialTrustChain', 'lookup']);
         expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
 
@@ -419,7 +419,7 @@ describe('devtools connect', function () {
         process.env.MONGODB_URI ?? '',
         defaultOpts,
         bus,
-        MongoClient
+        MongoClient,
       );
       expect((await client.db('admin').command({ ping: 1 })).ok).to.equal(1);
 
@@ -439,7 +439,7 @@ describe('devtools connect', function () {
         await connectMongoClient(uri, defaultOpts, bus, MongoClient);
       } catch (e: any) {
         return expect(e.message.toLowerCase()).to.include(
-          'it looks like this is a mongodb atlas cluster'
+          'it looks like this is a mongodb atlas cluster',
         );
       }
       expect.fail('Failed to throw expected error');
@@ -453,7 +453,7 @@ describe('devtools connect', function () {
 
     it('returns true if the authMechanism is MONGODB-OIDC', function () {
       expect(
-        isHumanOidcFlow('mongodb://example/?authMechanism=MONGODB-OIDC', {})
+        isHumanOidcFlow('mongodb://example/?authMechanism=MONGODB-OIDC', {}),
       ).to.equal(true);
     });
 
@@ -463,7 +463,7 @@ describe('devtools connect', function () {
           authMechanismProperties: {
             ENVIRONMENT: 'azure',
           },
-        })
+        }),
       ).to.equal(false);
     });
 
@@ -471,8 +471,8 @@ describe('devtools connect', function () {
       expect(
         isHumanOidcFlow(
           'mongodb://example/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:azure',
-          {}
-        )
+          {},
+        ),
       ).to.equal(false);
     });
   });

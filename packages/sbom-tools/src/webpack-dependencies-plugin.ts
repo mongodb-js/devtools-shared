@@ -48,7 +48,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
       entry.fileName
         ?.split(path.win32.sep)
         .join(path.posix.sep)
-        .includes('node_modules/webpack')
+        .includes('node_modules/webpack'),
     );
 
     return webpackEntry?.fileName;
@@ -60,7 +60,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
         ? findAllProdDepsTreeLocations(compiler.context)
         : []),
       ...(this.includePackages || []).map((packageName) =>
-        findPackageLocation(packageName, compiler.context)
+        findPackageLocation(packageName, compiler.context),
       ),
     ];
 
@@ -94,7 +94,7 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
       if (
         modules?.find(
           (m) =>
-            m.moduleType === 'runtime' && m.name?.startsWith('webpack/runtime')
+            m.moduleType === 'runtime' && m.name?.startsWith('webpack/runtime'),
         ) &&
         webpackModulePath
       ) {
@@ -106,17 +106,17 @@ export class WebpackDependenciesPlugin implements WebpackPluginInstance {
 
     compiler.hooks.shutdown.tapPromise(PLUGIN_NAME, async () => {
       const dependencyList = await Promise.all(
-        Array.from(this.resolvedModules).map(getPackageInfo)
+        Array.from(this.resolvedModules).map(getPackageInfo),
       );
 
       const uniqueList = _.uniqBy(
         dependencyList,
-        ({ name, version }) => `${name}@${version}`
+        ({ name, version }) => `${name}@${version}`,
       );
 
       const sortedList = _.sortBy(
         uniqueList,
-        ({ name, version }) => `${name}@${version}`
+        ({ name, version }) => `${name}@${version}`,
       );
 
       const outputPath =

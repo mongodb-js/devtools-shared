@@ -24,11 +24,11 @@ export type DownloadResult = DownloadArtifactInfo & {
 export async function downloadMongoDbWithVersionInfo(
   tmpdir: string,
   targetVersionSemverSpecifier = '*',
-  options: DownloadOptions = {}
+  options: DownloadOptions = {},
 ): Promise<DownloadResult> {
   let wantsEnterprise = options.enterprise ?? false;
   const isWindows = ['win32', 'windows'].includes(
-    options.platform ?? process.platform
+    options.platform ?? process.platform,
   );
   async function lookupDownloadUrl(): Promise<DownloadArtifactInfo> {
     return await getDownloadURL({
@@ -45,7 +45,7 @@ export async function downloadMongoDbWithVersionInfo(
       !!options.crypt_shared,
       'latest-alpha',
       isWindows,
-      lookupDownloadUrl
+      lookupDownloadUrl,
     );
   }
 
@@ -53,7 +53,7 @@ export async function downloadMongoDbWithVersionInfo(
     wantsEnterprise = true;
     targetVersionSemverSpecifier = targetVersionSemverSpecifier.replace(
       /-enterprise$/,
-      ''
+      '',
     );
   }
 
@@ -63,30 +63,30 @@ export async function downloadMongoDbWithVersionInfo(
     targetVersionSemverSpecifier +
       (wantsEnterprise ? '-enterprise' : '-community'),
     isWindows,
-    () => lookupDownloadUrl()
+    () => lookupDownloadUrl(),
   );
 }
 
 const downloadPromises: Record<string, Promise<DownloadResult>> = Object.create(
-  null
+  null,
 );
 async function doDownload(
   tmpdir: string,
   isCryptLibrary: boolean,
   version: string,
   isWindows: boolean,
-  lookupDownloadUrl: () => Promise<DownloadArtifactInfo>
+  lookupDownloadUrl: () => Promise<DownloadArtifactInfo>,
 ): Promise<DownloadResult> {
   const downloadTarget = path.resolve(
     tmpdir,
     `mongodb-${process.platform}-${process.env.DISTRO_ID || 'none'}-${
       process.arch
-    }-${version}`.replace(/[^a-zA-Z0-9_-]/g, '')
+    }-${version}`.replace(/[^a-zA-Z0-9_-]/g, ''),
   );
   return (downloadPromises[downloadTarget] ??= (async () => {
     const bindir = path.resolve(
       downloadTarget,
-      isCryptLibrary && !isWindows ? 'lib' : 'bin'
+      isCryptLibrary && !isWindows ? 'lib' : 'bin',
     );
     const artifactInfoFile = path.join(bindir, '.artifact_info');
     try {
@@ -116,16 +116,16 @@ async function doDownload(
         // `download` package is unable to handle (https://github.com/kevva/decompress/issues/93)
         await promisify(pipeline)(
           response.body,
-          tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 })
+          tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 }),
         );
       } else {
         const filename = path.join(
           downloadTarget,
-          path.basename(new URL(url).pathname)
+          path.basename(new URL(url).pathname),
         );
         await promisify(pipeline)(
           response.body,
-          createWriteStream(filename, { highWaterMark: HWM })
+          createWriteStream(filename, { highWaterMark: HWM }),
         );
         debug(`Written file ${url} to ${filename}, extracting...`);
         await decompress(filename, downloadTarget, {

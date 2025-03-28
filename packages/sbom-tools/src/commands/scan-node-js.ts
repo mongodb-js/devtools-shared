@@ -23,7 +23,7 @@ type NodeVulnerability = {
 async function formatVulnerability(
   id: string,
   nodeVulnerability: NodeVulnerability,
-  nodeVersion: string
+  nodeVersion: string,
 ): Promise<SnykVulnerability> {
   const score = await fetchScore(`NSWG-COR-${id}`, nodeVulnerability);
 
@@ -45,23 +45,23 @@ async function formatVulnerability(
 
 async function fetchScore(
   vulnId: string,
-  nodeVulnerability: NodeVulnerability
+  nodeVulnerability: NodeVulnerability,
 ) {
   const cves = await Promise.all(
     nodeVulnerability.cve.map((cve) =>
       fetch(
-        `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`
+        `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cve}`,
       ).then((res) =>
         res.ok
           ? res.json()
           : Promise.reject(
-              new Error(`Fetch ${cve} failed. Status: ${res.status}`)
-            )
-      )
-    )
+              new Error(`Fetch ${cve} failed. Status: ${res.status}`),
+            ),
+      ),
+    ),
   ).catch((e) => {
     console.error(
-      `Error fetching score for ${vulnId}: ${(e as Error).message}`
+      `Error fetching score for ${vulnId}: ${(e as Error).message}`,
     );
 
     return [];
@@ -71,7 +71,7 @@ async function fetchScore(
     cvssMetrics: {
       type: 'Primary' | 'Secondary';
       cvssData: { baseScore: number };
-    }[]
+    }[],
   ) => {
     return (
       cvssMetrics.find((m) => m.type === 'Primary')?.cvssData?.baseScore ??
@@ -82,14 +82,14 @@ async function fetchScore(
   const allCvss: (number | undefined)[] = cves.map(
     (cve) =>
       getBestCvssMetricScore(
-        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV31 ?? []
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV31 ?? [],
       ) ??
       getBestCvssMetricScore(
-        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV30 ?? []
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV30 ?? [],
       ) ??
       getBestCvssMetricScore(
-        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV2 ?? []
-      )
+        cve?.vulnerabilities[0]?.cve?.metrics?.cvssMetricV2 ?? [],
+      ),
   );
 
   const knownCvss: number[] = [];
@@ -165,7 +165,7 @@ export const command = new Command('scan-node-js')
           version: options.version,
         }),
         null,
-        2
-      )
+        2,
+      ),
     );
   });

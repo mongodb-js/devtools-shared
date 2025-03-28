@@ -40,7 +40,7 @@ memory.push(
   traverse(non_ascii_space_characters, codePoints.non_ASCII_space_characters),
   traverse(prohibited_characters, codePoints.prohibited_characters),
   traverse(bidirectional_r_al, codePoints.bidirectional_r_al),
-  traverse(bidirectional_l, codePoints.bidirectional_l)
+  traverse(bidirectional_l, codePoints.bidirectional_l),
 );
 
 async function writeCodepoints() {
@@ -52,9 +52,9 @@ async function writeCodepoints() {
   }
   await write(
     createWriteStream(process.argv[2]),
-    prettier.format(
+    await prettier.format(
       `import { gunzipSync } from 'zlib';
-  
+
   export default gunzipSync(
     Buffer.from(
       '${gzipSync(Buffer.concat(memory), { level: 9 }).toString('base64')}',
@@ -62,24 +62,24 @@ async function writeCodepoints() {
     )
   );
   `,
-      formatOptions
-    )
+      formatOptions,
+    ),
   );
 
   const fsStreamUncompressedData = createWriteStream(process.argv[3]);
 
   await write(
     fsStreamUncompressedData,
-    prettier.format(
+    await prettier.format(
       `const data = Buffer.from('${Buffer.concat(memory).toString(
-        'base64'
+        'base64',
       )}', 'base64');\nexport default data;\n`,
-      formatOptions
-    )
+      formatOptions,
+    ),
   );
 }
 
 writeCodepoints().catch((error) =>
   // eslint-disable-next-line no-console
-  console.error('error occurred generating saslprep codepoint data', { error })
+  console.error('error occurred generating saslprep codepoint data', { error }),
 );

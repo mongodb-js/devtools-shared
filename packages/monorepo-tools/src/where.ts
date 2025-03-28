@@ -33,7 +33,7 @@ if (execCommandArgs.includes('--lerna-exec')) {
 }
 
 async function filterPackagesByExpression(
-  expression: string
+  expression: string,
 ): Promise<string[]> {
   const packages: string[] = [];
   for await (const { packageJson } of listAllPackages()) {
@@ -59,7 +59,7 @@ async function lernaExec(packages: string[]) {
     await findMonorepoRoot(),
     'node_modules',
     '.bin',
-    'lerna'
+    'lerna',
   );
 
   execFileSync(lernaBin, ['exec', ...scope, ...execCommandArgs], {
@@ -73,7 +73,7 @@ async function npmWorkspaces(packages: string[]) {
 
   if (Number(npmVersion.substr(0, 2)) < 7) {
     throw Error(
-      `"npm run where" relies on npm@7 features, using npm@${npmVersion}. Update npm to 7 or use the command with --lerna-exec instead`
+      `"npm run where" relies on npm@7 features, using npm@${npmVersion}. Update npm to 7 or use the command with --lerna-exec instead`,
     );
   }
 
@@ -87,7 +87,7 @@ async function npmWorkspaces(packages: string[]) {
   console.log();
   console.log(
     'Running "npm %s" for the following packages:',
-    execCommandArgs.join(' ')
+    execCommandArgs.join(' '),
   );
   console.log();
   console.log(util.inspect(packages));
@@ -117,5 +117,5 @@ process.on('unhandledRejection', (err: Error) => {
 main().catch((err) =>
   process.nextTick(() => {
     throw err;
-  })
+  }),
 );

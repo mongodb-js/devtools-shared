@@ -107,7 +107,7 @@ describe('get-os-info', function () {
 
       const systemVersionPlist = await fs.readFile(
         '/System/Library/CoreServices/SystemVersion.plist',
-        'utf-8'
+        'utf-8',
       );
 
       const {

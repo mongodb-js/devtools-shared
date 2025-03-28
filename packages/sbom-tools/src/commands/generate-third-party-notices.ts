@@ -32,13 +32,13 @@ const ALLOWED_LICENSES = [
 
 function checkOverrides(packagesToCheck: string[], dependencies: Package[]) {
   const depsSet = new Set(
-    dependencies.map(({ name, version }) => `${name}@${version}`)
+    dependencies.map(({ name, version }) => `${name}@${version}`),
   );
 
   for (const packageName of packagesToCheck) {
     if (!depsSet.has(packageName)) {
       throw new Error(
-        `The package "${packageName}" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.`
+        `The package "${packageName}" is not appearing in the dependencies, please remove it from the configured ignoredPackages or licenseOverrides.`,
       );
     }
   }
@@ -65,7 +65,7 @@ function normalizeLicenseProperty(license: string | { type: string }): string {
 }
 
 function getLicenses(pkg: Package) {
-  return (pkg.license ? [pkg.license] : pkg.licenses ?? [])
+  return (pkg.license ? [pkg.license] : (pkg.licenses ?? []))
     .filter(Boolean)
     .map(normalizeLicenseProperty);
 }
@@ -98,13 +98,13 @@ function validatePackage(pkg: Package, config: Config) {
       } catch (error) {
         return allowedLicense === spdx;
       }
-    }
+    },
   );
 }
 
 async function readConfig(configPath: string): Promise<Config> {
   const originalConfig: Partial<Config> = JSON.parse(
-    await fs.readFile(configPath, 'utf-8')
+    await fs.readFile(configPath, 'utf-8'),
   );
 
   return Promise.resolve({
@@ -124,7 +124,7 @@ const packageNameAndVersion = (pkg: Package) => `${pkg.name}@${pkg.version}`;
 // licensing data.
 export function printLicenseInformation(
   productName: string,
-  packages: Package[]
+  packages: Package[],
 ): string {
   let output = `\
 The following third-party software is used by and included in **${productName}**.
@@ -136,7 +136,8 @@ Package|Version|License
 -------|-------|-------
 ${packages
   .map(
-    (pkg) => `**[${pkg.name}](#${id(pkg)})**|${pkg.version}|${licenseSpdx(pkg)}`
+    (pkg) =>
+      `**[${pkg.name}](#${id(pkg)})**|${pkg.version}|${licenseSpdx(pkg)}`,
   )
   .join('\n')}
 
@@ -186,7 +187,7 @@ function validatePackages(packages: Package[], config: Config) {
   const invalidPackages = packages
     .filter(
       (pkg) =>
-        !config.doNotValidatePackages.includes(packageNameAndVersion(pkg))
+        !config.doNotValidatePackages.includes(packageNameAndVersion(pkg)),
     )
     .filter((pkg) => !validatePackage(pkg, config));
 
@@ -195,9 +196,9 @@ function validatePackages(packages: Package[], config: Config) {
       [
         `Generation failed, found ${invalidPackages.length} invalid packages:`,
         ...invalidPackages.map(
-          (pkg) => `- ${pkg.name}@${pkg.version}: ${licenseSpdx(pkg)}`
+          (pkg) => `- ${pkg.name}@${pkg.version}: ${licenseSpdx(pkg)}`,
         ),
-      ].join('\n')
+      ].join('\n'),
     );
   }
 }
@@ -209,19 +210,19 @@ function applyConfig(dependencies: Package[], config: Config): Package[] {
       ...config.doNotValidatePackages,
       ...Object.keys(config.licenseOverrides),
     ],
-    dependencies
+    dependencies,
   );
 
   return dependencies
     .filter(
       (pkg) =>
         !(config.ignoredOrgs || []).some((org) =>
-          pkg.name.startsWith(org + '/')
-        )
+          pkg.name.startsWith(org + '/'),
+        ),
     )
     .filter(
       (pkg) =>
-        !(config.ignoredPackages || []).includes(packageNameAndVersion(pkg))
+        !(config.ignoredPackages || []).includes(packageNameAndVersion(pkg)),
     )
     .map((pkg) => ({
       ...pkg,
@@ -262,13 +263,13 @@ export const command = new Command('generate-3rd-party-notices')
   .option(
     '--config [config]',
     'Path of the configuration file',
-    'licenses.json'
+    'licenses.json',
   )
   .option(
     '--dependencies <paths>',
     'Comma-separated list of dependency files',
     commaSeparatedList,
-    []
+    [],
   )
   .action(async (options) => {
     await generate3rdPartyNotices({

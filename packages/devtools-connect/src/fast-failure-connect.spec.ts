@@ -17,33 +17,33 @@ class MongoError extends Error {
 describe('isFastFailureConnectionError', function () {
   it('returns true for ECONNREFUSED', function () {
     expect(
-      isFastFailureConnectionError(new MongoNetworkError('ECONNREFUSED'))
+      isFastFailureConnectionError(new MongoNetworkError('ECONNREFUSED')),
     ).to.equal(true);
   });
 
   it('returns true for ENOTFOUND', function () {
     expect(
-      isFastFailureConnectionError(new MongoNetworkError('ENOTFOUND'))
+      isFastFailureConnectionError(new MongoNetworkError('ENOTFOUND')),
     ).to.equal(true);
   });
 
   it('returns true for ENETUNREACH', function () {
     expect(
-      isFastFailureConnectionError(new MongoNetworkError('ENETUNREACH'))
+      isFastFailureConnectionError(new MongoNetworkError('ENETUNREACH')),
     ).to.equal(true);
   });
 
   it('returns true when an API version is required', function () {
     expect(
       isFastFailureConnectionError(
-        new MongoError('The apiVersion parameter is required')
-      )
+        new MongoError('The apiVersion parameter is required'),
+      ),
     ).to.equal(true);
   });
 
   it('returns false for generic errors', function () {
     expect(
-      isFastFailureConnectionError(new Error('could not connect'))
+      isFastFailureConnectionError(new Error('could not connect')),
     ).to.equal(false);
   });
 });

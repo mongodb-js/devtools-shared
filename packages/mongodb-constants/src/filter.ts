@@ -24,7 +24,7 @@ export const ALL_CONSTANTS = [
 const DEFAULT_SERVER_VERSION = '999.999.999';
 
 export type Meta =
-  | typeof ALL_CONSTANTS[number]['meta']
+  | (typeof ALL_CONSTANTS)[number]['meta']
   | 'field:identifier'
   | 'field:reference';
 
@@ -91,7 +91,7 @@ function matchesMeta(filter: string[], meta: string) {
 
 function isIn<T extends string | number>(
   val: T | T[] | undefined,
-  set: T[] | undefined
+  set: T[] | undefined,
 ): boolean {
   // Do not filter when either value or match set is not provided
   if (typeof val === 'undefined' || typeof set === 'undefined') {
@@ -120,7 +120,7 @@ export function createConstantFilter({
   serverVersion = DEFAULT_SERVER_VERSION,
   stage: filterStage = {},
 }: Pick<FilterOptions, 'meta' | 'serverVersion' | 'stage'> = {}): (
-  completion: Completion
+  completion: Completion,
 ) => boolean {
   const currentServerVersion =
     /^(?<version>\d+\.\d+\.\d+)/.exec(serverVersion)?.groups?.version ??
@@ -170,7 +170,7 @@ export function wrapField(field: string, force = false): string {
 }
 
 function normalizeField(
-  field: string | { name: string; description?: string }
+  field: string | { name: string; description?: string },
 ) {
   return typeof field === 'string'
     ? { value: field }
@@ -190,7 +190,7 @@ function normalizeField(
  */
 export function getFilteredCompletions(
   options: FilterOptions = {},
-  constants: Completion[] = ALL_CONSTANTS as Completion[]
+  constants: Completion[] = ALL_CONSTANTS as Completion[],
 ): Completion[] {
   const {
     serverVersion = DEFAULT_SERVER_VERSION,
@@ -220,7 +220,7 @@ export function getFilteredCompletions(
           description,
         },
       ];
-    })
+    }),
   );
 
   return completionsWithFields.filter((completion) => {

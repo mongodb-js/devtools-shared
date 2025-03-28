@@ -15,7 +15,7 @@ describe('stage operators', function () {
     it(`${operator.name} has a properly formatted comment`, function () {
       expect(
         operator.comment.startsWith('/**\n'),
-        'expected comment to be open'
+        'expected comment to be open',
       ).to.be.true;
 
       const commentLines = operator.comment.split('\n');
@@ -26,19 +26,19 @@ describe('stage operators', function () {
       for (const commentLine of commentLines) {
         expect(
           /^ \*( |$)/.test(commentLine),
-          'expected comment to be indented properly'
+          'expected comment to be indented properly',
         ).to.be.true;
 
         const spaces =
           /^ */.exec(commentLine.replace(/^ \* ?/, ''))?.[0].length ?? -1;
         expect(spaces % 2, 'expected comment to be indented properly').to.equal(
-          0
+          0,
         );
       }
 
       expect(
         operator.comment.endsWith('\n */\n'),
-        'expected comment to be closed properly'
+        'expected comment to be closed properly',
       ).to.be.true;
     });
 
@@ -47,7 +47,7 @@ describe('stage operators', function () {
 
       expect(
         () => acorn.parseExpressionAt(snippet, 0, { ecmaVersion: 'latest' }),
-        'expected snippet to parse'
+        'expected snippet to parse',
       ).not.to.throw();
 
       const snippetLines = snippet.split('\n');
@@ -55,7 +55,7 @@ describe('stage operators', function () {
       for (const snippetLine of snippetLines) {
         const spaces = /^ */.exec(snippetLine)?.[0].length ?? -1;
         expect(spaces % 2, 'expected snippet to be indented properly').to.equal(
-          0
+          0,
         );
       }
     });
@@ -70,7 +70,7 @@ describe('stage operators', function () {
         operator.name.localeCompare(STAGE_OPERATORS[index - 1].name),
         `Expected ${operator.name} to be before ${
           STAGE_OPERATORS[index - 1].name
-        }`
+        }`,
       ).to.be.greaterThan(-1);
     });
   });

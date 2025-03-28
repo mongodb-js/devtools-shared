@@ -73,7 +73,7 @@ import * as utilities from './index';
     .command('ls', 'List currently running MongoDB instances')
     .command(
       'exec',
-      'Run a process with a MongoDB instance (as MONGODB_URI env var)'
+      'Run a process with a MongoDB instance (as MONGODB_URI env var)',
     )
     .demandCommand(1, 'A command needs to be provided')
     .help().argv;
@@ -90,7 +90,7 @@ import * as utilities from './index';
       `${argv.$0} stop --id=${id}` +
         (argv.runnerDir !== defaultRunnerDir
           ? `--runnerDir=${argv.runnerDir}`
-          : '')
+          : ''),
     );
     cluster.unref();
   }
@@ -149,7 +149,7 @@ import * as utilities from './index';
   // eslint-disable-next-line @typescript-eslint/require-await
   async function unknown() {
     throw new Error(
-      `Unknown command: ${command}. See '${argv.$0} --help' for more information.`
+      `Unknown command: ${command}. See '${argv.$0} --help' for more information.`,
     );
   }
 

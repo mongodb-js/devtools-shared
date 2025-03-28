@@ -65,7 +65,7 @@ export class HTTPServerProxyTestSetup {
   tlsOptions = Object.freeze({
     key: readFileSync(path.resolve(__dirname, 'fixtures', 'server.bundle.pem')),
     cert: readFileSync(
-      path.resolve(__dirname, 'fixtures', 'server.bundle.pem')
+      path.resolve(__dirname, 'fixtures', 'server.bundle.pem'),
     ),
     ca: readFileSync(path.resolve(__dirname, 'fixtures', 'ca.crt')),
     sshdKey: readFileSync(path.resolve(__dirname, 'fixtures', 'sshd.key')),
@@ -89,19 +89,19 @@ export class HTTPServerProxyTestSetup {
     this.socks5ProxyServer = (socks5Server as any).createServer(
       (
         info: any,
-        accept: (intercept: true) => Socket
+        accept: (intercept: true) => Socket,
         //deny: () => void
       ): void => {
         const socket = accept(true);
         this.httpServer.emit('connection', socket);
-      }
+      },
     );
 
     const onconnect =
       (server: HTTPServer) =>
       (req: IncomingMessage, socket: Duplex, head: Buffer) => {
         const [username, pw] = parseHTTPAuthHeader(
-          req.headers['proxy-authorization']
+          req.headers['proxy-authorization'],
         );
         if (this.authHandler?.(username, pw) === false) {
           socket.end('HTTP/1.0 407 Proxy Authentication Required\r\n\r\n');
@@ -118,7 +118,7 @@ export class HTTPServerProxyTestSetup {
 
     this.httpProxyServer = createHTTPServer((req, res) => {
       const [username, pw] = parseHTTPAuthHeader(
-        req.headers['proxy-authorization']
+        req.headers['proxy-authorization'],
       );
       if (this.authHandler?.(username, pw) === false) {
         res.writeHead(407);
@@ -134,7 +134,7 @@ export class HTTPServerProxyTestSetup {
             return socket1;
           },
         },
-        (proxyRes) => proxyRes.pipe(res)
+        (proxyRes) => proxyRes.pipe(res),
       );
     }).on('connect', onconnect(this.httpServer));
 
@@ -167,7 +167,7 @@ export class HTTPServerProxyTestSetup {
               this.httpServer.emit('connection', accept());
             });
           });
-      }
+      },
     );
   }
 
@@ -183,7 +183,7 @@ export class HTTPServerProxyTestSetup {
       ].map(async (server) => {
         await promisify(server.listen.bind(server))(0);
         server.on('connection', (conn) => this.connections.push(conn));
-      })
+      }),
     );
   }
 
@@ -192,7 +192,7 @@ export class HTTPServerProxyTestSetup {
   }
 
   socks5AuthUsernamePassword(
-    cb: (user: string, pass: string, cb: (success: boolean) => void) => void
+    cb: (user: string, pass: string, cb: (success: boolean) => void) => void,
   ): void {
     this.socks5ProxyServer.useAuth(socks5AuthUserPassword(cb));
   }
@@ -202,7 +202,7 @@ export class HTTPServerProxyTestSetup {
       Object.assign(new URL(`http://_`), {
         pathname: r.url,
         host: r.headers.host,
-      }).toString()
+      }).toString(),
     );
   }
 

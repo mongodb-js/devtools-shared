@@ -25,7 +25,7 @@ const dnsLookup = util.promisify(dns.lookup.bind(dns));
 
 function rangesContainsIP(
   ipRanges: ParsedCIDRs,
-  ip: ipaddr.IPv4 | ipaddr.IPv6
+  ip: ipaddr.IPv4 | ipaddr.IPv6,
 ) {
   if (ip.kind() === 'ipv4') {
     return !!ipRanges.v4.find((cidr) => ip.match(cidr));

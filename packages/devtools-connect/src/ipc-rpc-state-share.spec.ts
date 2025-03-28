@@ -136,7 +136,7 @@ describe('IPC RPC state sharing', function () {
               clientId: 'clientId',
             },
             version: 1,
-          }
+          },
         );
       expect(result).to.deep.equal({ accessToken: 'req-accesstoken' });
     });
@@ -145,8 +145,8 @@ describe('IPC RPC state sharing', function () {
       callback.callsFake((params: { timeoutContext: AbortSignal }) => {
         return new Promise((resolve, reject) =>
           params.timeoutContext.addEventListener('abort', () =>
-            reject(new Error('aborted'))
-          )
+            reject(new Error('aborted')),
+          ),
         );
       });
       server = await StateShareServer.create(fakeState);
@@ -162,7 +162,7 @@ describe('IPC RPC state sharing', function () {
             },
             version: 1,
             timeoutContext: abortController.signal,
-          }
+          },
         );
       setTimeout(() => abortController.abort(), 100);
       try {

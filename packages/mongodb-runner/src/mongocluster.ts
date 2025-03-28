@@ -48,10 +48,10 @@ export class MongoCluster {
     cluster.topology = serialized.topology;
     cluster.replSetName = serialized.replSetName;
     cluster.servers = await Promise.all(
-      serialized.servers.map((srv: any) => MongoServer.deserialize(srv))
+      serialized.servers.map((srv: any) => MongoServer.deserialize(srv)),
     );
     cluster.shards = await Promise.all(
-      serialized.shards.map((shard: any) => MongoCluster.deserialize(shard))
+      serialized.shards.map((shard: any) => MongoCluster.deserialize(shard)),
     );
     return cluster;
   }
@@ -87,7 +87,7 @@ export class MongoCluster {
       options.binDir = await downloadMongoDb(
         options.tmpDir,
         options.version,
-        options.downloadOptions
+        options.downloadOptions,
       );
     }
 
@@ -96,7 +96,7 @@ export class MongoCluster {
         await MongoServer.start({
           ...options,
           binary: 'mongod',
-        })
+        }),
       );
     } else if (options.topology === 'replset') {
       const { secondaries = 2, arbiters = 0 } = options;
@@ -135,9 +135,9 @@ export class MongoCluster {
               ...options,
               args,
               binary: 'mongod',
-            })
-          )
-        ))
+            }),
+          ),
+        )),
       );
 
       await primary.withClient(async (client) => {
@@ -187,8 +187,8 @@ export class MongoCluster {
             ...options,
             args: [...shardArgs, i > 0 ? '--shardsvr' : '--configsvr'],
             topology: 'replset',
-          })
-        )
+          }),
+        ),
       );
       cluster.shards.push(configsvr, ...shardsvrs);
 
@@ -219,7 +219,7 @@ export class MongoCluster {
 
   async close(): Promise<void> {
     await Promise.all(
-      [...this.servers, ...this.shards].map((closable) => closable.close())
+      [...this.servers, ...this.shards].map((closable) => closable.close()),
     );
     this.servers = [];
     this.shards = [];
@@ -227,11 +227,11 @@ export class MongoCluster {
 
   async withClient<Fn extends (client: MongoClient) => any>(
     fn: Fn,
-    clientOptions: MongoClientOptions = {}
+    clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
     const client = await MongoClient.connect(
       this.connectionString,
-      clientOptions
+      clientOptions,
     );
     try {
       return await fn(client);

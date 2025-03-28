@@ -47,7 +47,7 @@ function isAtlas(str: string): boolean {
 export class MongoAutoencryptionUnavailable extends Error {
   constructor() {
     super(
-      'Automatic encryption is only available with Atlas and MongoDB Enterprise'
+      'Automatic encryption is only available with Atlas and MongoDB Enterprise',
     );
   }
 }
@@ -59,7 +59,7 @@ export class MongoAutoencryptionUnavailable extends Error {
 async function connectWithFailFast(
   uri: string,
   client: MongoClient,
-  logger: ConnectLogEmitter
+  logger: ConnectLogEmitter,
 ): Promise<void> {
   const failedConnections = new Map<string, Error>();
   let failEarlyClosePromise: Promise<void> | null = null;
@@ -135,7 +135,7 @@ async function connectWithFailFast(
     client.removeListener('serverHeartbeatFailed', heartbeatFailureListener);
     client.removeListener(
       'serverHeartbeatSucceeded',
-      heartbeatSucceededListener
+      heartbeatSucceededListener,
     );
     logger.emit('devtools-connect:connect-attempt-finished', {
       cryptSharedLibVersionInfo: (client as any)?.autoEncrypter
@@ -155,7 +155,7 @@ let resolveDnsHelpers:
 
 async function resolveMongodbSrv(
   uri: string,
-  logger: ConnectLogEmitter
+  logger: ConnectLogEmitter,
 ): Promise<string> {
   const resolutionDetails: ConnectDnsResolutionDetail[] = [];
   if (uri.startsWith('mongodb+srv://')) {
@@ -195,7 +195,7 @@ async function resolveMongodbSrv(
                     durationMs: Date.now() - start,
                   });
                   cb(...args);
-                }
+                },
               );
             },
             resolveTxt(hostname: string, cb: Parameters<typeof resolveTxt>[1]) {
@@ -211,7 +211,7 @@ async function resolveMongodbSrv(
                     durationMs: Date.now() - start,
                   });
                   cb(...args);
-                }
+                },
               );
             },
           },
@@ -295,7 +295,7 @@ function copyEventEmitterEvents<M>(
       event: K,
       ...args: M[K] extends (...args: infer P) => any ? P : never
     ) => void;
-  }
+  },
 ) {
   from.emit = function <K extends string & keyof M>(
     event: K,
@@ -329,7 +329,7 @@ export class DevtoolsConnectionState {
       'productDocsLink' | 'productName' | 'oidc' | 'parentHandle'
     >,
     logger: ConnectLogEmitter,
-    ca: string | undefined
+    ca: string | undefined,
   ) {
     this.productName = options.productName;
     if (options.parentHandle) {
@@ -348,7 +348,7 @@ export class DevtoolsConnectionState {
         logger: proxyingLogger,
         redirectServerRequestHandler: oidcServerRequestHandler.bind(
           null,
-          options
+          options,
         ),
         ...addToOIDCPluginHttpOptions(options.oidc, ca ? { ca } : {}),
       });
@@ -422,7 +422,7 @@ export async function connectMongoClient(
   uri: string,
   clientOptions: DevtoolsConnectOptions,
   logger: ConnectLogEmitter,
-  MongoClientClass: typeof MongoClient
+  MongoClientClass: typeof MongoClient,
 ): Promise<ConnectMongoClientResult> {
   detectAndLogMissingOptionalDependencies(logger);
 
@@ -504,7 +504,7 @@ async function connectMongoClientImpl({
               ...(clientOptions.proxy as DevtoolsProxyOptions),
               ...(ca ? { ca } : {}),
             },
-        clientOptions.applyProxyToOIDC ? undefined : 'mongodb://'
+        clientOptions.applyProxyToOIDC ? undefined : 'mongodb://',
       );
     cleanupOnClientClose.push(() => proxyAgent?.destroy());
 
@@ -522,7 +522,7 @@ async function connectMongoClientImpl({
       tunnel = createSocks5Tunnel(
         proxyAgent,
         'generate-credentials',
-        'mongodb://'
+        'mongodb://',
       );
       cleanupOnClientClose.push(() => tunnel?.close());
     }
@@ -553,7 +553,7 @@ async function connectMongoClientImpl({
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
       { allowPartialTrustChain: true },
-      ca ? { ca } : {}
+      ca ? { ca } : {},
     );
 
     // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
@@ -623,7 +623,7 @@ function getMaybeConectionString(uri: string): ConnectionString | null {
 
 function getConnectionStringParam<K extends keyof MongoClientOptions>(
   uri: string,
-  key: K
+  key: K,
 ): string | null {
   return (
     getMaybeConectionString(uri)
@@ -634,7 +634,7 @@ function getConnectionStringParam<K extends keyof MongoClientOptions>(
 
 function hasProxyHostOption(
   uri: string,
-  clientOptions: MongoClientOptions
+  clientOptions: MongoClientOptions,
 ): boolean {
   if (clientOptions.proxyHost || clientOptions.proxyPort) return true;
   const sp =
@@ -644,7 +644,7 @@ function hasProxyHostOption(
 
 export function isHumanOidcFlow(
   uri: string,
-  clientOptions: MongoClientOptions
+  clientOptions: MongoClientOptions,
 ): boolean {
   if (
     (clientOptions.authMechanism &&
@@ -661,14 +661,14 @@ export function isHumanOidcFlow(
   return (
     authMechanism === 'MONGODB-OIDC' &&
     !new CommaAndColonSeparatedRecord(sp?.get('authMechanismProperties')).get(
-      'ENVIRONMENT'
+      'ENVIRONMENT',
     )
   );
 }
 
 function closeMongoClientWhenAuthFails(
   state: DevtoolsConnectionState,
-  client: MongoClient
+  client: MongoClient,
 ): void {
   // First, make sure that the 'close' event is emitted on the client,
   // see also the comments in https://jira.mongodb.org/browse/NODE-5155.
@@ -693,19 +693,19 @@ function closeMongoClientWhenAuthFails(
   const onOIDCAuthFailed = () => client.close().catch(() => {});
   state.oidcPlugin.logger.once(
     'mongodb-oidc-plugin:auth-failed',
-    onOIDCAuthFailed
+    onOIDCAuthFailed,
   );
   client.once('close', () =>
     state.oidcPlugin.logger.off?.(
       'mongodb-oidc-plugin:auth-failed',
-      onOIDCAuthFailed
-    )
+      onOIDCAuthFailed,
+    ),
   );
 }
 
 function addToOIDCPluginHttpOptions(
   existingOIDCPluginOptions: MongoDBOIDCPluginOptions | undefined,
-  addedOptions: Partial<OIDCHTTPOptions>
+  addedOptions: Partial<OIDCHTTPOptions>,
 ): Pick<MongoDBOIDCPluginOptions, 'customHttpOptions'> {
   const existingCustomOptions = existingOIDCPluginOptions?.customHttpOptions;
   if (typeof existingCustomOptions === 'function') {
@@ -714,7 +714,7 @@ function addToOIDCPluginHttpOptions(
         existingCustomOptions(
           url,
           { ...options, ...addedOptions },
-          ...restArgs
+          ...restArgs,
         ),
     };
   }

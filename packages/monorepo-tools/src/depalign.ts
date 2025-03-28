@@ -116,7 +116,7 @@ async function main(args: ParsedArgs) {
       await fs.writeFile(
         depalignrcPath,
         JSON.stringify({ ...depalignrc, ignore }, null, 2),
-        'utf8'
+        'utf8',
       );
 
       extraneous.clear();
@@ -126,27 +126,27 @@ async function main(args: ParsedArgs) {
       console.log(
         'Following extraneous versions found in the `ignore` config option in %s: %s',
         path.relative(process.cwd(), depalignrcPath),
-        chalk.dim('(can be fixed with --autofix)')
+        chalk.dim('(can be fixed with --autofix)'),
       );
       console.log();
 
       for (const [depName, versions] of extraneous) {
         const versionPadStart = Math.max(
-          ...versions.map((version) => version.length)
+          ...versions.map((version) => version.length),
         );
         console.log(
           '  %s %s',
           chalk.bold(depName),
           versions.length === depalignrc.ignore[depName].length
             ? chalk.dim('(whole rule)')
-            : ''
+            : '',
         );
         console.log();
         for (const version of versions) {
           console.log(
             '    %s%s',
             ' '.repeat(versionPadStart - version.length),
-            version
+            version,
           );
         }
         console.log();
@@ -154,7 +154,7 @@ async function main(args: ParsedArgs) {
     } else {
       console.log(
         '%s',
-        chalk.green('No extraneous rules found in depalign config')
+        chalk.green('No extraneous rules found in depalign config'),
       );
     }
 
@@ -172,7 +172,7 @@ async function main(args: ParsedArgs) {
       console.log(
         `%s: You are about to update mismatched dependencies which might potentially be a %s. Please make sure that everything is still working as expected after the update.`,
         chalk.yellow('Warning'),
-        chalk.bold('breaking change')
+        chalk.bold('breaking change'),
       );
       console.log();
     }
@@ -182,7 +182,7 @@ async function main(args: ParsedArgs) {
       applyFixes,
       report,
       includeMismatched,
-      fixOnly
+      fixOnly,
     );
 
     console.log();
@@ -201,8 +201,8 @@ async function main(args: ParsedArgs) {
             return val;
           }
         },
-        2
-      )
+        2,
+      ),
     );
   } else {
     prettyPrintReport(report);
@@ -233,7 +233,7 @@ async function alignPackageToRange(packageName: string, range: string) {
 
 function hasDep(
   packageJson: Record<string, any>,
-  packageName: string
+  packageName: string,
 ): boolean {
   for (const group of DEPENDENCY_GROUPS) {
     if (packageJson[group] && packageJson[group][packageName]) {
@@ -247,7 +247,7 @@ function hasDep(
 function updateDepToRange(
   packageJson: Record<string, any>,
   packageName: string,
-  range: string
+  range: string,
 ): Record<string, any> {
   const updated = { ...packageJson };
 
@@ -278,17 +278,17 @@ function generateReport(
     includeTypes?: string | string[];
     includeTypesOnly?: boolean;
     ignore?: Record<string, string[]>;
-  } = {}
+  } = {},
 ) {
   const report: Report = { mismatched: new Map(), deduped: new Map() };
 
   for (const [depName, versions] of dependencies) {
     const ignoredVersions = new Set(ignore[depName] || []);
     const notIgnoredVersions = versions.filter(
-      ({ version }) => !ignoredVersions.has(version)
+      ({ version }) => !ignoredVersions.has(version),
     );
     const notIgnoredUniqueVersionsOnly = Array.from(
-      new Set(notIgnoredVersions.map(({ version }) => version))
+      new Set(notIgnoredVersions.map(({ version }) => version)),
     );
 
     if (notIgnoredUniqueVersionsOnly.length <= 1) {
@@ -320,7 +320,7 @@ function generateReport(
 
 function normalizeIgnore(
   { deduped, mismatched }: Report,
-  ignore: Record<string, string[]> = {}
+  ignore: Record<string, string[]> = {},
 ) {
   const ignoreMap = new Map(Object.entries(ignore));
   const mergedReport = new Map([...deduped, ...mismatched]);
@@ -333,16 +333,16 @@ function normalizeIgnore(
       const reportItemVersionsOnly = new Set(
         mergedReport
           .get(depName)
-          ?.versions.map(({ version }: { version: string }) => version)
+          ?.versions.map(({ version }: { version: string }) => version),
       );
       const extraneousVersions = versions.filter(
-        (version) => !reportItemVersionsOnly.has(version)
+        (version) => !reportItemVersionsOnly.has(version),
       );
       if (extraneousVersions.length > 0) {
         extraneous.set(depName, extraneousVersions);
       }
       newIgnore[depName] = versions.filter((version) =>
-        reportItemVersionsOnly.has(version)
+        reportItemVersionsOnly.has(version),
       );
     } else {
       extraneous.set(depName, versions);
@@ -357,7 +357,7 @@ async function applyFixes(
   this: ora.Ora,
   { deduped, mismatched }: Report,
   includeMismatched = false,
-  fixOnly = new Set()
+  fixOnly = new Set(),
 ) {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const spinner = this;
@@ -435,7 +435,7 @@ function prettyPrintReport({ deduped, mismatched }: Report) {
   function printReportItems(items: Map<string, ReportItem>) {
     for (const [depName, { versions }] of items) {
       const versionPadStart = Math.max(
-        ...versions.map(({ version }) => version.length)
+        ...versions.map(({ version }) => version.length),
       );
       console.log('  %s', chalk.bold(depName));
       console.log();
@@ -448,8 +448,8 @@ function prettyPrintReport({ deduped, mismatched }: Report) {
             `at ${path.relative(process.cwd(), from) || 'root'} ${
               // Not printing prod ones as it's kinda implied
               type !== 'prod' ? `(${type})` : ''
-            }`.trim()
-          )
+            }`.trim(),
+          ),
         );
       }
       console.log();
@@ -460,7 +460,7 @@ function prettyPrintReport({ deduped, mismatched }: Report) {
     console.log(
       '%s %s',
       chalk.bold.yellow('Deduped:'),
-      chalk.dim('(can be fixed with --autofix)')
+      chalk.dim('(can be fixed with --autofix)'),
     );
     console.log();
     printReportItems(deduped);
@@ -475,7 +475,7 @@ function prettyPrintReport({ deduped, mismatched }: Report) {
   if (deduped.size === 0 && mismatched.size === 0) {
     console.log(
       '%s',
-      chalk.green('All dependencies are aligned, nothing to report!')
+      chalk.green('All dependencies are aligned, nothing to report!'),
     );
   }
 }
@@ -513,5 +513,5 @@ function parseOptions() {
 main(parseOptions()).catch((err) =>
   process.nextTick(() => {
     throw err;
-  })
+  }),
 );

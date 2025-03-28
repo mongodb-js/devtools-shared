@@ -18,14 +18,14 @@ export interface ProxyEventMap {
     proxyPort: number;
   }) => void;
   'socks5:forwarding-error': (
-    ev: { error: string } & Partial<BaseSocks5RequestMetadata>
+    ev: { error: string } & Partial<BaseSocks5RequestMetadata>,
   ) => void;
   'socks5:agent-initialized': () => void;
   'socks5:closing-tunnel': () => void;
   'socks5:got-forwarding-request': (ev: BaseSocks5RequestMetadata) => void;
   'socks5:accepted-forwarding-request': (ev: BaseSocks5RequestMetadata) => void;
   'socks5:failed-forwarding-request': (
-    ev: { error: string } & Partial<BaseSocks5RequestMetadata>
+    ev: { error: string } & Partial<BaseSocks5RequestMetadata>,
   ) => void;
   'socks5:forwarded-socket-closed': (ev: BaseSocks5RequestMetadata) => void;
 
@@ -55,11 +55,11 @@ export interface ProxyLogEmitter {
   on<K extends keyof ProxyEventMap>(event: K, listener: ProxyEventMap[K]): this;
   off?<K extends keyof ProxyEventMap>(
     event: K,
-    listener: ProxyEventMap[K]
+    listener: ProxyEventMap[K],
   ): this;
   once<K extends keyof ProxyEventMap>(
     event: K,
-    listener: ProxyEventMap[K]
+    listener: ProxyEventMap[K],
   ): this;
   emit<K extends keyof ProxyEventMap>(
     event: K,
@@ -78,7 +78,7 @@ let idCounter = 0;
 export function hookLogger(
   emitter: ProxyLogEmitter,
   log: MongoLogWriter,
-  logCtx: string
+  logCtx: string,
 ): void {
   logCtx = `${logCtx}-${idCounter++}`;
   const { mongoLogId } = log;
@@ -89,7 +89,7 @@ export function hookLogger(
       mongoLogId(1_001_000_253),
       `socks5-${logCtx}`,
       'Validated auth parameters',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -98,7 +98,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_254),
       `socks5-${logCtx}`,
-      'Skipping auth setup'
+      'Skipping auth setup',
     );
   });
 
@@ -108,7 +108,7 @@ export function hookLogger(
       mongoLogId(1_001_000_255),
       `socks5-${logCtx}`,
       'Listening for Socks5 connections',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -118,7 +118,7 @@ export function hookLogger(
       mongoLogId(1_001_000_259),
       `socks5-${logCtx}`,
       'Failed to establish new outgoing connection from Socks5 proxy',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -127,7 +127,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_259),
       `socks5-${logCtx}`,
-      'Finished initializing agent'
+      'Finished initializing agent',
     );
   });
 
@@ -136,7 +136,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_256),
       `socks5-${logCtx}`,
-      'Closing Socks5 tunnel'
+      'Closing Socks5 tunnel',
     );
   });
 
@@ -146,7 +146,7 @@ export function hookLogger(
       mongoLogId(1_001_000_260),
       `socks5-${logCtx}`,
       'Received Socks5 fowarding request',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -156,7 +156,7 @@ export function hookLogger(
       mongoLogId(1_001_000_262),
       `socks5-${logCtx}`,
       'Established outbound connection and accepting socks5 request',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -166,7 +166,7 @@ export function hookLogger(
       mongoLogId(1_001_000_265),
       `socks5-${logCtx}`,
       'Error establishing outbound connection for socks5 request',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -176,7 +176,7 @@ export function hookLogger(
       mongoLogId(1_001_000_264),
       `socks5-${logCtx}`,
       'Socks5 stream socket closed',
-      { ...ev }
+      { ...ev },
     );
   });
 
@@ -185,7 +185,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_252),
       `ssh-${logCtx}`,
-      'sshClient closed'
+      'sshClient closed',
     );
   });
 
@@ -195,7 +195,7 @@ export function hookLogger(
       mongoLogId(1_001_000_257),
       `ssh-${logCtx}`,
       'Establishing new SSH connection',
-      { ...ev }
+      { ...ev },
     );
   });
   emitter.on('ssh:failed-connection', (ev) => {
@@ -204,7 +204,7 @@ export function hookLogger(
       mongoLogId(1_001_000_258),
       `ssh-${logCtx}`,
       'Failed to establish new SSH connection',
-      { ...ev }
+      { ...ev },
     );
   });
   emitter.on('ssh:established-connection', () => {
@@ -212,7 +212,7 @@ export function hookLogger(
       'DEVTOOLS-PROXY',
       mongoLogId(1_001_000_259),
       `ssh-${logCtx}`,
-      'Finished establishing new SSH connection'
+      'Finished establishing new SSH connection',
     );
   });
 
@@ -224,7 +224,7 @@ export function hookLogger(
       'Error forwarding outbound SSH connection, potentially retrying',
       {
         ...ev,
-      }
+      },
     );
   });
 }

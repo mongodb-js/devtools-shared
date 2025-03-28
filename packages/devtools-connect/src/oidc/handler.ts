@@ -7,7 +7,7 @@ import {
 
 export function oidcServerRequestHandler(
   options: Pick<DevtoolsConnectOptions, 'productDocsLink' | 'productName'>,
-  info: RedirectServerRequestInfo
+  info: RedirectServerRequestInfo,
 ): void {
   const { productDocsLink, productName } = options;
   const { res, result, status } = info;
@@ -24,7 +24,7 @@ export function oidcServerRequestHandler(
   // pages do not unintentionally rely on external resources (which they should never do).
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; style-src 'unsafe-inline'"
+    "default-src 'self'; style-src 'unsafe-inline'",
   );
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
@@ -34,7 +34,7 @@ export function oidcServerRequestHandler(
         getStaticPage(HttpServerPage.OIDCAcceptedPage, {
           productDocsLink,
           productName,
-        })
+        }),
       );
       break;
     case 'rejected':
@@ -45,7 +45,7 @@ export function oidcServerRequestHandler(
           error: info.error,
           errorDescription: info.errorDescription,
           errorURI: info.errorURI,
-        })
+        }),
       );
       break;
     default:
@@ -53,7 +53,7 @@ export function oidcServerRequestHandler(
         getStaticPage(HttpServerPage.OIDCNotFoundPage, {
           productDocsLink,
           productName,
-        })
+        }),
       );
       break;
   }

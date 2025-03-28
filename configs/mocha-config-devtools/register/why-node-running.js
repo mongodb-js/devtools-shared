@@ -8,7 +8,7 @@ exports.mochaHooks = {
     const timeout = setTimeout(() => {
       console.log(
         "if the process still running, run kill -SIGINFO %s to see what's keeping it",
-        process.pid
+        process.pid,
       );
     }, 10000);
     timeout.unref?.();

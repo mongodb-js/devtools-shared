@@ -35,13 +35,13 @@ export function calculateReplacements(ranges: string[]): Map<string, string> {
 
 export function getHighestRange(ranges: string[]): string | null {
   const validRanges = ranges.filter(
-    (range) => semver.validRange(range) && range !== '*'
+    (range) => semver.validRange(range) && range !== '*',
   );
 
   const sortedRanges = validRanges.sort((v1, v2) => {
     const res = semver.compare(
       semver.minVersion(v2) ?? '',
-      semver.minVersion(v1) ?? ''
+      semver.minVersion(v1) ?? '',
     );
 
     if (res === 1 || res === -1) {

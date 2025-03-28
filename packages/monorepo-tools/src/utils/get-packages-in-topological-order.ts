@@ -17,32 +17,32 @@ export interface PackageInfo {
 }
 
 export async function getPackagesInTopologicalOrder(
-  monorepoRoot: string
+  monorepoRoot: string,
 ): Promise<PackageInfo[]> {
   const patterns: string[] =
     JSON.parse(
-      await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8')
+      await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8'),
     ).workspaces || [];
 
   const packageJsonPaths = await glob(
     // NOTE: glob patterns should always use forward slashes,
     // path.join here wouldn't work on win.
     patterns.map((pattern) => `${pattern}/package.json`),
-    { cwd: monorepoRoot }
+    { cwd: monorepoRoot },
   );
 
   const internalPackages: InternalPackageInfo[] = await Promise.all(
     packageJsonPaths.map(async (packageJsonPath) => {
       const packageJsonLocation = path.resolve(monorepoRoot, packageJsonPath);
       const packageJson = JSON.parse(
-        await fs.readFile(packageJsonLocation, 'utf8')
+        await fs.readFile(packageJsonLocation, 'utf8'),
       );
       return {
         name: packageJson.name,
         location: path.resolve(path.dirname(packageJsonLocation)),
         packageJson,
       };
-    })
+    }),
   );
 
   const edges: [string, string][] = [];

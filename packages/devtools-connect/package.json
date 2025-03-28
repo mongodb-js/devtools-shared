@@ -83,7 +83,8 @@
     "sinon-chai": "^3.7.0",
     "ts-node": "^10.9.2",
     "ts-sinon": "^2.0.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "prettier": "^3.5.3"
   },
   "optionalDependencies": {
     "kerberos": "^2.1.0",

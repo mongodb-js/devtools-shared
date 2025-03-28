@@ -37,16 +37,16 @@ describe('@mongodb-js/shell-bson-parser', function () {
         BinaryCreateFromHexString: Binary.createFromHexString('deadbeef'),
         BinaryCreateFromBase64: Binary.createFromBase64('3q2+7w=='),
         }`,
-        { allowMethods: true }
-      )
+        { allowMethods: true },
+      ),
     ).to.deep.equal({
       BinaryCreateFromHexString: new bson.Binary(
         Buffer.from('deadbeef', 'hex'),
-        0
+        0,
       ),
       BinaryCreateFromBase64: new bson.Binary(
         Buffer.from('3q2+7w==', 'base64'),
-        0
+        0,
       ),
     });
   });
@@ -79,20 +79,20 @@ describe('@mongodb-js/shell-bson-parser', function () {
     Timestamp_long: Timestamp(new Long(1, 2)),
     ISODate: ISODate("2020-01-01 12:00:00"),
     Date: new Date("2020-01-01 12:00:00")
-  }`)
+  }`),
     ).to.deep.equal({
       RegExp: /test/gi,
       Binary: new bson.Binary(),
       BinData: new bson.Binary(Buffer.from('dGVzdAo=', 'base64'), 3),
       UUID: new bson.Binary(
         Buffer.from('3d37923dab8e49319e4693df5fd3599e', 'hex'),
-        4
+        4,
       ),
       Code: new bson.Code('function() {}'),
       DBRef: new bson.DBRef(
         'tests',
         new bson.ObjectId('5e159ba7eac34211f2252aaa'),
-        'test'
+        'test',
       ),
       Decimal128: bson.Decimal128.fromString('128'),
       NumberDecimal: bson.Decimal128.fromString('12345'),
@@ -122,7 +122,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
     _id: ObjectId("5e159ba7eac34211f2252aaa"),
     created: Timestamp(10 + 10, 10),
     filter: { year: { $gte: 2021 - (1/2 + 0.5 - (5 * 0)) } },
-  }`)
+  }`),
     ).to.deep.equal({
       _id: new bson.ObjectId('5e159ba7eac34211f2252aaa'),
       created: new bson.Timestamp({ i: 10, t: 20 }),
@@ -152,7 +152,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
         "$sum": 1
       }
     }
-  }]`)
+  }]`),
     ).to.deep.equal([
       {
         $match: {
@@ -190,7 +190,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
       expect(
         parse('{ date: Code({ toString: Date.constructor("throw null;") }) }', {
           mode,
-        })
+        }),
       ).to.equal('');
     });
   }
@@ -207,7 +207,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
           parse('{ floor: Math.floor(5.5) }', {
             mode: ParseMode.Strict,
             allowMethods: false,
-          })
+          }),
         ).to.equal('');
       });
 
@@ -218,7 +218,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
               parse(`{ date: (${dateFn}(0)).getFullYear() }`, {
                 mode: ParseMode.Strict,
                 allowMethods: false,
-              })
+              }),
             ).to.equal('');
           });
         });
@@ -305,14 +305,14 @@ describe('@mongodb-js/shell-bson-parser', function () {
         expect(
           parse(
             '{ simpleCalc: (5 * Math.floor(5.5) + Math.ceil(5.5)) }',
-            options
-          )
+            options,
+          ),
         ).to.deep.equal({ simpleCalc: 31 });
       });
 
       it('should prevent invalid functions', function () {
         expect(parse('{ simpleCalc: Math.totallyLegit(5) }', options)).to.equal(
-          ''
+          '',
         );
       });
     });
@@ -320,7 +320,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
     describe('Function expressions', function () {
       it('should allow functions as object properties', function () {
         expect(
-          parse('{ $where: function() { this.x = 1 }}', options)
+          parse('{ $where: function() { this.x = 1 }}', options),
         ).to.deep.equal({
           $where: 'function() { this.x = 1 }',
         });
@@ -332,7 +332,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
       it('should allow multiline functions', function () {
         expect(
-          parse('{ $where: function\n()\n{\nthis.x = 1\n}}', options)
+          parse('{ $where: function\n()\n{\nthis.x = 1\n}}', options),
         ).to.deep.equal({
           $where: 'function\n()\n{\nthis.x = 1\n}',
         });
@@ -354,7 +354,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
             lang: "js"
           }
         }
-      }`)
+      }`),
         ).to.deep.equal({
           $expr: {
             $function: {
@@ -402,7 +402,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
       for (const { dateFn, args } of isoDateTests()) {
         context(
           `Date allow using member methods with "${dateFn}" and args ${JSON.stringify(
-            args
+            args,
           )}`,
           function () {
             it('should allow member expressions', function () {
@@ -459,14 +459,14 @@ describe('@mongodb-js/shell-bson-parser', function () {
                 getSeconds: new (Date as any)(...args).getSeconds(),
                 getTime: new (Date as any)(...args).getTime(),
                 getTimezoneOffset: new (Date as any)(
-                  ...args
+                  ...args,
                 ).getTimezoneOffset(),
                 getUTCDate: new (Date as any)(...args).getUTCDate(),
                 getUTCDay: new (Date as any)(...args).getUTCDay(),
                 getUTCFullYear: new (Date as any)(...args).getUTCFullYear(),
                 getUTCHours: new (Date as any)(...args).getUTCHours(),
                 getUTCMilliseconds: new (Date as any)(
-                  ...args
+                  ...args,
                 ).getUTCMilliseconds(),
                 getUTCMinutes: new (Date as any)(...args).getUTCMinutes(),
                 getUTCMonth: new (Date as any)(...args).getUTCMonth(),
@@ -484,7 +484,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
                 setUTCFullYear: new (Date as any)(...args).setUTCFullYear(2010),
                 setUTCHours: new (Date as any)(...args).setUTCHours(23),
                 setUTCMilliseconds: new (Date as any)(
-                  ...args
+                  ...args,
                 ).setUTCMilliseconds(1),
                 setUTCMinutes: new (Date as any)(...args).setUTCMinutes(1),
                 setUTCMonth: new (Date as any)(...args).setUTCMonth(1),
@@ -499,7 +499,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
               const input = `{ evilDate: (${dateFn}(0)).totallyLegit(5) }`;
               expect(parse(input, options)).to.equal('');
             });
-          }
+          },
         );
       }
 
@@ -510,7 +510,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
         const input = `${newDate}`;
 
         expect(parse(input, options)).to.include(
-          String(new Date().getUTCFullYear())
+          String(new Date().getUTCFullYear()),
         );
       });
     });
@@ -574,11 +574,11 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
   it('should correctly parse NumberLong and Int64 bigger than Number.MAX_SAFE_INTEGER', function () {
     expect(
-      parse("{ n: NumberLong('345678654321234552') }").n.toString()
+      parse("{ n: NumberLong('345678654321234552') }").n.toString(),
     ).to.equal('345678654321234552');
 
     expect(parse("{ n: Int64('345678654321234552') }").n.toString()).to.equal(
-      '345678654321234552'
+      '345678654321234552',
     );
   });
 

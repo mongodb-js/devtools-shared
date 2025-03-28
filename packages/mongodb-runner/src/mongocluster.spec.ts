@@ -112,10 +112,10 @@ describe('MongoCluster', function () {
 
     const logFiles = await fs.readdir(logDir);
     expect(
-      logFiles.filter((file) => file.startsWith('mongod-')).length
+      logFiles.filter((file) => file.startsWith('mongod-')).length,
     ).to.be.greaterThan(2);
     expect(
-      logFiles.filter((file) => file.startsWith('mongos-')).length
+      logFiles.filter((file) => file.startsWith('mongos-')).length,
     ).to.equal(1);
   });
 

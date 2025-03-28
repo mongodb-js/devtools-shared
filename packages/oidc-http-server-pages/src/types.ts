@@ -4,7 +4,7 @@ import type {
   OIDCNotFoundPageProps,
 } from './pages-source';
 export interface ITemplate<
-  TParameters extends Record<string, string> = Record<string, string>
+  TParameters extends Record<string, string> = Record<string, string>,
 > {
   parameters: TParameters;
   html: string;
@@ -26,7 +26,7 @@ export type PageTemplates<
   TPageProps extends Record<
     string,
     Record<string, string>
-  > = HttpServerPageProps
+  > = HttpServerPageProps,
 > = {
   [Key in keyof TPageProps]: ITemplate<TPageProps[Key]>[];
 };

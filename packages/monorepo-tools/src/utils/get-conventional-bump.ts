@@ -23,7 +23,7 @@ export type GitCommit = {
  * @return {string} the semver increment determined
  */
 export function getConventionalBump(
-  commit: Pick<GitCommit, 'subject' | 'body'>
+  commit: Pick<GitCommit, 'subject' | 'body'>,
 ) {
   const { subject, body } = commit;
 

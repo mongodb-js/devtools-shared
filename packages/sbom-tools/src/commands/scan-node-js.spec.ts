@@ -8,7 +8,7 @@ import { importFixture } from '../../test/helpers';
 async function mockCVEResponse(
   cveId: string,
   statusCode = 200,
-  response?: any
+  response?: any,
 ) {
   nock('https://services.nvd.nist.gov')
     .get('/rest/json/cves/2.0')
@@ -62,7 +62,7 @@ describe('scan-node-js', function () {
     const result = await scanNodeJs({ version: '18.14.0' });
 
     expect(JSON.parse(JSON.stringify(result, null, 2))).to.deep.equal(
-      await importFixture('expect-unknown.json')
+      await importFixture('expect-unknown.json'),
     );
   });
 });

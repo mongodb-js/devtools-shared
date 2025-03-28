@@ -19,7 +19,7 @@ export const range = (n: number): number[] => [...Array(n).keys()];
  */
 export async function parallelForEach<T>(
   iterable: AsyncIterable<T>,
-  fn: (arg0: T) => Promise<void> | void
+  fn: (arg0: T) => Promise<void> | void,
 ): Promise<PromiseSettledResult<void>[]> {
   const result = [];
   for await (const item of iterable) {

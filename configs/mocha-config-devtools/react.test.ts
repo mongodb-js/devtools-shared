@@ -12,8 +12,8 @@ describe('mocha-config-devtools/react', function () {
     const tag = document.createElement('style');
     tag.appendChild(
       document.createTextNode(
-        `@container compass-workspace-container (width < 900px){.test{display:none;}}`
-      )
+        `@container compass-workspace-container (width < 900px){.test{display:none;}}`,
+      ),
     );
     document.head.appendChild(tag);
   });

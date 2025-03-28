@@ -19,7 +19,7 @@ describe('createAgent', function () {
   const get = async (
     url: string,
     agent: Agent,
-    customOptions: RequestOptions = {}
+    customOptions: RequestOptions = {},
   ): Promise<IncomingMessage & { body: string }> => {
     const nodeJSBuiltinGet =
       new URL(url).protocol === 'https:' ? httpsGet : httpGet;
@@ -30,7 +30,7 @@ describe('createAgent', function () {
     };
     agents.push(agent);
     const res = await new Promise<IncomingMessage>((resolve, reject) =>
-      nodeJSBuiltinGet(url, options, resolve).once('error', reject)
+      nodeJSBuiltinGet(url, options, resolve).once('error', reject),
     );
     let body = '';
     res.setEncoding('utf8');
@@ -59,7 +59,7 @@ describe('createAgent', function () {
 
       const res = await get(
         'http://example.com/hello',
-        createAgent({ proxy: `socks5://127.0.0.1:${setup.socks5ProxyPort}` })
+        createAgent({ proxy: `socks5://127.0.0.1:${setup.socks5ProxyPort}` }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -75,7 +75,7 @@ describe('createAgent', function () {
         'http://example.com/hello',
         createAgent({
           proxy: `socks5://foo:bar@127.0.0.1:${setup.socks5ProxyPort}`,
-        })
+        }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -93,7 +93,7 @@ describe('createAgent', function () {
           'http://example.com/hello',
           createAgent({
             proxy: `socks5://foo:bar@127.0.0.1:${setup.socks5ProxyPort}`,
-          })
+          }),
         );
         expect.fail('missed exception');
       } catch (err: any) {
@@ -106,7 +106,7 @@ describe('createAgent', function () {
     it('can connect to an http proxy without auth', async function () {
       const res = await get(
         'http://example.com/hello',
-        createAgent({ proxy: `http://127.0.0.1:${setup.httpProxyPort}` })
+        createAgent({ proxy: `http://127.0.0.1:${setup.httpProxyPort}` }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -121,7 +121,7 @@ describe('createAgent', function () {
         'http://example.com/hello',
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpProxyPort}`,
-        })
+        }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -137,7 +137,7 @@ describe('createAgent', function () {
         'http://example.com/hello',
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpProxyPort}`,
-        })
+        }),
       );
       expect(res.statusCode).to.equal(407);
     });
@@ -150,7 +150,7 @@ describe('createAgent', function () {
         createAgent({
           proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
           ca: setup.tlsOptions.ca,
-        })
+        }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -166,7 +166,7 @@ describe('createAgent', function () {
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpsProxyPort}`,
           ca: setup.tlsOptions.ca,
-        })
+        }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -183,7 +183,7 @@ describe('createAgent', function () {
         createAgent({
           proxy: `http://foo:bar@127.0.0.1:${setup.httpsProxyPort}`,
           ca: setup.tlsOptions.ca,
-        })
+        }),
       );
       expect(res.statusCode).to.equal(407);
     });
@@ -196,7 +196,7 @@ describe('createAgent', function () {
             proxy: `http://127.0.0.1:${setup.httpsProxyPort}`,
             ca: setup.tlsOptions.ca,
           }),
-          { ca: undefined }
+          { ca: undefined },
         );
         expect(res.body).to.equal('OK /hello');
         expect(setup.getRequestedUrls()).to.deep.equal([
@@ -235,7 +235,7 @@ svWDlVGBan5BhynXw8nGm2DkZaEElx0bO+kn+kPWiWo8nr8o0XU3IfMNZBeyoy2D
 Uv9X8EKpSKrYhOoNgAVxCqojtGzG1n8TSvSCueKBrkaMWfvDjG1b8zLshvBu2ip4
 q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 -----END CERTIFICATE-----`,
-          }
+          },
         );
         expect(res.body).to.equal('OK /hello');
         expect(setup.getRequestedUrls()).to.deep.equal([
@@ -251,14 +251,14 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
               '..',
               'test',
               'fixtures',
-              'ca.crt'
+              'ca.crt',
             ),
           },
         });
         const res = await get(
           'https://example.com/hello',
           createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` }),
-          { ca: undefined }
+          { ca: undefined },
         );
         expect(res.body).to.equal('OK /hello');
         expect(setup.getRequestedUrls()).to.deep.equal([
@@ -270,7 +270,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
           await get(
             'https://example.com/hello',
             createAgent({ proxy: `http://127.0.0.1:${setup.httpsProxyPort}` }),
-            { ca: undefined }
+            { ca: undefined },
           );
           expect.fail('missed exception');
         } catch (err) {
@@ -284,7 +284,9 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
     it('can connect to an ssh proxy without auth', async function () {
       const res = await get(
         'http://example.com/hello',
-        createAgent({ proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}` })
+        createAgent({
+          proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}`,
+        }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -300,7 +302,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 
       const res = await get(
         'http://example.com/hello',
-        createAgent({ proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}` })
+        createAgent({ proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}` }),
       );
       expect(res.body).to.equal('OK /hello');
       expect(setup.getRequestedUrls()).to.deep.equal([
@@ -317,12 +319,12 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
           'http://example.com/hello',
           createAgent({
             proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}`,
-          })
+          }),
         );
         expect.fail('missed exception');
       } catch (err: any) {
         expect(err.message).to.equal(
-          'All configured authentication methods failed'
+          'All configured authentication methods failed',
         );
       }
     });
@@ -336,7 +338,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
           'http://example.com/hello',
           createAgent({
             proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}`,
-          })
+          }),
         );
         expect.fail('missed exception');
       } catch (err: any) {
@@ -353,7 +355,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
       try {
         await get(
           'https://example.com/hello',
-          createAgent({ ciphers: 'unknown' } as any)
+          createAgent({ ciphers: 'unknown' } as any),
         );
         expect.fail('missed exception');
       } catch (err: any) {
@@ -371,7 +373,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
         '..',
         'test',
         'fixtures',
-        'partial-trust-chain'
+        'partial-trust-chain',
       );
       let server: TLSServer;
 
@@ -382,7 +384,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
             key: await fs.readFile(path.join(fixtures, 'key.pem')),
             cert: await fs.readFile(path.join(fixtures, 'cert.pem')),
           },
-          (socket) => socket.end('HTTP/1.0 200 OK\r\n\r\nOK /hello')
+          (socket) => socket.end('HTTP/1.0 200 OK\r\n\r\nOK /hello'),
         );
         server.listen(0);
       });
@@ -402,10 +404,10 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 
         const res = await get(
           `https://localhost:${(server.address() as AddressInfo).port}/hello`,
-          createAgent({})
+          createAgent({}),
         );
         expect(res.body).to.equal('OK /hello');
       });
-    }
+    },
   );
 });

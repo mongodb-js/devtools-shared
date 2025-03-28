@@ -14,7 +14,7 @@ const webpack = util.promisify(webpackCb);
 async function runPlugin(
   structure: Record<string, string>,
   options: WebpackDependenciesPluginOptions,
-  webpackConfig?: { runtime: boolean }
+  webpackConfig?: { runtime: boolean },
 ): Promise<Package[]> {
   return withTempDir(structure, async (contextPath) => {
     const outputPath =
@@ -23,7 +23,7 @@ async function runPlugin(
     const plugin = new WebpackDependenciesPlugin(options);
     const config = (await fs.readdir(path.join(contextPath, 'src')))
       .filter(
-        (filename) => filename.startsWith('input') && filename.endsWith('.js')
+        (filename) => filename.startsWith('input') && filename.endsWith('.js'),
       )
       .map((filename, i) => ({
         context: contextPath,
@@ -52,13 +52,13 @@ async function runPlugin(
     if (stats && stats.hasErrors()) {
       throw new Error(
         JSON.stringify(stats.toJson().errors) ??
-          'Compilation stats contains errors.'
+          'Compilation stats contains errors.',
       );
     }
 
     return JSON.parse(await fs.readFile(outputPath, 'utf-8')).map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ({ path: _, ...rest }) => rest
+      ({ path: _, ...rest }) => rest,
     );
   });
 }
@@ -261,7 +261,7 @@ describe('WebpackDependenciesPlugin', function () {
           {
             content: await fs.readFile(
               require.resolve('webpack/LICENSE'),
-              'utf-8'
+              'utf-8',
             ),
             filename: 'LICENSE',
           },
@@ -269,7 +269,7 @@ describe('WebpackDependenciesPlugin', function () {
         name: 'webpack',
 
         version: JSON.parse(
-          await fs.readFile(require.resolve('webpack/package.json'), 'utf-8')
+          await fs.readFile(require.resolve('webpack/package.json'), 'utf-8'),
         ).version,
       },
     ]);

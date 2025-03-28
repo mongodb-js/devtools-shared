@@ -39,7 +39,7 @@ describe('getStaticPage', function () {
     const html = getStaticPage<TestPagesProps, TestPage>(
       'Page1',
       { prop1, prop2 },
-      templates
+      templates,
     );
     expect(html).to.equal(`<h1>${prop1}</h1>${prop2}`);
   });
@@ -48,7 +48,7 @@ describe('getStaticPage', function () {
     const html = getStaticPage<TestPagesProps, TestPage>(
       'Page1',
       {},
-      templates
+      templates,
     );
     expect(html).to.equal('<h1>default</h1>');
   });
@@ -58,10 +58,10 @@ describe('getStaticPage', function () {
     const html = getStaticPage<TestPagesProps, TestPage>(
       'Page1',
       { prop1 },
-      templates
+      templates,
     );
     expect(html).to.equal(
-      '<h1>&#039;one&#039; &amp; &quot;two&quot; &amp; &lt;three&gt;</h1>'
+      '<h1>&#039;one&#039; &amp; &quot;two&quot; &amp; &lt;three&gt;</h1>',
     );
   });
 
@@ -70,8 +70,8 @@ describe('getStaticPage', function () {
       getStaticPage<TestPagesProps, TestPage>(
         'UnknownPage' as TestPage,
         {},
-        templates
-      )
+        templates,
+      ),
     ).to.throw(Error, /No template found/);
   });
 
@@ -80,8 +80,8 @@ describe('getStaticPage', function () {
       getStaticPage<TestPagesProps, TestPage>(
         'UnknownPage' as TestPage,
         { never: 'no' },
-        templates
-      )
+        templates,
+      ),
     ).to.throw(Error, /No template found/);
   });
 });

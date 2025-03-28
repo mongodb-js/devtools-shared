@@ -24,7 +24,7 @@ describe('bump-packages', function () {
     const packagePath = path.join(
       repoPath,
       'packages',
-      packageJsonOptions.name
+      packageJsonOptions.name,
     );
 
     fs.mkdirSync(packagePath, {
@@ -36,7 +36,7 @@ describe('bump-packages', function () {
       JSON.stringify({
         version: '1.0.0',
         ...packageJsonOptions,
-      })
+      }),
     );
   };
 
@@ -44,7 +44,7 @@ describe('bump-packages', function () {
     childProcess.spawnSync(
       'git',
       ['add', path.relative(repoPath, changeFile)],
-      { cwd: repoPath }
+      { cwd: repoPath },
     );
     childProcess.spawnSync('git', ['commit', '-am', commitMessage], {
       cwd: repoPath,
@@ -79,7 +79,7 @@ describe('bump-packages', function () {
     const { status } = childProcess.spawnSync(
       'node',
       [path.resolve(__dirname, '..', '..', 'dist', 'bump-packages.js')],
-      { cwd: repoPath, stdio: 'inherit' }
+      { cwd: repoPath, stdio: 'inherit' },
     );
 
     if (status !== 0) {
@@ -94,16 +94,16 @@ describe('bump-packages', function () {
         repoPath,
         'packages',
         `package${i}`,
-        'package.json'
+        'package.json',
       );
 
       manifests[`package${i}`] = JSON.parse(
-        fs.readFileSync(packageJsonPath, 'utf8')
+        fs.readFileSync(packageJsonPath, 'utf8'),
       );
     }
 
     manifests.lock = JSON.parse(
-      fs.readFileSync(path.join(repoPath, 'package-lock.json'), 'utf8')
+      fs.readFileSync(path.join(repoPath, 'package-lock.json'), 'utf8'),
     );
 
     return manifests;
@@ -136,14 +136,14 @@ describe('bump-packages', function () {
         version: '1.0.0',
         private: true,
         workspaces: ['packages/*'],
-      })
+      }),
     );
     fs.writeFileSync(
       path.join(repoPath, './lerna.json'),
       JSON.stringify({
         packages: ['packages/*'],
         version: 'independent',
-      })
+      }),
     );
 
     const spawnOptions = { cwd: repoPath, stdio: 'inherit' } as const;
@@ -152,22 +152,22 @@ describe('bump-packages', function () {
     childProcess.spawnSync(
       'git',
       ['config', '--local', 'user.name', 'user'],
-      spawnOptions
+      spawnOptions,
     );
     childProcess.spawnSync(
       'git',
       ['config', '--local', 'user.email', 'user@example.com'],
-      spawnOptions
+      spawnOptions,
     );
     childProcess.spawnSync(
       'git',
       ['checkout', '-b', MAIN_BRANCH],
-      spawnOptions
+      spawnOptions,
     );
     childProcess.spawnSync(
       'git',
       ['remote', 'add', 'origin', remote],
-      spawnOptions
+      spawnOptions,
     );
 
     addPackage({ name: 'package1' });
@@ -204,7 +204,7 @@ describe('bump-packages', function () {
     childProcess.spawnSync(
       'git',
       ['push', '--set-upstream', 'origin', MAIN_BRANCH],
-      spawnOptions
+      spawnOptions,
     );
   });
 
@@ -224,7 +224,7 @@ describe('bump-packages', function () {
 
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/no-bump-commit.json')
+      require('./fixtures/no-bump-commit.json'),
     );
   });
 
@@ -235,7 +235,7 @@ describe('bump-packages', function () {
 
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/last-commit-is-bump.json')
+      require('./fixtures/last-commit-is-bump.json'),
     );
   });
 
@@ -247,7 +247,7 @@ describe('bump-packages', function () {
 
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/bump-package-without-deps.json')
+      require('./fixtures/bump-package-without-deps.json'),
     );
   });
 
@@ -258,7 +258,7 @@ describe('bump-packages', function () {
     const manifests = readAllManifests();
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/bump-package-1-feat.json')
+      require('./fixtures/bump-package-1-feat.json'),
     );
   });
 
@@ -269,7 +269,7 @@ describe('bump-packages', function () {
     const manifests = readAllManifests();
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/bump-package-1-breaking.json')
+      require('./fixtures/bump-package-1-breaking.json'),
     );
   });
 
@@ -284,7 +284,7 @@ describe('bump-packages', function () {
       const manifests = readAllManifests();
       assert.deepStrictEqual(
         manifests,
-        require('./fixtures/skip-packages.json')
+        require('./fixtures/skip-packages.json'),
       );
     } finally {
       process.env.SKIP_BUMP_PACKAGES = skipBkp;
@@ -302,7 +302,7 @@ describe('bump-packages', function () {
       const manifests = readAllManifests();
       assert.deepStrictEqual(
         manifests,
-        require('./fixtures/skip-packages-keep-unskipped.json')
+        require('./fixtures/skip-packages-keep-unskipped.json'),
       );
     } finally {
       process.env.SKIP_BUMP_PACKAGES = skipBkp;
@@ -321,7 +321,7 @@ describe('bump-packages', function () {
     const manifests = readAllManifests();
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/preserve-caret.json')
+      require('./fixtures/preserve-caret.json'),
     );
   });
 
@@ -337,7 +337,7 @@ describe('bump-packages', function () {
     const manifests = readAllManifests();
     assert.deepStrictEqual(
       manifests,
-      require('./fixtures/preserve-tilde.json')
+      require('./fixtures/preserve-tilde.json'),
     );
   });
 

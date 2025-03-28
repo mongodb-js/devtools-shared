@@ -3,7 +3,7 @@ import getTemplates from './get-templates.js';
 
 function findTemplate(
   templates: ITemplate[],
-  parameterKeys: string[]
+  parameterKeys: string[],
 ): ITemplate | undefined {
   const parametersJoined = parameterKeys.sort().join('-');
   for (const template of templates) {
@@ -16,7 +16,7 @@ function findTemplate(
 
 function replacePlaceholders(
   template: ITemplate<Record<string, string>>,
-  parameters: Record<string, string>
+  parameters: Record<string, string>,
 ): string {
   let { html } = template;
   for (const [key, placeholder] of Object.entries(template.parameters)) {
@@ -39,11 +39,11 @@ export function getStaticPage<
     string,
     Record<string, string>
   > = HttpServerPageProps,
-  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   page: TPage,
   parameters: TPageParameters[TPage],
-  templates?: PageTemplates<TPageParameters>
+  templates?: PageTemplates<TPageParameters>,
 ): string {
   if (!templates) {
     templates = getTemplates() as PageTemplates<TPageParameters>;
@@ -55,14 +55,14 @@ export function getStaticPage<
   }
 
   const nonEmptyParameters = Object.keys(parameters).filter(
-    (key) => typeof parameters[key] !== 'undefined' && parameters !== null
+    (key) => typeof parameters[key] !== 'undefined' && parameters !== null,
   );
   const template = findTemplate(pageTemplates, nonEmptyParameters);
   if (!template) {
     throw new Error(
       `No template found for ${page}; parameters: ${Object.keys(
-        parameters
-      ).join(',')}. The parameters might be incorrect.`
+        parameters,
+      ).join(',')}. The parameters might be incorrect.`,
     );
   }
 

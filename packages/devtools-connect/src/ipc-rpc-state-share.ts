@@ -24,7 +24,7 @@ import { resolve as resolvePath } from 'path';
 export async function readSignedStream(
   input: Readable,
   signature: string | string[] | undefined,
-  hmacKey: Uint8Array
+  hmacKey: Uint8Array,
 ): Promise<string> {
   if (!signature) throw new Error('Missing signature');
   if (Array.isArray(signature)) throw new Error('Multiple signatures');
@@ -53,7 +53,7 @@ export async function readSignedStream(
 // Sign a chunk of data using an HMAC key.
 export function sign(
   payload: Uint8Array | string,
-  hmacKey: Uint8Array
+  hmacKey: Uint8Array,
 ): string {
   return crypto.createHmac('sha256', hmacKey).update(payload).digest('base64');
 }
@@ -131,7 +131,7 @@ export abstract class RpcServer {
     let response;
     try {
       const content = JSON.parse(
-        await readSignedStream(req, req.headers['x-signature'], this.hmacKey)
+        await readSignedStream(req, req.headers['x-signature'], this.hmacKey),
       );
 
       response = { status: 200, ...(await this.handleRpc(content)) };
@@ -160,7 +160,7 @@ export abstract class RpcServer {
   }
 
   protected abstract handleRpc(
-    content: Record<string, unknown>
+    content: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
 }
 
@@ -176,7 +176,7 @@ export class RpcClient {
   }
 
   public async makeRpcCall(
-    reqData: Record<string, unknown>
+    reqData: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const payload = new TextEncoder().encode(JSON.stringify(reqData));
     const req = request({
@@ -191,12 +191,12 @@ export class RpcClient {
     req.end(payload);
     const [res] = (await once(req, 'response')) as [IncomingMessage];
     const content = JSON.parse(
-      await readSignedStream(res, res.headers['x-signature'], this.hmacKey)
+      await readSignedStream(res, res.headers['x-signature'], this.hmacKey),
     );
     if (res.statusCode !== 200 || content.status !== 200) {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(
-        String(content.error ?? `${res.statusCode} ${res.statusMessage}`)
+        String(content.error ?? `${res.statusCode} ${res.statusMessage}`),
       );
     }
     return content;
@@ -215,7 +215,7 @@ export class StateShareServer extends RpcServer {
   }
 
   static async create(
-    state: DevtoolsConnectionState
+    state: DevtoolsConnectionState,
   ): Promise<StateShareServer> {
     const result = new this(state);
     await result._init();
@@ -237,7 +237,7 @@ export class StateShareServer extends RpcServer {
               {
                 ...content.callbackParams,
                 timeoutContext: abortController.signal,
-              }
+              },
             );
           return { result };
         } finally {
@@ -263,7 +263,7 @@ export class StateShareClient extends RpcClient {
       },
       serialize() {
         throw new Error(
-          'serialize() not supported in devtools-connect state-share clients'
+          'serialize() not supported in devtools-connect state-share clients',
         );
       },
       logger: new EventEmitter(),
@@ -271,7 +271,7 @@ export class StateShareClient extends RpcClient {
         authMechanismProperties: {
           OIDC_HUMAN_CALLBACK: this._oidcCallback.bind(
             this,
-            'oidc:OIDC_HUMAN_CALLBACK'
+            'oidc:OIDC_HUMAN_CALLBACK',
           ),
         },
       },
@@ -280,10 +280,10 @@ export class StateShareClient extends RpcClient {
 
   private async _oidcCallback(
     method: string,
-    params: OIDCCallbackParams
+    params: OIDCCallbackParams,
   ): Promise<IdPServerResponse> {
     const timeoutContextId = (await promisify(crypto.randomBytes)(16)).toString(
-      'base64'
+      'base64',
     );
     const { timeoutContext, ...callbackParams } = params;
     const abort = async () => {

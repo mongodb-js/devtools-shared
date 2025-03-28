@@ -126,7 +126,7 @@ async function parseTarget(
   distro: string | undefined,
   platform: string,
   archs: string[],
-  version: string
+  version: string,
 ): Promise<PriorityValue<string>[]> {
   if (platform === 'linux') {
     const results: PriorityValue<string>[] = [];
@@ -252,7 +252,7 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
         const targetPriority = getPriority(opts.target, candidate.target);
         return { value: candidate, priority: targetPriority };
       }),
-      (candidate: PriorityValue<DownloadInfo>) => candidate.priority
+      (candidate: PriorityValue<DownloadInfo>) => candidate.priority,
     );
 
     if (bestDownload && bestDownload.priority > 0) {
@@ -262,8 +262,8 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
   if (!download) {
     throw new Error(
       `Could not find download URL for version ${version?.version} ${inspect(
-        opts
-      )}`
+        opts,
+      )}`,
     );
   }
 
@@ -274,7 +274,7 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
     throw new Error(
       `No crypt_shared library download for version ${
         version?.version
-      } available ${inspect(opts)}`
+      } available ${inspect(opts)}`,
     );
   }
 
@@ -282,7 +282,7 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
   // mongocryptd is contained in the regular enterprise archive, the csfle lib is not
   let { url } = wantsCryptShared
     ? (download.crypt_shared ?? download.csfle)!
-    : (wantsCryptd ? download.cryptd : null) ?? download.archive;
+    : ((wantsCryptd ? download.cryptd : null) ?? download.archive);
   if (wantsCryptd) {
     // cryptd package on Windows was buggy: https://jira.mongodb.org/browse/BUILD-13653
     url = url.replace('mongodb-shell-windows', 'mongodb-cryptd-windows');
@@ -307,7 +307,7 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
 }
 
 async function options(
-  opts: Options | string = {}
+  opts: Options | string = {},
 ): Promise<ProcessedOptions & VersionListOpts> {
   if (typeof opts === 'string') {
     opts = {
@@ -368,13 +368,13 @@ async function options(
     opts.distro,
     opts.platform,
     processedOptions.arch,
-    processedOptions.version
+    processedOptions.version,
   );
   return processedOptions;
 }
 
 export async function getDownloadURL(
-  opts?: Options | string
+  opts?: Options | string,
 ): Promise<DownloadArtifactInfo> {
   const parsedOptions = await options(opts);
 
