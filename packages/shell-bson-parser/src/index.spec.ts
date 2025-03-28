@@ -448,50 +448,49 @@ describe('@mongodb-js/shell-bson-parser', function () {
           toISOString: (${newDate}).toISOString(),
           valueOf: (${newDate}.valueOf()),
        }`;
-              expect(parse(input, options)).to.deep.equal({
-                getDate: new (Date as any)(...args).getDate(),
-                getDay: new (Date as any)(...args).getDay(),
-                getFullYear: new (Date as any)(...args).getFullYear(),
-                getHours: new (Date as any)(...args).getHours(),
-                getMilliseconds: new (Date as any)(...args).getMilliseconds(),
-                getMinutes: new (Date as any)(...args).getMinutes(),
-                getMonth: new (Date as any)(...args).getMonth(),
-                getSeconds: new (Date as any)(...args).getSeconds(),
-                getTime: new (Date as any)(...args).getTime(),
-                getTimezoneOffset: new (Date as any)(
-                  ...args
-                ).getTimezoneOffset(),
-                getUTCDate: new (Date as any)(...args).getUTCDate(),
-                getUTCDay: new (Date as any)(...args).getUTCDay(),
-                getUTCFullYear: new (Date as any)(...args).getUTCFullYear(),
-                getUTCHours: new (Date as any)(...args).getUTCHours(),
-                getUTCMilliseconds: new (Date as any)(
-                  ...args
-                ).getUTCMilliseconds(),
-                getUTCMinutes: new (Date as any)(...args).getUTCMinutes(),
-                getUTCMonth: new (Date as any)(...args).getUTCMonth(),
-                getUTCSeconds: new (Date as any)(...args).getUTCSeconds(),
-                getYear: new (Date as any)(...args).getYear(), // getYear is deprecated
-                setDate: new (Date as any)(...args).setDate(24),
-                setFullYear: new (Date as any)(...args).setFullYear(2010),
-                setHours: new (Date as any)(...args).setHours(23),
-                setMilliseconds: new (Date as any)(...args).setMilliseconds(1),
-                setMinutes: new (Date as any)(...args).setMinutes(1),
-                setMonth: new (Date as any)(...args).setMonth(1),
-                setSeconds: new (Date as any)(...args).setSeconds(59),
-                setTime: new (Date as any)(...args).setTime(10),
-                setUTCDate: new (Date as any)(...args).setUTCDate(24),
-                setUTCFullYear: new (Date as any)(...args).setUTCFullYear(2010),
-                setUTCHours: new (Date as any)(...args).setUTCHours(23),
-                setUTCMilliseconds: new (Date as any)(
-                  ...args
-                ).setUTCMilliseconds(1),
-                setUTCMinutes: new (Date as any)(...args).setUTCMinutes(1),
-                setUTCMonth: new (Date as any)(...args).setUTCMonth(1),
-                setUTCSeconds: new (Date as any)(...args).setUTCSeconds(59),
-                setYear: new (Date as any)(...args).setYear(96), // setYear is deprecated
-                toISOString: new (Date as any)(...args).toISOString(),
-                valueOf: new (Date as any)(...args).valueOf(),
+
+              const actual = parse(input, options);
+              const expectedDate = new (Date as any)(...args) as Date;
+              expect(actual).to.deep.equal({
+                getDate: expectedDate.getDate(),
+                getDay: expectedDate.getDay(),
+                getFullYear: expectedDate.getFullYear(),
+                getHours: expectedDate.getHours(),
+                getMilliseconds: expectedDate.getMilliseconds(),
+                getMinutes: expectedDate.getMinutes(),
+                getMonth: expectedDate.getMonth(),
+                getSeconds: expectedDate.getSeconds(),
+                getTime: expectedDate.getTime(),
+                getTimezoneOffset: expectedDate.getTimezoneOffset(),
+                getUTCDate: expectedDate.getUTCDate(),
+                getUTCDay: expectedDate.getUTCDay(),
+                getUTCFullYear: expectedDate.getUTCFullYear(),
+                getUTCHours: expectedDate.getUTCHours(),
+                getUTCMilliseconds: expectedDate.getUTCMilliseconds(),
+                getUTCMinutes: expectedDate.getUTCMinutes(),
+                getUTCMonth: expectedDate.getUTCMonth(),
+                getUTCSeconds: expectedDate.getUTCSeconds(),
+                getYear: (expectedDate as any).getYear(), // getYear is deprecated
+                setDate: new Date(expectedDate).setDate(24),
+                setFullYear: new Date(expectedDate).setFullYear(2010),
+                setHours: new Date(expectedDate).setHours(23),
+                setMilliseconds: new Date(expectedDate).setMilliseconds(1),
+                setMinutes: new Date(expectedDate).setMinutes(1),
+                setMonth: new Date(expectedDate).setMonth(1),
+                setSeconds: new Date(expectedDate).setSeconds(59),
+                setTime: new Date(expectedDate).setTime(10),
+                setUTCDate: new Date(expectedDate).setUTCDate(24),
+                setUTCFullYear: new Date(expectedDate).setUTCFullYear(2010),
+                setUTCHours: new Date(expectedDate).setUTCHours(23),
+                setUTCMilliseconds: new Date(expectedDate).setUTCMilliseconds(
+                  1
+                ),
+                setUTCMinutes: new Date(expectedDate).setUTCMinutes(1),
+                setUTCMonth: new Date(expectedDate).setUTCMonth(1),
+                setUTCSeconds: new Date(expectedDate).setUTCSeconds(59),
+                setYear: (new Date(expectedDate) as any).setYear(96), // setYear is deprecated
+                toISOString: expectedDate.toISOString(),
+                valueOf: expectedDate.valueOf(),
               });
             });
 
