@@ -18,7 +18,7 @@ const query = parse(
     simpleCalc: 6,
     date: new Date(1578974885017)
   }`,
-  { mode: 'strict' }
+  { mode: 'strict' },
 );
 
 /*
@@ -36,7 +36,7 @@ const query = parse(
     _id: ObjectID("132323"),
     simpleCalc: Math.max(1,2,3) * Math.min(4,3,2)
   }`,
-  { mode: 'weak' }
+  { mode: 'weak' },
 );
 
 /*
@@ -54,7 +54,7 @@ const query = parse(
     _id: ObjectID("132323"), // a helpful comment
     simpleCalc: Math.max(1,2,3) * Math.min(4,3,2)
   }`,
-  { mode: 'loose' }
+  { mode: 'loose' },
 );
 
 /*

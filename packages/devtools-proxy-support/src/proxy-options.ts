@@ -82,7 +82,7 @@ function shouldProxy(noProxy: string, url: URL): boolean {
 export function proxyForUrl(
   proxyOptions: DevtoolsProxyOptions,
   target: string,
-  req?: ClientRequest & { overrideProtocol?: string }
+  req?: ClientRequest & { overrideProtocol?: string },
 ): string {
   if (proxyOptions.proxy) {
     const proxyUrl = proxyOptions.proxy;
@@ -95,7 +95,7 @@ export function proxyForUrl(
 
   if (proxyOptions.useEnvironmentVariableProxies) {
     const { map, noProxy } = proxyConfForEnvVars(
-      proxyOptions.env ?? process.env
+      proxyOptions.env ?? process.env,
     );
     const url = new URL(target);
     const protocol = (req?.overrideProtocol ?? url.protocol).replace(/:$/, '');
@@ -128,15 +128,15 @@ function validateElectronProxyURL(url: URL | string): string {
   if (url.protocol === 'ssh:') {
     throw new Error(
       `Using ssh:// proxies for generic browser proxy usage is not supported (translating '${redactUrl(
-        url
-      )}')`
+        url,
+      )}')`,
     );
   }
   if (url.username || url.password) {
     throw new Error(
       `Using authenticated proxies for generic browser proxy usage is not supported (translating '${redactUrl(
-        url
-      )}')`
+        url,
+      )}')`,
     );
   }
   if (
@@ -145,22 +145,22 @@ function validateElectronProxyURL(url: URL | string): string {
     url.protocol !== 'socks5:'
   ) {
     throw new Error(
-      `Unsupported proxy protocol (translating '${redactUrl(url)}')`
+      `Unsupported proxy protocol (translating '${redactUrl(url)}')`,
     );
   }
   if (url.search || url.hash) {
     throw new Error(
       `Unsupported URL extensions in proxy specification (translating '${redactUrl(
-        url
-      )}')`
+        url,
+      )}')`,
     );
   }
   if (url.pathname === '') return url.toString();
   if (url.pathname !== '/') {
     throw new Error(
       `Unsupported URL pathname in proxy specification (translating '${redactUrl(
-        url
-      )}')`
+        url,
+      )}')`,
     );
   }
   return url.toString().replace(/\/$/, '');
@@ -168,7 +168,7 @@ function validateElectronProxyURL(url: URL | string): string {
 
 // Convert our own `DevtoolsProxyOptions` to the format used by Electron.
 export function translateToElectronProxyConfig(
-  proxyOptions: DevtoolsProxyOptions
+  proxyOptions: DevtoolsProxyOptions,
 ): ElectronProxyConfig {
   if (proxyOptions.proxy) {
     let url = proxyOptions.proxy;
@@ -192,7 +192,7 @@ export function translateToElectronProxyConfig(
     const proxyRulesList: string[] = [];
     const proxyBypassRulesList = [proxyOptions.noProxyHosts];
     const { map, noProxy } = proxyConfForEnvVars(
-      proxyOptions.env ?? process.env
+      proxyOptions.env ?? process.env,
     );
     for (const key of ['http', 'https', 'ftp']) {
       // supported protocols for Electron proxying
@@ -226,7 +226,7 @@ export function translateToElectronProxyConfig(
 // that would just forward to another Socks5 tunnel anyway.
 export function getSocks5OnlyProxyOptions(
   proxyOptions: DevtoolsProxyOptions,
-  target?: string
+  target?: string,
 ): TunnelOptions | undefined {
   let proxyUrl: string | undefined;
   if (target !== undefined) proxyUrl = proxyForUrl(proxyOptions, target);
@@ -252,7 +252,7 @@ interface DevtoolsProxyOptionsSecretsInternal {
 // They do *not* extract secrets from env vars, since the `.env`
 // property is generally intended for testing/not for storage.
 export function extractProxySecrets(
-  proxyOptions: Readonly<DevtoolsProxyOptions>
+  proxyOptions: Readonly<DevtoolsProxyOptions>,
 ): {
   proxyOptions: DevtoolsProxyOptions;
   secrets: DevtoolsProxyOptionsSecrets;
@@ -289,7 +289,7 @@ export function mergeProxySecrets({
   secrets: DevtoolsProxyOptionsSecrets;
 }): DevtoolsProxyOptions {
   const parsedSecrets: DevtoolsProxyOptionsSecretsInternal = JSON.parse(
-    secrets || '{}'
+    secrets || '{}',
   );
   if (
     (parsedSecrets.username || parsedSecrets.password) &&

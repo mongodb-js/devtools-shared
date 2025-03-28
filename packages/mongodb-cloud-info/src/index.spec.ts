@@ -17,7 +17,7 @@ describe('getCloudInfo', function () {
       .get('/mongodb-js/devtools-shared/main/resources/cidrs.json')
       .replyWithFile(
         200,
-        path.resolve(__dirname, '../../../resources/cidrs.json')
+        path.resolve(__dirname, '../../../resources/cidrs.json'),
       );
   });
 

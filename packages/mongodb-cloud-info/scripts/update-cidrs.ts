@@ -55,10 +55,10 @@ async function getSplitAWSIpRanges() {
 
   return {
     v4: result.prefixes.map((range) =>
-      serializeV4CIDR(ipaddr.parseCIDR(range.ip_prefix))
+      serializeV4CIDR(ipaddr.parseCIDR(range.ip_prefix)),
     ),
     v6: result.ipv6_prefixes.map((range) =>
-      serializeV6CIDR(ipaddr.parseCIDR(range.ipv6_prefix))
+      serializeV6CIDR(ipaddr.parseCIDR(range.ipv6_prefix)),
     ),
   };
 }
@@ -74,7 +74,7 @@ async function findServiceTagsPublicJsonUrl() {
       return Boolean(
         $(element)
           ?.attr('href')
-          ?.match(/ServiceTags_Public_[\d]+\.json$/)
+          ?.match(/ServiceTags_Public_[\d]+\.json$/),
       );
     })
     .first()
@@ -128,7 +128,7 @@ async function writeAllIpRanges() {
     '..',
     '..',
     'resources',
-    'cidrs.json'
+    'cidrs.json',
   );
 
   await fs.promises.mkdir(path.dirname(filename), { recursive: true });

@@ -44,7 +44,7 @@ describe('createSocks5Tunnel', function () {
       {
         proxyUsername: 'baz',
         proxyPassword: 'quux',
-      }
+      },
     );
     if (!tunnel) {
       // regular conditional instead of assertion so that TS can follow it
@@ -62,7 +62,7 @@ describe('createSocks5Tunnel', function () {
       expect.fail('missed exception');
     } catch (err) {
       expect(err.message).to.include(
-        'request to http://localhost:1/hello failed'
+        'request to http://localhost:1/hello failed',
       );
     }
   });
@@ -76,7 +76,7 @@ describe('createSocks5Tunnel', function () {
       {
         proxyUsername: 'baz',
         proxyPassword: 'quux',
-      }
+      },
     );
     if (!tunnel) {
       // regular conditional instead of assertion so that TS can follow it
@@ -104,7 +104,7 @@ describe('createSocks5Tunnel', function () {
         },
         {
           proxyHost: 'example.net',
-        }
+        },
       );
       expect.fail('missed exception');
     } catch (err) {
@@ -115,7 +115,7 @@ describe('createSocks5Tunnel', function () {
   it('does not start an actual server if the proxy config already specifies socks5', async function () {
     async function existingTunnelConfig(
       options: DevtoolsProxyOptions,
-      target?: string
+      target?: string,
     ): Promise<TunnelOptions | undefined> {
       const tunnel = await setupSocks5Tunnel(options, undefined, target);
       expect(tunnel?.constructor.name).to.equal('ExistingTunnel');
@@ -123,13 +123,13 @@ describe('createSocks5Tunnel', function () {
     }
 
     expect(
-      await existingTunnelConfig({ proxy: 'socks5://example.com:123' })
+      await existingTunnelConfig({ proxy: 'socks5://example.com:123' }),
     ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
     expect(
-      await existingTunnelConfig({ proxy: 'socks5://example.com' })
+      await existingTunnelConfig({ proxy: 'socks5://example.com' }),
     ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 1080 });
     expect(
-      await existingTunnelConfig({ proxy: 'socks5://foo:bar@example.com' })
+      await existingTunnelConfig({ proxy: 'socks5://foo:bar@example.com' }),
     ).to.deep.equal({
       proxyHost: 'example.com',
       proxyPort: 1080,
@@ -139,8 +139,8 @@ describe('createSocks5Tunnel', function () {
     expect(
       await existingTunnelConfig(
         { proxy: 'socks5://example.com:123' },
-        'mongodb://'
-      )
+        'mongodb://',
+      ),
     ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
     expect(
       await existingTunnelConfig(
@@ -148,8 +148,8 @@ describe('createSocks5Tunnel', function () {
           useEnvironmentVariableProxies: true,
           env: { MONGODB_PROXY: 'socks5://example.com:123' },
         },
-        'mongodb://'
-      )
+        'mongodb://',
+      ),
     ).to.deep.equal({ proxyHost: 'example.com', proxyPort: 123 });
   });
 
@@ -158,7 +158,7 @@ describe('createSocks5Tunnel', function () {
       {
         proxy: `http://foo:bar@127.0.0.1:${setup.httpProxyPort}`,
       },
-      'generate-credentials'
+      'generate-credentials',
     );
     if (!tunnel) {
       // regular conditional instead of assertion so that TS can follow it
@@ -167,7 +167,7 @@ describe('createSocks5Tunnel', function () {
 
     const fetch = createFetch({
       proxy: `socks5://${encodeURIComponent(
-        tunnel.config.proxyUsername!
+        tunnel.config.proxyUsername!,
       )}:${encodeURIComponent(tunnel.config.proxyPassword!)}@127.0.0.1:${
         tunnel.config.proxyPort
       }`,
@@ -194,7 +194,7 @@ describe('createSocks5Tunnel', function () {
         },
       },
       {},
-      'mongodb://'
+      'mongodb://',
     );
     if (!tunnel) {
       // regular conditional instead of assertion so that TS can follow it
@@ -217,7 +217,7 @@ describe('createSocks5Tunnel', function () {
         },
       },
       {},
-      'mongodb://'
+      'mongodb://',
     );
     if (!tunnel) {
       // regular conditional instead of assertion so that TS can follow it
@@ -239,7 +239,7 @@ describe('createSocks5Tunnel', function () {
     let netServer: Server;
     beforeEach(async function () {
       netServer = createServer((sock) =>
-        sock.once('data', (chk) => sock.end('hello, ' + chk.toString() + '!'))
+        sock.once('data', (chk) => sock.end('hello, ' + chk.toString() + '!')),
       );
       netServer.listen(0);
       await once(netServer, 'listening');
@@ -264,7 +264,7 @@ describe('createSocks5Tunnel', function () {
           const outgoing = createConnection(+port, host);
           socket.write('HTTP/1.0 200 OK\r\n\r\n');
           socket.pipe(outgoing).pipe(socket);
-        }
+        },
       );
       tunnel = await setupSocks5Tunnel(
         {
@@ -274,7 +274,7 @@ describe('createSocks5Tunnel', function () {
           },
         },
         {},
-        'mongodb://'
+        'mongodb://',
       );
       if (!tunnel) {
         // regular conditional instead of assertion so that TS can follow it

@@ -46,7 +46,7 @@ function saslprep(
     bidirectional_l,
   }: ReturnType<typeof createMemoryCodePoints>,
   input: string,
-  opts: { allowUnassigned?: boolean } = {}
+  opts: { allowUnassigned?: boolean } = {},
 ): string {
   // 2.1.  Mapping
 
@@ -86,24 +86,24 @@ function saslprep(
 
   // 3. Prohibit
   const hasProhibited = normalized_map.some((character) =>
-    prohibited_characters.get(character)
+    prohibited_characters.get(character),
   );
 
   if (hasProhibited) {
     throw new Error(
-      'Prohibited character, see https://tools.ietf.org/html/rfc4013#section-2.3'
+      'Prohibited character, see https://tools.ietf.org/html/rfc4013#section-2.3',
     );
   }
 
   // Unassigned Code Points
   if (opts.allowUnassigned !== true) {
     const hasUnassigned = normalized_map.some((character) =>
-      unassigned_code_points.get(character)
+      unassigned_code_points.get(character),
     );
 
     if (hasUnassigned) {
       throw new Error(
-        'Unassigned code point, see https://tools.ietf.org/html/rfc4013#section-2.5'
+        'Unassigned code point, see https://tools.ietf.org/html/rfc4013#section-2.5',
       );
     }
   }
@@ -111,11 +111,11 @@ function saslprep(
   // 4. check bidi
 
   const hasBidiRAL = normalized_map.some((character) =>
-    bidirectional_r_al.get(character)
+    bidirectional_r_al.get(character),
   );
 
   const hasBidiL = normalized_map.some((character) =>
-    bidirectional_l.get(character)
+    bidirectional_l.get(character),
   );
 
   // 4.1 If a string contains any RandALCat character, the string MUST NOT
@@ -123,7 +123,7 @@ function saslprep(
   if (hasBidiRAL && hasBidiL) {
     throw new Error(
       'String must not contain RandALCat and LCat at the same time,' +
-        ' see https://tools.ietf.org/html/rfc3454#section-6'
+        ' see https://tools.ietf.org/html/rfc3454#section-6',
     );
   }
 
@@ -134,16 +134,16 @@ function saslprep(
    */
 
   const isFirstBidiRAL = bidirectional_r_al.get(
-    getCodePoint(first(normalized_input))!
+    getCodePoint(first(normalized_input))!,
   );
   const isLastBidiRAL = bidirectional_r_al.get(
-    getCodePoint(last(normalized_input))!
+    getCodePoint(last(normalized_input))!,
   );
 
   if (hasBidiRAL && !(isFirstBidiRAL && isLastBidiRAL)) {
     throw new Error(
       'Bidirectional RandALCat character must be the first and the last' +
-        ' character of the string, see https://tools.ietf.org/html/rfc3454#section-6'
+        ' character of the string, see https://tools.ietf.org/html/rfc3454#section-6',
     );
   }
 

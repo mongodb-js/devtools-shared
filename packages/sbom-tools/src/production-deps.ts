@@ -83,7 +83,7 @@ export function findAllProdDepsTreeLocations(from = process.cwd()): string[] {
         console.error(
           `Warning: failed to resolve ${dep} from ${packageLocation}. This is normal if this dependency is optional. ${
             (error as Error).message
-          }`
+          }`,
         );
       }
     });

@@ -51,7 +51,7 @@ export interface OIDCMockProviderConfig {
   overrideRequestHandler?(
     url: string,
     req: IncomingMessage,
-    res: ServerResponse
+    res: ServerResponse,
   ): MaybePromise<void>;
 
   /**
@@ -100,7 +100,7 @@ export class OIDCMockProvider {
 
   private constructor(config: OIDCMockProviderConfig) {
     this.httpServer = (config.createHTTPServer ?? createHTTPServer)(
-      (req, res) => void this.handleRequest(req, res)
+      (req, res) => void this.handleRequest(req, res),
     );
     this.config = config;
 
@@ -113,7 +113,7 @@ export class OIDCMockProvider {
   private async init(): Promise<this> {
     this.httpServer.listen(
       this.config.port ?? 0,
-      this.config.bindIpAll ? '::' : this.config.hostname
+      this.config.bindIpAll ? '::' : this.config.hostname,
     );
     await once(this.httpServer, 'listening');
     const { port } = this.httpServer.address() as AddressInfo;
@@ -128,7 +128,7 @@ export class OIDCMockProvider {
   }
 
   public static async create(
-    config: OIDCMockProviderConfig
+    config: OIDCMockProviderConfig,
   ): Promise<OIDCMockProvider> {
     return await new this(config).init();
   }
@@ -140,7 +140,7 @@ export class OIDCMockProvider {
 
   private async handleRequest(
     req: IncomingMessage,
-    res: ServerResponse
+    res: ServerResponse,
   ): Promise<void> {
     res.setHeader('Content-Type', 'application/json');
     try {
@@ -151,7 +151,7 @@ export class OIDCMockProvider {
           req.headers['content-type'] !== 'application/x-www-form-urlencoded'
         ) {
           throw new Error(
-            'Only accepting application/x-www-form-urlencoded POST bodies'
+            'Only accepting application/x-www-form-urlencoded POST bodies',
           );
         }
         let body = '';
@@ -174,12 +174,12 @@ export class OIDCMockProvider {
             token_endpoint: new URL('/token', this.issuer).toString(),
             authorization_endpoint: new URL(
               '/authorize',
-              this.issuer
+              this.issuer,
             ).toString(),
             jwks_uri: new URL('/jwks', this.issuer).toString(),
             device_authorization_endpoint: new URL(
               '/device',
-              this.issuer
+              this.issuer,
             ).toString(),
             ...this.config.additionalIssuerMetadata?.(),
           };
@@ -230,7 +230,7 @@ export class OIDCMockProvider {
         case '/token': {
           // Provide a token after successful Auth Code Flow/Device Auth Flow
           const { code, code_verifier, device_code } = Object.fromEntries(
-            url.searchParams
+            url.searchParams,
           );
           const {
             client_id,
@@ -249,8 +249,8 @@ export class OIDCMockProvider {
             if (code_challenge_method !== 'S256') {
               throw new Error(
                 `Unsupported code challenge method ${String(
-                  code_challenge_method
-                )}`
+                  code_challenge_method,
+                )}`,
               );
             }
 
@@ -261,7 +261,7 @@ export class OIDCMockProvider {
             const actualChallenge = Buffer.from(
               // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
               code_challenge,
-              'base64'
+              'base64',
             ).toString('hex');
             if (expectedChallenge !== actualChallenge) {
               throw new Error('Challenge mismatch');
@@ -323,7 +323,7 @@ export class OIDCMockProvider {
             typeof err === 'object' && err && 'message' in err
               ? (err as Error).message
               : String(err),
-        })
+        }),
       );
     }
   }

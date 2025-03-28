@@ -96,7 +96,7 @@ export class MongoServer {
         } catch (err) {
           if (
             ((err as any).errorLogEntries as LogEntry[]).some(
-              isFailureToSetupListener
+              isFailureToSetupListener,
             )
           ) {
             if (port === maxPort) port = minPort;
@@ -170,7 +170,7 @@ export class MongoServer {
         options.logDir,
         `${options.binary}-${String(proc.pid)}-${new Date()
           .toISOString()
-          .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`
+          .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`,
       );
       await fs.mkdir(options.logDir, { recursive: true });
       const outStream = createWriteStream(outFile);
@@ -181,7 +181,7 @@ export class MongoServer {
         () => outStream.end(),
         () => {
           /* ignore error */
-        }
+        },
       );
     } else {
       stderr.on('data', (chunk) => debug('server stderr', chunk));
@@ -205,12 +205,12 @@ export class MongoServer {
             debug(
               'got server build info from log',
               srv.serverVersion,
-              srv.serverVariant
+              srv.serverVariant,
             );
         },
         () => {
           /* ignore error */
-        }
+        },
       );
       const { port } = await filterLogStreamForPort(logEntryStream);
       debug('server listening on port', port);
@@ -226,7 +226,7 @@ export class MongoServer {
             .join(', ')} from ${commandline.join(' ')})`;
         }
         const err: Error & { errorLogEntries?: LogEntry[] } = new Error(
-          message
+          message,
         );
         err.errorLogEntries = errorLogEntries;
         throw err;
@@ -273,20 +273,20 @@ export class MongoServer {
   private async _populateBuildInfo(): Promise<void> {
     if (this.buildInfo?.version) return;
     this.buildInfo = await this.withClient(
-      async (client) => await client.db('admin').command({ buildInfo: 1 })
+      async (client) => await client.db('admin').command({ buildInfo: 1 }),
     );
     debug(
       'got server build info through client',
       this.serverVersion,
-      this.serverVariant
+      this.serverVariant,
     );
   }
 
   async withClient<Fn extends (client: MongoClient) => any>(
-    fn: Fn
+    fn: Fn,
   ): Promise<ReturnType<Fn>> {
     const client = await MongoClient.connect(
-      `mongodb://${this.hostport}/?directConnection=true`
+      `mongodb://${this.hostport}/?directConnection=true`,
     );
     try {
       return await fn(client);

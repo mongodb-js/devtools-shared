@@ -13,7 +13,7 @@ describe('Logging setup', function () {
       'logid',
       null,
       pt,
-      () => new Date('2021-12-16T14:35:08.763Z')
+      () => new Date('2021-12-16T14:35:08.763Z'),
     );
     const emitter: ConnectLogEmitter = new EventEmitter();
 
@@ -27,7 +27,7 @@ describe('Logging setup', function () {
     };
     emitter.emit(
       'devtools-connect:connect-attempt-initialized',
-      connAttemptData
+      connAttemptData,
     );
     emitter.emit('devtools-connect:connect-heartbeat-failure', {
       connectionId: 'localhost',

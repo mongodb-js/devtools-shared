@@ -30,7 +30,7 @@ describe('RemoteSigningClient', function () {
         #!/bin/bash
         echo "Signing script called with arguments: $@"
         echo "RemoteSigningClient: signed content" > $1
-        `
+        `,
     );
   });
 
