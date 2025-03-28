@@ -42,7 +42,7 @@
   "lock": {
     "name": "test-repo",
     "version": "1.0.0",
-    "lockfileVersion": 2,
+    "lockfileVersion": 3,
     "requires": true,
     "packages": {
       "": {
@@ -114,47 +114,6 @@
       "packages/package7": {
         "version": "1.0.1",
         "devDependencies": {
-          "package6": "^1.0.1"
-        }
-      }
-    },
-    "dependencies": {
-      "package1": {
-        "version": "file:packages/package1"
-      },
-      "package2": {
-        "version": "file:packages/package2",
-        "requires": {
-          "package1": "1.0.0"
-        }
-      },
-      "package3": {
-        "version": "file:packages/package3",
-        "requires": {
-          "package1": "1.0.0"
-        }
-      },
-      "package4": {
-        "version": "file:packages/package4",
-        "requires": {
-          "package3": "1.0.0"
-        }
-      },
-      "package5": {
-        "version": "file:packages/package5",
-        "requires": {
-          "package1": "1.0.0"
-        }
-      },
-      "package6": {
-        "version": "file:packages/package6",
-        "requires": {
-          "package5": "1.0.0"
-        }
-      },
-      "package7": {
-        "version": "file:packages/package7",
-        "requires": {
           "package6": "^1.0.1"
         }
       }
