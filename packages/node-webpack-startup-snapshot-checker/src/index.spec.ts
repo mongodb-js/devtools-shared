@@ -16,19 +16,17 @@ describe('startup snapshot checker', function () {
       });
 
       proc.once('exit', (code, signal) => {
-        if (code === 0 && !signal) {
-          resolve();
+        let err: Error;
+        if (signal) {
+          err = new Error(`Failed with signal ${signal}`);
+        } else if (code !== null && code !== 0) {
+          err = new Error(`Failed with code ${code}`);
         } else {
-          let err: Error;
-          if (signal) {
-            err = new Error(`Failed with signal ${signal}`);
-          } else {
-            err = new Error(`Failed with code ${code}`);
-          }
-
-          err.message += '\n' + errBuffer;
-          reject(err);
+          return resolve();
         }
+
+        err.message += '\n' + errBuffer;
+        reject(err);
       });
     });
   };
