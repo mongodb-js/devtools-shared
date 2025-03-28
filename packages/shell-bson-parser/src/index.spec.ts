@@ -451,6 +451,14 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
               const actual = parse(input, options);
               const expectedDate = new (Date as any)(...args) as Date;
+
+              // Sometimes we'll get a millisecond difference between instantiating the dates, so let's correct for that
+              const millisecondsDiff =
+                actual.getMilliseconds - expectedDate.getMilliseconds();
+              expect(Math.abs(millisecondsDiff)).to.be.lessThan(2);
+
+              expectedDate.setMilliseconds(actual.getMilliseconds);
+
               expect(actual).to.deep.equal({
                 getDate: expectedDate.getDate(),
                 getDay: expectedDate.getDay(),
