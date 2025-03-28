@@ -9,6 +9,7 @@ type CacheOptions = {
 };
 
 export interface AutocompletionContext {
+  databasesForConnection(connectionKey: string): Promise<string[]>;
   collectionsForDatabase(
     connectionKey: string,
     databaseName: string
@@ -39,6 +40,16 @@ export class CachingAutocompletionContext implements AutocompletionContext {
   static caching(delegate: AutocompletionContext): AutocompletionContext {
     return new CachingAutocompletionContext(delegate, new NodeCache());
   }
+  async databasesForConnection(connectionKey: string): Promise<string[]> {
+    const cacheKey = `databasesForConnection::${connectionKey}`;
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as string[];
+    }
+
+    const result = await this.delegate.databasesForConnection(connectionKey);
+    this.cache.set(cacheKey, result, this.cacheOptions.databaseCollectionsTTL);
+    return result;
+  }
 
   async collectionsForDatabase(
     connectionKey: string,
@@ -53,11 +64,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
       connectionKey,
       databaseName
     );
-    this.cache.set(
-      `collectionsForDatabase::${connectionKey}::${databaseName}`,
-      result,
-      this.cacheOptions.databaseCollectionsTTL
-    );
+    this.cache.set(cacheKey, result, this.cacheOptions.databaseCollectionsTTL);
     return result;
   }
 
