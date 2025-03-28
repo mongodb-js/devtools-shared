@@ -53,11 +53,16 @@ describe('Autocompleter', function () {
       expect(completions.length).to.be.gt(100);
 
       // one of them is the myGlobalFunction() function
-      expect(completions).to.deep.include({
-        kind: 'function',
-        name: 'myGlobalFunction',
-        type: 'void',
-      });
+      expect(
+        completions.filter((c) => c.name.includes('myGlobalFunction'))
+      ).to.deep.equal([
+        {
+          kind: 'function',
+          name: 'myGlobalFunction',
+          result: 'myGlobalFunction',
+          type: 'void',
+        },
+      ]);
     });
 
     it('returns nothing for a member of a variable that does not exist', function () {
@@ -79,9 +84,15 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
           type: '(p1: number) => void',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+          type: 'string',
+        },
       ]);
     });
 
@@ -94,9 +105,15 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
           type: '(p1: number) => void',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+          type: 'string',
+        },
       ]);
     });
 
@@ -111,9 +128,15 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
           type: '(p1: number) => void',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+          type: 'string',
+        },
       ]);
     });
 
@@ -138,11 +161,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
+          result: 'myGlobalFunction({ param1',
           type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
+          result: 'myGlobalFunction({ param2',
           type: 'string',
         },
       ]);
@@ -159,11 +184,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
+          result: 'myGlobalFunction({ param1',
           type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
+          result: 'myGlobalFunction({ param2',
           type: 'string',
         },
       ]);
@@ -181,11 +208,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
+          result: 'myGlobalFunction({ param1',
           type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
+          result: 'myGlobalFunction({ param2',
           type: 'string',
         },
       ]);
@@ -217,6 +246,7 @@ describe('Autocompleter', function () {
         {
           kind: 'function',
           name: 'myGlobalFunction',
+          result: 'myGlobalFunction',
           type: 'void',
         },
       ]);
@@ -232,9 +262,15 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
           type: '(p1: number) => void',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+          type: 'string',
+        },
       ]);
 
       expect(autoCompleter.autocomplete('myGlobalObject.', 0)).to.deep.equal(
@@ -256,6 +292,7 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
           type: '(p1: number) => void',
         },
       ]);
@@ -276,11 +313,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
+          result: 'myGlobalFunction({ param1',
           type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
+          result: 'myGlobalFunction({ param2',
           type: 'string',
         },
       ]);

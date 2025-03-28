@@ -114,6 +114,7 @@ function getSymbolAtPosition(
 }
 
 export type AutoCompletion = {
+  result: string;
   name: string;
   kind: ts.ScriptElementKind;
   type: string;
@@ -136,7 +137,9 @@ function getTypeFromDeclaration(decl: ts.Declaration): string {
 
 function mapCompletions(
   filter: AutocompleteFilterFunction,
+  prefix: string,
   trigger: string,
+  suffix: string,
   completions: ts.CompletionInfo
 ): AutoCompletion[] {
   return completions.entries
@@ -158,6 +161,7 @@ function mapCompletions(
       }
 
       return {
+        result: prefix + entry.name + suffix,
         name: entry.name,
         kind: entry.kind,
         type,
@@ -259,7 +263,15 @@ export default class Autocompleter {
     if (completions) {
       const tsAst = compileSourceFile(code);
       const symbolAtPosition = getSymbolAtPosition(tsAst, position) ?? '';
-      return mapCompletions(this.filter, symbolAtPosition, completions);
+      const prefix = code.slice(0, position - symbolAtPosition.length);
+      const suffix = code.slice(position);
+      return mapCompletions(
+        this.filter,
+        prefix,
+        symbolAtPosition,
+        suffix,
+        completions
+      );
     }
 
     return [];

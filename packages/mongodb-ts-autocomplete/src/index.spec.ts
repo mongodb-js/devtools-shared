@@ -1,4 +1,4 @@
-import MongoDBAutocompleter from './index';
+import { MongoDBAutocompleter } from './index';
 import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
@@ -9,6 +9,7 @@ describe('MongoDBAutocompleter', function () {
 
   beforeEach(function () {
     autocompleterContext = {
+      databasesForConnection: () => Promise.resolve(['db1', 'db2']),
       collectionsForDatabase: () => Promise.resolve(['foo', 'bar', 'baz']),
       schemaInformationForCollection: async () => {
         const docs = [
@@ -50,6 +51,7 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'function',
         name: 'ObjectId',
+        result: 'ObjectId',
         type: 'bson.ObjectId',
       },
     ]);
@@ -68,21 +70,25 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'property',
         name: 'bar',
+        result: 'db.bar',
         type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'property',
         name: 'baz',
+        result: 'db.baz',
         type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'property',
         name: 'foo',
+        result: 'db.foo',
         type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'method',
         name: 'runCommand',
+        result: 'db.runCommand',
         type: 'mql.Document',
       },
     ]);
@@ -100,16 +106,19 @@ describe('MongoDBAutocompleter', function () {
       {
         kind: 'property',
         name: 'bar',
+        result: 'db.foo.find({ bar',
         type: 'bson.Double | number',
       },
       {
         kind: 'property',
         name: 'baz',
+        result: 'db.foo.find({ baz',
         type: '{\n    a?: bson.Double | number;\n    b?: string;\n  }',
       },
       {
         kind: 'property',
         name: 'foo',
+        result: 'db.foo.find({ foo',
         type: 'string',
       },
     ]);
