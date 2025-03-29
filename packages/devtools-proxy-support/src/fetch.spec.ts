@@ -4,6 +4,11 @@ import { HTTPServerProxyTestSetup } from '../test/helpers';
 
 describe('createFetch', function () {
   it("consistency check: plain `import('node-fetch')` fails", async function () {
+    if (process.versions.node >= '20.19.0') {
+      // 'node 20.19.0 has require(esm) enabled by default'
+      return this.skip();
+    }
+
     let failed = false;
     try {
       await import('node-fetch');
