@@ -450,120 +450,145 @@ describe('@mongodb-js/shell-bson-parser', function () {
        }`;
 
               const actual = parse(input, options);
-              const expectedDate = new (Date as any)(...args) as Date;
 
               // When constructing a date with no arguments, it will be set to the current date,
               // which is prone to race conditions for millisecond precision.
               const allowedMillisecondDelta = args.length === 0 ? 2 : 0;
 
-              expect(actual.getDate).to.equal(expectedDate.getDate());
-              expect(actual.getDay).to.equal(expectedDate.getDay());
-              expect(actual.getFullYear).to.equal(expectedDate.getFullYear());
-              expect(actual.getHours).to.equal(expectedDate.getHours());
+              expect(actual.getDate).to.equal(
+                new (Date as any)(...args).getDate()
+              );
+              expect(actual.getDay).to.equal(
+                new (Date as any)(...args).getDay()
+              );
+              expect(actual.getFullYear).to.equal(
+                new (Date as any)(...args).getFullYear()
+              );
+              expect(actual.getHours).to.equal(
+                new (Date as any)(...args).getHours()
+              );
               expect(actual.getMilliseconds).to.be.approximately(
-                expectedDate.getMilliseconds(),
+                new (Date as any)(...args).getMilliseconds(),
                 allowedMillisecondDelta
               );
-              expect(actual.getMinutes).to.equal(expectedDate.getMinutes());
-              expect(actual.getMonth).to.equal(expectedDate.getMonth());
-              expect(actual.getSeconds).to.equal(expectedDate.getSeconds());
+              expect(actual.getMinutes).to.equal(
+                new (Date as any)(...args).getMinutes()
+              );
+              expect(actual.getMonth).to.equal(
+                new (Date as any)(...args).getMonth()
+              );
+              expect(actual.getSeconds).to.equal(
+                new (Date as any)(...args).getSeconds()
+              );
               expect(actual.getTime).to.be.approximately(
-                expectedDate.getTime(),
+                new (Date as any)(...args).getTime(),
                 allowedMillisecondDelta
               );
               expect(actual.getTimezoneOffset).to.equal(
-                expectedDate.getTimezoneOffset()
+                new (Date as any)(...args).getTimezoneOffset()
               );
-              expect(actual.getUTCDate).to.equal(expectedDate.getUTCDate());
-              expect(actual.getUTCDay).to.equal(expectedDate.getUTCDay());
+              expect(actual.getUTCDate).to.equal(
+                new (Date as any)(...args).getUTCDate()
+              );
+              expect(actual.getUTCDay).to.equal(
+                new (Date as any)(...args).getUTCDay()
+              );
               expect(actual.getUTCFullYear).to.equal(
-                expectedDate.getUTCFullYear()
+                new (Date as any)(...args).getUTCFullYear()
               );
-              expect(actual.getUTCHours).to.equal(expectedDate.getUTCHours());
+              expect(actual.getUTCHours).to.equal(
+                new (Date as any)(...args).getUTCHours()
+              );
               expect(actual.getUTCMilliseconds).to.be.approximately(
-                expectedDate.getUTCMilliseconds(),
+                new (Date as any)(...args).getUTCMilliseconds(),
                 allowedMillisecondDelta
               );
               expect(actual.getUTCMinutes).to.equal(
-                expectedDate.getUTCMinutes()
+                new (Date as any)(...args).getUTCMinutes()
               );
-              expect(actual.getUTCMonth).to.equal(expectedDate.getUTCMonth());
+              expect(actual.getUTCMonth).to.equal(
+                new (Date as any)(...args).getUTCMonth()
+              );
               expect(actual.getUTCSeconds).to.equal(
-                expectedDate.getUTCSeconds()
+                new (Date as any)(...args).getUTCSeconds()
               );
-              expect(actual.getYear).to.equal((expectedDate as any).getYear()); // getYear is deprecated
+              expect(actual.getYear).to.equal(
+                (new (Date as any)(...args) as any).getYear()
+              ); // getYear is deprecated
               expect(actual.setDate).to.be.approximately(
-                new Date(expectedDate).setDate(24),
+                new (Date as any)(...args).setDate(24),
                 allowedMillisecondDelta
               );
               expect(actual.setFullYear).to.be.approximately(
-                new Date(expectedDate).setFullYear(2010),
+                new (Date as any)(...args).setFullYear(2010),
                 allowedMillisecondDelta
               );
               expect(actual.setHours).to.be.approximately(
-                new Date(expectedDate).setHours(23),
+                new (Date as any)(...args).setHours(23),
                 allowedMillisecondDelta
               );
               expect(actual.setMilliseconds).to.be.approximately(
-                new Date(expectedDate).setMilliseconds(1),
+                new (Date as any)(...args).setMilliseconds(1),
                 allowedMillisecondDelta
               );
               expect(actual.setMinutes).to.be.approximately(
-                new Date(expectedDate).setMinutes(1),
+                new (Date as any)(...args).setMinutes(1),
                 allowedMillisecondDelta
               );
               expect(actual.setMonth).to.be.approximately(
-                new Date(expectedDate).setMonth(1),
+                new (Date as any)(...args).setMonth(1),
                 allowedMillisecondDelta
               );
               expect(actual.setSeconds).to.be.approximately(
-                new Date(expectedDate).setSeconds(59),
+                new (Date as any)(...args).setSeconds(59),
                 allowedMillisecondDelta
               );
               expect(actual.setTime).to.be.approximately(
-                new Date(expectedDate).setTime(10),
+                new (Date as any)(...args).setTime(10),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCDate).to.be.approximately(
-                new Date(expectedDate).setUTCDate(24),
+                new (Date as any)(...args).setUTCDate(24),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCFullYear).to.be.approximately(
-                new Date(expectedDate).setUTCFullYear(2010),
+                new (Date as any)(...args).setUTCFullYear(2010),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCHours).to.be.approximately(
-                new Date(expectedDate).setUTCHours(23),
+                new (Date as any)(...args).setUTCHours(23),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCMilliseconds).to.be.approximately(
-                new Date(expectedDate).setUTCMilliseconds(1),
+                new (Date as any)(...args).setUTCMilliseconds(1),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCMinutes).to.be.approximately(
-                new Date(expectedDate).setUTCMinutes(1),
+                new (Date as any)(...args).setUTCMinutes(1),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCMonth).to.be.approximately(
-                new Date(expectedDate).setUTCMonth(1),
+                new (Date as any)(...args).setUTCMonth(1),
                 allowedMillisecondDelta
               );
               expect(actual.setUTCSeconds).to.be.approximately(
-                new Date(expectedDate).setUTCSeconds(59),
+                new (Date as any)(...args).setUTCSeconds(59),
                 allowedMillisecondDelta
               );
               expect(actual.setYear).to.be.approximately(
-                (new Date(expectedDate) as any).setYear(96),
+                (new (Date as any)(...args) as any).setYear(96),
                 allowedMillisecondDelta
               ); // setYear is deprecated
               expect(actual.valueOf).to.be.approximately(
-                expectedDate.valueOf(),
+                new (Date as any)(...args).valueOf(),
                 allowedMillisecondDelta
               );
 
               const isoRegex = /^([^.]*\.)([\d]*)(Z)$/;
               const actualMatch = isoRegex.exec(actual.toISOString);
-              const expectedMatch = isoRegex.exec(expectedDate.toISOString());
+              const expectedMatch = isoRegex.exec(
+                new (Date as any)(...args).toISOString()
+              );
 
               expect(actualMatch?.length).to.equal(4);
               expect(expectedMatch?.length).to.equal(4);
