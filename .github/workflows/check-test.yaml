@@ -1,11 +1,9 @@
 # This action runs lint checks and tests against the code.
 name: Check and Test
 
-# Controls when the action will run.
 on:
   pull_request:
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   push:
     branches:
@@ -18,7 +16,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   check-and-test:
     name: Check and Test
@@ -28,10 +25,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
       fail-fast: false
 
-    # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -51,11 +46,11 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get -y update && sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -95,9 +90,6 @@ jobs:
         shell: bash
 
       - name: Run Checks
-        # We exclude dependents when running eslint and depchecks because
-        # linting and dependency checking is relevant only for packages where
-        # the source code was changed
         run: npm run check-ci -- --stream
         shell: bash
 
