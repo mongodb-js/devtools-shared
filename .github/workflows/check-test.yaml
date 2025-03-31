@@ -102,7 +102,7 @@ jobs:
           for report in "${coverage_reports[@]}"; do
             echo "Processing report: $report"
             flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<<$report)
-            coveralls report --base-path . --job-flag=$flag_name $report --parallel --no-logo --debug
+            coveralls report --base-path . --job-flag=$flag_name $report --parallel --no-logo
           done
 
           coveralls done
