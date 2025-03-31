@@ -104,3 +104,17 @@ jobs:
       - name: Run Tests
         run: npm run test-ci -- --stream
         shell: bash
+
+      - name: Report Coverage
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          curl -L https://coveralls.io/coveralls-linux.tar.gz | tar -xz -C /usr/local/bin
+          coverage_reports=(ls packages/*/coverage/lcov.info)
+          for report in "${coverage_reports[@]}"; do
+            flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<< $report)
+            coverage report --base-path . --job-flag=$flag_name $report
+          done
+        env:
+          COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+          COVERALLS_REPO_TOKEN: ${{ github.token }}
+          COVERALLS_GIT_COMMIT: ${{ github.sha }}
