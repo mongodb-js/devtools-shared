@@ -113,8 +113,10 @@ jobs:
           for report in "${coverage_reports[@]}"; do
             echo "Processing report: $report"
             flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<<$report)
-            coveralls report --base-path . --job-flag=$flag_name $report
+            coveralls report --base-path . --job-flag=$flag_name $report --parallel --service-name github-actions
           done
+
+          coveralls done
         env:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
           COVERALLS_REPO_TOKEN: ${{ github.token }}
