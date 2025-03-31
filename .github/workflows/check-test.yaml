@@ -112,4 +112,3 @@ jobs:
         env:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
           COVERALLS_REPO_TOKEN: ${{ github.token }}
-          COVERALLS_GIT_COMMIT: ${{ github.sha }}
