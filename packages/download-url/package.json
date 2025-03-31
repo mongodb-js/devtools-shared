@@ -5,7 +5,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./.esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./.esm-wrapper.mjs && prettier --write .esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
