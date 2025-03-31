@@ -69,7 +69,7 @@
     "find-up": "^4.1.0",
     "git-log-parser": "^1.2.0",
     "glob": "^10.2.7",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.8",
     "ora": "^5.4.0",
     "pacote": "^11.3.5",
     "pkg-up": "^3.1.0",
