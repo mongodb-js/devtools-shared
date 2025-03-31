@@ -46,7 +46,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "debug": "^4.3.4",
+    "debug": "^4.4.0",
     "tar": "^6.1.15",
     "decompress": "^4.2.1",
     "mongodb-download-url": "^1.5.6",

@@ -46,7 +46,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "debug": "^4.3.4",
+    "debug": "^4.4.0",
     "@mongodb-js/shell-bson-parser": "^1.2.1",
     "javascript-stringify": "^2.1.0",
     "lodash": "^4.17.21"

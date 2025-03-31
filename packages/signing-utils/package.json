@@ -66,7 +66,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "debug": "^4.3.4",
+    "debug": "^4.4.0",
     "ssh2": "^1.15.0",
     "@types/ssh2": "^1.11.19"
   }
