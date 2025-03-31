@@ -42,7 +42,7 @@
     "debug": "^4.1.1",
     "minimist": "^1.2.8",
     "node-fetch": "^2.6.1",
-    "semver": "^7.1.1"
+    "semver": "^7.7.1"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
