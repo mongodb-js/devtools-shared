@@ -16,11 +16,11 @@ describe('bump-packages', function () {
   });
 
   this.timeout(60000);
-  let tempDir;
-  let remote;
-  let repoPath;
+  let tempDir: string;
+  let remote: string;
+  let repoPath: string;
 
-  const addPackage = (packageJsonOptions) => {
+  const addPackage = (packageJsonOptions: any) => {
     const packagePath = path.join(
       repoPath,
       'packages',
@@ -40,7 +40,7 @@ describe('bump-packages', function () {
     );
   };
 
-  function commitFile(changeFile, commitMessage) {
+  function commitFile(changeFile: string, commitMessage: string) {
     childProcess.spawnSync(
       'git',
       ['add', path.relative(repoPath, changeFile)],
@@ -51,7 +51,7 @@ describe('bump-packages', function () {
     });
   }
 
-  const commitRootChange = (commitMessage) => {
+  const commitRootChange = (commitMessage: string) => {
     const timestamp = Date.now().toString();
     const changeFile = path.join(repoPath, `${timestamp}.txt`);
 
@@ -64,7 +64,7 @@ describe('bump-packages', function () {
     commitRootChange('chore(ci): bump packages (#1)');
   }
 
-  const commitPackageChange = (packageName, commitMessage) => {
+  const commitPackageChange = (packageName: string, commitMessage: string) => {
     const packagePath = path.join(repoPath, 'packages', packageName);
     const timestamp = Date.now().toString();
     const changeFile = path.join(packagePath, `${timestamp}.txt`);

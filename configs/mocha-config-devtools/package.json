@@ -22,7 +22,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@mongodb-js/prettier-config-devtools": "^1.0.0",
+    "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "prettier": "^3.5.3",
     "react": ">=16"
   },

@@ -80,7 +80,7 @@
     "duplexpair": "^1.0.2",
     "electron": "^31.2.1",
     "eslint": "^7.25.0",
-    "gen-esm-wrapper": "^1.1.0",
+    "gen-esm-wrapper": "^1.1.3",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
     "prettier": "^3.5.3",

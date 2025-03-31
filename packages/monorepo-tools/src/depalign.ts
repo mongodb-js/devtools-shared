@@ -392,7 +392,7 @@ async function applyFixes(
       // Deduped versions will always have a fix, for mismatched we fall back to
       // highest version (you need to opt in into this potentially breaking
       // update so you should know what you're doing)
-      const fixVersion = fixes.get(version) || fixes.values().next().value;
+      const fixVersion = (fixes.get(version) || fixes.values().next().value)!;
 
       if (updatesByPackage.has(from)) {
         updatesByPackage.get(from)!.set(depName, fixVersion);
