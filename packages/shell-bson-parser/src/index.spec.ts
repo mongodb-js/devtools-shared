@@ -513,7 +513,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
                 new (Date as any)(...args).getUTCSeconds()
               );
               expect(actual.getYear).to.equal(
-                (new (Date as any)(...args) as any).getYear()
+                new (Date as any)(...args).getYear()
               ); // getYear is deprecated
               expect(actual.setDate).to.be.approximately(
                 new (Date as any)(...args).setDate(24),
@@ -576,7 +576,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
                 allowedMillisecondDelta
               );
               expect(actual.setYear).to.be.approximately(
-                (new (Date as any)(...args) as any).setYear(96),
+                new (Date as any)(...args).setYear(96),
                 allowedMillisecondDelta
               ); // setYear is deprecated
               expect(actual.valueOf).to.be.approximately(
