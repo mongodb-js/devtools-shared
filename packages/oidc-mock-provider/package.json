@@ -51,7 +51,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "yargs": "17.7.2"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.10",
