@@ -109,9 +109,10 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           curl -L https://coveralls.io/coveralls-linux.tar.gz | tar -xz -C /usr/local/bin
-          coverage_reports=(ls packages/*/coverage/lcov.info)
+          coverage_reports=(packages/*/coverage/lcov.info)
           for report in "${coverage_reports[@]}"; do
-            flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<< $report)
+            echo "Processing report: $report"
+            flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<<$report)
             coveralls report --base-path . --job-flag=$flag_name $report
           done
         env:
