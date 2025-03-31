@@ -30,7 +30,7 @@
     "@mongodb-js/eslint-config-devtools": "0.9.10",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "@mongodb-js/monorepo-tools": "^1.1.17",
-    "depcheck": "^1.4.1",
+    "depcheck": "^1.4.7",
     "eslint": "^7.25.0",
     "prettier": "^3.5.3"
   },
