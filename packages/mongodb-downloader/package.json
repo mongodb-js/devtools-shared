@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -49,14 +49,14 @@
     "debug": "^4.4.0",
     "tar": "^6.1.15",
     "decompress": "^4.2.1",
-    "mongodb-download-url": "^1.5.6",
+    "mongodb-download-url": "^1.5.7",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "0.9.10",
-    "@mongodb-js/mocha-config-devtools": "^1.0.4",
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
-    "@mongodb-js/tsconfig-devtools": "^1.0.2",
+    "@mongodb-js/eslint-config-devtools": "0.9.11",
+    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
+    "@mongodb-js/tsconfig-devtools": "^1.0.3",
     "@types/debug": "^4.1.8",
     "@types/decompress": "^4.2.4",
     "@types/mocha": "^9.1.1",

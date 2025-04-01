@@ -1,7 +1,7 @@
 {
   "name": "mongodb-log-writer",
   "description": "A library for writing MongoDB logv2 messages",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
@@ -69,10 +69,10 @@
     "bson": "6.x"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "0.9.10",
-    "@mongodb-js/mocha-config-devtools": "^1.0.4",
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
-    "@mongodb-js/tsconfig-devtools": "^1.0.2",
+    "@mongodb-js/eslint-config-devtools": "0.9.11",
+    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
+    "@mongodb-js/tsconfig-devtools": "^1.0.3",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/semver": "^7.7.0",

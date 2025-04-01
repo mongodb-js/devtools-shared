@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/tsconfig-devtools",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Shared Devtools Typescript configuration",
   "license": "SSPL",
   "files": [
@@ -11,7 +11,7 @@
     "typescript": "^5.0.4"
   },
   "devDependencies": {
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "prettier": "^3.5.3"
   },
   "scripts": {

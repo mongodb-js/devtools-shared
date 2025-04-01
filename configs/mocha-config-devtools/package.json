@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/mocha-config-devtools",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Shared mocha mocha configuration for Devtools packages",
   "license": "SSPL",
   "main": "index.js",
@@ -22,7 +22,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "prettier": "^3.5.3",
     "react": ">=16"
   },
