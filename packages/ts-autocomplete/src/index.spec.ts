@@ -60,7 +60,6 @@ describe('Autocompleter', function () {
           kind: 'function',
           name: 'myGlobalFunction',
           result: 'myGlobalFunction',
-          type: 'void',
         },
       ]);
     });
@@ -85,13 +84,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
-          type: '(p1: number) => void',
         },
         {
           kind: 'property',
           name: 'stringProp',
           result: 'myGlobalObject.stringProp',
-          type: 'string',
         },
       ]);
     });
@@ -106,13 +103,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
-          type: '(p1: number) => void',
         },
         {
           kind: 'property',
           name: 'stringProp',
           result: 'myGlobalObject.stringProp',
-          type: 'string',
         },
       ]);
     });
@@ -129,13 +124,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
-          type: '(p1: number) => void',
         },
         {
           kind: 'property',
           name: 'stringProp',
           result: 'myGlobalObject.stringProp',
-          type: 'string',
         },
       ]);
     });
@@ -162,13 +155,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'param1',
           result: 'myGlobalFunction({ param1',
-          type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
           result: 'myGlobalFunction({ param2',
-          type: 'string',
         },
       ]);
     });
@@ -185,13 +176,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'param1',
           result: 'myGlobalFunction({ param1',
-          type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
           result: 'myGlobalFunction({ param2',
-          type: 'string',
         },
       ]);
     });
@@ -209,13 +198,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'param1',
           result: 'myGlobalFunction({ param1',
-          type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
           result: 'myGlobalFunction({ param2',
-          type: 'string',
         },
       ]);
     });
@@ -245,7 +232,6 @@ describe('Autocompleter', function () {
           kind: 'function',
           name: 'myGlobalFunction',
           result: 'myGlobalFunction',
-          type: 'void',
         },
       ]);
     });
@@ -260,7 +246,6 @@ describe('Autocompleter', function () {
           kind: 'const',
           name: 'myGlobalObject',
           result: 'myGlobalObject',
-          type: 'MyObject',
         },
       ]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([
@@ -268,13 +253,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
-          type: '(p1: number) => void',
         },
         {
           kind: 'property',
           name: 'stringProp',
           result: 'myGlobalObject.stringProp',
-          type: 'string',
         },
       ]);
 
@@ -285,7 +268,6 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
-          type: '(p1: number) => void',
         },
       ]);
     });
@@ -302,13 +284,11 @@ describe('Autocompleter', function () {
           kind: 'property',
           name: 'param1',
           result: 'myGlobalFunction({ param1',
-          type: 'string',
         },
         {
           kind: 'property',
           name: 'param2',
           result: 'myGlobalFunction({ param2',
-          type: 'string',
         },
       ]);
     });

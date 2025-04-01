@@ -50,7 +50,6 @@ describe('MongoDBAutocompleter', function () {
         kind: 'function',
         name: 'ObjectId',
         result: 'ObjectId',
-        type: 'bson.ObjectId',
       },
     ]);
   });
@@ -60,31 +59,27 @@ describe('MongoDBAutocompleter', function () {
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(
-      completions.filter((c) => /ShellAPI|mql/.test(c.type))
+      completions.filter((c) => /property|method/.test(c.kind))
     ).to.deep.equal([
       {
         kind: 'property',
         name: 'bar',
         result: 'db.bar',
-        type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'property',
         name: 'baz',
         result: 'db.baz',
-        type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'property',
         name: 'foo',
         result: 'db.foo',
-        type: 'ShellAPI.Collection<{}>',
       },
       {
         kind: 'method',
         name: 'runCommand',
         result: 'db.runCommand',
-        type: 'mql.Document',
       },
     ]);
   });
@@ -99,19 +94,16 @@ describe('MongoDBAutocompleter', function () {
         kind: 'property',
         name: 'bar',
         result: 'db.foo.find({ bar',
-        type: 'bson.Double | number',
       },
       {
         kind: 'property',
         name: 'baz',
         result: 'db.foo.find({ baz',
-        type: '{\n    a?: bson.Double | number;\n    b?: string;\n  }',
       },
       {
         kind: 'property',
         name: 'foo',
         result: 'db.foo.find({ foo',
-        type: 'string',
       },
     ]);
   });

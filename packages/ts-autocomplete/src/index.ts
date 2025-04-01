@@ -117,7 +117,6 @@ export type AutoCompletion = {
   result: string;
   name: string;
   kind: ts.ScriptElementKind;
-  type: string;
 };
 
 function getTypeFromDeclaration(decl: ts.Declaration): string {
@@ -144,26 +143,10 @@ function mapCompletions(
   return completions.entries
     .filter((entry) => filter({ trigger, kind: entry.kind, name: entry.name }))
     .map((entry) => {
-      // entry.symbol is included because we specify includeSymbol when calling
-      // getCompletionsAtPosition
-
-      const declarations = entry.symbol?.getDeclarations();
-      let type = 'any';
-      const decl = declarations?.[0];
-      if (decl) {
-        // decl's children are (usually) things like ['a', ':', 'string'] or
-        // ['bb', ':', '(p1: number) => void']. So the one at position 2 (zero
-        // indexed) is the type.
-        // TODO: we should try and extract whatever magic vscode (via monaco) is
-        // doing to get proper types out
-        type = getTypeFromDeclaration(decl);
-      }
-
       return {
         result: prefix + entry.name,
         name: entry.name,
         kind: entry.kind,
-        type,
       };
     });
 }
@@ -214,7 +197,6 @@ export default class Autocompleter {
       code.length,
       {
         allowIncompleteCompletions: true,
-        includeSymbol: true,
       }
     );
 
