@@ -79,6 +79,21 @@ describe('download center client', function () {
       const content = await downloadCenter.downloadAsset('prefix/asset.txt');
       expect(content?.toString()).to.contain('content');
     });
+
+    it('can upload a file with private acls and download it back', async function () {
+      await downloadCenter.uploadAsset(
+        'prefix-private/asset.txt',
+        createReadStream(fixturePath('asset.txt')),
+        {
+          acl: 'private',
+        }
+      );
+
+      const content = await downloadCenter.downloadAsset(
+        'prefix-private/asset.txt'
+      );
+      expect(content?.toString()).to.contain('content');
+    });
   });
 
   describe('upload / download config', function () {
