@@ -196,39 +196,8 @@ export default class Autocompleter {
 
     if (debugLog.enabled) {
       for (const filename of this.listFiles()) {
-        try {
-          debugLog(
-            'getSyntacticDiagnostics',
-            filename,
-            filterDiagnostics(
-              this.languageService.getSyntacticDiagnostics(filename)
-            )
-          );
-        } catch (err: any) {
-          debugLog(
-            'getSyntacticDiagnostics',
-            filename,
-            err.stack,
-            err.ProgramFiles
-          );
-        }
-        try {
-          debugLog(
-            'getSemanticDiagnostics',
-            filename,
-            filterDiagnostics(
-              this.languageService.getSemanticDiagnostics(filename)
-            )
-          );
-        } catch (err: any) {
-          debugLog(
-            'getSemanticDiagnostics',
-            filename,
-            err.stack,
-            err.ProgramFiles
-          );
-        }
-        //debugLog('getSuggestionDiagnostics', filename, filterDiagnostics(this.languageService.getSuggestionDiagnostics(filename));
+        this.debugLanguageService(filename, 'getSyntacticDiagnostics');
+        this.debugLanguageService(filename, 'getSemanticDiagnostics');
       }
     }
 
@@ -240,5 +209,26 @@ export default class Autocompleter {
     }
 
     return [];
+  }
+
+  debugLanguageService(
+    filename: string,
+    method:
+      | 'getSyntacticDiagnostics'
+      | 'getSemanticDiagnostics'
+      | 'getSuggestionDiagnostics'
+  ) {
+    try {
+      debugLog(
+        method,
+        filename,
+        filterDiagnostics(this.languageService[method](filename))
+      );
+    } catch (err: any) {
+      // These methods can throw and then it would be nice to at least know
+      // why/where. One example would be when you try and alias and then import
+      // a global module in the code passed to the language service.
+      debugLog(method, filename, err.stack, err.ProgramFiles);
+    }
   }
 }
