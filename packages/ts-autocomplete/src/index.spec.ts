@@ -231,8 +231,6 @@ describe('Autocompleter', function () {
     it('returns nothing when it has no code', function () {
       expect(autoCompleter.autocomplete('myGlobalOb')).to.deep.equal([]);
       expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([]);
-      expect(autoCompleter.autocomplete('myGlobalObject', 0)).to.deep.equal([]);
-      expect(autoCompleter.autocomplete('myGlobalObject', 1)).to.deep.equal([]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([]);
     });
 
@@ -257,7 +255,14 @@ describe('Autocompleter', function () {
         '/code.d.ts': CODE_TS,
       });
 
-      expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([]);
+      expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([
+        {
+          kind: 'const',
+          name: 'myGlobalObject',
+          result: 'myGlobalObject',
+          type: 'MyObject',
+        },
+      ]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([
         {
           kind: 'property',
@@ -273,19 +278,6 @@ describe('Autocompleter', function () {
         },
       ]);
 
-      expect(autoCompleter.autocomplete('myGlobalObject.', 0)).to.deep.equal(
-        []
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 1)).to.deep.equal(
-        []
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 2)).to.deep.equal(
-        []
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 3)).to.deep.equal(
-        []
-      );
-
       expect(
         autoCompleter.autocomplete('myGlobalObject.functionPr')
       ).to.deep.equal([
@@ -296,10 +288,6 @@ describe('Autocompleter', function () {
           type: '(p1: number) => void',
         },
       ]);
-
-      expect(
-        autoCompleter.autocomplete('myGlobalObject.typo', 4)
-      ).to.deep.equal([]);
     });
 
     it('returns completions for the fields of object function parameters', function () {

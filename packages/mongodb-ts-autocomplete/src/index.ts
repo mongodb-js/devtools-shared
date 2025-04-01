@@ -117,10 +117,6 @@ class ConnectionSchema {
   }
 }
 
-type AutocompleteOptions = {
-  position?: number;
-};
-
 export class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
   private connectionSchemas: Record<string, ConnectionSchema>;
@@ -166,14 +162,7 @@ declare global {
 `;
   }
 
-  async autocomplete(
-    code: string,
-    { position }: AutocompleteOptions = {}
-  ): Promise<AutoCompletion[]> {
-    if (typeof position === 'undefined') {
-      position = code.length;
-    }
-
+  async autocomplete(code: string): Promise<AutoCompletion[]> {
     const { connectionId, databaseName } =
       this.context.currentDatabaseAndConnection();
 
@@ -213,6 +202,6 @@ declare global {
       ),
     });
 
-    return this.autocompleter.autocomplete(code, position);
+    return this.autocompleter.autocomplete(code);
   }
 }

@@ -139,7 +139,6 @@ function mapCompletions(
   filter: AutocompleteFilterFunction,
   prefix: string,
   trigger: string,
-  suffix: string,
   completions: ts.CompletionInfo
 ): AutoCompletion[] {
   return completions.entries
@@ -161,7 +160,7 @@ function mapCompletions(
       }
 
       return {
-        result: prefix + entry.name + suffix,
+        result: prefix + entry.name,
         name: entry.name,
         kind: entry.kind,
         type,
@@ -205,18 +204,14 @@ export default class Autocompleter {
       getVirtualLanguageService();
   }
 
-  autocomplete(code: string, position?: number): AutoCompletion[] {
-    if (typeof position === 'undefined') {
-      position = code.length;
-    }
-
+  autocomplete(code: string): AutoCompletion[] {
     this.updateCode({
       '/main.ts': code,
     });
 
     const completions = this.languageService.getCompletionsAtPosition(
       '/main.ts',
-      position,
+      code.length,
       {
         allowIncompleteCompletions: true,
         includeSymbol: true,
@@ -263,16 +258,9 @@ export default class Autocompleter {
 
     if (completions) {
       const tsAst = compileSourceFile(code);
-      const symbolAtPosition = getSymbolAtPosition(tsAst, position) ?? '';
-      const prefix = code.slice(0, position - symbolAtPosition.length);
-      const suffix = code.slice(position);
-      return mapCompletions(
-        this.filter,
-        prefix,
-        symbolAtPosition,
-        suffix,
-        completions
-      );
+      const symbolAtPosition = getSymbolAtPosition(tsAst, code.length) ?? '';
+      const prefix = code.slice(0, code.length - symbolAtPosition.length);
+      return mapCompletions(this.filter, prefix, symbolAtPosition, completions);
     }
 
     return [];
