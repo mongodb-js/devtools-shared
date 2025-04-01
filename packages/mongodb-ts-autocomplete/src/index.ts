@@ -162,7 +162,6 @@ type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
 
 declare global {
   var db: CurrentDatabaseSchema;
-  var use: (collection: string) => CurrentDatabaseSchema;
 }
 `;
   }
