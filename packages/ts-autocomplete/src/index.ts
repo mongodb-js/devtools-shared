@@ -10,11 +10,11 @@ type TypeFilename = string;
 
 type UpdateDefinitionFunction = (newDef: Record<TypeFilename, string>) => void;
 
-function getVirtualLanguageService(): [
-  ts.LanguageService,
-  UpdateDefinitionFunction,
-  () => string[]
-] {
+function getVirtualLanguageService(): {
+  languageService: ts.LanguageService;
+  updateCode: UpdateDefinitionFunction;
+  listFiles: () => string[];
+} {
   const codeHolder: Record<TypeFilename, string> = Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
   const options: ts.CompilerOptions = {
@@ -72,11 +72,14 @@ function getVirtualLanguageService(): [
     error: (...args) => debugError(args),
   };
 
-  return [
-    ts.createLanguageService(servicesHost, ts.createDocumentRegistry()),
+  return {
+    languageService: ts.createLanguageService(
+      servicesHost,
+      ts.createDocumentRegistry()
+    ),
     updateCode,
     listFiles,
-  ];
+  };
 }
 
 function compileSourceFile(code: string): ts.SourceFile {
@@ -168,12 +171,15 @@ export default class Autocompleter {
   private readonly filter: AutocompleteFilterFunction;
   private readonly languageService: ts.LanguageService;
   readonly updateCode: UpdateDefinitionFunction;
-  readonly listfiles: () => string[];
+  readonly listFiles: () => string[];
 
   constructor({ filter }: AutocompleterOptions = {}) {
     this.filter = filter ?? (() => true);
-    [this.languageService, this.updateCode, this.listfiles] =
-      getVirtualLanguageService();
+    ({
+      languageService: this.languageService,
+      updateCode: this.updateCode,
+      listFiles: this.listFiles,
+    } = getVirtualLanguageService());
   }
 
   autocomplete(code: string): AutoCompletion[] {
@@ -190,7 +196,7 @@ export default class Autocompleter {
     );
 
     if (debugLog.enabled) {
-      for (const filename of this.listfiles()) {
+      for (const filename of this.listFiles()) {
         try {
           debugLog(
             'getSyntacticDiagnostics',
