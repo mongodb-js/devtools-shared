@@ -9,13 +9,17 @@ type CacheOptions = {
 };
 
 export interface AutocompletionContext {
-  databasesForConnection(connectionKey: string): Promise<string[]>;
+  currentDatabaseAndConnection(): {
+    connectionId: string;
+    databaseName: string;
+  };
+  databasesForConnection(connectionId: string): Promise<string[]>;
   collectionsForDatabase(
-    connectionKey: string,
+    connectionId: string,
     databaseName: string
   ): Promise<string[]>;
   schemaInformationForCollection(
-    connectionKey: string,
+    connectionId: string,
     databaseName: string,
     collectionName: string
   ): Promise<JSONSchema>;
@@ -40,28 +44,33 @@ export class CachingAutocompletionContext implements AutocompletionContext {
   static caching(delegate: AutocompletionContext): AutocompletionContext {
     return new CachingAutocompletionContext(delegate, new NodeCache());
   }
-  async databasesForConnection(connectionKey: string): Promise<string[]> {
-    const cacheKey = `databasesForConnection::${connectionKey}`;
+
+  currentDatabaseAndConnection() {
+    return this.delegate.currentDatabaseAndConnection();
+  }
+
+  async databasesForConnection(connectionId: string): Promise<string[]> {
+    const cacheKey = `databasesForConnection::${connectionId}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) as string[];
     }
 
-    const result = await this.delegate.databasesForConnection(connectionKey);
+    const result = await this.delegate.databasesForConnection(connectionId);
     this.cache.set(cacheKey, result, this.cacheOptions.databaseCollectionsTTL);
     return result;
   }
 
   async collectionsForDatabase(
-    connectionKey: string,
+    connectionId: string,
     databaseName: string
   ): Promise<string[]> {
-    const cacheKey = `collectionsForDatabase::${connectionKey}::${databaseName}`;
+    const cacheKey = `collectionsForDatabase::${connectionId}::${databaseName}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) as string[];
     }
 
     const result = await this.delegate.collectionsForDatabase(
-      connectionKey,
+      connectionId,
       databaseName
     );
     this.cache.set(cacheKey, result, this.cacheOptions.databaseCollectionsTTL);
@@ -69,18 +78,18 @@ export class CachingAutocompletionContext implements AutocompletionContext {
   }
 
   async schemaInformationForCollection(
-    connectionKey: string,
+    connectionId: string,
     databaseName: string,
     collectionName: string
   ): Promise<JSONSchema> {
-    const cacheKey = `schemaInformationForNamespace::${connectionKey}::${databaseName}.${collectionName}`;
+    const cacheKey = `schemaInformationForNamespace::${connectionId}::${databaseName}.${collectionName}`;
     if (this.cache.has(cacheKey)) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       return this.cache.get(cacheKey) as JSONSchema;
     }
 
     const result = await this.delegate.schemaInformationForCollection(
-      connectionKey,
+      connectionId,
       databaseName,
       collectionName
     );

@@ -13,6 +13,7 @@ import {
   compileSourceFile,
 } from './cdt-analyser';
 
+import { CachingAutocompletionContext } from './autocompletion-context';
 import type { AutocompletionContext } from './autocompletion-context';
 
 export { JSONSchema } from './type-export';
@@ -117,8 +118,6 @@ class ConnectionSchema {
 }
 
 type AutocompleteOptions = {
-  connectionId: string;
-  databaseName: string;
   position?: number;
 };
 
@@ -128,7 +127,7 @@ export class MongoDBAutocompleter {
   private readonly autocompleter: Autocompleter;
 
   constructor({ context, autocompleterOptions }: MongoDBAutocompleterOptions) {
-    this.context = context;
+    this.context = CachingAutocompletionContext.caching(context);
     this.autocompleter = new Autocompleter(autocompleterOptions);
 
     this.connectionSchemas = Object.create(null);
@@ -144,13 +143,13 @@ export class MongoDBAutocompleter {
     return this.connectionSchemas[connectionId];
   }
 
-  getConnectionCode(connectionKey: string): string {
+  getConnectionCode(connectionId: string): string {
     return `
 import * as ShellAPI from '/shell-api.ts';
 import * as bson from '/bson.ts';
 
 export type ServerSchema = ${this.connectionSchemas[
-      connectionKey
+      connectionId
     ].toTypescriptTypeDefinition()};
 `;
   }
@@ -170,11 +169,14 @@ declare global {
 
   async autocomplete(
     code: string,
-    { connectionId, databaseName, position }: AutocompleteOptions
+    { position }: AutocompleteOptions = {}
   ): Promise<AutoCompletion[]> {
     if (typeof position === 'undefined') {
       position = code.length;
     }
+
+    const { connectionId, databaseName } =
+      this.context.currentDatabaseAndConnection();
 
     // TODO: we're now compiling the source twice: autocomplete will also
     // compile if it finds completions in order to filter them. Does it matter?
@@ -183,12 +185,11 @@ declare global {
     const tsAst = compileSourceFile(code);
     const collectionName = inferCollectionNameFromFunctionCall(tsAst) || 'test';
 
-    const schema: JSONSchema =
-      await this.context.schemaInformationForCollection(
-        connectionId,
-        databaseName,
-        collectionName
-      );
+    const schema = await this.context.schemaInformationForCollection(
+      connectionId,
+      databaseName,
+      collectionName
+    );
 
     const connection = this.addConnection(connectionId);
     connection.addCollectionSchema(databaseName, collectionName, schema);

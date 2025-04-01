@@ -143,7 +143,7 @@ function mapCompletions(
   completions: ts.CompletionInfo
 ): AutoCompletion[] {
   return completions.entries
-    .filter((entry) => filter({ trigger, name: entry.name }))
+    .filter((entry) => filter({ trigger, kind: entry.kind, name: entry.name }))
     .map((entry) => {
       // entry.symbol is included because we specify includeSymbol when calling
       // getCompletionsAtPosition
@@ -171,6 +171,7 @@ function mapCompletions(
 
 type AutocompleteFilterOptions = {
   trigger: string;
+  kind: string;
   name: string;
 };
 

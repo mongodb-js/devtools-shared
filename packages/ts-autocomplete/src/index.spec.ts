@@ -13,7 +13,7 @@ function filterStartingWith({
   name = name.toLocaleLowerCase();
   trigger = trigger.toLocaleLowerCase();
 
-  return name !== trigger && name.startsWith(trigger);
+  return name.startsWith(trigger);
 }
 
 describe('Autocompleter', function () {

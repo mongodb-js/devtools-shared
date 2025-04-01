@@ -9,6 +9,10 @@ describe('MongoDBAutocompleter', function () {
 
   beforeEach(function () {
     autocompleterContext = {
+      currentDatabaseAndConnection: () => ({
+        connectionId: 'my-connectionId',
+        databaseName: 'my-databaseName',
+      }),
       databasesForConnection: () => Promise.resolve(['db1', 'db2']),
       collectionsForDatabase: () => Promise.resolve(['foo', 'bar', 'baz']),
       schemaInformationForCollection: async () => {
@@ -35,18 +39,12 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('does not leak the bson package', async function () {
-    const completions = await autocompleter.autocomplete('bson.', {
-      connectionId: 'myConnection',
-      databaseName: 'myDatabase',
-    });
+    const completions = await autocompleter.autocomplete('bson.');
     expect(completions).to.deep.equal([]);
   });
 
   it('completes a bson expression', async function () {
-    const completions = await autocompleter.autocomplete('Ob', {
-      connectionId: 'myConnection',
-      databaseName: 'myDatabase',
-    });
+    const completions = await autocompleter.autocomplete('Ob');
     expect(completions.filter((c) => c.name === 'ObjectId')).to.deep.equal([
       {
         kind: 'function',
@@ -58,10 +56,7 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('completes a collection name', async function () {
-    const completions = await autocompleter.autocomplete('db.fo', {
-      connectionId: 'myConnection',
-      databaseName: 'myDatabase',
-    });
+    const completions = await autocompleter.autocomplete('db.fo');
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(
@@ -95,10 +90,7 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('completes a collection field name in a query', async function () {
-    const completions = await autocompleter.autocomplete('db.foo.find({ fo', {
-      connectionId: 'myConnection',
-      databaseName: 'myDatabase',
-    });
+    const completions = await autocompleter.autocomplete('db.foo.find({ fo');
 
     expect(
       completions.filter((c) => /^(foo|bar|baz)$/.test(c.name))
