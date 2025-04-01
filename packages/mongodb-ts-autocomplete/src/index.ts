@@ -119,7 +119,7 @@ class ConnectionSchema {
 
 export class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
-  private connectionSchemas: Record<string, ConnectionSchema>;
+  private readonly connectionSchemas: Record<string, ConnectionSchema>;
   private readonly autocompleter: Autocompleter;
 
   constructor({ context, autocompleterOptions }: MongoDBAutocompleterOptions) {
