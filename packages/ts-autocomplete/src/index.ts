@@ -27,7 +27,6 @@ function getVirtualLanguageService(): {
 
   const updateCode = (newDef: Record<TypeFilename, string>): void => {
     for (const [key, value] of Object.entries(newDef)) {
-      //console.log(key, value);
       codeHolder[key] = value;
       versions[key] = (versions[key] ?? 0) + 1;
     }
