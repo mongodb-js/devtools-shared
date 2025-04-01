@@ -17,73 +17,75 @@ function assertIsDefined<T>(
 }
 
 function toTypeName(type: string): string | string[] {
-  // JSON Schema types
-  if (type === 'string') {
-    return 'string';
-  }
-  if (type === 'number' || type === 'integer') {
-    return 'number';
-  }
-  if (type === 'boolean') {
-    return 'boolean';
-  }
-  if (type === 'null') {
-    return 'null';
-  }
+  switch (type) {
+    // JSON Schema types
+    case 'string':
+      return 'string';
 
-  // BSON types
-  // see InternalTypeToBsonTypeMap
-  if (type === 'double') {
-    return ['bson.Double', 'number'];
-  }
-  if (type === 'binData') {
-    return 'bson.Binary';
-  }
-  if (type === 'objectId') {
-    return 'bson.ObjectId';
-  }
-  if (type === 'bool') {
-    return 'boolean';
-  }
-  if (type === 'date') {
-    return 'bson.Date';
-  }
-  if (type === 'regex') {
-    return 'bson.BSONRegExp';
-  }
-  if (type === 'symbol') {
-    return 'bson.BSONSymbol';
-  }
-  if (type === 'javascript' || type === 'javascriptWithScope') {
-    return 'bson.Code';
-  }
-  if (type === 'int') {
-    return ['bson.Int32', 'number'];
-  }
-  if (type === 'timestamp') {
-    return 'bson.Timestamp';
-  }
-  if (type === 'long') {
-    return ['bson.Long', 'number'];
-  }
-  if (type === 'decimal') {
-    return 'bson.Decimal128';
-  }
-  if (type === 'minKey') {
-    return 'bson.MinKey';
-  }
-  if (type === 'maxKey') {
-    return 'bson.MaxKey';
-  }
-  if (type === 'dbPointer') {
-    return 'bson.DBPointer';
-  }
+    case 'number':
+    case 'integer':
+      return 'number';
 
-  if (type === 'undefined') {
-    return 'undefined';
-  }
+    case 'boolean':
+      return 'boolean';
 
-  return 'any';
+    case 'null':
+      return 'null';
+
+    // BSON types
+    // see InternalTypeToBsonTypeMap in mongodb-schema:
+    // https://github.com/mongodb-js/mongodb-schema/blob/5ca185a6967e0f0d1bb20f75555d3f4f1f9c24fe/src/schema-converters/internalToMongoDB.ts#L8
+    case 'double':
+      return ['bson.Double', 'number'];
+
+    case 'binData':
+      return 'bson.Binary';
+    case 'objectId':
+      return 'bson.ObjectId';
+
+    case 'bool':
+      return 'boolean';
+
+    case 'date':
+      return 'bson.Date';
+
+    case 'regex':
+      return 'bson.BSONRegExp';
+
+    case 'symbol':
+      return 'bson.BSONSymbol';
+
+    case 'javascript':
+    case 'javascriptWithScope':
+      return 'bson.Code';
+
+    case 'int':
+      return ['bson.Int32', 'number'];
+
+    case 'timestamp':
+      return 'bson.Timestamp';
+
+    case 'long':
+      return ['bson.Long', 'number'];
+
+    case 'decimal':
+      return 'bson.Decimal128';
+
+    case 'minKey':
+      return 'bson.MinKey';
+
+    case 'maxKey':
+      return 'bson.MaxKey';
+
+    case 'dbPointer':
+      return 'bson.DBPointer';
+
+    case 'undefined':
+      return 'undefined';
+
+    default:
+      return 'any';
+  }
 }
 
 function uniqueTypes(property: JSONSchema): Set<string> {
