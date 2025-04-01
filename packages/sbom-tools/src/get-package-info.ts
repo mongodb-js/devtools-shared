@@ -34,7 +34,7 @@ function readFileWithCache(filePath: string): Promise<string> {
 }
 
 const findPackageJson = async (
-  modulePath: string
+  modulePath: string,
 ): Promise<{ path: string; content: PackageJSON } | undefined> => {
   const candidatePath = await findUp('package.json', {
     cwd: path.dirname(modulePath),
@@ -46,7 +46,7 @@ const findPackageJson = async (
 
   try {
     const packageJson: PackageJSON = JSON.parse(
-      await readFileWithCache(candidatePath)
+      await readFileWithCache(candidatePath),
     );
 
     if (
@@ -83,15 +83,13 @@ export async function getPackageInfo(modulePath: string): Promise<Package> {
   ].filter(Boolean) as any;
 
   const licenseFiles = await Promise.all(
-    (
-      await fs.readdir(packagePath)
-    )
+    (await fs.readdir(packagePath))
       .filter((filename) => licenseRegexp.test(filename))
       .sort()
       .map(async (filename) => ({
         filename,
         content: await readFileWithCache(path.join(packagePath, filename)),
-      }))
+      })),
   );
 
   return {

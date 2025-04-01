@@ -13,7 +13,7 @@ const localClientDebug = debug.extend('LocalSigningClient');
  */
 export class LocalSigningClient implements SigningClient {
   constructor(
-    private options: Omit<SigningClientOptions, 'workingDirectory'>
+    private options: Omit<SigningClientOptions, 'workingDirectory'>,
   ) {}
 
   // we want to wrap any errors in promise rejections, so even though there is no
@@ -37,7 +37,7 @@ export class LocalSigningClient implements SigningClient {
           cwd: directoryOfFileToSign,
           env,
           encoding: 'utf-8',
-        }
+        },
       );
 
       localClientDebug({ stdout, stderr });
@@ -47,7 +47,7 @@ export class LocalSigningClient implements SigningClient {
           JSON.stringify({
             stdout,
             stderr,
-          })
+          }),
         );
       }
       localClientDebug(`Signed file ${file}`);

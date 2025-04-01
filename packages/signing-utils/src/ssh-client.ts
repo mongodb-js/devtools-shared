@@ -58,7 +58,7 @@ export class SSHClient {
       throw new Error('Not connected to ssh server');
     }
     const stream: ClientChannel = await promisify(
-      this.sshConnection.exec.bind(this.sshConnection)
+      this.sshConnection.exec.bind(this.sshConnection),
     )(command);
     let data = '';
     stream.setEncoding('utf-8');
@@ -72,7 +72,7 @@ export class SSHClient {
     const [code] = await once(stream, 'close');
     if (code !== 0) {
       throw new Error(
-        `Command failed with code ${code as number}. Error: ${data}`
+        `Command failed with code ${code as number}. Error: ${data}`,
       );
     }
 
@@ -94,7 +94,7 @@ export class SSHClient {
     const sftpConnection = await this.getSftpConnection();
     return promisify(sftpConnection.fastPut.bind(sftpConnection))(
       file,
-      remotePath
+      remotePath,
     );
   }
 
@@ -102,7 +102,7 @@ export class SSHClient {
     const sftpConnection = await this.getSftpConnection();
     return promisify(sftpConnection.fastGet.bind(sftpConnection))(
       remotePath,
-      file
+      file,
     );
   }
 

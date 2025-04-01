@@ -53,10 +53,10 @@ function getPageTemplates<TParameters extends Record<string, string>>({
   const templates: ITemplate<TParameters>[] = [];
   for (const paramsSubset of allSubsets(parameters)) {
     const propsObject = Object.fromEntries(
-      paramsSubset.map((prop) => [prop, placeholder(prop)])
+      paramsSubset.map((prop) => [prop, placeholder(prop)]),
     );
     const markup = renderStylesToString(
-      renderToStaticMarkup(React.createElement(Component, propsObject))
+      renderToStaticMarkup(React.createElement(Component, propsObject)),
     );
     templates.push({
       parameters: propsObject as TParameters,
@@ -71,7 +71,7 @@ export function generateTemplates<
     string,
     Record<string, string>
   > = HttpServerPageProps,
-  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   pages: Record<
     TPage,
@@ -79,7 +79,7 @@ export function generateTemplates<
       Component: Component;
       parameters: string[];
     }
-  >
+  >,
 ): PageTemplates<TPageParameters> {
   const templates: Partial<PageTemplates<TPageParameters>> = {};
   for (const pageName of Object.keys(pages) as TPage[]) {
@@ -119,7 +119,7 @@ function generateJS(data: string): void {
       return JSON.parse(buffer.toString());
     }
     module.exports = getTemplates;
-  `
+  `,
   );
 }
 
@@ -128,7 +128,7 @@ export function generateCompressedTemplates<
     string,
     Record<string, string>
   > = HttpServerPageProps,
-  TPage extends string & keyof TPageParameters = string & keyof TPageParameters
+  TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   pages: Record<
     TPage,
@@ -136,10 +136,10 @@ export function generateCompressedTemplates<
       Component: Component;
       parameters: string[];
     }
-  >
+  >,
 ): void {
   const templates = JSON.stringify(
-    generateTemplates<TPageParameters, TPage>(pages)
+    generateTemplates<TPageParameters, TPage>(pages),
   );
   generateGzip(templates);
   generateJS(templates);

@@ -3,7 +3,7 @@ import { PassThrough } from 'stream';
 import { createInterface as createReadlineInterface } from 'readline';
 
 export async function* createLogEntryIterator(
-  stdout: Readable
+  stdout: Readable,
 ): AsyncIterable<LogEntry> {
   for await (const line of createReadlineInterface({ input: stdout })) {
     if (!line.trim()) {
@@ -94,7 +94,7 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
   if (
     logEntry.id === undefined &&
     (match = /^waiting for connections on port (?<port>\d+)( ssl)?$/i.exec(
-      logEntry.message
+      logEntry.message,
     ))
   ) {
     return +(match.groups?.port ?? '0');
@@ -102,8 +102,8 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
   if (isFailureToSetupListener(logEntry)) {
     throw new Error(
       `Failed to setup listener (${logEntry.message} ${JSON.stringify(
-        logEntry.attr
-      )})`
+        logEntry.attr,
+      )})`,
     );
   }
   return -1;
@@ -117,7 +117,7 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
  * @returns The port that the target process is listening on.
  */
 export async function filterLogStreamForPort(
-  input: Readable
+  input: Readable,
 ): Promise<{ port: number }> {
   let port = -1;
   const inputDuplicate = input.pipe(new PassThrough({ objectMode: true }));
@@ -184,7 +184,7 @@ function getBuildInfoFromLogEntry(logEntry: LogEntry): Partial<BuildInfo> {
  * @returns The build info.
  */
 export async function filterLogStreamForBuildInfo(
-  input: Readable
+  input: Readable,
 ): Promise<BuildInfo> {
   let buildInfo: BuildInfo = { version: null, modules: null };
   const inputDuplicate = input.pipe(new PassThrough({ objectMode: true }));

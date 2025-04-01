@@ -10,10 +10,9 @@ export async function* listAllPackages(): AsyncIterable<
   const packages = await getPackagesInTopologicalOrder(monorepoRoot);
   for (const packageInfo of packages) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const packageJson = require(path.join(
-      packageInfo.location,
-      'package.json'
-    ));
+    const packageJson = require(
+      path.join(packageInfo.location, 'package.json'),
+    );
     yield { rootDir: monorepoRoot, packageJson, ...packageInfo };
   }
 }

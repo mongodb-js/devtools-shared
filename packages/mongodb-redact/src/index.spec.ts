@@ -68,7 +68,7 @@ describe('mongodb-redact', function () {
     it('should work with BinData', function () {
       const res = redact(BIN_DATA);
       expect(res).to.include(
-        'db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "<base64>")}})'
+        'db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{changeset:BinData(5, "<base64>")}})',
       );
     });
   });
@@ -81,8 +81,8 @@ describe('mongodb-redact', function () {
     it('should redact emails inside strings', function () {
       expect(
         redact(
-          '"db.test.insert({ email: "foo-bar$qwerty@example.sample.org" })"'
-        )
+          '"db.test.insert({ email: "foo-bar$qwerty@example.sample.org" })"',
+        ),
       ).to.equal('"db.test.insert({ email: "<email>" })"');
     });
 
@@ -96,10 +96,10 @@ describe('mongodb-redact', function () {
 
     it('should redact OS X user paths', function () {
       let res = redact(
-        '/Users/foo/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
+        '/Users/foo/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html',
       );
       expect(res).to.equal(
-        '/Users/<user>/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html'
+        '/Users/<user>/Applications/MongoDB%20Compass.app/Contents/Resources/app/index.html',
       );
       res = redact('/Users/JohnDoe/Documents/letter.pages');
       expect(res).to.equal(res, '/Users/<user>/Documents/letter.pages');
@@ -109,7 +109,7 @@ describe('mongodb-redact', function () {
 
     it('should redact Windows user paths using backward slash', function () {
       let res = redact(
-        'C:\\Users\\foo\\AppData\\Local\\MongoDBCompass\\app-1.0.1\\resources\\app\\index.js'
+        'C:\\Users\\foo\\AppData\\Local\\MongoDBCompass\\app-1.0.1\\resources\\app\\index.js',
       );
       expect(res).to.equal(res, 'C:\\Users\\<user>\\index.js');
       res = redact('c:\\Users\\JohnDoe\\test');
@@ -120,11 +120,11 @@ describe('mongodb-redact', function () {
 
     it('should redact Windows user paths using forward slash', function () {
       const res = redact(
-        'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
+        'C:/Users/foo/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js',
       );
       expect(res).to.equal(
         res,
-        'C:/Users/<user>/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js'
+        'C:/Users/<user>/AppData/Local/MongoDBCompass/app-1.0.1/resources/app/index.js',
       );
     });
 
@@ -144,7 +144,7 @@ describe('mongodb-redact', function () {
 
     it('should redact MongoDB connection URIs', function () {
       let res = redact(
-        'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000'
+        'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000',
       );
       expect(res).to.equal('<mongodb uri>');
       res = redact('mongodb://localhost,localhost:27018,localhost:27019');
@@ -162,10 +162,10 @@ describe('mongodb-redact', function () {
 
     it('should redact Compass Schema URL fragments', function () {
       const res = redact(
-        'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/db.collection'
+        'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/db.collection',
       );
       expect(res).to.equal(
-        'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/<namespace>'
+        'index.html?connection_id=e5938750-038e-4cab-b2ba-9ccb9ed7e2a2#schema/<namespace>',
       );
     });
   });
@@ -227,7 +227,7 @@ describe('mongodb-redact', function () {
         obj: {
           path: '/Users/thomas/something.txt',
         },
-      })`)
+      })`),
       );
       expect(res).to.deep.equal({
         obj: {

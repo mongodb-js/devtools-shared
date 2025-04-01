@@ -61,13 +61,13 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.35",
     "@types/sinon-chai": "^3.2.5",
-    "chai": "^4.3.6",
+    "chai": "^4.5.0",
     "cross-spawn": "^7.0.6",
-    "depcheck": "^1.4.1",
+    "depcheck": "^1.4.7",
     "eslint": "^7.25.0",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
-    "prettier": "^2.3.2",
+    "prettier": "^3.5.3",
     "sinon": "^9.2.3",
     "typescript": "^5.0.4"
   }

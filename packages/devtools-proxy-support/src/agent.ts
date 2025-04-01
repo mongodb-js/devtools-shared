@@ -29,7 +29,7 @@ export type AgentWithInitialize = HTTPSAgent & {
   createSocket(
     req: ClientRequest,
     options: TcpNetConnectOpts | ConnectionOptions,
-    cb: (err: Error | null, s?: Duplex) => void
+    cb: (err: Error | null, s?: Duplex) => void,
   ): void;
 
   // http.Agent is an EventEmitter, just missing from @types/node
@@ -52,7 +52,7 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
   // allowPartialTrustChain listed here until the Node.js types have it
   constructor(
     proxyOptions: DevtoolsProxyOptions & { allowPartialTrustChain?: boolean },
-    logger: ProxyLogEmitter
+    logger: ProxyLogEmitter,
   ) {
     // NB: The Node.js HTTP agent implementation overrides request options
     // with agent options. Ideally, we'd want to merge them, but it seems like
@@ -92,7 +92,7 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
 
   override async connect(
     req: ClientRequest,
-    opts: AgentConnectOpts & Partial<SecureContextOptions>
+    opts: AgentConnectOpts & Partial<SecureContextOptions>,
   ): Promise<HTTPAgent> {
     opts.ca = mergeCA(this.proxyOptions.ca, opts.ca); // see constructor
     if (this.sshAgent) return this.sshAgent;
@@ -134,7 +134,7 @@ class DevtoolsProxyAgentWithSystemCA extends AgentBase {
       const { ca } = await systemCA({ ca: proxyOptions.ca });
       return new DevtoolsProxyAgent(
         { ...proxyOptions, ca, allowPartialTrustChain: true },
-        this.logger
+        this.logger,
       );
     })();
     this.agent.catch(() => {
@@ -157,7 +157,7 @@ class DevtoolsProxyAgentWithSystemCA extends AgentBase {
 }
 
 export function createAgent(
-  proxyOptions: DevtoolsProxyOptions
+  proxyOptions: DevtoolsProxyOptions,
 ): AgentWithInitialize {
   return new DevtoolsProxyAgentWithSystemCA(proxyOptions);
 }
@@ -165,7 +165,7 @@ export function createAgent(
 export function useOrCreateAgent(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
   target?: string,
-  useTargetRegardlessOfExistingAgent = false
+  useTargetRegardlessOfExistingAgent = false,
 ): AgentWithInitialize | undefined {
   if ('createConnection' in proxyOptions) {
     const agent = proxyOptions as AgentWithInitialize;

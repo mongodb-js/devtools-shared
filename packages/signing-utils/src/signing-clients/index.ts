@@ -58,7 +58,7 @@ export interface SigningClient {
 }
 
 export async function getSigningClient(
-  options: ClientOptions
+  options: ClientOptions,
 ): Promise<SigningClient> {
   async function getSshClient(sshOptions: ConnectConfig) {
     const sshClient = new SSHClient(sshOptions);

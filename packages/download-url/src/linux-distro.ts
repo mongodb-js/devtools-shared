@@ -60,7 +60,7 @@ export async function getCurrentLinuxDistro(): Promise<
     return results;
   }
   throw new Error(
-    `Could not figure out current Linux distro (${id}, ${osReleaseId})`
+    `Could not figure out current Linux distro (${id}, ${osReleaseId})`,
   );
 }
 
@@ -145,7 +145,7 @@ function listDistroIds({
       }
       const known = [55, 57, 62, 67, 70, 71, 72, 80, 81, 82, 83, 8, 90, 93, 9];
       const allowedVersions = known.filter((v) =>
-        v > 50 ? v <= want : v * 10 <= want
+        v > 50 ? v <= want : v * 10 <= want,
       );
 
       return allowedVersions.map((v, i) => ({

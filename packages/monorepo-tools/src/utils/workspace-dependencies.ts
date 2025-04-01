@@ -16,27 +16,27 @@ export async function collectWorkspacesMeta() {
       .map(({ location }) => [
         location,
         { ...require(path.join(location, 'package.json')), location },
-      ])
+      ]),
   );
 }
 
 function getDepType(
   dependency: string,
   version: string,
-  pkgJson: Record<string, any>
+  pkgJson: Record<string, any>,
 ): DepType | null {
   return pkgJson.devDependencies &&
     pkgJson.devDependencies[dependency] === version
     ? 'dev'
     : pkgJson.peerDependencies &&
-      pkgJson.peerDependencies[dependency] === version
-    ? 'peer'
-    : pkgJson.optionalDependencies &&
-      pkgJson.optionalDependencies[dependency] === version
-    ? 'optional'
-    : pkgJson.dependencies && pkgJson.dependencies[dependency] === version
-    ? 'prod'
-    : null;
+        pkgJson.peerDependencies[dependency] === version
+      ? 'peer'
+      : pkgJson.optionalDependencies &&
+          pkgJson.optionalDependencies[dependency] === version
+        ? 'optional'
+        : pkgJson.dependencies && pkgJson.dependencies[dependency] === version
+          ? 'prod'
+          : null;
 }
 
 export type WorkspaceDependencyInfo = {
@@ -55,7 +55,7 @@ export function collectWorkspacesDependencies(
       optionalDependencies?: any;
       name: string;
     }
-  >
+  >,
 ) {
   const dependencies = new Map<string, WorkspaceDependencyInfo[]>();
 

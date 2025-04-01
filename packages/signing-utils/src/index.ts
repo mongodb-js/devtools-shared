@@ -11,11 +11,11 @@ import { debug } from './utils';
  */
 export async function sign(
   file: string,
-  options: ClientOptions
+  options: ClientOptions,
 ): Promise<void> {
   debug(
     `Signing file: ${file} with client ${options.client} and options:`,
-    options
+    options,
   );
   try {
     const signingClient = await getSigningClient(options);

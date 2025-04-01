@@ -25,7 +25,7 @@ export function hookLogger(
   emitter: ConnectLogEmitter,
   log: MongoLogWriter,
   contextPrefix: string,
-  redactURICredentials: (uri: string) => string
+  redactURICredentials: (uri: string) => string,
 ): void {
   oidcHookLogger(emitter, log, contextPrefix);
   proxyHookLogger(emitter, log, contextPrefix);
@@ -42,9 +42,9 @@ export function hookLogger(
         {
           ...ev,
           uri: redactURICredentials(ev.uri),
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -58,9 +58,9 @@ export function hookLogger(
         {
           ...ev,
           failure: ev.failure?.message,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -71,9 +71,9 @@ export function hookLogger(
         mongoLogId(1_000_000_035),
         `${contextPrefix}-connect`,
         'Server heartbeat succeeded',
-        ev
+        ev,
       );
-    }
+    },
   );
 
   emitter.on('devtools-connect:connect-fail-early', function () {
@@ -81,7 +81,7 @@ export function hookLogger(
       'DEVTOOLS-CONNECT',
       mongoLogId(1_000_000_036),
       `${contextPrefix}-connect`,
-      'Aborting connection attempt as irrecoverable'
+      'Aborting connection attempt as irrecoverable',
     );
   });
 
@@ -102,9 +102,9 @@ export function hookLogger(
         mongoLogId(1_000_000_037),
         `${contextPrefix}-connect`,
         'Connection attempt finished',
-        attr
+        attr,
       );
-    }
+    },
   );
 
   emitter.on(
@@ -121,9 +121,9 @@ export function hookLogger(
           duringLoad: ev.duringLoad,
           resolutionDetails: ev.resolutionDetails,
           durationMs: ev.durationMs,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -139,9 +139,9 @@ export function hookLogger(
           to: redactURICredentials(ev.to),
           resolutionDetails: ev.resolutionDetails,
           durationMs: ev.durationMs,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -155,9 +155,9 @@ export function hookLogger(
         {
           name: ev.name,
           error: ev.error.message,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -173,9 +173,9 @@ export function hookLogger(
           asyncFallbackError: ev.asyncFallbackError?.message,
           systemCertsError: ev.systemCertsError?.message,
           messages: ev.messages,
-        }
+        },
       );
-    }
+    },
   );
 
   emitter.on(
@@ -188,8 +188,8 @@ export function hookLogger(
         'Restarting connection attempt after TLS error',
         {
           error: ev.error,
-        }
+        },
       );
-    }
+    },
   );
 }

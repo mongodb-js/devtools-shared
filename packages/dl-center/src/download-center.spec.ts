@@ -29,7 +29,7 @@ describe('download center client', function () {
 
   before(async function () {
     tempDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'download-center-tests-')
+      path.join(os.tmpdir(), 'download-center-tests-'),
     );
 
     s3rver = new S3rver({
@@ -73,7 +73,7 @@ describe('download center client', function () {
     it('can upload a file and download it back', async function () {
       await downloadCenter.uploadAsset(
         'prefix/asset.txt',
-        createReadStream(fixturePath('asset.txt'))
+        createReadStream(fixturePath('asset.txt')),
       );
 
       const content = await downloadCenter.downloadAsset('prefix/asset.txt');
@@ -99,7 +99,7 @@ describe('download center client', function () {
   describe('upload / download config', function () {
     it('can upload and download a valid config file', async function () {
       const validConfig = await readJSON<DownloadCenterConfig>(
-        fixturePath('compass.json')
+        fixturePath('compass.json'),
       );
       await downloadCenter.uploadConfig('prefix/compass.json', validConfig);
 
@@ -118,7 +118,7 @@ describe('download center client', function () {
         .catch((e) => e);
 
       expect(error.message).equal(
-        'Invalid configuration: data.versions should be array'
+        'Invalid configuration: data.versions should be array',
       );
     });
 
@@ -147,8 +147,8 @@ describe('download center client', function () {
       expect(error.message).to.match(
         new RegExp(
           'Download center urls broken:\n' +
-            '- http://example.com/non-existing-url -> [45][0-9][0-9]'
-        )
+            '- http://example.com/non-existing-url -> [45][0-9][0-9]',
+        ),
       );
     });
   });
@@ -256,7 +256,7 @@ describe('download center client', function () {
           validateConfigSchema(invalidConfig);
         }).to.throw(
           'Invalid configuration: data should have' +
-            " required property 'manual_link'"
+            " required property 'manual_link'",
         );
       });
     });
@@ -312,14 +312,14 @@ describe('download center client', function () {
 
           it('throws reporting broken urls', async function () {
             const error = await validateDownloadLinks(downloadCenterJson).catch(
-              (e) => e
+              (e) => e,
             );
 
             expect(error).not.to.be.undefined;
             expect(error.message).to.equal(
               'Download center urls broken:\n' +
                 '- https://downloads.mongodb.com/compass/mongosh-0.2.2-win32.zip -> 404\n' +
-                '- https://downloads.mongodb.com/compass/mongosh_0.2.2_amd64.deb -> 404'
+                '- https://downloads.mongodb.com/compass/mongosh_0.2.2_amd64.deb -> 404',
             );
           });
         });
@@ -345,8 +345,8 @@ describe('download center client', function () {
           it('does not throw if all the downloads are ok', async function () {
             expect(
               await validateDownloadLinks(
-                downloadCenterJsonWithMultiplePackages
-              )
+                downloadCenterJsonWithMultiplePackages,
+              ),
             ).to.be.undefined;
           });
         });
