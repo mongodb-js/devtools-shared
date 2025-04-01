@@ -150,7 +150,11 @@ export type AutocompleterOptions = {
   filter?: AutocompleteFilterFunction;
 };
 
-function filterDiagnostics(diagnostics: any[]) {
+function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
+  fileName?: string;
+  text?: string;
+  messageText: string | ts.DiagnosticMessageChain;
+}[] {
   return diagnostics.map((item) => {
     const result = {
       ..._.pick(item.file, 'fileName', 'text'),
