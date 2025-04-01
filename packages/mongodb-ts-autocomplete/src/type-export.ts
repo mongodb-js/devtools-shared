@@ -7,18 +7,6 @@ function getBSONType(property: JSONSchema): string | string[] | undefined {
   return property.bsonType || property.type;
 }
 
-function isBSONObjectProperty(property: JSONSchema): boolean {
-  return getBSONType(property) === 'object';
-}
-
-function isBSONArrayProperty(property: JSONSchema): boolean {
-  return getBSONType(property) === 'array';
-}
-
-function isBSONPrimitive(property: JSONSchema): boolean {
-  return !(isBSONArrayProperty(property) || isBSONObjectProperty(property));
-}
-
 function assertIsDefined<T>(
   value: T,
   message: string
@@ -127,28 +115,26 @@ function toTypescriptType(
 ): string {
   const eachFieldDefinition = Object.entries(properties).map(
     ([propertyName, schema]) => {
-      if (isBSONPrimitive(schema)) {
-        return `${indentSpaces(indent)}${propertyName}?: ${[
-          ...uniqueTypes(schema),
-        ].join(' | ')}`;
+      switch (getBSONType(schema)) {
+        case 'array':
+          assertIsDefined(schema.items, 'schema.items must be defined');
+          return `${indentSpaces(indent)}${propertyName}?: ${arrayType([
+            ...uniqueTypes(schema.items),
+          ])}`;
+        case 'object':
+          assertIsDefined(
+            schema.properties,
+            'schema.properties must be defined'
+          );
+          return `${indentSpaces(indent)}${propertyName}?: ${toTypescriptType(
+            schema.properties as Record<string, JSONSchema>,
+            indent + 1
+          )}`;
+        default:
+          return `${indentSpaces(indent)}${propertyName}?: ${[
+            ...uniqueTypes(schema),
+          ].join(' | ')}`;
       }
-
-      if (isBSONArrayProperty(schema)) {
-        assertIsDefined(schema.items, 'schema.items must be defined');
-        return `${indentSpaces(indent)}${propertyName}?: ${arrayType([
-          ...uniqueTypes(schema.items),
-        ])}`;
-      }
-
-      if (isBSONObjectProperty(schema)) {
-        assertIsDefined(schema.properties, 'schema.properties must be defined');
-        return `${indentSpaces(indent)}${propertyName}?: ${toTypescriptType(
-          schema.properties as Record<string, JSONSchema>,
-          indent + 1
-        )}`;
-      }
-
-      throw new Error('We should never get here');
     }
   );
 
