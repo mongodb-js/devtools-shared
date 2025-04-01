@@ -453,7 +453,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
               // When constructing a date with no arguments, it will be set to the current date,
               // which is prone to race conditions for millisecond precision.
-              const allowedMillisecondDelta = args.length === 0 ? 2 : 0;
+              const allowedMillisecondDelta = args.length === 0 ? 3 : 0;
 
               expect(actual.getDate).to.equal(
                 new (Date as any)(...args).getDate(),

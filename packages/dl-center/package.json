@@ -73,6 +73,6 @@
   "dependencies": {
     "ajv": "^6.12.5",
     "aws-sdk": "^2.1441.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.7.0"
   }
 }

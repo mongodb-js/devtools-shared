@@ -41,7 +41,7 @@
   "dependencies": {
     "debug": "^4.4.0",
     "minimist": "^1.2.8",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.7.0",
     "semver": "^7.7.1"
   },
   "devDependencies": {
