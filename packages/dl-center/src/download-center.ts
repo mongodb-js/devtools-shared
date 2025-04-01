@@ -24,6 +24,11 @@ export type S3BucketConfig = {
   secretAccessKey: string;
 
   /**
+   * The AWS session token
+   */
+  sessionToken?: string;
+
+  /**
    * S3 service endpoint. Set this to connect to a local test server.
    */
   endpoint?: string;
