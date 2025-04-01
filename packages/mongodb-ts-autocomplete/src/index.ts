@@ -127,7 +127,6 @@ export class MongoDBAutocompleter {
     this.autocompleter = new Autocompleter(autocompleterOptions);
 
     this.connectionSchemas = Object.create(null);
-    this.connectionSchemas;
 
     this.autocompleter.updateCode(autocompleteTypes);
   }

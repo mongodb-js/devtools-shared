@@ -119,21 +119,6 @@ export type AutoCompletion = {
   kind: ts.ScriptElementKind;
 };
 
-function getTypeFromDeclaration(decl: ts.Declaration): string {
-  const index = decl
-    .getChildren()
-    .findIndex((child) => child.getFullText() === ':');
-  if (index !== -1) {
-    // TODO: try and trim whitespace or do something more intelligent so we
-    // don't get things like "{\n    a?: any;\n    b?: string;\n  }"
-    return decl
-      .getChildAt(index + 1)
-      ?.getFullText()
-      .trim();
-  }
-  return 'any';
-}
-
 function mapCompletions(
   filter: AutocompleteFilterFunction,
   prefix: string,
