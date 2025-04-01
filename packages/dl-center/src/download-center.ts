@@ -52,6 +52,7 @@ export type S3BucketConfig = {
 
 export type UploadAssetOptions = {
   contentType?: string;
+  acl?: string;
 };
 
 type S3UploadFunc = (
@@ -235,8 +236,10 @@ export class DownloadCenter {
       throw new Error('s3ObjectKey is required');
     }
 
+    const acl = options.acl ?? ACL_PUBLIC_READ;
+
     const uploadParams: S3.PutObjectRequest = {
-      ACL: ACL_PUBLIC_READ,
+      ACL: acl,
       Bucket: this.s3BucketName,
       Key: s3ObjectKey,
       Body: content,
