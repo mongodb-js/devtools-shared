@@ -100,9 +100,9 @@ function toTypeName(type: string): string | string[] {
 
 function uniqueTypes(property: JSONSchema): Set<string> {
   const type = getBSONType(property);
-  const types = Array.isArray(type)
-    ? type.map((t) => toTypeName(t))
-    : [toTypeName(type ?? 'any')];
+  const types = (Array.isArray(type) ? type : [type ?? 'any'])
+    .map((t) => toTypeName(t))
+    .flat();
   return new Set(types.flat());
 }
 
