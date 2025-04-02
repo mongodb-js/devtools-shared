@@ -25,8 +25,7 @@ type MongoDBAutocompleterOptions = {
 };
 
 class DatabaseSchema {
-  private collectionNames: Set<string>;
-  private collectionSchemas: Record<string, JSONSchema>;
+  private collectionSchemas: Record<string, JSONSchema | undefined>;
 
   constructor() {
     // TODO: this is kinda the only real reason for this class: So we can keep
@@ -34,25 +33,34 @@ class DatabaseSchema {
     // names from a listCollections() or it could just be all the ones we've
     // auto-completed for. The schemas can come from the autocompletion context.
     // This can probably be added to the autocompletion context.
-    this.collectionNames = new Set();
     this.collectionSchemas = Object.create(null);
   }
 
   setCollectionNames(collectionNames: string[]): void {
-    this.collectionNames = new Set(collectionNames);
+    // add the missing ones as undefined
+    for (const collectionName of collectionNames) {
+      if (!this.collectionSchemas[collectionName]) {
+        this.collectionSchemas[collectionName] = undefined;
+      }
+    }
+
+    // remove the ones that don't exist anymore
+    const knownCollectionNames = new Set(collectionNames);
+    for (const key of Object.keys(this.collectionSchemas)) {
+      if (!knownCollectionNames.has(key)) {
+        delete this.collectionSchemas[key];
+      }
+    }
   }
 
   setCollectionSchema(collectionName: string, schema: JSONSchema): void {
-    this.collectionNames.add(collectionName);
     this.collectionSchemas[collectionName] = schema;
   }
 
   toTypescriptTypeDefinition(): string {
-    const collectionProperties = [...this.collectionNames.values()].map(
-      (collectionName) => {
-        const def = this.collectionSchemas[collectionName]
-          ? toTypescriptTypeDefinition(this.collectionSchemas[collectionName])
-          : `{}`;
+    const collectionProperties = Object.entries(this.collectionSchemas).map(
+      ([collectionName, schema]) => {
+        const def = schema ? toTypescriptTypeDefinition(schema) : `{}`;
         return `      '${collectionName}': ShellAPI.Collection<${def}>;`;
       }
     );
@@ -64,7 +72,6 @@ class DatabaseSchema {
 }
 
 class ConnectionSchema {
-  private readonly databaseNames: Set<string>;
   private readonly databaseSchemas: Record<string, DatabaseSchema>;
 
   constructor() {
@@ -73,12 +80,10 @@ class ConnectionSchema {
     // names from a listDatabases() or it could just be all the ones we've
     // auto-completed for. The schemas can come from the autocompletion context.
     // This can probably be added to the autocompletion context.
-    this.databaseNames = new Set();
     this.databaseSchemas = Object.create(null);
   }
 
   addDatabase(databaseName: string) {
-    this.databaseNames.add(databaseName);
     if (!this.databaseSchemas[databaseName]) {
       this.databaseSchemas[databaseName] = new DatabaseSchema();
     }
@@ -102,11 +107,9 @@ class ConnectionSchema {
   }
 
   toTypescriptTypeDefinition(): string {
-    const databaseProperties = [...this.databaseNames.values()].map(
-      (databaseName) => {
-        const def = this.databaseSchemas[databaseName]
-          ? this.databaseSchemas[databaseName].toTypescriptTypeDefinition()
-          : `{}`;
+    const databaseProperties = Object.entries(this.databaseSchemas).map(
+      ([databaseName, schema]) => {
+        const def = schema.toTypescriptTypeDefinition();
         return `      '${databaseName}': ShellAPI.Database & ${def}`;
       }
     );
