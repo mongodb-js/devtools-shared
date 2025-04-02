@@ -59,7 +59,7 @@ describe('MongoDBAutocompleter', function () {
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(
-      completions.filter((c) => /property|method/.test(c.kind))
+      completions.filter((c) => /property|method/.test(c.kind)),
     ).to.deep.equal([
       {
         kind: 'property',
@@ -88,7 +88,7 @@ describe('MongoDBAutocompleter', function () {
     const completions = await autocompleter.autocomplete('db.foo.find({ fo');
 
     expect(
-      completions.filter((c) => /^(foo|bar|baz)$/.test(c.name))
+      completions.filter((c) => /^(foo|bar|baz)$/.test(c.name)),
     ).to.deep.equal([
       {
         kind: 'property',

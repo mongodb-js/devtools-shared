@@ -5,17 +5,17 @@ export function compileSourceFile(code: string): ts.SourceFile {
     '_initial_parsing.ts',
     code,
     ts.ScriptTarget.Latest,
-    true
+    true,
   );
 }
 
 const QUERY_METHODS = ['aggregate', 'find', 'findOne'];
 
 export function inferCollectionNameFromFunctionCall(
-  sourceFile: ts.SourceFile
+  sourceFile: ts.SourceFile,
 ): string | null {
   function findAggregateCallExpression(
-    node: ts.Node
+    node: ts.Node,
   ): ts.CallExpression | undefined {
     if (
       ts.isCallExpression(node) &&

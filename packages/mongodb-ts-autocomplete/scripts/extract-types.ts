@@ -7,7 +7,7 @@ function replaceImports(code: string) {
   // IDE finds the import.
   return code.replace(
     "import type * as bson from 'bson'",
-    "import type * as bson from '/bson.ts'"
+    "import type * as bson from '/bson.ts'",
   );
 }
 
@@ -29,7 +29,7 @@ async function run() {
       '..',
       'src',
       'fixtures',
-      'bson-expressions.ts'
+      'bson-expressions.ts',
     ),
     '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
     '/shell-api.ts': path.join(
@@ -37,7 +37,7 @@ async function run() {
       '..',
       'src',
       'fixtures',
-      'shell-api.ts'
+      'shell-api.ts',
     ),
   };
   const files = await loadSources(input);
@@ -51,7 +51,7 @@ export default files;
     '..',
     'src',
     'fixtures',
-    'autocomplete-types.ts'
+    'autocomplete-types.ts',
   );
   await fs.writeFile(filepath, code, 'utf-8');
 }

@@ -62,7 +62,7 @@ class DatabaseSchema {
       ([collectionName, schema]) => {
         const def = schema ? toTypescriptTypeDefinition(schema) : `{}`;
         return `      '${collectionName}': ShellAPI.Collection<${def}>;`;
-      }
+      },
     );
 
     return `{
@@ -97,12 +97,12 @@ class ConnectionSchema {
   addCollectionSchema(
     databaseName: string,
     collectionName: string,
-    collectionSchema: JSONSchema
+    collectionSchema: JSONSchema,
   ) {
     this.addDatabase(databaseName);
     this.databaseSchemas[databaseName].setCollectionSchema(
       collectionName,
-      collectionSchema
+      collectionSchema,
     );
   }
 
@@ -111,7 +111,7 @@ class ConnectionSchema {
       ([databaseName, schema]) => {
         const def = schema.toTypescriptTypeDefinition();
         return `      '${databaseName}': ShellAPI.Database & ${def}`;
-      }
+      },
     );
 
     return `{
@@ -178,7 +178,7 @@ declare global {
     const schema = await this.context.schemaInformationForCollection(
       connectionId,
       databaseName,
-      collectionName
+      collectionName,
     );
 
     const connection = this.addConnection(connectionId);
@@ -186,7 +186,7 @@ declare global {
 
     const collectionNames = await this.context.collectionsForDatabase(
       connectionId,
-      databaseName
+      databaseName,
     );
     connection.setDatabaseCollectionNames(databaseName, collectionNames);
 
@@ -200,7 +200,7 @@ declare global {
     this.autocompleter.updateCode({
       '/current-globals.ts': this.getCurrentGlobalsCode(
         connectionId,
-        databaseName
+        databaseName,
       ),
     });
 

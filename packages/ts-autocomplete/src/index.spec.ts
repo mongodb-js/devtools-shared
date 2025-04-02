@@ -22,7 +22,7 @@ describe('Autocompleter', function () {
   before(async function () {
     CODE_TS = await fs.readFile(
       path.resolve(__dirname, '..', 'test', 'fixtures', 'code.ts'),
-      'utf8'
+      'utf8',
     );
   });
 
@@ -54,7 +54,7 @@ describe('Autocompleter', function () {
 
       // one of them is the myGlobalFunction() function
       expect(
-        completions.filter((c) => c.name.includes('myGlobalFunction'))
+        completions.filter((c) => c.name.includes('myGlobalFunction')),
       ).to.deep.equal([
         {
           kind: 'function',
@@ -70,7 +70,7 @@ describe('Autocompleter', function () {
       });
 
       expect(
-        autoCompleter.autocomplete('doesNotExist.somethingElse')
+        autoCompleter.autocomplete('doesNotExist.somethingElse'),
       ).to.deep.equal([]);
     });
 
@@ -118,7 +118,7 @@ describe('Autocompleter', function () {
       });
 
       expect(
-        autoCompleter.autocomplete('myGlobalObject.doesNotExist')
+        autoCompleter.autocomplete('myGlobalObject.doesNotExist'),
       ).to.deep.equal([
         {
           kind: 'property',
@@ -191,7 +191,7 @@ describe('Autocompleter', function () {
       });
 
       const completions = autoCompleter.autocomplete(
-        'myGlobalFunction({ doesNotExist'
+        'myGlobalFunction({ doesNotExist',
       );
       expect(completions).to.deep.equal([
         {
@@ -262,7 +262,7 @@ describe('Autocompleter', function () {
       ]);
 
       expect(
-        autoCompleter.autocomplete('myGlobalObject.functionPr')
+        autoCompleter.autocomplete('myGlobalObject.functionPr'),
       ).to.deep.equal([
         {
           kind: 'property',
@@ -278,7 +278,7 @@ describe('Autocompleter', function () {
       });
 
       expect(
-        autoCompleter.autocomplete('myGlobalFunction({ par')
+        autoCompleter.autocomplete('myGlobalFunction({ par'),
       ).to.deep.equal([
         {
           kind: 'property',

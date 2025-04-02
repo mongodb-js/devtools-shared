@@ -16,12 +16,12 @@ export interface AutocompletionContext {
   databasesForConnection(connectionId: string): Promise<string[]>;
   collectionsForDatabase(
     connectionId: string,
-    databaseName: string
+    databaseName: string,
   ): Promise<string[]>;
   schemaInformationForCollection(
     connectionId: string,
     databaseName: string,
-    collectionName: string
+    collectionName: string,
   ): Promise<JSONSchema>;
   cacheOptions?: Partial<CacheOptions>;
 }
@@ -31,7 +31,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
 
   constructor(
     private readonly delegate: AutocompletionContext,
-    private readonly cache: NodeCache
+    private readonly cache: NodeCache,
   ) {
     this.cacheOptions = {
       databaseCollectionsTTL: 180,
@@ -62,7 +62,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
 
   async collectionsForDatabase(
     connectionId: string,
-    databaseName: string
+    databaseName: string,
   ): Promise<string[]> {
     const cacheKey = `collectionsForDatabase::${connectionId}::${databaseName}`;
     if (this.cache.has(cacheKey)) {
@@ -71,7 +71,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
 
     const result = await this.delegate.collectionsForDatabase(
       connectionId,
-      databaseName
+      databaseName,
     );
     this.cache.set(cacheKey, result, this.cacheOptions.databaseCollectionsTTL);
     return result;
@@ -80,7 +80,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
   async schemaInformationForCollection(
     connectionId: string,
     databaseName: string,
-    collectionName: string
+    collectionName: string,
   ): Promise<JSONSchema> {
     const cacheKey = `schemaInformationForNamespace::${connectionId}::${databaseName}.${collectionName}`;
     if (this.cache.has(cacheKey)) {
@@ -91,7 +91,7 @@ export class CachingAutocompletionContext implements AutocompletionContext {
     const result = await this.delegate.schemaInformationForCollection(
       connectionId,
       databaseName,
-      collectionName
+      collectionName,
     );
 
     this.cache.set(cacheKey, result, this.cacheOptions.collectionSchemaTTL);

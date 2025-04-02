@@ -69,7 +69,7 @@ describe('toTypescriptTypeDefinition', function () {
         timestamp: new Timestamp(new Long('7218556297505931265')), // Timestamp, 17, timestamp
         long: new Long('123456789123456789'), // 64-bit integer, 18, long
         decimal: new Decimal128(
-          Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+          Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]),
         ), // Decimal128, 19, decimal
         minKey: new MinKey(), // Min key, -1, minKey
         maxKey: new MaxKey(), // Max key, 127, maxKey
@@ -85,9 +85,9 @@ describe('toTypescriptTypeDefinition', function () {
           compressedTimeSeries: new Binary(
             Buffer.from(
               'CQCKW/8XjAEAAIfx//////////H/////////AQAAAAAAAABfAAAAAAAAAAEAAAAAAAAAAgAAAAAAAAAHAAAAAAAAAA4AAAAAAAAAAA==',
-              'base64'
+              'base64',
             ),
-            7
+            7,
           ), // 7
           custom: new Binary(Buffer.from('//8='), 128), // 128
         },
@@ -138,7 +138,7 @@ describe('toTypescriptTypeDefinition', function () {
   string?: string;
   symbol?: bson.BSONSymbol;
   timestamp?: bson.Timestamp;
-}`
+}`,
     );
   });
 
@@ -198,7 +198,7 @@ describe('toTypescriptTypeDefinition', function () {
     postalCode?: string;
   };
   hobbies?: string[];
-}`
+}`,
     );
   });
 
@@ -225,7 +225,7 @@ describe('toTypescriptTypeDefinition', function () {
       schema,
       `{
   a?: bson.Double | number | string | boolean | null;
-}`
+}`,
     );
   });
 
@@ -245,7 +245,7 @@ describe('toTypescriptTypeDefinition', function () {
       `{
   a?: any[];
   b?: any[];
-}`
+}`,
     );
   });
 
@@ -275,7 +275,7 @@ describe('toTypescriptTypeDefinition', function () {
     };
   };
   b?: any[];
-}`
+}`,
     );
   });
 });

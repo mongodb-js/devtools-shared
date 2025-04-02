@@ -74,7 +74,7 @@ function getVirtualLanguageService(): {
   return {
     languageService: ts.createLanguageService(
       servicesHost,
-      ts.createDocumentRegistry()
+      ts.createDocumentRegistry(),
     ),
     updateCode,
     listFiles,
@@ -86,13 +86,13 @@ function compileSourceFile(code: string): ts.SourceFile {
     '_initial_parsing.ts',
     code,
     ts.ScriptTarget.Latest,
-    true
+    true,
   );
 }
 
 function getSymbolAtPosition(
   sourceFile: ts.SourceFile,
-  position: number
+  position: number,
 ): string | null {
   function findNodeAtPosition(node: ts.Node): ts.Node | undefined {
     if (position >= node.getStart(sourceFile) && position <= node.getEnd()) {
@@ -125,7 +125,7 @@ function mapCompletions(
   filter: AutocompleteFilterFunction,
   prefix: string,
   trigger: string,
-  completions: ts.CompletionInfo
+  completions: ts.CompletionInfo,
 ): AutoCompletion[] {
   return completions.entries
     .filter((entry) => filter({ trigger, kind: entry.kind, name: entry.name }))
@@ -145,7 +145,7 @@ type AutocompleteFilterOptions = {
 };
 
 type AutocompleteFilterFunction = (
-  filterOptions: AutocompleteFilterOptions
+  filterOptions: AutocompleteFilterOptions,
 ) => boolean;
 
 export type AutocompleterOptions = {
@@ -191,7 +191,7 @@ export default class Autocompleter {
       code.length,
       {
         allowIncompleteCompletions: true,
-      }
+      },
     );
 
     if (debugLog.enabled) {
@@ -216,13 +216,13 @@ export default class Autocompleter {
     method:
       | 'getSyntacticDiagnostics'
       | 'getSemanticDiagnostics'
-      | 'getSuggestionDiagnostics'
+      | 'getSuggestionDiagnostics',
   ) {
     try {
       debugLog(
         method,
         filename,
-        filterDiagnostics(this.languageService[method](filename))
+        filterDiagnostics(this.languageService[method](filename)),
       );
     } catch (err: any) {
       // These methods can throw and then it would be nice to at least know

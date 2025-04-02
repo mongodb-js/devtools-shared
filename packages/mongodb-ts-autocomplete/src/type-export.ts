@@ -9,7 +9,7 @@ function getBSONType(property: JSONSchema): string | string[] | undefined {
 
 function assertIsDefined<T>(
   value: T,
-  message: string
+  message: string,
 ): asserts value is NonNullable<T> {
   if (value === undefined || value === null) {
     throw new Error(message);
@@ -113,7 +113,7 @@ function arrayType(types: string[]) {
 
 function toTypescriptType(
   properties: Record<string, JSONSchema>,
-  indent: number
+  indent: number,
 ): string {
   const eachFieldDefinition = Object.entries(properties).map(
     ([propertyName, schema]) => {
@@ -126,18 +126,18 @@ function toTypescriptType(
         case 'object':
           assertIsDefined(
             schema.properties,
-            'schema.properties must be defined'
+            'schema.properties must be defined',
           );
           return `${indentSpaces(indent)}${propertyName}?: ${toTypescriptType(
             schema.properties as Record<string, JSONSchema>,
-            indent + 1
+            indent + 1,
           )}`;
         default:
           return `${indentSpaces(indent)}${propertyName}?: ${[
             ...uniqueTypes(schema),
           ].join(' | ')}`;
       }
-    }
+    },
   );
 
   return `{\n${eachFieldDefinition.join(';\n')};\n${indentSpaces(indent - 1)}}`;

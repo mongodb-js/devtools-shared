@@ -12,7 +12,7 @@ export interface Collection<T> {
   updateOne(query: mql.Filter<T>, modifier: Partial<T> | mql.Pipeline<T>): void;
   updateMany(
     query: mql.Filter<T>,
-    modifier: Partial<T> | mql.Pipeline<T>
+    modifier: Partial<T> | mql.Pipeline<T>,
   ): void;
 }
 
