@@ -8,7 +8,7 @@ export const importFixture = async (file: string) =>
 
 export async function withTempDir<T>(
   structure: Record<string, string>,
-  fn: (tempPath: string) => Promise<T>
+  fn: (tempPath: string) => Promise<T>,
 ): Promise<T> {
   const tempDirPath = path.join(os.tmpdir(), `sbom-tools-${Date.now()}`);
 

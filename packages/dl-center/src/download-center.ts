@@ -52,13 +52,14 @@ export type S3BucketConfig = {
 
 export type UploadAssetOptions = {
   contentType?: string;
+  acl?: string;
 };
 
 type S3UploadFunc = (
-  req: S3.PutObjectRequest
+  req: S3.PutObjectRequest,
 ) => Promise<S3.ManagedUpload.SendData>;
 type S3GetObjectFunc = (
-  params: S3.GetObjectRequest
+  params: S3.GetObjectRequest,
 ) => Promise<S3.GetObjectOutput>;
 
 type ProbeResponse = {
@@ -101,7 +102,7 @@ export function validateConfigSchema(config: DownloadCenterConfig): void {
   const valid = validate(config);
   if (!valid) {
     throw new Error(
-      `Invalid configuration: ${ajv.errorsText(validate.errors)}`
+      `Invalid configuration: ${ajv.errorsText(validate.errors)}`,
     );
   }
 }
@@ -118,7 +119,7 @@ export function validateConfigSchema(config: DownloadCenterConfig): void {
  * @memberof DownloadCenter
  */
 export async function validateDownloadLinks(
-  config: DownloadCenterConfig
+  config: DownloadCenterConfig,
 ): Promise<void> {
   const errors: Record<string, number> = {};
   const links: Link[] = [];
@@ -167,7 +168,7 @@ export async function validateDownloadLinks(
  * @memberof DownloadCenter
  */
 export async function validateConfig(
-  config: DownloadCenterConfig
+  config: DownloadCenterConfig,
 ): Promise<void> {
   validateConfigSchema(config);
   await validateDownloadLinks(config);
@@ -229,14 +230,16 @@ export class DownloadCenter {
   async uploadAsset(
     s3ObjectKey: string,
     content: Content,
-    options: UploadAssetOptions = {}
+    options: UploadAssetOptions = {},
   ): Promise<void> {
     if (!s3ObjectKey) {
       throw new Error('s3ObjectKey is required');
     }
 
+    const acl = options.acl ?? ACL_PUBLIC_READ;
+
     const uploadParams: S3.PutObjectRequest = {
-      ACL: ACL_PUBLIC_READ,
+      ACL: acl,
       Bucket: this.s3BucketName,
       Key: s3ObjectKey,
       Body: content,
@@ -257,7 +260,7 @@ export class DownloadCenter {
    * @memberof DownloadCenter
    */
   async downloadConfig(
-    s3ObjectKey: string
+    s3ObjectKey: string,
   ): Promise<DownloadCenterConfig | undefined> {
     const body = await this.downloadAsset(s3ObjectKey);
 
@@ -283,7 +286,7 @@ export class DownloadCenter {
    */
   async uploadConfig(
     s3ObjectKey: string,
-    config: DownloadCenterConfig
+    config: DownloadCenterConfig,
   ): Promise<void> {
     if (!s3ObjectKey) {
       throw new Error('s3ObjectKey is required');

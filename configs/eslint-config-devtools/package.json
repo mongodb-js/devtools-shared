@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/eslint-config-devtools",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "Shared DevTools eslint configuration",
   "license": "SSPL",
   "main": "index.js",
@@ -28,7 +28,7 @@
     "eslint-plugin-react-hooks": "^4.2.0"
   },
   "devDependencies": {
-    "prettier": "2.3.2"
+    "prettier": "^3.5.3"
   },
   "scripts": {
     "check": "npm run lint",

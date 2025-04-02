@@ -76,7 +76,7 @@ const binaryExpression = (node: BinaryExpression): any => {
       return walk(left) instanceof walk(right);
     default:
       throw new Error(
-        `Invalid BinaryExpression Provided: '${String(node.operator)}'`
+        `Invalid BinaryExpression Provided: '${String(node.operator)}'`,
       );
   }
 };
@@ -111,7 +111,7 @@ const memberExpression = (node: CallExpression, withNew: boolean): any => {
 };
 
 const functionExpression = (
-  node: FunctionExpression | ArrowFunctionExpression
+  node: FunctionExpression | ArrowFunctionExpression,
 ): string => {
   const source = node.loc?.source || '';
   const range = node.range || [];

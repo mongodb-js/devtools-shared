@@ -29,7 +29,7 @@ export function sarifToMarkdown({ sarif }: { sarif: any }): string {
           alertState.dismissed_comment || ''
         } | ${alertState.rule.security_severity_level} |`.replace(
           /\n/g,
-          '<br/>'
+          '<br/>',
         ) + '\n';
     }
   }

@@ -119,7 +119,7 @@ function _isCollationValid(collation: any) {
     }
     if (
       COLLATION_OPTIONS[key as keyof typeof COLLATION_OPTIONS].includes(
-        value as string | number | boolean
+        value as string | number | boolean,
       ) === false
     ) {
       debug('Collation "%s" is invalid bc of its values', collation);
@@ -317,7 +317,7 @@ export function validate(what: string, input: string) {
 /** @public */
 export default function queryParser(
   filter: string,
-  project: string | null = DEFAULT_PROJECT
+  project: string | null = DEFAULT_PROJECT,
 ) {
   if (arguments.length === 1) {
     if (_.isString(filter)) {

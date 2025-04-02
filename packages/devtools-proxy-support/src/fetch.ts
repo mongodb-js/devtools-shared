@@ -41,10 +41,10 @@ let cachedFetch: Promise<typeof fetch> | undefined;
 
 export type { Request, Response, RequestInfo, RequestInit };
 export function createFetch(
-  proxyOptions: DevtoolsProxyOptions | AgentWithInitialize
+  proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
 ): { agent: AgentWithInitialize | undefined } & ((
   url: string,
-  fetchOptions?: RequestInit
+  fetchOptions?: RequestInit,
 ) => Promise<Response>) {
   const agent = useOrCreateAgent(proxyOptions);
   let agentInitializedPromise;
@@ -57,6 +57,6 @@ export function createFetch(
       ]);
       return await fetch(url, { agent, ...fetchOptions });
     },
-    { agent }
+    { agent },
   );
 }

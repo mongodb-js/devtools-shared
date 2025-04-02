@@ -5,7 +5,7 @@ import { expect } from 'chai';
 describe('startup snapshot checker', function () {
   const execFile = (
     command: string,
-    args: ReadonlyArray<string>
+    args: ReadonlyArray<string>,
   ): Promise<void> => {
     const proc = spawn(command, args);
     return new Promise<void>((resolve, reject) => {

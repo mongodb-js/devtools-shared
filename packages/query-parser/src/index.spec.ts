@@ -46,7 +46,7 @@ describe('mongodb-query-parser', function () {
     context('when a new keyword is provided', function () {
       it('returns the filter', function () {
         const res = parseFilter(
-          '{_id: new ObjectId("58c33a794d08b991e3648fd2")}'
+          '{_id: new ObjectId("58c33a794d08b991e3648fd2")}',
         );
         assert.deepEqual(res, {
           _id: new bson.ObjectId('58c33a794d08b991e3648fd2'),
@@ -101,12 +101,12 @@ describe('mongodb-query-parser', function () {
       it('should support BinData', function () {
         assert.deepEqual(
           convert(
-            `new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")`
+            `new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")`,
           ),
           {
             $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
             $type: `0${bson.Binary.SUBTYPE_BYTE_ARRAY}`,
-          }
+          },
         );
       });
 
@@ -116,7 +116,7 @@ describe('mongodb-query-parser', function () {
           {
             $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
             $type: `0${bson.Binary.SUBTYPE_UUID}`,
-          }
+          },
         );
       });
 
@@ -124,12 +124,12 @@ describe('mongodb-query-parser', function () {
       it('should support Binary.createFromHexString', function () {
         assert.deepEqual(
           convert(
-            `Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`
+            `Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`,
           ),
           {
             $binary: '3q2+7w==',
             $type: `0${bson.Binary.SUBTYPE_BYTE_ARRAY}`,
-          }
+          },
         );
       });
 
@@ -137,12 +137,12 @@ describe('mongodb-query-parser', function () {
       it('should support Binary.createFromBase64', function () {
         assert.deepEqual(
           convert(
-            `Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`
+            `Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})`,
           ),
           {
             $binary: '3q2+7w==',
             $type: `0${bson.Binary.SUBTYPE_BYTE_ARRAY}`,
-          }
+          },
         );
       });
 
@@ -161,7 +161,7 @@ describe('mongodb-query-parser', function () {
                 lang: "js"
               }
             }
-          }`
+          }`,
           ),
           {
             $expr: {
@@ -171,14 +171,14 @@ describe('mongodb-query-parser', function () {
                 lang: 'js',
               },
             },
-          }
+          },
         );
 
         assert.deepEqual(
           convert('{$match: function() { return this.x === 2; }}'),
           {
             $match: 'function() { return this.x === 2; }',
-          }
+          },
         );
       });
 
@@ -362,14 +362,14 @@ describe('mongodb-query-parser', function () {
   a: {
     $exists: true
   }
-}`
+}`,
       );
     });
 
     it('should allow falsy indentation', function () {
       assert.equal(
         toJSString({ a: { $exists: true } }, 0),
-        '{a:{$exists:true}}'
+        '{a:{$exists:true}}',
       );
     });
 
@@ -380,7 +380,7 @@ describe('mongodb-query-parser', function () {
 pineapplea: {
 pineapplepineapple$exists: true
 pineapple}
-}`
+}`,
       );
     });
 
@@ -394,9 +394,9 @@ pineapple}
 e  s`,
             },
           },
-          0
+          0,
         ),
-        "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}"
+        "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}",
       );
     });
   });
@@ -421,7 +421,7 @@ e  s`,
 e  s`,
           },
         }),
-        "{a: {name: 'multi-line with s p a c\\n \\ne s'}}"
+        "{a: {name: 'multi-line with s p a c\\n \\ne s'}}",
       );
     });
 
@@ -432,7 +432,7 @@ e  s`,
 
         assert.equal(
           stringify({ test: new bson.Long('123456789123456789') }),
-          "{test: NumberLong('123456789123456789')}"
+          "{test: NumberLong('123456789123456789')}",
         );
       });
     });
@@ -477,7 +477,7 @@ e  s`,
         const stringified = stringify(query);
         assert.equal(
           stringified,
-          '{coordinates: {$geoWithin: { $centerSphere: [ [ -79, 28 ], 0.04 ]}}}'
+          '{coordinates: {$geoWithin: { $centerSphere: [ [ -79, 28 ], 0.04 ]}}}',
         );
       });
     });
@@ -488,7 +488,7 @@ e  s`,
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          "{test: ISODate('2017-01-01T12:35:31.000Z')}"
+          "{test: ISODate('2017-01-01T12:35:31.000Z')}",
         );
       });
 
@@ -505,14 +505,14 @@ e  s`,
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          "{test: ISODate('2017-01-01T12:35:31.000Z')}"
+          "{test: ISODate('2017-01-01T12:35:31.000Z')}",
         );
       });
 
       it('throws if the provided ISODate is invalid', function () {
         assert.throws(
           () => parseFilter("{test: ISODate('invalid')}"),
-          /"invalid" is not a valid ISODate/
+          /"invalid" is not a valid ISODate/,
         );
       });
     });
@@ -556,12 +556,12 @@ e  s`,
 
       it('handles $regex object format (keeps format)', function () {
         const res = parseFilter(
-          '{"name": {"$regex": "pineapple", "$options": "i"}}'
+          '{"name": {"$regex": "pineapple", "$options": "i"}}',
         );
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          "{name: {$regex: 'pineapple',$options: 'i'}}"
+          "{name: {$regex: 'pineapple',$options: 'i'}}",
         );
       });
 
@@ -603,7 +603,7 @@ e  s`,
         const res = {
           name: new bson.BSONRegExp(
             'pineapple',
-            'x' /* x flag is not valid in js but valid in BSONRegExp*/
+            'x' /* x flag is not valid in js but valid in BSONRegExp*/,
           ),
         };
         const stringified = stringify(res);
@@ -616,7 +616,7 @@ e  s`,
             // Perl Compatible Regular Expressions supported feature that isn't in regular
             // js RegExp: case-insensitive match.
             '(?i)a(?-i)cme',
-            'i'
+            'i',
           ),
         };
         const stringified = stringify(res);
@@ -627,47 +627,47 @@ e  s`,
     context('when provided a Binary', function () {
       it('should support BinData', function () {
         const res = parseFilter(
-          `{name: new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")}`
+          `{name: new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")}`,
         );
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, 'OyQRAeK7QlWMr0E2xWapYg==')}`
+          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, 'OyQRAeK7QlWMr0E2xWapYg==')}`,
         );
       });
 
       it('should support UUID', function () {
         const res = parseFilter(
-          '{name: UUID("3b241101-e2bb-4255-8caf-4136c566a962")}'
+          '{name: UUID("3b241101-e2bb-4255-8caf-4136c566a962")}',
         );
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          "{name: UUID('3b241101-e2bb-4255-8caf-4136c566a962')}"
+          "{name: UUID('3b241101-e2bb-4255-8caf-4136c566a962')}",
         );
       });
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
       it('should support Binary.createFromHexString', function () {
         const res = parseFilter(
-          `{name: Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`
+          `{name: Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`
+          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
         );
       });
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromBase64/
       it('should support Binary.createFromBase64', function () {
         const res = parseFilter(
-          `{name: Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`
+          `{name: Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
         const stringified = stringify(res);
         assert.equal(
           stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`
+          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
         );
       });
     });

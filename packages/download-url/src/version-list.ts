@@ -97,7 +97,7 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
         ) {
           tryWriteCache = false;
           debug(
-            'cannot use cache because it is not a file or we do not own it'
+            'cannot use cache because it is not a file or we do not own it',
           );
           throw new Error();
         }
@@ -122,7 +122,7 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
     const response = await fetch(versionListUrl);
     if (!response.ok) {
       throw new Error(
-        `Could not get mongodb versions from ${versionListUrl}: ${response.statusText}`
+        `Could not get mongodb versions from ${versionListUrl}: ${response.statusText}`,
       );
     }
     fullJSON = await response.json();
@@ -156,16 +156,16 @@ export async function getVersion(opts: VersionListOpts): Promise<VersionInfo> {
   versions = versions.filter((info: VersionInfo) => info.downloads.length > 0);
   if (opts.allowedTags && !opts.allowedTags.includes('*')) {
     versions = versions.filter((info: VersionInfo) =>
-      opts.allowedTags!.some((tag) => !!info[tag as Exclude<ReleaseTag, '*'>])
+      opts.allowedTags!.some((tag) => !!info[tag as Exclude<ReleaseTag, '*'>]),
     );
   }
   if (opts.version && opts.version !== '*') {
     versions = versions.filter((info: VersionInfo) =>
-      semver.satisfies(info.version, opts.version!)
+      semver.satisfies(info.version, opts.version!),
     );
   }
   versions = versions.sort((a: VersionInfo, b: VersionInfo) =>
-    semver.rcompare(a.version, b.version)
+    semver.rcompare(a.version, b.version),
   );
   return versions[0];
 }

@@ -46,19 +46,19 @@ import { createRequire } from 'module';
 const debug = createDebug('proxy-agent');
 
 type ValidProtocol =
-  | typeof HttpProxyAgent.protocols[number]
-  | typeof HttpsProxyAgent.protocols[number]
-  | typeof SocksProxyAgent.protocols[number]
-  | typeof PacProxyAgent.protocols[number];
+  | (typeof HttpProxyAgent.protocols)[number]
+  | (typeof HttpsProxyAgent.protocols)[number]
+  | (typeof SocksProxyAgent.protocols)[number]
+  | (typeof PacProxyAgent.protocols)[number];
 
 type AgentConstructor = new (
   proxy: string,
-  proxyAgentOptions?: ProxyAgentOptions
+  proxyAgentOptions?: ProxyAgentOptions,
 ) => Agent;
 
 type GetProxyForUrlCallback = (
   url: string,
-  req: http.ClientRequest
+  req: http.ClientRequest,
 ) => string | Promise<string>;
 
 /**
@@ -78,7 +78,7 @@ const wellKnownAgents = {
 export const proxies: {
   [P in ValidProtocol]: [
     () => Promise<AgentConstructor>,
-    () => Promise<AgentConstructor>
+    () => Promise<AgentConstructor>,
   ];
 } = {
   http: [wellKnownAgents.http, wellKnownAgents.https],
@@ -158,7 +158,7 @@ export class ProxyAgent extends Agent {
 
   async connect(
     req: http.ClientRequest,
-    opts: AgentConnectOpts
+    opts: AgentConnectOpts,
   ): Promise<http.Agent> {
     const { secureEndpoint } = opts;
     const isWebSocket = req.getHeader('upgrade') === 'websocket';
@@ -167,8 +167,8 @@ export class ProxyAgent extends Agent {
         ? 'wss:'
         : 'https:'
       : isWebSocket
-      ? 'ws:'
-      : 'http:';
+        ? 'ws:'
+        : 'http:';
     const host = req.getHeader('host');
     const url = new URL(req.path, `${protocol}//${String(host)}`).href;
     const proxy = await this.getProxyForUrl(url, req);
@@ -194,9 +194,8 @@ export class ProxyAgent extends Agent {
       if (!isValidProtocol(proxyProto)) {
         throw new Error(`Unsupported protocol for proxy URL: ${proxy}`);
       }
-      const ctor = await proxies[proxyProto][
-        secureEndpoint || isWebSocket ? 1 : 0
-      ]();
+      const ctor =
+        await proxies[proxyProto][secureEndpoint || isWebSocket ? 1 : 0]();
       agent = new ctor(proxy, this.connectOpts);
       this.cache.set(cacheKey, agent);
     } else {
@@ -252,7 +251,7 @@ function installPacHttpsHack() {
       if (!companionHttpsAgent) {
         companionHttpsAgent = new HttpsProxyAgent(
           this.proxy.href,
-          this.options
+          this.options,
         );
         (this as any)[kCompanionHttpsProxyAgent] = companionHttpsAgent;
       }

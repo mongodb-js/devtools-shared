@@ -29,7 +29,7 @@ async function main(argv) {
   let workspaceNameFromArgs = argv[0];
   const workspacesMeta = await collectWorkspacesMeta();
   const dirs = Array.from(workspacesMeta.values()).map(({ location }) =>
-    path.basename(location)
+    path.basename(location),
   );
   const names = Array.from(workspacesMeta.values()).map(({ name }) => name);
 
@@ -42,7 +42,7 @@ async function main(argv) {
   if (nameExists(workspaceNameFromArgs)) {
     console.warn(
       `⚠️  Workspace with the name "%s" already exists, please choose another name`,
-      workspaceNameFromArgs
+      workspaceNameFromArgs,
     );
     console.warn();
     workspaceNameFromArgs = null;
@@ -138,7 +138,7 @@ async function main(argv) {
       onCancel() {
         canceled = true;
       },
-    }
+    },
   );
 
   if (canceled) {
@@ -222,7 +222,7 @@ async function main(argv) {
   const packagePath = path.resolve(
     monorepoRoot,
     isConfig ? 'configs' : 'packages',
-    packageNameToDir(name)
+    packageNameToDir(name),
   );
 
   const packageJsonPath = path.join(packagePath, 'package.json');
@@ -242,7 +242,7 @@ async function main(argv) {
 
   const prettierrcPath = path.join(packagePath, '.prettierrc.json');
   const prettierrcContent = JSON.stringify(
-    '@mongodb-js/prettier-config-devtools'
+    '@mongodb-js/prettier-config-devtools',
   );
 
   const prettierIgnorePath = path.join(packagePath, '.prettierignore');
@@ -261,7 +261,7 @@ async function main(argv) {
       exclude: ['./src/**/*.spec.*'],
     },
     null,
-    2
+    2,
   );
 
   const tsconfigLintPath = path.join(packagePath, 'tsconfig-lint.json');
@@ -272,7 +272,7 @@ async function main(argv) {
       exclude: ['node_modules', 'dist'],
     },
     null,
-    2
+    2,
   );
 
   const eslintrcPath = path.join(packagePath, '.eslintrc.js');
@@ -315,8 +315,8 @@ module.exports = {
       license === 'SSPL'
         ? SSPL_LICENSE_CONTENT
         : license === 'Apache-2.0'
-        ? APACHE2_LICENSE_CONTENT
-        : ''
+          ? APACHE2_LICENSE_CONTENT
+          : '',
     );
   });
 
@@ -340,13 +340,13 @@ module.exports = {
     async () => {
       await runInDir('npm install');
       await runInDir('npm run reformat', packagePath);
-    }
+    },
   );
 
   console.log();
   console.log(
     'Workspace is ready at %s',
-    path.relative(process.cwd(), packagePath)
+    path.relative(process.cwd(), packagePath),
   );
   console.log();
 }
@@ -355,7 +355,7 @@ const BestMatchCache = new Map();
 
 async function resolveLatestVersionFromRegistry(
   depName,
-  registry = process.env.npm_config_registry
+  registry = process.env.npm_config_registry,
 ) {
   try {
     return `^${(await pacote.manifest(depName, { registry })).version}`;
@@ -367,7 +367,7 @@ async function resolveLatestVersionFromRegistry(
 async function applyBestVersionMatch(
   pkgJson,
   meta,
-  types = ['dependencies', 'devDependencies']
+  types = ['dependencies', 'devDependencies'],
 ) {
   const dependencies = collectWorkspacesDependencies(meta);
 
@@ -377,7 +377,7 @@ async function applyBestVersionMatch(
         pkgJson[depType][depName] = BestMatchCache.get(depName);
       } else {
         const maybeRanges = (dependencies.get(depName) || []).map(
-          ({ version }) => version
+          ({ version }) => version,
         );
         pkgJson[depType][depName] =
           getHighestRange(maybeRanges) ||
@@ -391,12 +391,12 @@ async function applyBestVersionMatch(
 
 function sortDepsByName(
   pkgJson,
-  types = ['dependencies', 'devDependencies', 'peerDependencies']
+  types = ['dependencies', 'devDependencies', 'peerDependencies'],
 ) {
   for (const depType of types) {
     if (pkgJson[depType]) {
       pkgJson[depType] = Object.fromEntries(
-        Object.entries(pkgJson[depType]).sort(([a], [b]) => a.localeCompare(b))
+        Object.entries(pkgJson[depType]).sort(([a], [b]) => a.localeCompare(b)),
       );
     }
   }

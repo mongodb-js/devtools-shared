@@ -6,7 +6,7 @@ const ONE_HOUR = 1000 * 60 * 60;
 export async function runInDir(
   command: string,
   cwd = process.cwd(),
-  timeout = ONE_HOUR
+  timeout = ONE_HOUR,
 ) {
   const execPromise = promisify(exec)(command, {
     cwd,

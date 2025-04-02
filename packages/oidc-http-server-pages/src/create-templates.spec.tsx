@@ -42,7 +42,7 @@ describe('generateTemplates', function () {
     const fullTemplate = templates.find(
       ({ parameters }) =>
         Object.keys(parameters).includes('prop1') &&
-        Object.keys(parameters).includes('prop2')
+        Object.keys(parameters).includes('prop2'),
     );
     expect(fullTemplate).to.exist;
     expect(fullTemplate).to.have.own.property('html');
@@ -53,7 +53,7 @@ describe('generateTemplates', function () {
   it('includes a template with placeholders for no props', function () {
     const templates = result['Page1'];
     const fullTemplate = templates.find(
-      ({ parameters }) => Object.keys(parameters).length === 0
+      ({ parameters }) => Object.keys(parameters).length === 0,
     );
     expect(fullTemplate).to.exist;
     expect(fullTemplate).to.have.own.property('html');

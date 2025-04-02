@@ -53,7 +53,7 @@ export interface Tunnel {
 function createFakeHttpClientRequest(
   dstAddr: string,
   dstPort: number,
-  overrideProtocol: string | undefined
+  overrideProtocol: string | undefined,
 ) {
   const headers: Record<string, string> = {
     host: `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`,
@@ -77,7 +77,7 @@ function createFakeHttpClientRequest(
         // https://github.com/TooTallNate/proxy-agents/blob/5555794b6d9e4b0a36fac80a2d3acea876a8f7dc/packages/http-proxy-agent/src/index.ts#L36
       },
       overrideProtocol,
-    }
+    },
   );
 }
 
@@ -97,7 +97,7 @@ export async function connectThroughAgent({
     req.on('error', reject);
     const done = (
       error: Error | null | undefined,
-      sock: Duplex | undefined
+      sock: Duplex | undefined,
     ) => {
       req.off('error', reject);
       if (error) reject(error);
@@ -105,15 +105,15 @@ export async function connectThroughAgent({
       else
         reject(
           new Error(
-            'Received neither error object nor socket from agent.createSocket()'
-          )
+            'Received neither error object nor socket from agent.createSocket()',
+          ),
         );
     };
 
     // err isn't actually optional but not part of the Node.js typings
     req.onSocket = (
       sock: Duplex | undefined,
-      err?: Error | null | undefined
+      err?: Error | null | undefined,
     ) => {
       done(err, sock);
     };
@@ -128,7 +128,7 @@ export async function connectThroughAgent({
         // instance. However, agent-base does not call the callback at all if
         // the agent resolved to another agent (as is the case for e.g. `ProxyAgent`).
         done(err, sock);
-      }
+      },
     );
   });
 
@@ -157,7 +157,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
     agent: AgentWithInitialize,
     tunnelOptions: Partial<TunnelOptions>,
     generateCredentials: boolean,
-    overrideProtocol: string | undefined
+    overrideProtocol: string | undefined,
   ) {
     super();
     this.setMaxListeners(Infinity);
@@ -210,8 +210,8 @@ class Socks5Server extends EventEmitter implements Tunnel {
               this.rawConfig.proxyPassword === pass;
             this.logger.emit('socks5:authentication-complete', { success });
             queueMicrotask(() => cb(success));
-          }
-        )
+          },
+        ),
       );
     } else {
       this.logger.emit('socks5:skip-auth-setup');
@@ -311,7 +311,7 @@ class Socks5Server extends EventEmitter implements Tunnel {
   private async socks5Request(
     info: any,
     accept: (intercept: true) => Socket,
-    deny: () => void
+    deny: () => void,
   ): Promise<void> {
     const { srcAddr, srcPort, dstAddr, dstPort } = info;
     const logMetadata = { srcAddr, srcPort, dstAddr, dstPort };
@@ -397,13 +397,13 @@ class ExistingTunnel extends EventEmitter {
 export function createSocks5Tunnel(
   proxyOptions: DevtoolsProxyOptions | AgentWithInitialize,
   tunnelOptions?: Partial<TunnelOptions> | 'generate-credentials',
-  target?: string | undefined
+  target?: string | undefined,
 ): Tunnel | undefined {
   const socks5OnlyProxyOptions = getSocks5OnlyProxyOptions(
     ('proxyOptions' in proxyOptions
       ? proxyOptions.proxyOptions
       : proxyOptions) as DevtoolsProxyOptions,
-    target
+    target,
   );
   if (socks5OnlyProxyOptions) {
     return new ExistingTunnel(socks5OnlyProxyOptions);
@@ -422,6 +422,6 @@ export function createSocks5Tunnel(
     agent,
     { ...tunnelOptions },
     generateCredentials,
-    target ? new URL(target).protocol : undefined
+    target ? new URL(target).protocol : undefined,
   );
 }

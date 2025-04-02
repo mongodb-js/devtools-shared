@@ -6,7 +6,7 @@ import type { SigningClient, SigningClientOptions } from '.';
 export class RemoteSigningClient implements SigningClient {
   constructor(
     private sshClient: SSHClient,
-    private options: SigningClientOptions
+    private options: SigningClientOptions,
   ) {}
 
   /**
@@ -28,7 +28,7 @@ export class RemoteSigningClient implements SigningClient {
 
   private getRemoteFilePath(file: string) {
     return `${this.options.workingDirectory}/temp-${Date.now()}-${path.basename(
-      file
+      file,
     )}`;
   }
 

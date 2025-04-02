@@ -14,7 +14,7 @@ const kUnknownUrl = Symbol('kUnknownUrl');
 
 async function verify(
   query: Options | string | undefined,
-  expectedURL: string | typeof kUnknownUrl
+  expectedURL: string | typeof kUnknownUrl,
 ): Promise<void> {
   const res = await resolve(query);
   if (expectedURL !== kUnknownUrl) {
@@ -63,7 +63,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.4.14.tgz'
+        'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.4.14.tgz',
       );
     });
 
@@ -75,7 +75,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz'
+        'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz',
       );
     });
 
@@ -89,7 +89,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-3.1.9.tgz'
+        'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-3.1.9.tgz',
       );
     });
 
@@ -104,7 +104,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/linux/mongodb-cryptd-linux-x86_64-enterprise-ubuntu2004-5.0.2.tgz'
+        'https://downloads.mongodb.com/linux/mongodb-cryptd-linux-x86_64-enterprise-ubuntu2004-5.0.2.tgz',
       );
     });
 
@@ -119,7 +119,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/windows/mongodb-cryptd-windows-x86_64-enterprise-5.0.2.zip'
+        'https://downloads.mongodb.com/windows/mongodb-cryptd-windows-x86_64-enterprise-5.0.2.zip',
       );
     });
 
@@ -134,7 +134,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/linux/mongo_crypt_shared_v1-linux-x86_64-enterprise-ubuntu2004-6.0.1.tgz'
+        'https://downloads.mongodb.com/linux/mongo_crypt_shared_v1-linux-x86_64-enterprise-ubuntu2004-6.0.1.tgz',
       );
     });
 
@@ -149,7 +149,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/windows/mongo_crypt_shared_v1-windows-x86_64-enterprise-6.0.1.zip'
+        'https://downloads.mongodb.com/windows/mongo_crypt_shared_v1-windows-x86_64-enterprise-6.0.1.zip',
       );
     });
 
@@ -161,7 +161,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/linux/mongodb-linux-i686-3.0.7.tgz'
+        'https://fastdl.mongodb.org/linux/mongodb-linux-i686-3.0.7.tgz',
       );
     });
 
@@ -177,7 +177,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.0-rc1.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.0-rc1.tgz',
         );
       });
 
@@ -190,7 +190,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-4.0.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-4.0.0.tgz',
         );
       });
 
@@ -203,7 +203,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-3.6.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1604-3.6.0.tgz',
         );
       });
 
@@ -215,7 +215,7 @@ describe('mongodb-download-url', function () {
         } as const;
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz',
         );
       });
     });
@@ -241,7 +241,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2004-4.4.4.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2004-4.4.4.tgz',
         );
       });
 
@@ -254,7 +254,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.3.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.3.tgz',
         );
       });
 
@@ -267,7 +267,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-4.4.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-4.4.0.tgz',
         );
       });
 
@@ -281,7 +281,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-6.2.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-6.2.0.tgz',
         );
       });
     });
@@ -296,7 +296,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-3.5.8.tgz'
+          'https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-3.5.8.tgz',
         );
       });
     });
@@ -313,7 +313,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse12-4.4.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse12-4.4.0.tgz',
         );
       });
     });
@@ -330,7 +330,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse15-4.4.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse15-4.4.0.tgz',
         );
       });
     });
@@ -347,7 +347,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse15-4.4.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-suse15-4.4.0.tgz',
         );
       });
     });
@@ -364,7 +364,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-7.0.14.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-7.0.14.tgz',
         );
       });
 
@@ -377,7 +377,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.4.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.4.0.tgz',
         );
       });
     });
@@ -394,7 +394,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel8-7.0.14.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel8-7.0.14.tgz',
         );
       });
     });
@@ -411,7 +411,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel8-6.0.17.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel8-6.0.17.tgz',
         );
       });
 
@@ -424,7 +424,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel80-6.0.16.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel80-6.0.16.tgz',
         );
       });
     });
@@ -441,7 +441,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel55-3.0.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel55-3.0.0.tgz',
         );
       });
     });
@@ -459,7 +459,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://downloads.mongodb.com/linux/mongodb-linux-s390x-enterprise-rhel72-6.0.19.tgz'
+          'https://downloads.mongodb.com/linux/mongodb-linux-s390x-enterprise-rhel72-6.0.19.tgz',
         );
       });
     });
@@ -478,7 +478,7 @@ describe('mongodb-download-url', function () {
         // We don't have zseries release tagged as rhel8, so this should fallback to rhel83 as the latest one
         await verify(
           query,
-          'https://downloads.mongodb.com/linux/mongodb-linux-s390x-enterprise-rhel83-6.0.19.tgz'
+          'https://downloads.mongodb.com/linux/mongodb-linux-s390x-enterprise-rhel83-6.0.19.tgz',
         );
       });
 
@@ -492,7 +492,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-rhel8-6.0.19.tgz'
+          'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-rhel8-6.0.19.tgz',
         );
       });
     });
@@ -509,7 +509,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.4.4.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.4.4.tgz',
         );
       });
 
@@ -522,7 +522,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.0.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.0.0.tgz',
         );
       });
 
@@ -535,7 +535,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.6.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.6.0.tgz',
         );
       });
 
@@ -547,7 +547,7 @@ describe('mongodb-download-url', function () {
         } as const;
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz',
         );
       });
     });
@@ -564,7 +564,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.4.4.tgz',
         );
       });
 
@@ -577,7 +577,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.2.1.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian10-4.2.1.tgz',
         );
       });
 
@@ -590,7 +590,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.1.1.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian92-4.1.1.tgz',
         );
       });
 
@@ -603,7 +603,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.6.0.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-debian81-3.6.0.tgz',
         );
       });
 
@@ -615,7 +615,7 @@ describe('mongodb-download-url', function () {
         } as const;
         await verify(
           query,
-          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz'
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz',
         );
       });
     });
@@ -633,7 +633,7 @@ describe('mongodb-download-url', function () {
 
         await verify(
           query,
-          'https://downloads.mongodb.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-4.4.5.tgz'
+          'https://downloads.mongodb.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-4.4.5.tgz',
         );
       });
     });
@@ -648,7 +648,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-3.1.9.zip'
+        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-3.1.9.zip',
       );
     });
     it('should resolve 3.1.19 enterprise', async function () {
@@ -660,7 +660,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/win32/mongodb-win32-x86_64-enterprise-windows-64-3.1.9.zip'
+        'https://downloads.mongodb.com/win32/mongodb-win32-x86_64-enterprise-windows-64-3.1.9.zip',
       );
     });
     it('should resolve 2.6.11', async function () {
@@ -671,7 +671,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-2.6.11.zip'
+        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-2.6.11.zip',
       );
     });
     it('should resolve 3.0.7 (32-bit)', async function () {
@@ -682,7 +682,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/win32/mongodb-win32-i386-3.0.7.zip'
+        'https://fastdl.mongodb.org/win32/mongodb-win32-i386-3.0.7.zip',
       );
     });
     it('should resolve 4.2.1 (64-bit)', async function () {
@@ -693,7 +693,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2012plus-4.2.1.zip'
+        'https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2012plus-4.2.1.zip',
       );
     });
     it('should resolve stable (64-bit)', async function () {
@@ -716,7 +716,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-3.1.9.tgz'
+        'https://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-3.1.9.tgz',
       );
     });
 
@@ -728,7 +728,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.6.8.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.6.8.tgz',
       );
     });
 
@@ -740,7 +740,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-4.0.3.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-4.0.3.tgz',
       );
     });
 
@@ -752,7 +752,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-4.1.3.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-4.1.3.tgz',
       );
     });
 
@@ -765,7 +765,7 @@ describe('mongodb-download-url', function () {
 
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.5.13.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.5.13.tgz',
       );
     });
 
@@ -778,7 +778,7 @@ describe('mongodb-download-url', function () {
 
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-3.0.0.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-3.0.0.tgz',
       );
     });
 
@@ -791,7 +791,7 @@ describe('mongodb-download-url', function () {
 
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-2.6.0.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-2.6.0.tgz',
       );
     });
 
@@ -804,7 +804,7 @@ describe('mongodb-download-url', function () {
 
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.2.0.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.2.0.tgz',
       );
     });
 
@@ -817,7 +817,7 @@ describe('mongodb-download-url', function () {
 
       await verify(
         query,
-        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.6.0-rc3.tgz'
+        'https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-3.6.0-rc3.tgz',
       );
     });
   });
@@ -860,7 +860,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        'https://downloads.mongodb.com/osx/mongodb-macos-arm64-enterprise-latest.tgz'
+        'https://downloads.mongodb.com/osx/mongodb-macos-arm64-enterprise-latest.tgz',
       );
     });
 
@@ -873,7 +873,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        'https://downloads.mongodb.com/osx/mongodb-macos-x86_64-enterprise-latest.tgz'
+        'https://downloads.mongodb.com/osx/mongodb-macos-x86_64-enterprise-latest.tgz',
       );
     });
 
@@ -886,7 +886,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/windows/mongodb-windows-x86_64-enterprise-latest.zip'
+        'https://downloads.mongodb.com/windows/mongodb-windows-x86_64-enterprise-latest.zip',
       );
     });
 
@@ -900,7 +900,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu2004-latest.tgz'
+        'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu2004-latest.tgz',
       );
     });
   });
@@ -926,7 +926,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://fastdl.mongodb.org/win32/mongodb-win32-i386-3.0.7.zip'
+        'https://fastdl.mongodb.org/win32/mongodb-win32-i386-3.0.7.zip',
       );
       delete process.env.MONGODB_VERSION;
     });
@@ -939,7 +939,7 @@ describe('mongodb-download-url', function () {
       };
       await assert.rejects(
         () => verify(query, kUnknownUrl),
-        /Could not find version matching/
+        /Could not find version matching/,
       );
     });
 
@@ -950,7 +950,7 @@ describe('mongodb-download-url', function () {
       };
       await assert.rejects(
         () => verify(query, kUnknownUrl),
-        /Could not find download URL for/
+        /Could not find download URL for/,
       );
     });
   });
@@ -1037,7 +1037,7 @@ describe('mongodb-download-url', function () {
       await clearCache('');
       await fs.writeFile(
         cachePath,
-        zlib.gzipSync(JSON.stringify(fakeVersion('1.2.3')))
+        zlib.gzipSync(JSON.stringify(fakeVersion('1.2.3'))),
       );
       await verify({ ...baseOptions }, `${versionListUrl}1.2.3.tgz`);
     });
@@ -1045,7 +1045,7 @@ describe('mongodb-download-url', function () {
     it('does not write to disk if requested not to', async function () {
       await verify(
         { ...baseOptions, cacheTimeMs: 0 },
-        `${versionListUrl}1.2.1.tgz`
+        `${versionListUrl}1.2.1.tgz`,
       );
       await assert.rejects(() => fs.stat(cachePath), /ENOENT/);
     });
@@ -1061,7 +1061,7 @@ describe('mongodb-download-url', function () {
       await fs.writeFile(
         cachePath,
         zlib.gzipSync(JSON.stringify(fakeVersion('1.2.3'))),
-        { mode: 0o666 }
+        { mode: 0o666 },
       );
       await verify({ ...baseOptions }, `${versionListUrl}1.2.1.tgz`);
     });

@@ -26,7 +26,7 @@ async function createJiraTicket(
     priority: string;
     issueType: string;
     dueDate: Date;
-  }
+  },
 ): Promise<void> {
   jiraBaseUrl = jiraBaseUrl.replace(/\/$/, '');
   const issueApiUrl = `${jiraBaseUrl}/rest/api/2/issue/`;
@@ -51,13 +51,13 @@ async function createJiraTicket(
     res.ok
       ? (await res.json()).total > 0
       : Promise.reject(
-          new Error(`HTTP error: ${res.status}. ${await res.text()}`)
-        )
+          new Error(`HTTP error: ${res.status}. ${await res.text()}`),
+        ),
   );
 
   if (exists) {
     console.info(
-      `The ${issue.issueType} ticket ${issue.project} - ${issue.summary}, already exists.`
+      `The ${issue.issueType} ticket ${issue.project} - ${issue.summary}, already exists.`,
     );
     return;
   }
@@ -123,16 +123,16 @@ function severityToDueDate(severity: Severity) {
     severity === 'high'
       ? 5
       : severity === 'medium'
-      ? 6 /* weeks */ * 7
-      : severity === 'low'
-      ? 12 /* weeks */ * 7
-      : // severity === 'critical' || severity === 'unknown'
-        1;
+        ? 6 /* weeks */ * 7
+        : severity === 'low'
+          ? 12 /* weeks */ * 7
+          : // severity === 'critical' || severity === 'unknown'
+            1;
 
   return new Date(
     new Date().getTime() +
       triageSlaDays +
-      resolutionSlaDays * 24 * 60 * 60 * 1000
+      resolutionSlaDays * 24 * 60 * 60 * 1000,
   );
 }
 
@@ -156,7 +156,7 @@ const formatOrigins = (origins: string[]) => {
 };
 
 export const buildJiraDescription = (
-  vulnerability: VulnerabilityInfo
+  vulnerability: VulnerabilityInfo,
 ): string => {
   return (
     `h4. Vulnerability Details
@@ -194,7 +194,7 @@ ${process.env.JIRA_VULNERABILITY_BUILD_INFO}
 };
 
 export async function createVulnerabilityTickets(
-  vulnerabilities: VulnerabilityInfo[]
+  vulnerabilities: VulnerabilityInfo[],
 ): Promise<void> {
   if (
     !process.env.JIRA_BASE_URL ||
@@ -206,7 +206,7 @@ export async function createVulnerabilityTickets(
       .join(', ');
 
     throw new Error(
-      `Missing required variables to create Jira tickets: ${missingEnv}`
+      `Missing required variables to create Jira tickets: ${missingEnv}`,
     );
   }
 
@@ -233,7 +233,7 @@ export async function createVulnerabilityTickets(
         priority: severityToJiraPriority(vulnerability.severity),
         issueType: JIRA_ISSUE_TYPE,
         dueDate: severityToDueDate(vulnerability.severity),
-      }
+      },
     );
   }
 }

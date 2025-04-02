@@ -12,13 +12,13 @@ const execFile = promisify(execFileCallback);
   const target = process.argv[2];
   if (!target) {
     throw new Error(
-      'Usage: npx node-webpack-startup-snapshot-checker <filename>'
+      'Usage: npx node-webpack-startup-snapshot-checker <filename>',
     );
   }
 
   const tmpdir = path.join(
     os.tmpdir(),
-    `node-webpack-startup-snapshot-checker-${Date.now()}`
+    `node-webpack-startup-snapshot-checker-${Date.now()}`,
   );
   try {
     const entryFile = path.join(tmpdir, 'entry.js');
@@ -31,7 +31,7 @@ const execFile = promisify(execFileCallback);
 'use strict';
 const v8 = require('v8');
 const target = require(${JSON.stringify(
-        createRequire(process.cwd() + '/dummy.js').resolve(target)
+        createRequire(process.cwd() + '/dummy.js').resolve(target),
       )});
 
 function printTarget() {
@@ -48,7 +48,7 @@ if (v8.startupSnapshot.isBuildingSnapshot()) {
 } else {
   printTarget();
 }
-`
+`,
     );
 
     await fs.writeFile(
@@ -74,7 +74,7 @@ module.exports = {
   target: 'node',
   entry: './entry.js'
 };
-    `
+    `,
     );
 
     const { stdout: originalOut } = await execFile('node', [entryFile], {
@@ -89,14 +89,14 @@ module.exports = {
           '..',
           '..',
           'bin',
-          'cli.js'
+          'cli.js',
         ),
         '--mode',
         'development',
       ],
       {
         cwd: tmpdir,
-      }
+      },
     );
 
     await execFile(
@@ -109,7 +109,7 @@ module.exports = {
       ],
       {
         cwd: tmpdir,
-      }
+      },
     );
 
     const { stdout: webpackedOut } = await execFile(
@@ -117,7 +117,7 @@ module.exports = {
       ['--snapshot-blob', 'snapshot.blob'],
       {
         cwd: tmpdir,
-      }
+      },
     );
 
     assert.deepStrictEqual(originalOut.split('\n'), webpackedOut.split('\n'));
