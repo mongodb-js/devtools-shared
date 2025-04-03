@@ -94,7 +94,7 @@ class Checker {
           return (
             'value' in property &&
             (['FunctionExpression', 'ArrowFunctionExpression'].includes(
-              property.value.type
+              property.value.type,
             ) ||
               this.checkSafeExpression(property.value))
           );

@@ -15,7 +15,7 @@ describe('LocalSigningClient', function () {
         #!/bin/bash
         echo "Signing script called with arguments: $@"
         echo "signed content" > ${fileNameAfterGpgSigning}
-        `
+        `,
     );
     await fs.writeFile(fileToSign, 'original content');
   });
@@ -23,8 +23,8 @@ describe('LocalSigningClient', function () {
   afterEach(async function () {
     await Promise.allSettled(
       [signingScript, fileToSign, fileNameAfterGpgSigning].map((file) =>
-        fs.rm(file)
-      )
+        fs.rm(file),
+      ),
     );
   });
 
@@ -51,7 +51,7 @@ describe('LocalSigningClient', function () {
           echo "Signing script called with arguments: $@"
           >&2 echo "error - something went wrong"
           exit 1
-          `
+          `,
       );
     });
 

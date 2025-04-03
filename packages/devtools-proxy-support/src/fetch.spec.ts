@@ -4,6 +4,11 @@ import { HTTPServerProxyTestSetup } from '../test/helpers';
 
 describe('createFetch', function () {
   it("consistency check: plain `import('node-fetch')` fails", async function () {
+    if (process.versions.node >= '20.19.0') {
+      // 'node 20.19.0 has require(esm) enabled by default'
+      return this.skip();
+    }
+
     let failed = false;
     try {
       await import('node-fetch');
@@ -30,7 +35,7 @@ describe('createFetch', function () {
 
     it('provides a node-fetch-like HTTP functionality', async function () {
       const response = await createFetch({})(
-        `http://127.0.0.1:${setup.httpServerPort}/test`
+        `http://127.0.0.1:${setup.httpServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
     });
@@ -40,7 +45,7 @@ describe('createFetch', function () {
         proxy: `ssh://someuser@127.0.0.1:${setup.sshProxyPort}`,
       });
       const response = await fetch(
-        `http://localhost:${setup.httpServerPort}/test`
+        `http://localhost:${setup.httpServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
       expect(setup.sshTunnelInfos).to.deep.equal([
@@ -58,7 +63,7 @@ describe('createFetch', function () {
         proxy: `http://127.0.0.1:${setup.httpProxyPort}`,
       });
       const response = await fetch(
-        `http://localhost:${setup.httpServerPort}/test`
+        `http://localhost:${setup.httpServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
     });
@@ -69,7 +74,7 @@ describe('createFetch', function () {
         ca: setup.tlsOptions.ca,
       });
       const response = await fetch(
-        `https://localhost:${setup.httpsServerPort}/test`
+        `https://localhost:${setup.httpsServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
     });
@@ -80,7 +85,7 @@ describe('createFetch', function () {
         proxy: `socks5://127.0.0.1:${setup.socks5ProxyPort}`,
       });
       const response = await fetch(
-        `http://localhost:${setup.httpServerPort}/test`
+        `http://localhost:${setup.httpServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
     });
@@ -91,7 +96,7 @@ describe('createFetch', function () {
         proxy: `pac+http://127.0.0.1:${setup.httpServerPort}/pac`,
       });
       const response = await fetch(
-        `http://localhost:${setup.httpsServerPort}/test`
+        `http://localhost:${setup.httpsServerPort}/test`,
       );
       expect(await response.text()).to.equal('OK /test');
 
@@ -100,7 +105,7 @@ describe('createFetch', function () {
         expect.fail('missed exception');
       } catch (err) {
         expect(err.message).to.include(
-          'Failed to establish a socket connection to proxies: ["SOCKS5 127.0.0.1:1"]'
+          'Failed to establish a socket connection to proxies: ["SOCKS5 127.0.0.1:1"]',
         );
       }
     });

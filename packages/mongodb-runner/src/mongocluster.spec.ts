@@ -112,10 +112,10 @@ describe('MongoCluster', function () {
 
     const logFiles = await fs.readdir(logDir);
     expect(
-      logFiles.filter((file) => file.startsWith('mongod-')).length
+      logFiles.filter((file) => file.startsWith('mongod-')).length,
     ).to.be.greaterThan(2);
     expect(
-      logFiles.filter((file) => file.startsWith('mongos-')).length
+      logFiles.filter((file) => file.startsWith('mongos-')).length,
     ).to.equal(1);
   });
 
@@ -212,9 +212,15 @@ describe('MongoCluster', function () {
   });
 
   it('can spawn a 6.x enterprise standalone mongod', async function () {
-    if (process.platform === 'win32' && process.env.CI) {
-      return this.skip(); // Github Actions CI runners go OOM when extracting the 6.x enterprise tarball...
+    if (
+      (process.platform === 'win32' || process.platform === 'linux') &&
+      process.env.CI
+    ) {
+      // Github Actions CI runners go OOM on Windows when extracting the 6.x enterprise tarball...
+      // On Ubuntu, 6.x only supports up to 22.04, while CI runs on 24.04.
+      return this.skip();
     }
+
     cluster = await MongoCluster.start({
       version: '6.x-enterprise',
       topology: 'standalone',
@@ -222,6 +228,21 @@ describe('MongoCluster', function () {
     });
     expect(cluster.connectionString).to.be.a('string');
     expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVariant).to.equal('enterprise');
+    const { ok } = await cluster.withClient(async (client) => {
+      return await client.db('admin').command({ ping: 1 });
+    });
+    expect(ok).to.equal(1);
+  });
+
+  it('can spawn a 8.x enterprise standalone mongod', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x-enterprise',
+      topology: 'standalone',
+      tmpDir,
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
     expect(cluster.serverVariant).to.equal('enterprise');
     const { ok } = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ ping: 1 });

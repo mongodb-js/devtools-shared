@@ -18,7 +18,7 @@ function ssh2(): typeof import('ssh2') {
   if (getFips()) {
     // ssh2 uses a WASM implementation of the non-FIPS-compliant Poly1305 hash algorithm
     throw new Error(
-      'devtools-proxy-support: Using `ssh2` features in FIPS mode is currently not available'
+      'devtools-proxy-support: Using `ssh2` features in FIPS mode is currently not available',
     );
   }
   // Lazily loading this package because it uses WebAssembly and therefore cannot
@@ -41,7 +41,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     srcIP: string,
     srcPort: number,
     dstIP: string,
-    dstPort: number
+    dstPort: number,
   ) => Promise<ClientChannel>;
 
   constructor(options: DevtoolsProxyOptions, logger?: ProxyLogEmitter) {
@@ -103,7 +103,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       }),
       (() => {
         const waitForReady = once(this.sshClient, 'ready').then(
-          () => undefined
+          () => undefined,
         );
         this.sshClient.connect(sshConnectConfig);
         return waitForReady;
@@ -128,7 +128,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
 
   override async connect(
     req: ClientRequest,
-    connectOpts: AgentConnectOpts
+    connectOpts: AgentConnectOpts,
   ): Promise<Duplex> {
     return await this._connect(req, connectOpts);
   }
@@ -136,7 +136,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   private async _connect(
     req: ClientRequest,
     connectOpts: AgentConnectOpts,
-    retriesLeft = 1
+    retriesLeft = 1,
   ): Promise<Duplex> {
     let host = '';
     try {
@@ -162,7 +162,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       return sock;
     } catch (err: unknown) {
       const retryableError = /Not connected|Channel open failure/.test(
-        (err as Error).message
+        (err as Error).message,
       );
       this.logger.emit('ssh:failed-forward', {
         host,

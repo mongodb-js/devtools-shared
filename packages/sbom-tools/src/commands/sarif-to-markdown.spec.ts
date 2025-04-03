@@ -13,10 +13,10 @@ describe('sarif-to-markdown', function () {
           '..',
           'test',
           'fixtures',
-          'mock-sarif.json'
+          'mock-sarif.json',
         ),
-        'utf8'
-      )
+        'utf8',
+      ),
     );
     const expectedMd = await fs.readFile(
       path.resolve(
@@ -26,9 +26,9 @@ describe('sarif-to-markdown', function () {
         'test',
         'fixtures',
         // .blob suffix to avoid prettier messing with things
-        'mock-sarif.md.blob'
+        'mock-sarif.md.blob',
       ),
-      'utf8'
+      'utf8',
     );
     expect(sarifToMarkdown({ sarif })).to.equal(expectedMd);
   });

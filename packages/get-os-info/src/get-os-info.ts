@@ -55,7 +55,7 @@ async function getDarwinInfo(): Promise<DarwinInfo> {
       '/System/Library/CoreServices/SystemVersion.plist';
     const systemVersionPlist = await fs.readFile(
       systemVersionPlistPath,
-      'utf-8'
+      'utf-8',
     );
     return parseDarwinInfo(systemVersionPlist);
   } catch (e) {
@@ -69,7 +69,7 @@ async function getDarwinInfo(): Promise<DarwinInfo> {
 
 export function parseDarwinInfo(systemVersionPlist: string): DarwinInfo {
   const match = systemVersionPlist.matchAll(
-    /<key>(?<key>[^<]+)<\/key>\s*<string>(?<value>[^<]+)<\/string>/gm
+    /<key>(?<key>[^<]+)<\/key>\s*<string>(?<value>[^<]+)<\/string>/gm,
   );
 
   const {
@@ -77,7 +77,7 @@ export function parseDarwinInfo(systemVersionPlist: string): DarwinInfo {
     ProductVersion: os_darwin_product_version = 'unknown',
     ProductBuildVersion: os_darwin_product_build_version = 'unknown',
   } = Object.fromEntries(
-    Array.from(match).map((m) => [m.groups?.key, m.groups?.value])
+    Array.from(match).map((m) => [m.groups?.key, m.groups?.value]),
   );
 
   return {

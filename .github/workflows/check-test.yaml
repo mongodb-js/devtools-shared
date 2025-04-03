@@ -1,11 +1,9 @@
 # This action runs lint checks and tests against the code.
 name: Check and Test
 
-# Controls when the action will run.
 on:
   pull_request:
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   push:
     branches:
@@ -18,7 +16,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   check-and-test:
     name: Check and Test
@@ -28,10 +25,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
       fail-fast: false
 
-    # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -51,21 +46,18 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get -y update && sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: "npm"
-
-      - name: Install npm
-        run: npm install -g npm@9
 
       - name: Use python@3.11
         # Default Python (3.12) doesn't have support for distutils
@@ -79,9 +71,8 @@ jobs:
           # Dependencies are included when installing as npm workspaces will
           # hoist every package in the repo and it's important that the
           # dependencies of packages we are planning to test are also prepared
-          npm ci
           npm run bootstrap-ci -- --scope @mongodb-js/monorepo-tools --stream --include-dependencies
-          npm run bootstrap-ci -- --stream --since ${SINCE_REF} --include-dependencies
+          npm run bootstrap-ci -- --stream --include-dependencies
 
           # saslprep source code may have been modified by bootstrapping,
           # depending on the OS, so undo that change if it has happened
@@ -97,12 +88,26 @@ jobs:
         shell: bash
 
       - name: Run Checks
-        # We exclude dependents when running eslint and depchecks because
-        # linting and dependency checking is relevant only for packages where
-        # the source code was changed
-        run: npm run check-ci -- --stream --since ${SINCE_REF} --exclude-dependents
+        run: npm run check-ci -- --stream
         shell: bash
 
       - name: Run Tests
-        run: npm run test-ci -- --stream --since ${SINCE_REF}
+        run: npm run test-ci -- --stream
         shell: bash
+
+      - name: Report Coverage
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          curl -L https://coveralls.io/coveralls-linux.tar.gz | tar -xz -C /usr/local/bin
+          coverage_reports=(packages/*/coverage/lcov.info)
+          for report in "${coverage_reports[@]}"; do
+            echo "Processing report: $report"
+            flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<<$report)
+            coveralls report --base-path . --job-flag=$flag_name $report --parallel --no-logo
+          done
+
+          coveralls done
+        env:
+          COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+          COVERALLS_REPO_TOKEN: ${{ github.token }}
+          COVERALLS_GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}

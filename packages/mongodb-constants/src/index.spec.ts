@@ -29,6 +29,7 @@ describe('constants', function () {
       'FULL_SCAN_STAGES',
       'REQUIRED_AS_FIRST_STAGE',
       'SYSTEM_VARIABLES',
+      'VALIDATION_TEMPLATE',
       'ATLAS_SEARCH_TEMPLATES',
       'ATLAS_VECTOR_SEARCH_TEMPLATE',
     ]);

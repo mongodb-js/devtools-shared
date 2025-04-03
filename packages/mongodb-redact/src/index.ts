@@ -24,7 +24,7 @@ export function redact<T>(message: T): T {
   if (isPlainObject(message)) {
     // recursively walk through all values of an object
     return Object.fromEntries(
-      Object.entries(message).map(([key, value]) => [key, redact(value)])
+      Object.entries(message).map(([key, value]) => [key, redact(value)]),
     ) as T;
   }
   if (Array.isArray(message)) {

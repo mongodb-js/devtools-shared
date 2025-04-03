@@ -91,7 +91,7 @@ describe('SSHAgent', function () {
       expect.fail('missed exception');
     } catch (err) {
       expect(err.message).to.include(
-        'request to http://example.com/hello failed, reason: Disconnected'
+        'request to http://example.com/hello failed, reason: Disconnected',
       );
     }
     expect(setup.authHandler).to.have.been.calledOnce;

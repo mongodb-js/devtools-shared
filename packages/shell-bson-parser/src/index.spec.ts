@@ -37,16 +37,16 @@ describe('@mongodb-js/shell-bson-parser', function () {
         BinaryCreateFromHexString: Binary.createFromHexString('deadbeef'),
         BinaryCreateFromBase64: Binary.createFromBase64('3q2+7w=='),
         }`,
-        { allowMethods: true }
-      )
+        { allowMethods: true },
+      ),
     ).to.deep.equal({
       BinaryCreateFromHexString: new bson.Binary(
         Buffer.from('deadbeef', 'hex'),
-        0
+        0,
       ),
       BinaryCreateFromBase64: new bson.Binary(
         Buffer.from('3q2+7w==', 'base64'),
-        0
+        0,
       ),
     });
   });
@@ -79,20 +79,20 @@ describe('@mongodb-js/shell-bson-parser', function () {
     Timestamp_long: Timestamp(new Long(1, 2)),
     ISODate: ISODate("2020-01-01 12:00:00"),
     Date: new Date("2020-01-01 12:00:00")
-  }`)
+  }`),
     ).to.deep.equal({
       RegExp: /test/gi,
       Binary: new bson.Binary(),
       BinData: new bson.Binary(Buffer.from('dGVzdAo=', 'base64'), 3),
       UUID: new bson.Binary(
         Buffer.from('3d37923dab8e49319e4693df5fd3599e', 'hex'),
-        4
+        4,
       ),
       Code: new bson.Code('function() {}'),
       DBRef: new bson.DBRef(
         'tests',
         new bson.ObjectId('5e159ba7eac34211f2252aaa'),
-        'test'
+        'test',
       ),
       Decimal128: bson.Decimal128.fromString('128'),
       NumberDecimal: bson.Decimal128.fromString('12345'),
@@ -122,7 +122,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
     _id: ObjectId("5e159ba7eac34211f2252aaa"),
     created: Timestamp(10 + 10, 10),
     filter: { year: { $gte: 2021 - (1/2 + 0.5 - (5 * 0)) } },
-  }`)
+  }`),
     ).to.deep.equal({
       _id: new bson.ObjectId('5e159ba7eac34211f2252aaa'),
       created: new bson.Timestamp({ i: 10, t: 20 }),
@@ -152,7 +152,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
         "$sum": 1
       }
     }
-  }]`)
+  }]`),
     ).to.deep.equal([
       {
         $match: {
@@ -190,7 +190,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
       expect(
         parse('{ date: Code({ toString: Date.constructor("throw null;") }) }', {
           mode,
-        })
+        }),
       ).to.equal('');
     });
   }
@@ -207,7 +207,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
           parse('{ floor: Math.floor(5.5) }', {
             mode: ParseMode.Strict,
             allowMethods: false,
-          })
+          }),
         ).to.equal('');
       });
 
@@ -218,7 +218,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
               parse(`{ date: (${dateFn}(0)).getFullYear() }`, {
                 mode: ParseMode.Strict,
                 allowMethods: false,
-              })
+              }),
             ).to.equal('');
           });
         });
@@ -305,14 +305,14 @@ describe('@mongodb-js/shell-bson-parser', function () {
         expect(
           parse(
             '{ simpleCalc: (5 * Math.floor(5.5) + Math.ceil(5.5)) }',
-            options
-          )
+            options,
+          ),
         ).to.deep.equal({ simpleCalc: 31 });
       });
 
       it('should prevent invalid functions', function () {
         expect(parse('{ simpleCalc: Math.totallyLegit(5) }', options)).to.equal(
-          ''
+          '',
         );
       });
     });
@@ -320,7 +320,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
     describe('Function expressions', function () {
       it('should allow functions as object properties', function () {
         expect(
-          parse('{ $where: function() { this.x = 1 }}', options)
+          parse('{ $where: function() { this.x = 1 }}', options),
         ).to.deep.equal({
           $where: 'function() { this.x = 1 }',
         });
@@ -332,7 +332,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
       it('should allow multiline functions', function () {
         expect(
-          parse('{ $where: function\n()\n{\nthis.x = 1\n}}', options)
+          parse('{ $where: function\n()\n{\nthis.x = 1\n}}', options),
         ).to.deep.equal({
           $where: 'function\n()\n{\nthis.x = 1\n}',
         });
@@ -354,7 +354,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
             lang: "js"
           }
         }
-      }`)
+      }`),
         ).to.deep.equal({
           $expr: {
             $function: {
@@ -402,7 +402,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
       for (const { dateFn, args } of isoDateTests()) {
         context(
           `Date allow using member methods with "${dateFn}" and args ${JSON.stringify(
-            args
+            args,
           )}`,
           function () {
             it('should allow member expressions', function () {
@@ -448,58 +448,169 @@ describe('@mongodb-js/shell-bson-parser', function () {
           toISOString: (${newDate}).toISOString(),
           valueOf: (${newDate}.valueOf()),
        }`;
-              expect(parse(input, options)).to.deep.equal({
-                getDate: new (Date as any)(...args).getDate(),
-                getDay: new (Date as any)(...args).getDay(),
-                getFullYear: new (Date as any)(...args).getFullYear(),
-                getHours: new (Date as any)(...args).getHours(),
-                getMilliseconds: new (Date as any)(...args).getMilliseconds(),
-                getMinutes: new (Date as any)(...args).getMinutes(),
-                getMonth: new (Date as any)(...args).getMonth(),
-                getSeconds: new (Date as any)(...args).getSeconds(),
-                getTime: new (Date as any)(...args).getTime(),
-                getTimezoneOffset: new (Date as any)(
-                  ...args
-                ).getTimezoneOffset(),
-                getUTCDate: new (Date as any)(...args).getUTCDate(),
-                getUTCDay: new (Date as any)(...args).getUTCDay(),
-                getUTCFullYear: new (Date as any)(...args).getUTCFullYear(),
-                getUTCHours: new (Date as any)(...args).getUTCHours(),
-                getUTCMilliseconds: new (Date as any)(
-                  ...args
-                ).getUTCMilliseconds(),
-                getUTCMinutes: new (Date as any)(...args).getUTCMinutes(),
-                getUTCMonth: new (Date as any)(...args).getUTCMonth(),
-                getUTCSeconds: new (Date as any)(...args).getUTCSeconds(),
-                getYear: new (Date as any)(...args).getYear(), // getYear is deprecated
-                setDate: new (Date as any)(...args).setDate(24),
-                setFullYear: new (Date as any)(...args).setFullYear(2010),
-                setHours: new (Date as any)(...args).setHours(23),
-                setMilliseconds: new (Date as any)(...args).setMilliseconds(1),
-                setMinutes: new (Date as any)(...args).setMinutes(1),
-                setMonth: new (Date as any)(...args).setMonth(1),
-                setSeconds: new (Date as any)(...args).setSeconds(59),
-                setTime: new (Date as any)(...args).setTime(10),
-                setUTCDate: new (Date as any)(...args).setUTCDate(24),
-                setUTCFullYear: new (Date as any)(...args).setUTCFullYear(2010),
-                setUTCHours: new (Date as any)(...args).setUTCHours(23),
-                setUTCMilliseconds: new (Date as any)(
-                  ...args
-                ).setUTCMilliseconds(1),
-                setUTCMinutes: new (Date as any)(...args).setUTCMinutes(1),
-                setUTCMonth: new (Date as any)(...args).setUTCMonth(1),
-                setUTCSeconds: new (Date as any)(...args).setUTCSeconds(59),
-                setYear: new (Date as any)(...args).setYear(96), // setYear is deprecated
-                toISOString: new (Date as any)(...args).toISOString(),
-                valueOf: new (Date as any)(...args).valueOf(),
-              });
+
+              const actual = parse(input, options);
+
+              // When constructing a date with no arguments, it will be set to the current date,
+              // which is prone to race conditions for millisecond precision.
+              const allowedMillisecondDelta = args.length === 0 ? 3 : 0;
+
+              expect(actual.getDate).to.equal(
+                new (Date as any)(...args).getDate(),
+              );
+              expect(actual.getDay).to.equal(
+                new (Date as any)(...args).getDay(),
+              );
+              expect(actual.getFullYear).to.equal(
+                new (Date as any)(...args).getFullYear(),
+              );
+              expect(actual.getHours).to.equal(
+                new (Date as any)(...args).getHours(),
+              );
+              expect(actual.getMilliseconds).to.be.approximately(
+                new (Date as any)(...args).getMilliseconds(),
+                allowedMillisecondDelta,
+              );
+              expect(actual.getMinutes).to.equal(
+                new (Date as any)(...args).getMinutes(),
+              );
+              expect(actual.getMonth).to.equal(
+                new (Date as any)(...args).getMonth(),
+              );
+              expect(actual.getSeconds).to.equal(
+                new (Date as any)(...args).getSeconds(),
+              );
+              expect(actual.getTime).to.be.approximately(
+                new (Date as any)(...args).getTime(),
+                allowedMillisecondDelta,
+              );
+              expect(actual.getTimezoneOffset).to.equal(
+                new (Date as any)(...args).getTimezoneOffset(),
+              );
+              expect(actual.getUTCDate).to.equal(
+                new (Date as any)(...args).getUTCDate(),
+              );
+              expect(actual.getUTCDay).to.equal(
+                new (Date as any)(...args).getUTCDay(),
+              );
+              expect(actual.getUTCFullYear).to.equal(
+                new (Date as any)(...args).getUTCFullYear(),
+              );
+              expect(actual.getUTCHours).to.equal(
+                new (Date as any)(...args).getUTCHours(),
+              );
+              expect(actual.getUTCMilliseconds).to.be.approximately(
+                new (Date as any)(...args).getUTCMilliseconds(),
+                allowedMillisecondDelta,
+              );
+              expect(actual.getUTCMinutes).to.equal(
+                new (Date as any)(...args).getUTCMinutes(),
+              );
+              expect(actual.getUTCMonth).to.equal(
+                new (Date as any)(...args).getUTCMonth(),
+              );
+              expect(actual.getUTCSeconds).to.equal(
+                new (Date as any)(...args).getUTCSeconds(),
+              );
+              expect(actual.getYear).to.equal(
+                new (Date as any)(...args).getYear(),
+              ); // getYear is deprecated
+              expect(actual.setDate).to.be.approximately(
+                new (Date as any)(...args).setDate(24),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setFullYear).to.be.approximately(
+                new (Date as any)(...args).setFullYear(2010),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setHours).to.be.approximately(
+                new (Date as any)(...args).setHours(23),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setMilliseconds).to.be.approximately(
+                new (Date as any)(...args).setMilliseconds(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setMinutes).to.be.approximately(
+                new (Date as any)(...args).setMinutes(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setMonth).to.be.approximately(
+                new (Date as any)(...args).setMonth(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setSeconds).to.be.approximately(
+                new (Date as any)(...args).setSeconds(59),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setTime).to.be.approximately(
+                new (Date as any)(...args).setTime(10),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCDate).to.be.approximately(
+                new (Date as any)(...args).setUTCDate(24),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCFullYear).to.be.approximately(
+                new (Date as any)(...args).setUTCFullYear(2010),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCHours).to.be.approximately(
+                new (Date as any)(...args).setUTCHours(23),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCMilliseconds).to.be.approximately(
+                new (Date as any)(...args).setUTCMilliseconds(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCMinutes).to.be.approximately(
+                new (Date as any)(...args).setUTCMinutes(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCMonth).to.be.approximately(
+                new (Date as any)(...args).setUTCMonth(1),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setUTCSeconds).to.be.approximately(
+                new (Date as any)(...args).setUTCSeconds(59),
+                allowedMillisecondDelta,
+              );
+              expect(actual.setYear).to.be.approximately(
+                new (Date as any)(...args).setYear(96),
+                allowedMillisecondDelta,
+              ); // setYear is deprecated
+              expect(actual.valueOf).to.be.approximately(
+                new (Date as any)(...args).valueOf(),
+                allowedMillisecondDelta,
+              );
+
+              const isoRegex = /^([^.]*\.)([\d]*)(Z)$/;
+              const actualMatch = isoRegex.exec(actual.toISOString);
+              const expectedMatch = isoRegex.exec(
+                new (Date as any)(...args).toISOString(),
+              );
+
+              expect(actualMatch?.length).to.equal(4);
+              expect(expectedMatch?.length).to.equal(4);
+
+              // Date group - 1970-01-01T00:00:00.
+              expect(actualMatch![1]).to.equal(expectedMatch![1]);
+
+              // Millisecond group
+              expect(Number.parseInt(actualMatch![2])).to.be.approximately(
+                Number.parseInt(expectedMatch![2]),
+                allowedMillisecondDelta,
+              );
+
+              // Z
+              expect(actualMatch![3]).to.equal(expectedMatch![3]);
             });
 
             it('should prevent invalid functions', function () {
               const input = `{ evilDate: (${dateFn}(0)).totallyLegit(5) }`;
               expect(parse(input, options)).to.equal('');
             });
-          }
+          },
         );
       }
 
@@ -510,7 +621,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
         const input = `${newDate}`;
 
         expect(parse(input, options)).to.include(
-          String(new Date().getUTCFullYear())
+          String(new Date().getUTCFullYear()),
         );
       });
     });
@@ -574,11 +685,11 @@ describe('@mongodb-js/shell-bson-parser', function () {
 
   it('should correctly parse NumberLong and Int64 bigger than Number.MAX_SAFE_INTEGER', function () {
     expect(
-      parse("{ n: NumberLong('345678654321234552') }").n.toString()
+      parse("{ n: NumberLong('345678654321234552') }").n.toString(),
     ).to.equal('345678654321234552');
 
     expect(parse("{ n: Int64('345678654321234552') }").n.toString()).to.equal(
-      '345678654321234552'
+      '345678654321234552',
     );
   });
 

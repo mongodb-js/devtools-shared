@@ -2,30 +2,30 @@
 // other tools start using it.
 
 function isFastFailureConnectionSingleError(
-  error: Error & { code?: string }
+  error: Error & { code?: string },
 ): boolean {
   switch (error.name) {
     case 'MongoNetworkError':
       return /\b(ECONNREFUSED|ENOTFOUND|ENETUNREACH|EINVAL)\b/.test(
-        error.message
+        error.message,
       );
     case 'MongoError':
       return /The apiVersion parameter is required/.test(error.message);
     default:
       return (
         ['ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'EINVAL'].includes(
-          error.code ?? ''
+          error.code ?? '',
         ) || isPotentialTLSCertificateError(error)
       );
   }
 }
 
 export const isFastFailureConnectionError = handleNestedErrors(
-  isFastFailureConnectionSingleError
+  isFastFailureConnectionSingleError,
 );
 
 function isPotentialTLSCertificateSingleError(
-  error: Error & { code?: string }
+  error: Error & { code?: string },
 ): boolean {
   // https://nodejs.org/api/tls.html#x509-certificate-error-codes
   return [
@@ -61,13 +61,13 @@ function isPotentialTLSCertificateSingleError(
 }
 
 export const isPotentialTLSCertificateError = handleNestedErrors(
-  isPotentialTLSCertificateSingleError
+  isPotentialTLSCertificateSingleError,
 );
 
 // Convenience wrapper that ensures that the given error is an `Error` instance
 // and that handles nested errors (.cause/AggregateError) as well
 function handleNestedErrors(
-  fn: (err: Error & { code?: string }) => boolean
+  fn: (err: Error & { code?: string }) => boolean,
 ): (err: unknown) => boolean {
   const checker = (err: unknown): boolean => {
     if (

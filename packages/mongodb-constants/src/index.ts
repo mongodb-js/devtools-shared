@@ -9,6 +9,7 @@ export * from './ns';
 export * from './query-operators';
 export * from './stage-operators';
 export * from './system-variables';
+export * from './validation-template';
 export { getFilteredCompletions, wrapField } from './filter';
 export type {
   Completion,

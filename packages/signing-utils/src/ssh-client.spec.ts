@@ -128,7 +128,7 @@ describe('SSHClient', function () {
       const error = await resultPromise.catch((e) => e);
       expect(error).to.have.a.property(
         'message',
-        'Command failed with code 10. Error: Some Error'
+        'Command failed with code 10. Error: Some Error',
       );
       expect(execStub.calledOnce).to.be.true;
       expect(execStub.firstCall.firstArg).to.equal(COMMAND);
