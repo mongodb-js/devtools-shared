@@ -63,7 +63,7 @@
     "eslint": "^7.25.0",
     "gen-esm-wrapper": "^1.1.1",
     "mocha": "^8.4.0",
-    "mongodb-schema": "^12.5.0",
+    "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
     "nyc": "^15.1.0",
     "prettier": "^3.5.3",

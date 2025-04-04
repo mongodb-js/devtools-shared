@@ -5,8 +5,8 @@ import type {
 } from '@mongodb-js/ts-autocomplete';
 import autocompleteTypes from './fixtures/autocomplete-types';
 
-import type { JSONSchema } from './type-export';
-import { toTypescriptTypeDefinition } from './type-export';
+import type { JSONSchema } from 'mongodb-schema';
+import { toTypescriptTypeDefinition } from 'mongodb-schema';
 
 import {
   inferCollectionNameFromFunctionCall,
@@ -16,7 +16,6 @@ import {
 import { CachingAutocompletionContext } from './autocompletion-context';
 import type { AutocompletionContext } from './autocompletion-context';
 
-export { JSONSchema } from './type-export';
 export { AutocompletionContext } from './autocompletion-context';
 
 type MongoDBAutocompleterOptions = {
