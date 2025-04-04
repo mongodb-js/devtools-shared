@@ -86,11 +86,11 @@ describe('download center client', function () {
         createReadStream(fixturePath('asset.txt')),
         {
           acl: 'private',
-        }
+        },
       );
 
       const content = await downloadCenter.downloadAsset(
-        'prefix-private/asset.txt'
+        'prefix-private/asset.txt',
       );
       expect(content?.toString()).to.contain('content');
     });
