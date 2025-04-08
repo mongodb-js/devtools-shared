@@ -48,7 +48,7 @@ async function hasAWSCname(host: string) {
     return addresses.some((address) => address.endsWith('.amazonaws.com'));
   } catch (err: unknown) {
     // This can be any of a long list of codes, but in all cases we're just
-    // going to assume that it is not one an AWS host.
+    // going to assume that it is not on an AWS host.
     // (see https://nodejs.org/api/dns.html#error-codes)
     return false;
   }
