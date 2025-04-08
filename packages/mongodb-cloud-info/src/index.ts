@@ -22,6 +22,7 @@ export type RawCloudProviderCIDRs = {
 let unparsedCIDRsPromise: Promise<RawCloudProviderCIDRs> | undefined;
 
 const dnsLookup = util.promisify(dns.lookup.bind(dns));
+const dnsResolveCname = util.promisify(dns.resolveCname.bind(dns));
 
 function rangesContainsIP(
   ipRanges: ParsedCIDRs,
@@ -39,6 +40,18 @@ function parseCIDRs(rawCidrs: RawCIDRs): ParsedCIDRs {
     v4: rawCidrs.v4.map((cidr) => [new ipaddr.IPv4(cidr[0]), cidr[1]]),
     v6: rawCidrs.v6.map((cidr) => [new ipaddr.IPv6(cidr[0]), cidr[1]]),
   };
+}
+
+async function hasAWSCname(host: string) {
+  try {
+    const addresses = await dnsResolveCname(host);
+    return addresses.some((address) => address.endsWith('.amazonaws.com'));
+  } catch (err: unknown) {
+    // This can be any of a long list of codes, but in all cases we're just
+    // going to assume that it is not one an AWS host.
+    // (see https://nodejs.org/api/dns.html#error-codes)
+    return false;
+  }
 }
 
 export async function getCloudInfo(host?: string) {
@@ -69,9 +82,15 @@ export async function getCloudInfo(host?: string) {
     throw err;
   }
 
-  return {
+  const info = {
     isAws: rangesContainsIP(parseCIDRs(unparsedCIDRs.aws), ip),
     isGcp: rangesContainsIP(parseCIDRs(unparsedCIDRs.gcp), ip),
     isAzure: rangesContainsIP(parseCIDRs(unparsedCIDRs.azure), ip),
   };
+
+  if (!info.isAws && !info.isGcp && !info.isAzure) {
+    info.isAws = await hasAWSCname(host);
+  }
+
+  return info;
 }
