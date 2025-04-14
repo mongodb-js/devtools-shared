@@ -14,7 +14,6 @@ Or use it directly in the CLI
 npx @mongodb-js/machine-id
 ```
 
-
 ## Usage
 
 ### As a module
@@ -40,34 +39,31 @@ machine-id
 This will print the machine ID to the console.
 
 ## Comparison with `node-machine-id`
+
 This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id), but **using native access to system APIs without the need for child processes**.
 
 If you were previously using `node-machine-id`, you can use the following mapping to get a result that uses the same hashing transformation. This helps create more consistent results as before but it is not guaranteed to be the same for all cases.
+
 ```ts
 import { createHash } from 'crypto';
 import { getMachineId } from '@mongodb-js/machine-id';
 
 function machineIdSync(original: boolean): string | undefined {
-    const rawMachineId = getMachineId({ raw: true }).toLowerCase();
+  const rawMachineId = getMachineId({ raw: true }).toLowerCase();
 
-    if (original) {
-        return rawMachineId;
-    }
+  if (original) {
+    return rawMachineId;
+  }
 
-    return createHash("sha256")
-        .update(rawMachineId)
-        .digest("hex");
+  return createHash('sha256').update(rawMachineId).digest('hex');
 }
-
 ```
 
 ## Supported Platforms
 
 - **macOS**: Uses the `IOPlatformUUID` from the `IOKit` framework (Supported on macOS 12.0 and later).
 - **Linux**: Uses the `/etc/machine-id` file to retrieve the machine ID. If this file does not exist, it falls back to `/var/lib/dbus/machine-id`.
-- **Windows**: Uses the `MachineGuid` from the  `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography` registry.
-
-
+- **Windows**: Uses the `MachineGuid` from the `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography` registry.
 
 ## License
 

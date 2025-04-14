@@ -12,7 +12,8 @@
     "test-ci": "npm run test",
     "lint": "eslint . && prettier --check .",
     "check": "npm run lint && npm run test",
-    "prepublishOnly": "npm run compile"
+    "prepublishOnly": "npm run compile",
+    "benchmark": "ts-node scripts/benchmark.ts"
   },
   "author": "Compass Team <compass@mongodb.com>",
   "gypfile": true,
