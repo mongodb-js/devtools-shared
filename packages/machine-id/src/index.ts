@@ -1,7 +1,7 @@
-import bindings from "bindings";
-import { createHash } from "crypto";
+import bindings from 'bindings';
+import { createHash } from 'crypto';
 
-const binding = bindings("machine_id");
+const binding = bindings('machine_id');
 
 export type GetMachineIdOptions = {
   /** If true, the machine ID will not be hashed with SHA256. */
@@ -25,5 +25,5 @@ export function getMachineId({ raw = false }: GetMachineIdOptions = {}):
     return machineId;
   }
 
-  return createHash("sha256").update(machineId).digest("hex");
+  return createHash('sha256').update(machineId).digest('hex');
 }

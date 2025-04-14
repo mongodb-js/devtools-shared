@@ -9,7 +9,7 @@
     "bootstrap": "npm run compile",
     "pretest": "npm run compile",
     "test": "mocha",
-    "lint": "eslint \"**/*.{js,ts}\"",
+    "lint": "eslint . && prettier --check .",
     "check": "npm run lint && npm run test",
     "prepublishOnly": "npm run compile"
   },

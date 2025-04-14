@@ -1,8 +1,8 @@
 module.exports = {
   root: true,
-  extends: ["@mongodb-js/eslint-config-devtools"],
+  extends: ['@mongodb-js/eslint-config-devtools'],
   parserOptions: {
     tsconfigRootDir: __dirname,
-    project: ["./tsconfig-lint.json"],
+    project: ['./tsconfig-lint.json'],
   },
 };

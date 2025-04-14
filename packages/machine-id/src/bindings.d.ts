@@ -1,4 +1,6 @@
 declare module 'bindings' {
-  function bindings(filename: string): any;
+  function bindings(filename: string): {
+    getMachineId: () => string | undefined;
+  };
   export = bindings;
 }
