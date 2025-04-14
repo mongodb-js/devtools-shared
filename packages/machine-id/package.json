@@ -2,8 +2,8 @@
   "name": "@mongodb-js/machine-id",
   "version": "1.0.0",
   "description": "Cross-platform native module to retrieve machine/device identifiers",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "compile": "tsc -p tsconfig.json && node-gyp rebuild && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "bootstrap": "npm run compile",
@@ -21,8 +21,8 @@
   },
   "license": "Apache-2.0",
   "exports": {
-    "require": "./lib/index.js",
-    "import": "./lib/.esm-wrapper.mjs"
+    "require": "./dist/index.js",
+    "import": "./dist/.esm-wrapper.mjs"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
   "repository": {
