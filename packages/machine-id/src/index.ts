@@ -8,6 +8,15 @@ export type GetMachineIdOptions = {
   raw?: boolean;
 };
 
+function getMachineIdFromBinding(): string | undefined {
+  try {
+    return binding.getMachineId() || undefined;
+  } catch {
+    // If the binding fails, we can assume the machine ID is not available.
+    return undefined;
+  }
+}
+
 /**
  * Get the machine ID for the current system
  * @returns The machine ID (UUID) or undefined if not available
@@ -15,20 +24,9 @@ export type GetMachineIdOptions = {
 export function getMachineId({ raw = false }: GetMachineIdOptions = {}):
   | string
   | undefined {
-  let machineId: string | undefined;
+  const machineId: string | undefined = getMachineIdFromBinding();
 
-  try {
-    machineId = binding.getMachineId();
-  } catch {
-    // If the binding fails, we can assume the machine ID is not available.
-    return undefined;
-  }
-
-  if (!machineId) {
-    return undefined;
-  }
-
-  if (raw === true) {
+  if (!machineId || raw === true) {
     return machineId;
   }
 

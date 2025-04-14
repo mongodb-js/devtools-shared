@@ -6,6 +6,7 @@ import { createHash } from 'crypto';
 import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 import bindings from 'bindings';
+import assert from 'assert';
 
 chai.use(sinonChai);
 
@@ -16,7 +17,9 @@ describe('machine-id', function () {
     let id: string;
 
     beforeEach(function () {
-      id = getMachineId({ raw: true }) || '';
+      const deviceId = getMachineId();
+      assert(deviceId);
+      id = deviceId;
     });
 
     it('returns a valid UUID format machine ID', function () {
@@ -50,7 +53,9 @@ describe('machine-id', function () {
     let id: string;
 
     beforeEach(function () {
-      id = getMachineId() || '';
+      const deviceId = getMachineId();
+      assert(deviceId);
+      id = deviceId;
     });
 
     it('returns a valid SHA256 hash format machine ID', function () {
@@ -59,11 +64,10 @@ describe('machine-id', function () {
 
       expect(hashRegex.test(id));
 
-      expect(id).equals(
-        createHash('sha256')
-          .update(getMachineId({ raw: true }) || '')
-          .digest('hex'),
-      );
+      const hashId = getMachineId({ raw: true });
+      assert(hashId);
+
+      expect(id).equals(createHash('sha256').update(hashId).digest('hex'));
     });
   });
 
