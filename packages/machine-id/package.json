@@ -2,12 +2,16 @@
   "name": "@mongodb-js/machine-id",
   "version": "1.0.0",
   "description": "Cross-platform native module to retrieve machine/device identifiers",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "pretest": "npm run build",
+    "compile": "tsc -p tsconfig.json && node-gyp rebuild && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "bootstrap": "npm run compile",
+    "pretest": "npm run compile",
     "test": "mocha",
-    "prepack": "npm run build",
-    "build": "node-gyp rebuild && gen-esm-wrapper . ./.esm-wrapper.mjs"
+    "lint": "eslint \"**/*.{js,ts}\"",
+    "check": "npm run lint && npm run test",
+    "prepublishOnly": "npm run compile"
   },
   "author": "Compass Team <compass@mongodb.com>",
   "gypfile": true,
@@ -17,8 +21,8 @@
   },
   "license": "Apache-2.0",
   "exports": {
-    "require": "./index.js",
-    "import": "./.esm-wrapper.mjs"
+    "require": "./lib/index.js",
+    "import": "./lib/.esm-wrapper.mjs"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
   "repository": {
@@ -26,22 +30,29 @@
     "url": "https://github.com/mongodb-js/devtools-shared.git"
   },
   "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
-  "typings": "index.d.ts",
+  "bin": {
+    "machine-id": "lib/bin/machine-id.js"
+  },
   "files": [
     "binding.cc",
     "binding.gyp",
-    "index.d.ts",
-    "index.js",
-    "bin/machine-id.js",
-    "LICENSE",
-    ".esm-wrapper.mjs"
+    "lib",
+    "LICENSE"
   ],
-  "bin": {
-    "machine-id": "bin/machine-id.js"
-  },
   "devDependencies": {
+    "@mongodb-js/eslint-config-devtools": "0.9.11",
+    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
+    "@mongodb-js/tsconfig-devtools": "^1.0.3",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.1.1",
+    "@types/sinon-chai": "^3.2.5",
+    "@types/node": "^20.10.0",
+    "eslint": "^8.0.0",
     "gen-esm-wrapper": "^1.1.1",
     "mocha": "^10.4.0",
-    "node-machine-id": "^1.1.12"
+    "chai": "^4.5.0",
+    "node-machine-id": "^1.1.12",
+    "typescript": "^5.0.0"
   }
 }
