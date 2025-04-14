@@ -52,6 +52,11 @@ namespace
   // Trim whitespace and newlines from a string
   std::string trim(const std::string &str)
   {
+    if (str.empty())
+    {
+      return str;
+    }
+
     std::string result = str;
     result.erase(result.find_last_not_of(" \n\r\t") + 1);
     result.erase(0, result.find_first_not_of(" \n\r\t"));
@@ -61,20 +66,26 @@ namespace
   // Read file contents
   std::string readFile(const char *path)
   {
-    std::ifstream file(path);
-    std::string content;
-
-    if (file.is_open())
+    try
     {
-      std::string line;
-      if (std::getline(file, line))
-      {
-        content = line;
-      }
-      file.close();
-    }
+      std::ifstream file(path);
+      std::string content;
 
-    return content;
+      if (file.is_open())
+      {
+        std::string line;
+        if (std::getline(file, line))
+        {
+          content = line;
+        }
+        file.close();
+      }
+      return content;
+    }
+    catch (const std::exception &)
+    {
+      return "";
+    }
   }
 
   // Get Linux machine ID by reading from system files
