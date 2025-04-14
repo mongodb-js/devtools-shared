@@ -1,8 +1,6 @@
 # @mongodb-js/machine-id
 
-[![npm](https://img.shields.io/npm/v/@mongodb-js/machine-id.svg)](https://www.npmjs.com/package/@mongodb-js/machine-id)
-
-A native Node.js module to retrieve the unique machine ID across different operating systems.
+> Cross-platform module to retrieve unique machine IDs across desktop operating systems without admin privileges or child processes.
 
 ## Installation
 
@@ -15,6 +13,7 @@ Or use it directly in the CLI
 ```
 npx @mongodb-js/machine-id
 ```
+
 
 ## Usage
 
@@ -40,25 +39,35 @@ machine-id
 
 This will print the machine ID to the console.
 
+## Comparison with `node-machine-id`
+This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id), but **using native access to system APIs without the need for child processes**.
+
+If you were previously using `node-machine-id`, you can use the following mapping to get a result that uses the same hashing transformation. This helps create more consistent results as before but it is not guaranteed to be the same for all cases.
+```ts
+import { createHash } from 'crypto';
+import { getMachineId } from '@mongodb-js/machine-id';
+
+function machineIdSync(original: boolean): string | undefined {
+    const rawMachineId = getMachineId({ raw: true }).toLowerCase();
+
+    if (original) {
+        return rawMachineId;
+    }
+
+    return createHash("sha256")
+        .update(rawMachineId)
+        .digest("hex");
+}
+
+```
+
 ## Supported Platforms
 
-- **macOS**: Retrieves the IOPlatformUUID using the IOKit framework
-- **Linux**: Support for Linux planned in future releases
-- **Windows**: Support for Windows planned in future releases
+- **macOS**: Uses the `IOPlatformUUID` from the `IOKit` framework (Supported on macOS 12.0 and later).
+- **Linux**: Uses the `/etc/machine-id` file to retrieve the machine ID. If this file does not exist, it falls back to `/var/lib/dbus/machine-id`.
+- **Windows**: Uses the `MachineGuid` from the  `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography` registry.
 
-## Implementation Details
 
-The module uses native OS-specific APIs to retrieve the machine ID:
-
-- On macOS, it uses the IOKit framework to access the IOPlatformUUID, which uniquely identifies the machine.
-
-## Comparison with node-machine-id
-
-This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id), but with:
-
-- Simplified API focused on getting the raw machine ID
-- Direct native access to system APIs without shell commands
-- Optimized for use in MongoDB tools
 
 ## License
 

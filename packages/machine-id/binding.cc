@@ -144,7 +144,7 @@ namespace
     }
 #endif
 
-    // If we couldn't get a machine ID or platform not supported
+    // If we couldn't get a machine ID or platform not supported, return undefined.
     return env.Undefined();
   }
 
