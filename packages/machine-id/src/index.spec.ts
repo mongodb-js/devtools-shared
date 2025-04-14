@@ -10,7 +10,7 @@ describe("machine-id", function () {
     let id: string;
 
     beforeEach(function () {
-      id = getMachineId(true);
+      id = getMachineId(true) || "";
     });
 
     it("returns a valid UUID format machine ID", function () {
@@ -44,7 +44,7 @@ describe("machine-id", function () {
     let id: string;
 
     beforeEach(function () {
-      id = getMachineId();
+      id = getMachineId() || "";
     });
 
     it("returns a valid SHA256 hash format machine ID", function () {
