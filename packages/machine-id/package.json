@@ -1,0 +1,47 @@
+{
+  "name": "@mongodb-js/machine-id",
+  "version": "1.0.0",
+  "description": "Cross-platform native module to retrieve machine/device identifiers",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "npm run build",
+    "test": "mocha",
+    "prepack": "npm run build",
+    "build": "node-gyp rebuild && gen-esm-wrapper . ./.esm-wrapper.mjs"
+  },
+  "author": "Compass Team <compass@mongodb.com>",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^8.0.0"
+  },
+  "license": "Apache-2.0",
+  "exports": {
+    "require": "./index.js",
+    "import": "./.esm-wrapper.mjs"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
+  "typings": "index.d.ts",
+  "files": [
+    "binding.cc",
+    "binding.gyp",
+    "index.d.ts",
+    "index.js",
+    "bin/machine-id.js",
+    "LICENSE",
+    ".esm-wrapper.mjs"
+  ],
+  "bin": {
+    "machine-id": "bin/machine-id.js"
+  },
+  "devDependencies": {
+    "gen-esm-wrapper": "^1.1.1",
+    "mocha": "^10.4.0",
+    "node-machine-id": "^1.1.12"
+  }
+}
