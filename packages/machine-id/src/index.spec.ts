@@ -17,7 +17,7 @@ describe('machine-id', function () {
     let id: string;
 
     beforeEach(function () {
-      const deviceId = getMachineId();
+      const deviceId = getMachineId({ raw: true });
       assert(deviceId);
       id = deviceId;
     });

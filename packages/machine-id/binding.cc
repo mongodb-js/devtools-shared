@@ -56,9 +56,12 @@ namespace
     {
       return str;
     }
-
     std::string result = str;
-    result.erase(result.find_last_not_of(" \n\r\t") + 1);
+    size_t from_right = result.find_last_not_of(" \n\r\t");
+    if (from_right != std::string::npos)
+    {
+      result.erase(from_right + 1);
+    }
     result.erase(0, result.find_first_not_of(" \n\r\t"));
     return result;
   }
