@@ -10,7 +10,7 @@ describe("machine-id", function () {
     let id: string;
 
     beforeEach(function () {
-      id = getMachineId(true) || "";
+      id = getMachineId({ raw: true }) || "";
     });
 
     it("returns a valid UUID format machine ID", function () {

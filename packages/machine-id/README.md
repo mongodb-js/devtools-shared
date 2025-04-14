@@ -21,11 +21,13 @@ npx @mongodb-js/machine-id
 ### As a module
 
 ```javascript
-const getMachineID = require('@mongodb-js/machine-id');
+import { getMachineID } from '@mongodb-js/machine-id';
 
 // Get the machine ID
-const id = getMachineID();
-console.log('Machine ID:', id);
+const hashedId = getMachineID();
+console.log('SHA-256 Hashed Machine ID:', id);
+const id = getMachineID({ raw: true });
+console.log('Original Machine ID:', id);
 ```
 
 ### As a CLI

@@ -7,6 +7,8 @@
 #elif defined(__linux__)
 #include <fstream>
 #include <algorithm>
+#elif defined(_WIN32)
+#include <windows.h>
 #endif
 
 using namespace Napi;
@@ -15,7 +17,7 @@ namespace
 {
 
 #ifdef __APPLE__
-  // Get macOS machine Id using IOKit framework directly
+  // Get macOS machine ID using IOKit framework directly
   std::string getMachineId()
   {
     std::string uuid;
@@ -43,7 +45,7 @@ namespace
     return uuid;
   }
 #elif defined(__linux__)
-  // Linux machine Id paths
+  // Linux machine ID paths
   const char *DBUS_PATH = "/var/lib/dbus/machine-id";
   const char *DBUS_PATH_ETC = "/etc/machine-id";
 
@@ -75,7 +77,7 @@ namespace
     return content;
   }
 
-  // Get Linux machine Id by reading from system files
+  // Get Linux machine ID by reading from system files
   std::string getMachineId()
   {
     std::string id = readFile(DBUS_PATH);
@@ -88,14 +90,53 @@ namespace
 
     return trim(id);
   }
+#elif defined(_WIN32)
+  // Get Windows machine ID from registry
+  std::string getMachineId()
+  {
+    std::string machineGuid;
+    HKEY hKey;
+    LONG result = RegOpenKeyExA(
+        HKEY_LOCAL_MACHINE,
+        "SOFTWARE\\Microsoft\\Cryptography",
+        0,
+        KEY_QUERY_VALUE | KEY_WOW64_64KEY,
+        &hKey);
+
+    if (result != ERROR_SUCCESS)
+    {
+      return "";
+    }
+
+    char value[128];
+    DWORD valueSize = sizeof(value);
+    DWORD valueType;
+
+    result = RegQueryValueExA(
+        hKey,
+        "MachineGuid",
+        NULL,
+        &valueType,
+        reinterpret_cast<LPBYTE>(value),
+        &valueSize);
+
+    RegCloseKey(hKey);
+
+    if (result == ERROR_SUCCESS && valueType == REG_SZ)
+    {
+      machineGuid = value;
+    }
+
+    return machineGuid;
+  }
 #endif
 
-  // Function to get the machine Id
+  // Function to get the machine ID
   Value GetMachineId(const CallbackInfo &args)
   {
     Env env = args.Env();
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
     std::string id = getMachineId();
     if (!id.empty())
     {
@@ -103,7 +144,7 @@ namespace
     }
 #endif
 
-    // If we couldn't get a machine Id or platform not supported
+    // If we couldn't get a machine ID or platform not supported
     return env.Undefined();
   }
 
