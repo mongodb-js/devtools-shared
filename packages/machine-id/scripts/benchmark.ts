@@ -12,7 +12,6 @@ import { machineIdSync } from 'node-machine-id';
 
 // Configuration
 const ITERATIONS = 100;
-const WARMUP_ITERATIONS = 10;
 
 // Utility to format time
 function formatTime(ms: number): string {
@@ -40,15 +39,8 @@ function runBenchmark() {
   console.log(`Test iterations: ${ITERATIONS}`);
   console.log('----------------------------------------');
 
-  // Warm-up
-  console.log('Warming up...');
-  for (let i = 0; i < WARMUP_ITERATIONS; i++) {
-    getMachineId({ raw: true });
-    machineIdSync(true);
-  }
-
   // Test raw mode (no hashing)
-  console.log('\nRaw machine ID retrieval:');
+  console.log('Raw:');
 
   const startOursRaw = process.hrtime.bigint();
   for (let i = 0; i < ITERATIONS; i++) {
@@ -75,8 +67,10 @@ function runBenchmark() {
     `Comparison: @mongodb-js/machine-id is ${formatComparison(ourTimeRaw, otherTimeRaw)}`,
   );
 
+  console.log('----------------------------------------');
+
   // Test hashed mode
-  console.log('\nHashed machine ID:');
+  console.log('Hashed:');
 
   // @mongodb-js/machine-id
   const startOursHashed = process.hrtime.bigint();
@@ -103,8 +97,6 @@ function runBenchmark() {
   console.log(
     `Comparison: @mongodb-js/machine-id is ${formatComparison(ourTimeHashed, otherTimeHashed)}`,
   );
-
-  console.log('\n========================================');
 }
 
 // Run the benchmark

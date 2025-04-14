@@ -1,7 +1,7 @@
 {
   "name": "@mongodb-js/machine-id",
   "version": "1.0.0",
-  "description": "Cross-platform native module to retrieve machine/device identifiers",
+  "description": "Native implementation for retrieving unique machine ID without admin privileges or child processes for desktop platforms. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -33,12 +33,12 @@
   },
   "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
   "bin": {
-    "machine-id": "lib/bin/machine-id.js"
+    "machine-id": "dist/bin/machine-id.js"
   },
   "files": [
     "binding.cc",
     "binding.gyp",
-    "lib",
+    "dist",
     "LICENSE"
   ],
   "devDependencies": {
@@ -55,6 +55,7 @@
     "mocha": "^8.4.0",
     "chai": "^4.5.0",
     "node-machine-id": "^1.1.12",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "ts-node": "^10.9.2"
   }
 }
