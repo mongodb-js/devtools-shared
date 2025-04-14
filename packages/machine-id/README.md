@@ -28,7 +28,6 @@ const id = getMachineID({ raw: true });
 console.log('Original Machine ID:', id);
 ```
 
-
 ## Supported Platforms
 
 - **macOS**: Uses the `IOPlatformUUID` from the `IOKit` framework (Supported on macOS 12.0 and later).
@@ -44,19 +43,19 @@ Here's a table of performance comparisons between the two libraries, based on th
 | Test        | node-machine-id | @mongodb-js/machine-id | Improvement |
 | ----------- | --------------- | ---------------------- | ----------- |
 | **Mac**     |
-| Raw      | 10.71ms          | 0.0072ms              | 1494x        |
-| Hashed   | 12.42ms          | 0.0176ms                 | 707x        |
+| Raw         | 10.71ms         | 0.0072ms               | 1494x       |
+| Hashed      | 12.42ms         | 0.0176ms               | 707x        |
 | **Linux**   |
-| Raw         | 3.26ms      | 0.0059ms               | 557x        |
-| Hashed      | 3.25ms        | 0.0088ms                 | 368x        |
+| Raw         | 3.26ms          | 0.0059ms               | 557x        |
+| Hashed      | 3.25ms          | 0.0088ms               | 368x        |
 | **Windows** |
-| Raw         | 45.36ms*          | 0.0122ms               | 3704x        |
-| Hashed      | 28.66ms*          | 0.0272ms                 | 1053x        |
+| Raw         | 45.36ms\*       | 0.0122ms               | 3704x       |
+| Hashed      | 28.66ms\*       | 0.0272ms               | 1053x       |
 
-\* - Windows tests may be inaccurate due to potential caching. 
-
+\* - Windows tests may be inaccurate due to potential caching.
 
 ### Migrating from `node-machine-id`
+
 If you were previously using `node-machine-id`, you can use the following mapping to get a result with the following hashing transformation. This is not guaranteed always to 1:1 match the output of `node-machine-id` for all cases. For example on Linux, it falls back to `/etc/machine-id` if `/var/lib/dbus/machine-id` is not available.
 
 ```ts
@@ -66,11 +65,14 @@ import { getMachineId } from '@mongodb-js/machine-id';
 function machineIdSync(original: boolean): string | undefined {
   const rawMachineId = getMachineId({ raw: true }).toLowerCase();
 
-  return original ? rawMachineId : createHash('sha256').update(rawMachineId).digest('hex');
+  return original
+    ? rawMachineId
+    : createHash('sha256').update(rawMachineId).digest('hex');
 }
 ```
 
 ## Credits
+
 Influenced by the work from [denisbrodbeck/machineid](https://github.com/denisbrodbeck/machineid) and [automation-stack/node-machine-id](https://github.com/automation-stack/node-machine-id).
 
 ## License

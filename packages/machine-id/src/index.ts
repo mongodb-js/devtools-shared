@@ -15,7 +15,14 @@ export type GetMachineIdOptions = {
 export function getMachineId({ raw = false }: GetMachineIdOptions = {}):
   | string
   | undefined {
-  const machineId: string | undefined = binding.getMachineId();
+  let machineId: string | undefined;
+
+  try {
+    machineId = binding.getMachineId();
+  } catch {
+    // If the binding fails, we can assume the machine ID is not available.
+    return undefined;
+  }
 
   if (!machineId) {
     return undefined;

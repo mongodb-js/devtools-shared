@@ -1,8 +1,13 @@
 /* eslint-disable no-console */
 import { getMachineId } from '.';
 import { machineIdSync as otherMachineId } from 'node-machine-id';
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { createHash } from 'crypto';
+import sinonChai from 'sinon-chai';
+import sinon from 'sinon';
+import bindings from 'bindings';
+
+chai.use(sinonChai);
 
 describe('machine-id', function () {
   this.timeout(5_000);
@@ -53,6 +58,43 @@ describe('machine-id', function () {
       const hashRegex = /^[0-9a-f]{64}$/i;
 
       expect(hashRegex.test(id));
+
+      expect(id).equals(
+        createHash('sha256')
+          .update(getMachineId({ raw: true }) || '')
+          .digest('hex'),
+      );
+    });
+  });
+
+  describe('edge cases', function () {
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    describe('returns undefined', function () {
+      it('if something goes wrong with the binding function', function () {
+        sinon
+          .stub(bindings('machine_id'), 'getMachineId')
+          .throws(new Error('Binding error'));
+
+        expect(getMachineId({ raw: true })).to.be.undefined;
+        expect(getMachineId()).to.be.undefined;
+      });
+
+      it('if the binding function returns an empty string', function () {
+        sinon.stub(bindings('machine_id'), 'getMachineId').returns('');
+
+        expect(getMachineId({ raw: true })).to.be.undefined;
+        expect(getMachineId()).to.be.undefined;
+      });
+
+      it('if the binding function returns undefined', function () {
+        sinon.stub(bindings('machine_id'), 'getMachineId').returns(undefined);
+
+        expect(getMachineId({ raw: true })).to.be.undefined;
+        expect(getMachineId()).to.be.undefined;
+      });
     });
   });
 });
