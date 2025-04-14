@@ -70,6 +70,9 @@ function machineIdSync(original: boolean): string | undefined {
 }
 ```
 
+## Credits
+Influenced by the work from [denisbrodbeck/machineid](https://github.com/denisbrodbeck/machineid) and [automation-stack/node-machine-id](https://github.com/automation-stack/node-machine-id).
+
 ## License
 
 Apache-2.0
