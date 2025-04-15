@@ -1,0 +1,62 @@
+{
+  "name": "@mongodb-js/machine-id",
+  "version": "1.0.0",
+  "description": "Native implementation for retrieving unique machine ID without admin privileges or child processes for desktop platforms. Faster and more reliable alternative to node-machine-id.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "compile": "tsc -p tsconfig.json && node-gyp rebuild && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "bootstrap": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "mocha",
+    "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
+    "test-ci": "npm run test-cov",
+    "lint": "eslint . && prettier --check .",
+    "check": "npm run lint && npm run test",
+    "prepublishOnly": "npm run compile",
+    "benchmark": "ts-node scripts/benchmark.ts"
+  },
+  "author": "Compass Team <compass@mongodb.com>",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^8.0.0"
+  },
+  "license": "Apache-2.0",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./dist/.esm-wrapper.mjs"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
+  "bin": {
+    "machine-id": "dist/bin/machine-id.js"
+  },
+  "files": [
+    "binding.cc",
+    "binding.gyp",
+    "dist",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@mongodb-js/eslint-config-devtools": "0.9.11",
+    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
+    "@mongodb-js/tsconfig-devtools": "^1.0.3",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.1.1",
+    "@types/sinon-chai": "^3.2.5",
+    "@types/node": "^17.0.35",
+    "eslint": "^7.25.0",
+    "gen-esm-wrapper": "^1.1.1",
+    "mocha": "^8.4.0",
+    "chai": "^4.5.0",
+    "node-machine-id": "^1.1.12",
+    "typescript": "^5.0.4",
+    "ts-node": "^10.9.2"
+  }
+}
