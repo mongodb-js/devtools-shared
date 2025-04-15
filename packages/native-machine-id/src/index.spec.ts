@@ -149,7 +149,7 @@ describe('native-machine-id', function () {
           sinon.replace(
             bindings('machine_id'),
             'getMachineIdAsync',
-            (callback: (err: Error | null, value?: string) => void) => {
+            (callback) => {
               const { error, value } = response();
               callback(error, value);
             },

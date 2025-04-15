@@ -98,7 +98,7 @@ namespace
   }
 
   // Get Linux machine ID by reading from system files
-  std::string getMachineId()
+  std::string getMachineId() noexcept
   {
     std::string uuid = readFile(DBUS_PATH);
 
@@ -112,7 +112,7 @@ namespace
   }
 #elif defined(_WIN32)
   // Get Windows machine ID from registry
-  std::string getMachineId()
+  std::string getMachineId() noexcept
   {
     std::string uuid;
     HKEY hKey;

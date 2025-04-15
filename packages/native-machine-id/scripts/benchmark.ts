@@ -7,7 +7,7 @@
  * against the node-machine-id package.
  */
 
-import { getMachineId } from '../dist/index.js';
+import { getMachineIdSync as getMachineId } from '../dist/index.js';
 import { machineIdSync } from 'node-machine-id';
 
 // Configuration
