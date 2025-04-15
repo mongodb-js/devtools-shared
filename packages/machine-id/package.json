@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/machine-id",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Native implementation for retrieving unique machine ID without admin privileges or child processes for desktop platforms. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
