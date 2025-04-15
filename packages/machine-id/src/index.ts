@@ -24,7 +24,7 @@ function getMachineIdFromBinding(): string | undefined {
 export function getMachineId({ raw = false }: GetMachineIdOptions = {}):
   | string
   | undefined {
-  const machineId: string | undefined = getMachineIdFromBinding();
+  const machineId = getMachineIdFromBinding();
 
   if (!machineId || raw === true) {
     return machineId;

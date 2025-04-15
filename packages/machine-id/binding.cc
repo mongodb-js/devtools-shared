@@ -18,7 +18,7 @@ namespace
 
 #ifdef __APPLE__
   // Get macOS machine ID using IOKit framework directly
-  std::string getMachineId()
+  std::string getMachineId() noexcept
   {
     std::string uuid;
     io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/");
@@ -34,10 +34,14 @@ namespace
     if (uuidProperty)
     {
       char buffer[128];
-      if (CFStringGetCString((CFStringRef)uuidProperty, buffer, sizeof(buffer), kCFStringEncodingUTF8))
+      if (!CFStringGetCString((CFStringRef)uuidProperty, buffer, sizeof(buffer), kCFStringEncodingUTF8))
       {
-        uuid = buffer;
+        CFRelease(uuidProperty);
+        IOObjectRelease(ioRegistryRoot);
+        return "";
       }
+
+      uuid = buffer;
       CFRelease(uuidProperty);
     }
 
@@ -77,10 +81,12 @@ namespace
       if (file.is_open())
       {
         std::string line;
-        if (std::getline(file, line))
+
+        if (!file.fail() && std::getline(file, line))
         {
           content = line;
         }
+
         file.close();
       }
       return content;
@@ -94,21 +100,21 @@ namespace
   // Get Linux machine ID by reading from system files
   std::string getMachineId()
   {
-    std::string id = readFile(DBUS_PATH);
+    std::string uuid = readFile(DBUS_PATH);
 
     // Try fallback path if the first path fails
-    if (id.empty())
+    if (uuid.empty())
     {
-      id = readFile(DBUS_PATH_ETC);
+      uuid = readFile(DBUS_PATH_ETC);
     }
 
-    return trim(id);
+    return trim(uuid);
   }
 #elif defined(_WIN32)
   // Get Windows machine ID from registry
   std::string getMachineId()
   {
-    std::string machineGuid;
+    std::string uuid;
     HKEY hKey;
     LONG result = RegOpenKeyExA(
         HKEY_LOCAL_MACHINE,
@@ -122,7 +128,7 @@ namespace
       return "";
     }
 
-    char value[128];
+    char value[128] = {0};
     DWORD valueSize = sizeof(value);
     DWORD valueType;
 
@@ -134,14 +140,19 @@ namespace
         reinterpret_cast<LPBYTE>(value),
         &valueSize);
 
-    RegCloseKey(hKey);
-
-    if (result == ERROR_SUCCESS && valueType == REG_SZ)
+    if (result == ERROR_SUCCESS && valueType == REG_SZ && valueSize > 0)
     {
-      machineGuid = value;
+      // Create string with explicit length based on returned valueSize
+      uuid = std::string(value, valueSize - (value[valueSize - 1] == '\0' ? 1 : 0));
+    }
+    else
+    {
+      RegCloseKey(hKey);
+      return "";
     }
 
-    return machineGuid;
+    RegCloseKey(hKey);
+    return uuid;
   }
 #endif
 
