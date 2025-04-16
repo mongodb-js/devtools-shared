@@ -2,7 +2,7 @@ import bindings from 'bindings';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 
-const binding = bindings('machine_id');
+const binding = bindings('native_machine_id');
 
 function getMachineIdFromBindingSync(): string | undefined {
   try {

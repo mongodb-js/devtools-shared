@@ -1,6 +1,6 @@
 {
   'targets': [{
-    'target_name': 'machine_id',
+    'target_name': 'native_machine_id',
     'sources': [ 'binding.cc' ],
     'include_dirs': ["<!(node -p \"require('node-addon-api').include_dir\")"],
     'dependencies': ["<!(node -p \"require('node-addon-api').gyp\")"],

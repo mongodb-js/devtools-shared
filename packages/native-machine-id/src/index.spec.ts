@@ -112,7 +112,7 @@ describe('native-machine-id', function () {
       describe('returns undefined', function () {
         it('if something goes wrong with the binding function', function () {
           sinon
-            .stub(bindings('machine_id'), 'getMachineIdSync')
+            .stub(bindings('native_machine_id'), 'getMachineIdSync')
             .throws(new Error('Binding error'));
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
@@ -120,7 +120,9 @@ describe('native-machine-id', function () {
         });
 
         it('if the binding function returns an empty string', function () {
-          sinon.stub(bindings('machine_id'), 'getMachineIdSync').returns('');
+          sinon
+            .stub(bindings('native_machine_id'), 'getMachineIdSync')
+            .returns('');
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
           expect(getMachineIdSync()).to.be.undefined;
@@ -128,7 +130,7 @@ describe('native-machine-id', function () {
 
         it('if the binding function returns undefined', function () {
           sinon
-            .stub(bindings('machine_id'), 'getMachineIdSync')
+            .stub(bindings('native_machine_id'), 'getMachineIdSync')
             .returns(undefined);
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
@@ -147,7 +149,7 @@ describe('native-machine-id', function () {
         beforeEach(function () {
           response = sinon.stub();
           sinon.replace(
-            bindings('machine_id'),
+            bindings('native_machine_id'),
             'getMachineIdAsync',
             (callback) => {
               const { error, value } = response();
@@ -159,7 +161,7 @@ describe('native-machine-id', function () {
         it('if something goes wrong with the binding function', async function () {
           response.returns({ error: null, value: 'not this' });
           sinon
-            .stub(bindings('machine_id'), 'getMachineIdAsync')
+            .stub(bindings('native_machine_id'), 'getMachineIdAsync')
             .throws(new Error('Binding error'));
 
           expect(await getMachineIdAsync({ raw: true })).to.be.undefined;
