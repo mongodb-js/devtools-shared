@@ -1,7 +1,7 @@
 {
-  "name": "@mongodb-js/machine-id",
-  "version": "1.1.0",
-  "description": "Native implementation for retrieving unique machine ID without admin privileges or child processes for desktop platforms. Faster and more reliable alternative to node-machine-id.",
+  "name": "native-machine-id",
+  "version": "0.0.2",
+  "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -58,5 +58,23 @@
     "node-machine-id": "^1.1.12",
     "typescript": "^5.0.4",
     "ts-node": "^10.9.2"
-  }
+  },
+  "keywords": [
+    "machine id",
+    "node machine id",
+    "device identifier",
+    "node id",
+    "unique identifier",
+    "device id",
+    "machine identifier",
+    "unique id",
+    "platform id",
+    "electron id",
+    "node-machine-id",
+    "uuid",
+    "restrictions",
+    "native",
+    "telemetry",
+    "telemetry id"
+  ]
 }

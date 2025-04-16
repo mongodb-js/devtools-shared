@@ -3,7 +3,7 @@
 /**
  * Performance comparison script for machine-id vs node-machine-id
  *
- * This script measures and compares the performance of @mongodb-js/machine-id
+ * This script measures and compares the performance of native-machine-id
  * against the node-machine-id package.
  */
 
@@ -58,13 +58,13 @@ function runBenchmark() {
   const otherTimeRaw = Number(endOtherRaw - startOtherRaw) / 1_000_000; // ms
 
   console.log(
-    `@mongodb-js/machine-id: ${formatTime(ourTimeRaw)} total, ${formatTime(ourTimeRaw / ITERATIONS)} per call`,
+    `native-machine-id: ${formatTime(ourTimeRaw)} total, ${formatTime(ourTimeRaw / ITERATIONS)} per call`,
   );
   console.log(
     `node-machine-id:        ${formatTime(otherTimeRaw)} total, ${formatTime(otherTimeRaw / ITERATIONS)} per call`,
   );
   console.log(
-    `Comparison: @mongodb-js/machine-id is ${formatComparison(ourTimeRaw, otherTimeRaw)}`,
+    `Comparison: native-machine-id is ${formatComparison(ourTimeRaw, otherTimeRaw)}`,
   );
 
   console.log('----------------------------------------');
@@ -72,7 +72,7 @@ function runBenchmark() {
   // Test hashed mode
   console.log('Hashed:');
 
-  // @mongodb-js/machine-id
+  // native-machine-id
   const startOursHashed = process.hrtime.bigint();
   for (let i = 0; i < ITERATIONS; i++) {
     getMachineId();
@@ -89,13 +89,13 @@ function runBenchmark() {
   const otherTimeHashed = Number(endOtherHashed - startOtherHashed) / 1_000_000; // ms
 
   console.log(
-    `@mongodb-js/machine-id: ${formatTime(ourTimeHashed)} total, ${formatTime(ourTimeHashed / ITERATIONS)} per call`,
+    `native-machine-id: ${formatTime(ourTimeHashed)} total, ${formatTime(ourTimeHashed / ITERATIONS)} per call`,
   );
   console.log(
     `node-machine-id:        ${formatTime(otherTimeHashed)} total, ${formatTime(otherTimeHashed / ITERATIONS)} per call`,
   );
   console.log(
-    `Comparison: @mongodb-js/machine-id is ${formatComparison(ourTimeHashed, otherTimeHashed)}`,
+    `Comparison: native-machine-id is ${formatComparison(ourTimeHashed, otherTimeHashed)}`,
   );
 }
 

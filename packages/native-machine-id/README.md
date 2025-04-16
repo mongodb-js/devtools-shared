@@ -1,17 +1,18 @@
-# @mongodb-js/machine-id
+# native-machine-id
 
-> Native implementation for retrieving unique machine ID without admin privileges or child processes for desktop platforms. Faster and more reliable alternative to node-machine-id.
+> Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.
 
 ## Installation
 
 ```
-npm install @mongodb-js/machine-id
+npm install native-machine-id
 ```
 
 Or use it directly in the CLI
 
 ```
-npx @mongodb-js/machine-id
+npx native-machine-id
+npx native-machine-id --raw
 ```
 
 ## Usage
@@ -19,13 +20,13 @@ npx @mongodb-js/machine-id
 ### As a module
 
 ```javascript
-import { getMachineID } from '@mongodb-js/machine-id';
+import { getMachineID } from 'native-machine-id';
 
 // Get the machine ID
 const hashedId = getMachineID();
-console.log('SHA-256 Hashed Machine ID:', id);
-const id = getMachineID({ raw: true });
-console.log('Original Machine ID:', id);
+console.log('SHA-256 Hashed Machine ID:', hashedId);
+const rawId = getMachineID({ raw: true });
+console.log('Original Machine ID:', rawId);
 ```
 
 ## Supported Platforms
@@ -36,21 +37,21 @@ console.log('Original Machine ID:', id);
 
 ## Comparison with `node-machine-id`
 
-This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id), but **using native access to system APIs without the need for child processes**, making it much faster and reliable.
+This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id) while **using native access to system APIs without the need for child processes**, making it much faster and reliable.
 
 Here's a table of performance comparisons between the two libraries, based on the average runtime from 1000 iterations of the `getMachineId` and `machineIdSync` functions, from `scripts/benchmark.ts`:
 
-| Test        | node-machine-id | @mongodb-js/machine-id | Improvement |
-| ----------- | --------------- | ---------------------- | ----------- |
+| Test        | node-machine-id | native-machine-id | Improvement |
+| ----------- | --------------- | ----------------- | ----------- |
 | **Mac**     |
-| Raw         | 10.71ms         | 0.0072ms               | 1494x       |
-| Hashed      | 12.42ms         | 0.0176ms               | 707x        |
+| Raw         | 10.71ms         | 0.0072ms          | 1494x       |
+| Hashed      | 12.42ms         | 0.0176ms          | 707x        |
 | **Linux**   |
-| Raw         | 3.26ms          | 0.0059ms               | 557x        |
-| Hashed      | 3.25ms          | 0.0088ms               | 368x        |
+| Raw         | 3.26ms          | 0.0059ms          | 557x        |
+| Hashed      | 3.25ms          | 0.0088ms          | 368x        |
 | **Windows** |
-| Raw         | 45.36ms\*       | 0.0122ms               | 3704x       |
-| Hashed      | 28.66ms\*       | 0.0272ms               | 1053x       |
+| Raw         | 45.36ms\*       | 0.0122ms          | 3704x       |
+| Hashed      | 28.66ms\*       | 0.0272ms          | 1053x       |
 
 \* - Windows tests may be inaccurate due to potential caching.
 
@@ -60,7 +61,7 @@ If you were previously using `node-machine-id`, you can use the following mappin
 
 ```ts
 import { createHash } from 'crypto';
-import { getMachineId } from '@mongodb-js/machine-id';
+import { getMachineId } from 'native-machine-id';
 
 function machineIdSync(original: boolean): string | undefined {
   const rawMachineId = getMachineId({ raw: true }).toLowerCase();
