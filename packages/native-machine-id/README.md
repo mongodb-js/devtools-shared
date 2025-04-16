@@ -24,9 +24,9 @@ import { getMachineID } from 'native-machine-id';
 
 // Get the machine ID
 const hashedId = getMachineID();
-console.log('SHA-256 Hashed Machine ID:', id);
-const id = getMachineID({ raw: true });
-console.log('Original Machine ID:', id);
+console.log('SHA-256 Hashed Machine ID:', hashedId);
+const rawId = getMachineID({ raw: true });
+console.log('Original Machine ID:', rawId);
 ```
 
 ## Supported Platforms
@@ -37,7 +37,7 @@ console.log('Original Machine ID:', id);
 
 ## Comparison with `node-machine-id`
 
-This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id), but **using native access to system APIs without the need for child processes**, making it much faster and reliable.
+This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id) while **using native access to system APIs without the need for child processes**, making it much faster and reliable.
 
 Here's a table of performance comparisons between the two libraries, based on the average runtime from 1000 iterations of the `getMachineId` and `machineIdSync` functions, from `scripts/benchmark.ts`:
 
