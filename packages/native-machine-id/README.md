@@ -20,13 +20,19 @@ npx native-machine-id --raw
 ### As a module
 
 ```javascript
-import { getMachineID } from 'native-machine-id';
+import { getMachineId } from 'native-machine-id';
 
-// Get the machine ID
+// Get the machine ID, hashed with SHA-256
 const hashedId = getMachineID();
-console.log('SHA-256 Hashed Machine ID:', hashedId);
+console.log('Hashed Machine ID:', hashedId);
+
+// Get the raw machine ID (should not be exposed in untrusted environments)
 const rawId = getMachineID({ raw: true });
 console.log('Original Machine ID:', rawId);
+
+// Or synchronously
+import { getMachineIdSync } from 'native-machine-id';
+const id = getMachineIdSync();
 ```
 
 ## Supported Platforms
@@ -39,7 +45,7 @@ console.log('Original Machine ID:', rawId);
 
 This module provides similar functionality to [node-machine-id](https://www.npmjs.com/package/node-machine-id) while **using native access to system APIs without the need for child processes**, making it much faster and reliable.
 
-Here's a table of performance comparisons between the two libraries, based on the average runtime from 1000 iterations of the `getMachineId` and `machineIdSync` functions, from `scripts/benchmark.ts`:
+Here's a table of performance comparisons between the two libraries, based on the average runtime from 1000 iterations of the `getMachineIdSync` and `machineIdSync` functions, from `scripts/benchmark.ts`:
 
 | Test        | node-machine-id | native-machine-id | Improvement |
 | ----------- | --------------- | ----------------- | ----------- |
@@ -61,10 +67,10 @@ If you were previously using `node-machine-id`, you can use the following mappin
 
 ```ts
 import { createHash } from 'crypto';
-import { getMachineId } from 'native-machine-id';
+import { getMachineIdSync } from 'native-machine-id';
 
 function machineIdSync(original: boolean): string | undefined {
-  const rawMachineId = getMachineId({ raw: true }).toLowerCase();
+  const rawMachineId = getMachineIdSync({ raw: true }).toLowerCase();
 
   return original
     ? rawMachineId
