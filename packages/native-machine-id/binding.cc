@@ -245,4 +245,4 @@ static Object InitModule(Env env, Object exports)
   return exports;
 }
 
-NODE_API_MODULE(machine_id, InitModule)
+NODE_API_MODULE(native_machine_id, InitModule)
