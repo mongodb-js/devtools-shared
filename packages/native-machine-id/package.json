@@ -34,7 +34,7 @@
   },
   "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
   "bin": {
-    "machine-id": "dist/bin/machine-id.js"
+    "native-machine-id": "dist/bin/machine-id.js"
   },
   "files": [
     "binding.cc",
