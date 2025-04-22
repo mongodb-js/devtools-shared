@@ -4,6 +4,13 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
+#include <AvailabilityMacros.h>
+// kIOMainPortDefault is the replacement on macOS 12+ but is not available in older SDKs
+#if (defined(MAC_OS_X_VERSION_MIN_REQUIRED) && MAC_OS_X_VERSION_MIN_REQUIRED >= 120000)
+#define IO_PORT_DEFAULT kIOMainPortDefault
+#else
+#define IO_PORT_DEFAULT kIOMasterPortDefault
+#endif
 #elif defined(__linux__)
 #include <fstream>
 #include <algorithm>
@@ -21,7 +28,7 @@ namespace
   std::string getMachineId() noexcept
   {
     std::string uuid;
-    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/");
+    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(IO_PORT_DEFAULT, "IOService:/");
 
     if (ioRegistryRoot == MACH_PORT_NULL)
     {
