@@ -21,7 +21,8 @@ function getVirtualLanguageService(): {
     target: ts.ScriptTarget.ES2022,
     allowJs: true,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
-    typeRoots: [],
+    types: ['node'],
+    //typeRoots: [],
     allowImportingTsExtensions: true,
   };
 
@@ -162,6 +163,11 @@ function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
       ..._.pick(item.file, 'fileName', 'text'),
       ..._.pick(item, 'messageText'),
     };
+
+    if (result.fileName === '/shell-api.ts') {
+      delete result.text;
+    }
+
     return result;
   });
 }

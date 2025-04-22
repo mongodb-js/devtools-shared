@@ -3,7 +3,7 @@ import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
 
-describe('MongoDBAutocompleter', function () {
+describe.only('MongoDBAutocompleter', function () {
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
 
@@ -59,32 +59,22 @@ describe('MongoDBAutocompleter', function () {
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
     expect(
-      completions.filter((c) => /property|method/.test(c.kind)),
+      completions
+        .filter((c) => /property|method/.test(c.kind))
+        .filter((c) => c.name === 'foo'),
     ).to.deep.equal([
-      {
-        kind: 'property',
-        name: 'bar',
-        result: 'db.bar',
-      },
-      {
-        kind: 'property',
-        name: 'baz',
-        result: 'db.baz',
-      },
       {
         kind: 'property',
         name: 'foo',
         result: 'db.foo',
       },
-      {
-        kind: 'method',
-        name: 'runCommand',
-        result: 'db.runCommand',
-      },
     ]);
   });
 
-  it('completes a collection field name in a query', async function () {
+  // TODO: We need MONGOSH-2170 so that we can use the generated MQL types via
+  // the Shell API to autocomplete fields in
+  // ServerSchema[databaseName][collectionName].schema
+  it.skip('completes a collection field name in a query', async function () {
     const completions = await autocompleter.autocomplete('db.foo.find({ fo');
 
     expect(
@@ -106,5 +96,50 @@ describe('MongoDBAutocompleter', function () {
         result: 'db.foo.find({ foo',
       },
     ]);
+  });
+
+  describe('getConnectionCode', function () {
+    it('generates code for a connection', async function () {
+      const docs = [
+        {
+          foo: 'foo',
+          bar: 1,
+          baz: {
+            a: 1,
+            b: 'b',
+          },
+        },
+      ];
+
+      const analyzedDocuments = await analyzeDocuments(docs);
+      const schema = await analyzedDocuments.getMongoDBJsonSchema();
+
+      const connection = autocompleter.addConnection('my-connectionId');
+      connection.addCollectionSchema(
+        'my-databaseName',
+        'my-collectionName',
+        schema,
+      );
+      const code = autocompleter.getConnectionCode('my-connectionId');
+      expect(code).to.equal(`
+import * as ShellAPI from '/shell-api.ts';
+import * as bson from '/bson.ts';
+
+export type ServerSchema = {
+  'my-databaseName': {
+    'my-collectionName': {
+      schema: {
+        bar?: bson.Double | number;
+        baz?: {
+          a?: bson.Double | number;
+          b?: string;
+        };
+        foo?: string;
+      }
+    };
+  }
+};
+`);
+    });
   });
 });

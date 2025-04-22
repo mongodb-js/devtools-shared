@@ -33,11 +33,9 @@ async function run() {
     ),
     '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
     '/shell-api.ts': path.join(
-      __dirname,
+      require.resolve('@mongosh/shell-api'),
       '..',
-      'src',
-      'fixtures',
-      'shell-api.ts',
+      'api-processed.d.ts',
     ),
   };
   const files = await loadSources(input);

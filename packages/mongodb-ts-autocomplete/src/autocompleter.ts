@@ -57,14 +57,17 @@ class DatabaseSchema {
   toTypescriptTypeDefinition(): string {
     const collectionProperties = Object.entries(this.collectionSchemas).map(
       ([collectionName, schema]) => {
-        const def = schema ? toTypescriptTypeDefinition(schema) : `{}`;
-        return `      '${collectionName}': ShellAPI.Collection<${def}>;`;
+        const def: string = schema ? toTypescriptTypeDefinition(schema) : `{}`;
+        const lines = def.split(/\n/g).map((line) => `      ${line}`);
+        return `  '${collectionName}': {
+      schema: ${lines.join('\n').trim()}
+    };`;
       },
     );
 
     return `{
   ${collectionProperties.join('\n')}
-}`;
+  }`;
   }
 }
 
@@ -107,7 +110,7 @@ class ConnectionSchema {
     const databaseProperties = Object.entries(this.databaseSchemas).map(
       ([databaseName, schema]) => {
         const def = schema.toTypescriptTypeDefinition();
-        return `      '${databaseName}': ShellAPI.Database & ${def}`;
+        return `'${databaseName}': ${def}`;
       },
     );
 
@@ -151,12 +154,13 @@ export type ServerSchema = ${this.connectionSchemas[
 
   getCurrentGlobalsCode(connectionId: string, databaseName: string) {
     return `
+import * as ShellAPI from '/shell-api.ts';
 import { ServerSchema } from '/${connectionId}.ts';
 
 type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
 
 declare global {
-  var db: CurrentDatabaseSchema;
+  var db: ShellAPI.Database<ServerSchema, CurrentDatabaseSchema>;
 }
 `;
   }

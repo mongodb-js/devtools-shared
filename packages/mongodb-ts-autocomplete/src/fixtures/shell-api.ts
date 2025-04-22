@@ -3,16 +3,19 @@
 
 import type * as mql from './mql.ts';
 
-export interface Collection<T> {
-  find(query: mql.Filter<T>): mql.Cursor<T>;
-  findOne(query: mql.Filter<T>): T;
-  aggregate(pipeline: mql.Pipeline<T>): mql.Cursor<T>;
-  insertOne(value: T): void;
-  insertMany(value: mql.Array<T>): void;
-  updateOne(query: mql.Filter<T>, modifier: Partial<T> | mql.Pipeline<T>): void;
+export interface Collection<T extends { schema: mql.Document }> {
+  find(query: mql.Filter<T['schema']>): mql.Cursor<T['schema']>;
+  findOne(query: mql.Filter<T['schema']>): T['schema'];
+  aggregate(pipeline: mql.Pipeline<T['schema']>): mql.Cursor<T['schema']>;
+  insertOne(value: T['schema']): void;
+  insertMany(value: mql.Array<T['schema']>): void;
+  updateOne(
+    query: mql.Filter<T['schema']>,
+    modifier: Partial<T> | mql.Pipeline<T['schema']>,
+  ): void;
   updateMany(
-    query: mql.Filter<T>,
-    modifier: Partial<T> | mql.Pipeline<T>,
+    query: mql.Filter<T['schema']>,
+    modifier: Partial<T['schema']> | mql.Pipeline<T['schema']>,
   ): void;
 }
 
