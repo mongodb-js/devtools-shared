@@ -4,13 +4,9 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
-#include <AvailabilityMacros.h>
-// Ensure compatibility with older macOS
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
-#define IO_PORT kIOMainPortDefault
-#else
+// kIOMainPortDefault and kIOMasterPortDefault are both set to 0
+// and we define them here to avoid conflicts across OS versions
 #define IO_PORT 0
-#endif
 #elif defined(__linux__)
 #include <fstream>
 #include <algorithm>
