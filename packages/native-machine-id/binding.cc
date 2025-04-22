@@ -6,8 +6,10 @@
 #include <IOKit/IOKitLib.h>
 #include <AvailabilityMacros.h>
 // Ensure compatibility with older macOS
-#if (MAC_OS_X_VERSION_MAX_ALLOWED < 120000)
-#define kIOMainPortDefault kIOMasterPortDefault
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
+#define IO_PORT kIOMainPortDefault
+#else
+#define IO_PORT 0
 #endif
 #elif defined(__linux__)
 #include <fstream>
@@ -26,7 +28,7 @@ namespace
   std::string getMachineId() noexcept
   {
     std::string uuid;
-    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/");
+    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(IO_PORT, "IOService:/");
 
     if (ioRegistryRoot == MACH_PORT_NULL)
     {
