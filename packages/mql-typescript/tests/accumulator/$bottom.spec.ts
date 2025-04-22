@@ -5,7 +5,12 @@ import * as schema from '../../out/schema';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom/#find-the-bottom-score}
  */
 function test0() {
-  type gamescores = {};
+  type gamescores = {
+    playerId: string;
+    gameId: string;
+    score: number;
+  };
+
   const aggregation: schema.Pipeline<gamescores> = [
     { $match: { gameId: 'G1' } },
     {
@@ -24,7 +29,12 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom/#finding-the-bottom-score-across-multiple-games}
  */
 function test1() {
-  type gamescores = {};
+  type gamescores = {
+    playerId: string;
+    gameId: string;
+    score: number;
+  };
+
   const aggregation: schema.Pipeline<gamescores> = [
     {
       $group: {

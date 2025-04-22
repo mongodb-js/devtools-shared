@@ -226,7 +226,7 @@ export class SchemaGenerator extends GeneratorBase {
 
   private emitArg(
     arg: NonNullable<typeof Operator._type.arguments>[number],
-    named: boolean
+    named: boolean,
   ): void {
     if (named) {
       this.emit(`${arg.name}${arg.optional ? '?' : ''}: `);
@@ -325,7 +325,7 @@ export class SchemaGenerator extends GeneratorBase {
 
         this.emitComment(
           `A type describing the \`${parsed.name}\` operator.`,
-          parsed.link
+          parsed.link,
         );
         this.emit(`export interface ${ifaceName}<S> {`);
         if (parsed.description) {
@@ -334,13 +334,13 @@ export class SchemaGenerator extends GeneratorBase {
         this.emit(`${parsed.name}:`);
         for (const type of parsed.type) {
           (this.typeMappings[`${type}_S`] ??= []).push(
-            `${namespace}.${ifaceName}<S>`
+            `${namespace}.${ifaceName}<S>`,
           );
         }
         for (const type of parsed.type) {
           // TODO: why?
           (this.typeMappings[`C_${file.category}_S`] ??= []).push(
-            `${namespace}.${ifaceName}<S>`
+            `${namespace}.${ifaceName}<S>`,
           );
         }
         if (!parsed.arguments) {
@@ -350,7 +350,7 @@ export class SchemaGenerator extends GeneratorBase {
           if (encode === 'single') {
             if (parsed.arguments.length !== 1) {
               throw new Error(
-                'encode: single should imply arguments.length === 1'
+                'encode: single should imply arguments.length === 1',
               );
             }
             if (parsed.arguments[0].variadic) {
@@ -368,7 +368,7 @@ export class SchemaGenerator extends GeneratorBase {
               // limitations of merging objects with records, we need to use some type magic, requiring a helper type.
               // { foo: number } & { [key: string]: string } results in foo being a string due to the indexer. To avoid it
               // we need to use RecordWithStaticFields<{ foo: number}, string>
-              const mergedArgs: typeof parsed.arguments[number][] = [];
+              const mergedArgs: (typeof parsed.arguments)[number][] = [];
               const objectType = this.getOutputOf(() => {
                 this.emit(encode === 'array' ? '[' : '{');
                 for (const arg of parsed.arguments!) {
@@ -414,16 +414,16 @@ export class SchemaGenerator extends GeneratorBase {
                       } else {
                         this.emit(
                           `RecordWithStaticFields<${objectType}, ${this.toComment(
-                            arg.description
+                            arg.description,
                           )} ${arg.type
                             .map((t) => this.getArgumentTypeName(t))
-                            .join(' | ')}>`
+                            .join(' | ')}>`,
                         );
                       }
                       break;
                     case 'array':
                       throw new Error(
-                        `invalid mergeObject combination: variadic=${arg.variadic}, encode=${parsed.encode}`
+                        `invalid mergeObject combination: variadic=${arg.variadic}, encode=${parsed.encode}`,
                       );
                     case undefined:
                       this.emitArg(arg, false);
@@ -436,14 +436,14 @@ export class SchemaGenerator extends GeneratorBase {
                       mergedArgs.length
                     }, ${namespace}.${ifaceName}.{${mergedArgs
                       .map((a) => a.name)
-                      .join(', ')}}`
+                      .join(', ')}}`,
                   );
               }
               break;
             case 'single':
               if (parsed.arguments.length !== 1) {
                 throw new Error(
-                  'encode: single should imply arguments.length === 1'
+                  'encode: single should imply arguments.length === 1',
                 );
               }
               this.emitArg(parsed.arguments[0], false);
@@ -469,7 +469,7 @@ export class SchemaGenerator extends GeneratorBase {
           interfaces
             .map((i) => `(${i}${i.endsWith('_S') ? '<S>' : ''})`)
             .join('|') +
-          ';'
+          ';',
       );
     }
   }

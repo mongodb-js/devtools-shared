@@ -1,6 +1,7 @@
 import yargs from 'yargs';
 import { SchemaGenerator } from './schemaGenerator';
 import { TestGenerator } from './testGenerator';
+import { DriverSchemaGenerator } from './driverSchemaGenerator';
 
 async function main() {
   const argv = await yargs
@@ -9,19 +10,33 @@ async function main() {
       'tests',
       'Generates tests from the php driver definitions and the docs examples',
     )
+    .command(
+      'driver-schema',
+      'Updates the php driver definitions with the schema for the tests',
+    )
     .demandCommand(1, 'A command must be provided')
     .help().argv;
 
-  const [command, ...args] = argv._.map(String);
+  const [command] = argv._.map(String);
 
   switch (command) {
     case 'schema':
-      const schemaGenerator = new SchemaGenerator();
-      await schemaGenerator.generate();
+      {
+        const schemaGenerator = new SchemaGenerator();
+        await schemaGenerator.generate();
+      }
       break;
     case 'tests':
-      const testGenerator = new TestGenerator();
-      await testGenerator.generate();
+      {
+        const testGenerator = new TestGenerator();
+        await testGenerator.generate();
+      }
+      break;
+    case 'driver-schema':
+      {
+        const driverSchemaGenerator = new DriverSchemaGenerator();
+        await driverSchemaGenerator.generate();
+      }
       break;
     default:
       throw new Error(
@@ -30,4 +45,7 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

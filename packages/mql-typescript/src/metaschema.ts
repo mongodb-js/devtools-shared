@@ -139,6 +139,62 @@ export const Operator = z
             name: z.string().optional(),
             link: z.string().url().regex(new RegExp('^https://')).optional(),
             pipeline: z.array(z.record(z.any())).optional(),
+            schema: z
+              .union([
+                z.string(),
+                z.record(
+                  z.record(
+                    z
+                      .object({
+                        types: z.array(
+                          z.union([
+                            z
+                              .object({
+                                bsonType: z.enum([
+                                  'Array',
+                                  'Binary',
+                                  'Boolean',
+                                  'Code',
+                                  'CodeWScope',
+                                  'Date',
+                                  'Decimal128',
+                                  'Double',
+                                  'Int32',
+                                  'Int64',
+                                  'MaxKey',
+                                  'MinKey',
+                                  'Null',
+                                  'ObjectId',
+                                  'BSONRegExp',
+                                  'String',
+                                  'BSONSymbol',
+                                  'Timestamp',
+                                  'Undefined',
+                                  'Document',
+                                  'Number',
+                                ]),
+                              })
+                              .strict(),
+                            z
+                              .object({
+                                bsonType: z.literal('Array'),
+                                types: z.array(z.record(z.any())),
+                              })
+                              .strict(),
+                            z
+                              .object({
+                                bsonType: z.literal('Document'),
+                                fields: z.record(z.record(z.any())),
+                              })
+                              .strict(),
+                          ]),
+                        ),
+                      })
+                      .strict(),
+                  ),
+                ),
+              ])
+              .optional(),
           })
           .strict(),
       )

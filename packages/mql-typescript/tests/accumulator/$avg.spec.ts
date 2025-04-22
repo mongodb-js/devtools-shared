@@ -5,7 +5,23 @@ import * as schema from '../../out/schema';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/#use-in--group-stage}
  */
 function test0() {
-  // TODO: no schema found for $avg.Use in $group Stage at https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/#use-in--group-stage
+  type sales = {
+    _id: number;
+    item: string;
+    price: number;
+    quantity: number;
+    date: Date;
+  };
+
+  const aggregation: schema.Pipeline<sales> = [
+    {
+      $group: {
+        _id: '$item',
+        avgAmount: { $avg: { $multiply: ['$price', '$quantity'] } },
+        avgQuantity: { $avg: '$quantity' },
+      },
+    },
+  ];
 }
 
 /**
@@ -13,5 +29,27 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/#use-in--setwindowfields-stage}
  */
 function test1() {
-  // TODO: no schema found for $avg.Use in $setWindowFields Stage at https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/#use-in--setwindowfields-stage
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: '$state',
+        sortBy: { orderDate: 1 },
+        output: {
+          averageQuantityForState: {
+            $avg: '$quantity',
+            window: { documents: ['unbounded', 'current'] },
+          },
+        },
+      },
+    },
+  ];
 }

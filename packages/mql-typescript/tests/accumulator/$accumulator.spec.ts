@@ -5,7 +5,13 @@ import * as schema from '../../out/schema';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/accumulator/#use--accumulator-to-implement-the--avg-operator}
  */
 function test0() {
-  type books = {};
+  type books = {
+    _id: number;
+    title: string;
+    author: string;
+    copies: number;
+  };
+
   const aggregation: schema.Pipeline<books> = [
     {
       $group: {
@@ -41,7 +47,13 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/accumulator/#use-initargs-to-vary-the-initial-state-by-group}
  */
 function test1() {
-  type restaurants = {};
+  type restaurants = {
+    _id: number;
+    name: string;
+    city: string;
+    cuisine: string;
+  };
+
   const aggregation: schema.Pipeline<restaurants> = [
     {
       $group: {

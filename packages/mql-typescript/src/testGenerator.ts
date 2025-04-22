@@ -3,80 +3,91 @@ import { GeneratorBase, YamlFiles } from './generator';
 import * as fs from 'fs/promises';
 import { Operator } from './metaschema';
 import { capitalize, removeNewlines } from './utils';
-import { parseSchema, Schema } from 'mongodb-schema';
-import { JSDOM } from 'jsdom';
-import JSON5 from 'json5';
+import {
+  SimplifiedSchema,
+  SimplifiedSchemaType,
+  SimplifiedSchemaBaseType,
+} from 'mongodb-schema';
 
+import * as bson from 'bson';
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
-class DocsCrawler {
-  constructor(private readonly url: string) {}
-
-  private getInsertionCode(
-    element: Element | null | undefined
-  ): { collectionName: string; documents: unknown[] } | undefined {
-    const codeSnippet = element?.querySelector('script')?.innerHTML;
-
-    if (codeSnippet !== undefined) {
-      const insertionCode =
-        /db\.(?<collectionName>[^\.]*)\.insertMany\((?<documents>\[.*])\)/gm.exec(
-          removeNewlines(JSON.parse(codeSnippet).text as string)
-        );
-
-      if (insertionCode && insertionCode.groups) {
-        return {
-          collectionName: insertionCode.groups.collectionName,
-
-          // The docs use quoted/unquoted shell syntax inconsistently, so use JSON5 instead of regular JSON
-          // to parse the documents.
-          documents: JSON5.parse(insertionCode.groups.documents.trim()),
-        };
-      }
-    }
-
-    // Sometimes insertion code for the collection will be in the parent examples section. We fallback to it if we can't find it in the current section.
-    while (element) {
-      element = element?.parentElement?.closest('section');
-      const examples = element?.querySelector("a[href='#examples']");
-      if (examples) {
-        return this.getInsertionCode(element);
-      }
-    }
-
-    return undefined;
-  }
-
-  public async getSchema(): Promise<
-    { schema: Schema; collectionName: string } | undefined
-  > {
-    const fragment = new URL(this.url).hash;
-    if (!fragment) {
-      return;
-    }
-
-    const dom = await JSDOM.fromURL(this.url);
-    const exampleSection = dom.window.document
-      .querySelector(`a[href='${fragment}']`)
-      ?.closest('section');
-
-    const insertionCode = this.getInsertionCode(exampleSection);
-
-    if (!insertionCode) {
-      return;
-    }
-
-    return {
-      schema: await parseSchema(insertionCode.documents),
-      collectionName: insertionCode.collectionName,
-    };
-  }
-}
-
 export class TestGenerator extends GeneratorBase {
+  private schemaBsonTypeToTS(
+    type: SimplifiedSchemaBaseType['bsonType'],
+  ): string {
+    switch (type) {
+      case 'Binary':
+        return 'bson.Binary';
+      case 'Boolean':
+        return 'boolean';
+      case 'Code':
+        return 'bson.Code';
+      case 'CodeWScope':
+        return 'bson.Code';
+      case 'Date':
+        return 'Date';
+      case 'Decimal128':
+        return 'bson.Decimal128';
+      case 'Double':
+        return 'bson.Double | number';
+      case 'Int32':
+        return 'bson.Int32';
+      case 'Int64':
+        return 'bson.Int64';
+      case 'MaxKey':
+        return 'bson.MaxKey';
+      case 'MinKey':
+        return 'bson.MinKey';
+      case 'Null':
+        return 'null';
+      case 'ObjectId':
+        return 'bson.ObjectId';
+      case 'BSONRegExp':
+        return 'bson.BSONRegExp';
+      case 'String':
+        return 'string';
+      case 'BSONSymbol':
+        return 'bson.BSONSymbol';
+      case 'Timestamp':
+        return `bson.Timestamp`;
+      case 'Undefined':
+        return `undefined`;
+      case 'Number' as any:
+        return 'number';
+      default:
+        throw new Error(`Unknown BSON type: ${type}`);
+    }
+  }
+
+  private simplifiedTypesToTS(types: SimplifiedSchemaType[]): string {
+    const mappedTypes = [];
+    for (const type of types) {
+      if (type.bsonType === 'Document' && 'fields' in type) {
+        mappedTypes.push(this.simplifiedSchemaToTS(type.fields));
+      } else if (type.bsonType === 'Array' && 'types' in type) {
+        mappedTypes.push(`Array<${this.simplifiedTypesToTS(type.types)}>`);
+      } else {
+        mappedTypes.push(this.schemaBsonTypeToTS(type.bsonType));
+      }
+    }
+
+    return mappedTypes.join(' | ');
+  }
+
+  private simplifiedSchemaToTS(schema: SimplifiedSchema): string {
+    let result = '{\n';
+    for (const [key, value] of Object.entries(schema)) {
+      result += `${key}: ${this.simplifiedTypesToTS(value.types)};\n`;
+    }
+    result += '}\n';
+    return result;
+  }
+
   private async emitTestBody(category: string, test: TestType): Promise<void> {
     if (!test.link) {
       this.emit(
-        `// TODO: No docs reference found for ${category}.${test.name}\n`
+        `// TODO: No docs reference found for ${category}.${test.name}\n`,
       );
       return;
     }
@@ -86,18 +97,21 @@ export class TestGenerator extends GeneratorBase {
       return;
     }
 
-    const schema = await new DocsCrawler(test.link).getSchema();
-    if (!schema) {
+    if (!test.schema || typeof test.schema === 'string') {
       this.emit(
-        `// TODO: no schema found for ${category}.${test.name} at ${test.link}\n`
+        `// TODO: no schema found for ${category}.${test.name}${test.schema ? `: ${test.schema}` : ''}\n`,
       );
       return;
     }
 
-    this.emit(`type ${schema.collectionName} = {};\n`); // TODO
+    const collectionName = Object.keys(test.schema)[0];
+    const schema = test.schema[collectionName] as SimplifiedSchema;
+
     this.emit(
-      `const aggregation: schema.Pipeline<${schema.collectionName}> = [\n`
+      `type ${collectionName} = ${this.simplifiedSchemaToTS(schema)}\n`,
     );
+
+    this.emit(`const aggregation: schema.Pipeline<${collectionName}> = [\n`);
 
     for (const stage of test.pipeline) {
       const json = JSON.stringify(stage, (_, value: any): any => {
@@ -113,7 +127,10 @@ export class TestGenerator extends GeneratorBase {
       });
 
       this.emit(
-        json.replaceAll(/"(?<functionBody>function[^"]*)"/gm, '$<functionBody>')
+        json.replaceAll(
+          /"(?<functionBody>function[^"]*)"/gm,
+          '$<functionBody>',
+        ),
       );
 
       this.emit(',\n');
@@ -147,7 +164,7 @@ export class TestGenerator extends GeneratorBase {
         for (const test of parsed.tests ?? []) {
           this.emitComment(
             test.name ?? `Test ${namespace}.${parsed.name}`,
-            test.link
+            test.link,
           );
           this.emit(`function test${i++}() {\n`);
 

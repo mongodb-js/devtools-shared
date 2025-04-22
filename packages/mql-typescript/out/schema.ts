@@ -1,5 +1,5 @@
 import type * as bson from 'bson';
-import { FilterOperators } from 'mongodb';
+import type { FilterOperators } from 'mongodb';
 
 type Condition<T> = AlternativeType<T> | FilterOperators<T>;
 type AlternativeType<T> =

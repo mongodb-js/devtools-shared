@@ -11,7 +11,7 @@ export abstract class GeneratorBase {
   private outputBuffer: StringWriter | undefined;
   private outputStream?: NodeJS.WritableStream;
 
-  private static loadOptions: yaml.LoadOptions = {
+  public static loadOptions: yaml.LoadOptions = {
     schema: yaml.DEFAULT_SCHEMA.extend([
       new yaml.Type('!bson_utcdatetime', {
         kind: 'scalar',
@@ -67,7 +67,7 @@ export abstract class GeneratorBase {
       '..',
       'mongo-php-library',
       'generator',
-      'config'
+      'config',
     );
 
     for await (const folder of await fs.readdir(configDir, {
@@ -84,7 +84,7 @@ export abstract class GeneratorBase {
 
   private async *listSourceYAMLFiles(): AsyncIterable<{
     category: string;
-    operators: () => AsyncIterable<{ yaml: unknown }>;
+    operators: () => AsyncIterable<{ yaml: unknown; path: string }>;
   }> {
     for await (const { category, folder } of this.listCategories()) {
       yield {
@@ -97,7 +97,8 @@ export abstract class GeneratorBase {
               const filePath = path.join(file.parentPath, file.name);
               const content = await fs.readFile(filePath, 'utf8');
               const parsed = yaml.load(content, GeneratorBase.loadOptions);
-              yield { yaml: parsed };
+
+              yield { yaml: parsed, path: filePath };
             }
           }
         },
