@@ -23,11 +23,11 @@ npx native-machine-id --raw
 import { getMachineId } from 'native-machine-id';
 
 // Get the machine ID, hashed with SHA-256
-const hashedId = getMachineID();
+const hashedId = getMachineId();
 console.log('Hashed Machine ID:', hashedId);
 
 // Get the raw machine ID (should not be exposed in untrusted environments)
-const rawId = getMachineID({ raw: true });
+const rawId = getMachineId({ raw: true });
 console.log('Original Machine ID:', rawId);
 
 // Or synchronously
@@ -37,7 +37,7 @@ const id = getMachineIdSync();
 
 ## Supported Platforms
 
-- **macOS**: Uses the `IOPlatformUUID` from the `IOKit` framework (Supported on macOS 12.0 and later).
+- **macOS**: Uses the `IOPlatformUUID` from the `IOKit` framework.
 - **Linux**: Uses the `/var/lib/dbus/machine-id` file to retrieve the machine ID. If this file does not exist, it falls back to `/etc/machine-id`.
 - **Windows**: Uses the `MachineGuid` from the `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography` registry.
 
