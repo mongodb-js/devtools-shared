@@ -39,7 +39,8 @@
     "test-changed": "lerna run test --stream --concurrency 1 --since origin/HEAD",
     "test-ci": "lerna run test-ci --concurrency 1",
     "test": "lerna run test --concurrency 1 --stream",
-    "where": "node ./scripts/src/where.js"
+    "where": "node ./scripts/src/where.js",
+    "get-package-list": "ts-node ./scripts/src/get-packages-list.ts"
   },
   "dependencies": {
     "@mongodb-js/monorepo-tools": "^1.1.17"
@@ -49,6 +50,7 @@
     "@babel/parser": "^7.22.7",
     "depcheck": "^1.4.7",
     "husky": "^8.0.3",
-    "lerna": "^7.1.1"
+    "lerna": "^7.1.1",
+    "ts-node": "^10.9.2"
   }
 }
