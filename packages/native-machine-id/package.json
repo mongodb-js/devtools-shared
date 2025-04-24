@@ -1,6 +1,6 @@
 {
   "name": "native-machine-id",
-  "version": "0.0.3",
+  "version": "0.0.8",
   "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,6 +8,7 @@
     "compile": "tsc -p tsconfig.json && node-gyp rebuild && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "bootstrap": "npm run compile",
     "pretest": "npm run compile",
+    "install": "node-gyp rebuild",
     "test": "mocha",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-ci": "npm run test-cov",
@@ -25,7 +26,8 @@
   "license": "Apache-2.0",
   "exports": {
     "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
+    "import": "./dist/.esm-wrapper.mjs",
+    "types": "./dist/index.d.ts"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
   "repository": {
@@ -34,7 +36,7 @@
   },
   "bugs": "https://jira.mongodb.org/projects/COMPASS/issues",
   "bin": {
-    "machine-id": "dist/bin/machine-id.js"
+    "native-machine-id": "dist/bin/machine-id.js"
   },
   "files": [
     "binding.cc",

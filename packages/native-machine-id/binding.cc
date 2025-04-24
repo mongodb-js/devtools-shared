@@ -4,6 +4,9 @@
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
+// kIOMainPortDefault and kIOMasterPortDefault are both set to 0
+// and we define them here to avoid conflicts across OS versions
+#define IO_PORT 0
 #elif defined(__linux__)
 #include <fstream>
 #include <algorithm>
@@ -21,7 +24,7 @@ namespace
   std::string getMachineId() noexcept
   {
     std::string uuid;
-    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/");
+    io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(IO_PORT, "IOService:/");
 
     if (ioRegistryRoot == MACH_PORT_NULL)
     {
@@ -98,7 +101,7 @@ namespace
   }
 
   // Get Linux machine ID by reading from system files
-  std::string getMachineId()
+  std::string getMachineId() noexcept
   {
     std::string uuid = readFile(DBUS_PATH);
 
@@ -112,7 +115,7 @@ namespace
   }
 #elif defined(_WIN32)
   // Get Windows machine ID from registry
-  std::string getMachineId()
+  std::string getMachineId() noexcept
   {
     std::string uuid;
     HKEY hKey;
@@ -156,8 +159,8 @@ namespace
   }
 #endif
 
-  // Function to get the machine ID
-  Value GetMachineId(const CallbackInfo &args)
+  // Function to get the machine ID (synchronous version)
+  Value GetMachineIdSync(const CallbackInfo &args)
   {
     Env env = args.Env();
 
@@ -173,12 +176,76 @@ namespace
     return env.Undefined();
   }
 
+  // Async worker class for getting machine ID
+  class GetMachineIdWorker : public AsyncWorker
+  {
+  private:
+    std::string id;
+
+  public:
+    GetMachineIdWorker(Function &callback)
+        : AsyncWorker(callback) {}
+
+    // This runs on a worker thread
+    void Execute() override
+    {
+#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
+      id = getMachineId();
+#endif
+    }
+
+    // This runs on the main thread after Execute completes
+    void OnOK() override
+    {
+      Napi::Env env = Env();
+      Napi::HandleScope scope(env);
+
+      if (!id.empty())
+      {
+        Callback().Call({env.Null(), String::New(env, id)});
+      }
+      else
+      {
+        Callback().Call({env.Null(), env.Undefined()});
+      }
+    }
+
+    void OnError(const Error &e) override
+    {
+      Napi::Env env = Env();
+      Napi::HandleScope scope(env);
+      Callback().Call({e.Value(), env.Undefined()});
+    }
+  };
+
+  // Function to get the machine ID asynchronously
+  Value GetMachineIdAsync(const CallbackInfo &args)
+  {
+    Env env = args.Env();
+
+    // Check if a callback was provided
+    if (args.Length() < 1 || !args[0].IsFunction())
+    {
+      TypeError::New(env, "Callback function expected").ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+
+    // Get the callback function
+    Function callback = args[0].As<Function>();
+
+    // Create and queue the async worker
+    GetMachineIdWorker *worker = new GetMachineIdWorker(callback);
+    worker->Queue();
+
+    return env.Undefined();
+  }
 }
 
 static Object InitModule(Env env, Object exports)
 {
-  exports["getMachineId"] = Function::New(env, GetMachineId);
+  exports["getMachineIdSync"] = Function::New(env, GetMachineIdSync);
+  exports["getMachineIdAsync"] = Function::New(env, GetMachineIdAsync);
   return exports;
 }
 
-NODE_API_MODULE(machine_id, InitModule)
+NODE_API_MODULE(native_machine_id, InitModule)
