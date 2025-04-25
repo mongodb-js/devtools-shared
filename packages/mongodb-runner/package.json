@@ -28,8 +28,11 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
+    }
   },
   "types": "./dist/index.d.ts",
   "scripts": {
