@@ -43,6 +43,11 @@ describe.only('MongoDBAutocompleter', function () {
     expect(completions).to.deep.equal([]);
   });
 
+  it('does not leak the ShellAPI package', async function () {
+    const completions = await autocompleter.autocomplete('ShellAPI.');
+    expect(completions).to.deep.equal([]);
+  });
+
   it('completes a bson expression', async function () {
     const completions = await autocompleter.autocomplete('Ob');
     expect(completions.filter((c) => c.name === 'ObjectId')).to.deep.equal([
@@ -50,6 +55,21 @@ describe.only('MongoDBAutocompleter', function () {
         kind: 'function',
         name: 'ObjectId',
         result: 'ObjectId',
+      },
+    ]);
+  });
+
+  it('completes a db method', async function () {
+    const completions = await autocompleter.autocomplete('db.hostIn');
+    expect(
+      completions
+        .filter((c) => /property|method/.test(c.kind))
+        .filter((c) => c.name === 'hostInfo'),
+    ).to.deep.equal([
+      {
+        kind: 'method',
+        name: 'hostInfo',
+        result: 'db.hostInfo',
       },
     ]);
   });
@@ -67,6 +87,21 @@ describe.only('MongoDBAutocompleter', function () {
         kind: 'property',
         name: 'foo',
         result: 'db.foo',
+      },
+    ]);
+  });
+
+  it('completes a collection method', async function () {
+    const completions = await autocompleter.autocomplete('db.foo.fi');
+    expect(
+      completions
+        .filter((c) => /property|method/.test(c.kind))
+        .filter((c) => c.name === 'find'),
+    ).to.deep.equal([
+      {
+        kind: 'method',
+        name: 'find',
+        result: 'db.foo.find',
       },
     ]);
   });
