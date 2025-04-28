@@ -22,6 +22,7 @@ function getVirtualLanguageService(): {
     allowJs: true,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
     types: ['node'],
+    lib: ['es2019'],
     //typeRoots: [],
     allowImportingTsExtensions: true,
   };
