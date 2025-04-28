@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 function replaceImports(code: string) {
-  // This just makes it possible to work on bson-expressions.ts because then the
+  // This just makes it possible to work on mql.ts because then the
   // IDE finds the import.
   return code.replace(
     "import type * as bson from 'bson'",
@@ -24,13 +24,6 @@ async function loadSources(sources: Record<string, string>) {
 async function run() {
   const input: Record<string, string> = {
     '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
-    '/bson-expressions.ts': path.join(
-      __dirname,
-      '..',
-      'src',
-      'fixtures',
-      'bson-expressions.ts',
-    ),
     '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
     '/shell-api.ts': path.join(
       require.resolve('@mongosh/shell-api'),

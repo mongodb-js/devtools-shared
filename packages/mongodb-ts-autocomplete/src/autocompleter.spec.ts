@@ -3,7 +3,7 @@ import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
 
-describe.only('MongoDBAutocompleter', function () {
+describe('MongoDBAutocompleter', function () {
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
 
@@ -52,7 +52,7 @@ describe.only('MongoDBAutocompleter', function () {
     const completions = await autocompleter.autocomplete('Ob');
     expect(completions.filter((c) => c.name === 'ObjectId')).to.deep.equal([
       {
-        kind: 'function',
+        kind: 'const',
         name: 'ObjectId',
         result: 'ObjectId',
       },

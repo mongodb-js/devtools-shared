@@ -160,7 +160,7 @@ import { ServerSchema } from '/${connectionId}.ts';
 type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
 
 declare global {
-  var db: ShellAPI.Database<ServerSchema, CurrentDatabaseSchema>;
+  const db: ShellAPI.Database<ServerSchema, CurrentDatabaseSchema>;
 }
 `;
   }
