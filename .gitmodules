@@ -1,0 +1,3 @@
+[submodule "packages/mql-typescript/mongo-php-library"]
+	path = packages/mql-typescript/mongo-php-library
+	url = https://github.com/mongodb-js/mongo-php-library
