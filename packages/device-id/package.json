@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/device-id",
-  "description": "Creates a consistent device ID hash across MongoDB tools.",
+  "description": "Creates a consistent, implementation-agnostic hash from a given raw machine ID resolution function. Designed to be used by MongoDB Tools.",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"
