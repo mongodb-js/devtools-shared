@@ -189,6 +189,9 @@ type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
 
 declare global {
   const db: ShellAPI.Database<ServerSchema, CurrentDatabaseSchema>;
+  const rs: ShellAPI.ReplicaSet<ServerSchema, CurrentDatabaseSchema>;
+  const sh: ShellAPI.Shard<ServerSchema, CurrentDatabaseSchema>;
+  const sp: ShellAPI.Streams<ServerSchema, CurrentDatabaseSchema>;
 }
 `;
   }
