@@ -82,4 +82,72 @@ describe('getDeviceId', function () {
 
     expect(resultA).to.equal(resultB);
   });
+
+  it('handles timeout when getting machine id', async () => {
+    let timeoutId: NodeJS.Timeout;
+    const getMachineId = () =>
+      new Promise<string>((resolve) => {
+        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+      });
+
+    let errorCalled = false;
+    const result = await getDeviceId({
+      getMachineId,
+      isNodeMachineId: false,
+      onError: () => {
+        errorCalled = true;
+      },
+      timeout: 1,
+    }).value;
+
+    clearTimeout(timeoutId!);
+    expect(result).to.equal('unknown');
+  });
+
+  it('handles external promise resolution', async () => {
+    let timeoutId: NodeJS.Timeout;
+    const getMachineId = () =>
+      new Promise<string>((resolve) => {
+        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+      });
+
+    const { resolve, value } = getDeviceId({
+      getMachineId,
+      isNodeMachineId: false,
+    });
+
+    resolve('external-id');
+
+    const result = await value;
+
+    clearTimeout(timeoutId!);
+    expect(result).to.be.a('string');
+    expect(result).to.equal('external-id');
+    expect(result).to.not.equal('unknown');
+  });
+
+  it('handles external promise rejection', async () => {
+    let timeoutId: NodeJS.Timeout;
+    const getMachineId = () =>
+      new Promise<string>((resolve) => {
+        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+      });
+
+    const error = new Error('External rejection');
+
+    const { reject, value } = getDeviceId({
+      getMachineId,
+      isNodeMachineId: false,
+    });
+
+    reject(error);
+
+    clearTimeout(timeoutId!);
+    try {
+      await value;
+      expect.fail('Expected promise to be rejected');
+    } catch (e) {
+      expect(e).to.equal(error);
+    }
+  });
 });
