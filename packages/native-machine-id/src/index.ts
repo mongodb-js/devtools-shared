@@ -1,8 +1,22 @@
-import bindings from 'bindings';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 
-const binding = bindings('native_machine_id');
+type NativeMachineIdModule = {
+  getMachineIdSync: () => string;
+  getMachineIdAsync: (cb: (err: unknown, id: string) => void) => void;
+}
+
+const binding = (() => {
+  try {
+    return require('../build/Release/native_machine_id.node') as NativeMachineIdModule;
+  } catch (outerError) {
+    try {
+      return require('../build/Debug/native_machine_id.node') as NativeMachineIdModule;
+    } catch {
+      throw outerError;
+    }
+  }
+})();
 
 function getMachineIdFromBindingSync(): string | undefined {
   try {
