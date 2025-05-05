@@ -31,7 +31,7 @@ export function getDeviceId({
         } else {
           resolve('unknown');
         }
-      }, timeout);
+      }, timeout).unref?.();
 
       resolveDeviceId = resolve;
       rejectDeviceId = reject;
