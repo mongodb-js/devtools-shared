@@ -83,7 +83,7 @@ describe('getDeviceId', function () {
     expect(resultA).to.equal(resultB);
   });
 
-  it('handles timeout when getting machine id', async () => {
+  it('handles timeout when getting machine id', async function () {
     let timeoutId: NodeJS.Timeout;
     const getMachineId = () =>
       new Promise<string>((resolve) => {
@@ -100,11 +100,13 @@ describe('getDeviceId', function () {
       timeout: 1,
     }).value;
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     clearTimeout(timeoutId!);
     expect(result).to.equal('unknown');
+    expect(errorCalled).to.equal(false);
   });
 
-  it('handles external promise resolution', async () => {
+  it('handles external promise resolution', async function () {
     let timeoutId: NodeJS.Timeout;
     const getMachineId = () =>
       new Promise<string>((resolve) => {
@@ -120,13 +122,14 @@ describe('getDeviceId', function () {
 
     const result = await value;
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     clearTimeout(timeoutId!);
     expect(result).to.be.a('string');
     expect(result).to.equal('external-id');
     expect(result).to.not.equal('unknown');
   });
 
-  it('handles external promise rejection', async () => {
+  it('handles external promise rejection', async function () {
     let timeoutId: NodeJS.Timeout;
     const getMachineId = () =>
       new Promise<string>((resolve) => {
@@ -142,6 +145,7 @@ describe('getDeviceId', function () {
 
     reject(error);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     clearTimeout(timeoutId!);
     try {
       await value;
