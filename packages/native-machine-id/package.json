@@ -1,6 +1,6 @@
 {
   "name": "native-machine-id",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,7 +24,6 @@
   "author": "Compass Team <compass@mongodb.com>",
   "gypfile": true,
   "dependencies": {
-    "bindings": "^1.5.0",
     "node-addon-api": "^8.0.0"
   },
   "license": "Apache-2.0",
@@ -55,10 +54,9 @@
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "@mongodb-js/tsconfig-devtools": "^1.0.3",
-    "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
-    "@types/sinon-chai": "^3.2.5",
     "@types/node": "^17.0.35",
+    "@types/sinon-chai": "^3.2.5",
     "eslint": "^7.25.0",
     "gen-esm-wrapper": "^1.1.1",
     "mocha": "^8.4.0",
