@@ -8,7 +8,6 @@ describe('getDeviceId', function () {
 
     const deviceId = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
     }).value;
 
     expect(deviceId).to.be.a('string');
@@ -22,12 +21,10 @@ describe('getDeviceId', function () {
 
     const resultA = await getDeviceId({
       getMachineId,
-      isNodeMachineId: true,
     }).value;
 
     const resultB = await getDeviceId({
       getMachineId: () => Promise.resolve(mockMachineId.toUpperCase()),
-      isNodeMachineId: true,
     }).value;
 
     expect(resultA).to.equal(resultB);
@@ -39,7 +36,6 @@ describe('getDeviceId', function () {
 
     const deviceId = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
       onError: (error) => {
         capturedError = error;
       },
@@ -56,7 +52,6 @@ describe('getDeviceId', function () {
 
     const result = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
       onError: (err) => {
         capturedError = err;
       },
@@ -72,18 +67,16 @@ describe('getDeviceId', function () {
 
     const resultA = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
     }).value;
 
     const resultB = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
     }).value;
 
     expect(resultA).to.equal(resultB);
   });
 
-  it('handles timeout when getting machine id', async function () {
+  it('resolves timeout with "unknown" by default', async function () {
     let timeoutId: NodeJS.Timeout;
     const getMachineId = () =>
       new Promise<string>((resolve) => {
@@ -93,7 +86,6 @@ describe('getDeviceId', function () {
     let errorCalled = false;
     const result = await getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
       onError: () => {
         errorCalled = true;
       },
@@ -106,6 +98,57 @@ describe('getDeviceId', function () {
     expect(errorCalled).to.equal(false);
   });
 
+  it('resolves with result of onTimeout when successful', async function () {
+    let timeoutId: NodeJS.Timeout;
+    const getMachineId = () =>
+      new Promise<string>((resolve) => {
+        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+      });
+
+    let errorCalled = false;
+    const result = await getDeviceId({
+      getMachineId,
+      onError: () => {
+        errorCalled = true;
+      },
+      timeout: 1,
+      onTimeout: () => {
+        return 'abc-123';
+      },
+    }).value;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    clearTimeout(timeoutId!);
+    expect(result).to.equal('abc-123');
+    expect(errorCalled).to.equal(false);
+  });
+
+  it('rejects with an error if onTimeout throws', async function () {
+    let timeoutId: NodeJS.Timeout;
+    const getMachineId = () =>
+      new Promise<string>((resolve) => {
+        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+      });
+
+    let errorCalled = false;
+    try {
+      const result = await getDeviceId({
+        getMachineId,
+        onError: () => {
+          errorCalled = true;
+        },
+        timeout: 1,
+        onTimeout: () => {
+          throw new Error('Operation timed out');
+        },
+      }).value;
+      expect.fail('Expected promise to be rejected');
+    } catch (error) {
+      expect((error as Error).message).to.equal('Operation timed out');
+      expect(errorCalled).to.equal(false);
+    }
+  });
+
   it('handles external promise resolution', async function () {
     let timeoutId: NodeJS.Timeout;
     const getMachineId = () =>
@@ -115,7 +158,6 @@ describe('getDeviceId', function () {
 
     const { resolve, value } = getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
     });
 
     resolve('external-id');
@@ -140,7 +182,6 @@ describe('getDeviceId', function () {
 
     const { reject, value } = getDeviceId({
       getMachineId,
-      isNodeMachineId: false,
     });
 
     reject(error);
