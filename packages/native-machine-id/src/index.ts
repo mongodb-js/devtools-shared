@@ -4,13 +4,15 @@ import { promisify } from 'util';
 type NativeMachineIdModule = {
   getMachineIdSync: () => string;
   getMachineIdAsync: (cb: (err: unknown, id: string) => void) => void;
-}
+};
 
 const binding = (() => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('../build/Release/native_machine_id.node') as NativeMachineIdModule;
   } catch (outerError) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       return require('../build/Debug/native_machine_id.node') as NativeMachineIdModule;
     } catch {
       throw outerError;
