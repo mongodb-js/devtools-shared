@@ -8,7 +8,7 @@ describe('getDeviceId', function () {
 
     const deviceId = await getDeviceId({
       getMachineId,
-    }).value;
+    });
 
     expect(deviceId).to.be.a('string');
     expect(deviceId).to.have.lengthOf(64); // SHA-256 hex digest length
@@ -21,44 +21,46 @@ describe('getDeviceId', function () {
 
     const resultA = await getDeviceId({
       getMachineId,
-    }).value;
+    });
 
     const resultB = await getDeviceId({
       getMachineId: () => Promise.resolve(mockMachineId.toUpperCase()),
-    }).value;
+    });
 
     expect(resultA).to.equal(resultB);
   });
 
   it('returns "unknown" when machine id is not found', async function () {
     const getMachineId = () => Promise.resolve(undefined);
-    let capturedError: Error | undefined;
+    let capturedError: [string, Error] | undefined;
 
     const deviceId = await getDeviceId({
       getMachineId,
-      onError: (error) => {
-        capturedError = error;
+      onError: (reason, error) => {
+        capturedError = [reason, error];
       },
-    }).value;
+    });
 
     expect(deviceId).to.equal('unknown');
-    expect(capturedError?.message).to.equal('Failed to resolve machine ID');
+    expect(capturedError?.[0]).to.equal('resolutionError');
+    expect(capturedError?.[1].message).to.equal('Failed to resolve machine ID');
   });
 
   it('returns "unknown" and calls onError when getMachineId throws', async function () {
     const error = new Error('Something went wrong');
     const getMachineId = () => Promise.reject(error);
-    let capturedError: Error | undefined;
+    let capturedError: [string, Error] | undefined;
 
     const result = await getDeviceId({
       getMachineId,
-      onError: (err) => {
-        capturedError = err;
+      onError: (reason, err) => {
+        capturedError = [reason, err];
       },
-    }).value;
+    });
 
     expect(result).to.equal('unknown');
-    expect(capturedError).to.equal(error);
+    expect(capturedError?.[0]).to.equal('resolutionError');
+    expect(capturedError?.[1]).to.equal(error);
   });
 
   it('produces consistent hash for the same machine id', async function () {
@@ -67,135 +69,84 @@ describe('getDeviceId', function () {
 
     const resultA = await getDeviceId({
       getMachineId,
-    }).value;
+    });
 
     const resultB = await getDeviceId({
       getMachineId,
-    }).value;
+    });
 
     expect(resultA).to.equal(resultB);
   });
 
-  it('resolves timeout with "unknown" by default', async function () {
-    let timeoutId: NodeJS.Timeout;
-    const getMachineId = () =>
-      new Promise<string>((resolve) => {
-        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+  const fallbackTestCases: {
+    fallbackValue?: string;
+    expectedResult: string;
+  }[] = [
+    { expectedResult: 'unknown' },
+    { fallbackValue: 'fallback-id', expectedResult: 'fallback-id' },
+  ];
+
+  describe('when timed out', () => {
+    for (const testCase of fallbackTestCases) {
+      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue}`, async function () {
+        let timeoutId: NodeJS.Timeout;
+        const getMachineId = () =>
+          new Promise<string>((resolve) => {
+            timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+          });
+
+        let capturedError: [string, Error] | undefined;
+        const result = await getDeviceId({
+          getMachineId,
+          onError: (reason, error) => {
+            capturedError = [reason, error];
+          },
+          timeout: 5,
+          fallbackValue: testCase.fallbackValue,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        clearTimeout(timeoutId!);
+        expect(result).to.equal(testCase.expectedResult);
+        expect(capturedError?.[0]).to.equal('timeout');
+        expect(capturedError?.[1].message).to.equal(
+          'Timeout reached after 5 ms',
+        );
       });
-
-    let errorCalled = false;
-    const result = await getDeviceId({
-      getMachineId,
-      onError: () => {
-        errorCalled = true;
-      },
-      timeout: 1,
-    }).value;
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearTimeout(timeoutId!);
-    expect(result).to.equal('unknown');
-    expect(errorCalled).to.equal(false);
-  });
-
-  it('resolves with result of onTimeout when successful', async function () {
-    let timeoutId: NodeJS.Timeout;
-    const getMachineId = () =>
-      new Promise<string>((resolve) => {
-        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
-      });
-
-    let errorCalled = false;
-    const result = await getDeviceId({
-      getMachineId,
-      onError: () => {
-        errorCalled = true;
-      },
-      timeout: 1,
-      onTimeout: () => {
-        return 'abc-123';
-      },
-    }).value;
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearTimeout(timeoutId!);
-    expect(result).to.equal('abc-123');
-    expect(errorCalled).to.equal(false);
-  });
-
-  it('rejects with an error if onTimeout throws', async function () {
-    let timeoutId: NodeJS.Timeout;
-    const getMachineId = () =>
-      new Promise<string>((resolve) => {
-        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
-      });
-
-    let errorCalled = false;
-    try {
-      await getDeviceId({
-        getMachineId,
-        onError: () => {
-          errorCalled = true;
-        },
-        timeout: 1,
-        onTimeout: () => {
-          throw new Error('Operation timed out');
-        },
-      }).value;
-      expect.fail('Expected promise to be rejected');
-    } catch (error) {
-      expect((error as Error).message).to.equal('Operation timed out');
-      expect(errorCalled).to.equal(false);
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearTimeout(timeoutId!);
   });
 
-  it('handles external promise resolution', async function () {
-    let timeoutId: NodeJS.Timeout;
-    const getMachineId = () =>
-      new Promise<string>((resolve) => {
-        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+  describe('when aborted', () => {
+    for (const testCase of fallbackTestCases) {
+      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue}`, async function () {
+        let timeoutId: NodeJS.Timeout;
+        const getMachineId = () =>
+          new Promise<string>((resolve) => {
+            timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
+          });
+
+        let capturedError: [string, Error] | undefined;
+        const abortController = new AbortController();
+        const value = getDeviceId({
+          getMachineId,
+          abortSignal: abortController.signal,
+          onError: (reason, error) => {
+            capturedError = [reason, error];
+          },
+          fallbackValue: testCase.fallbackValue,
+        });
+
+        abortController.abort();
+
+        const result = await value;
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        clearTimeout(timeoutId!);
+        expect(result).to.be.a('string');
+        expect(result).to.equal(testCase.expectedResult);
+        expect(capturedError?.[0]).to.equal('abort');
+        expect(capturedError?.[1].message).to.equal('Aborted by abort signal');
       });
-
-    const { resolve, value } = getDeviceId({
-      getMachineId,
-    });
-
-    resolve('external-id');
-
-    const result = await value;
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearTimeout(timeoutId!);
-    expect(result).to.be.a('string');
-    expect(result).to.equal('external-id');
-    expect(result).to.not.equal('unknown');
-  });
-
-  it('handles external promise rejection', async function () {
-    let timeoutId: NodeJS.Timeout;
-    const getMachineId = () =>
-      new Promise<string>((resolve) => {
-        timeoutId = setTimeout(() => resolve('delayed-id'), 10_000);
-      });
-
-    const error = new Error('External rejection');
-
-    const { reject, value } = getDeviceId({
-      getMachineId,
-    });
-
-    reject(error);
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearTimeout(timeoutId!);
-    try {
-      await value;
-      expect.fail('Expected promise to be rejected');
-    } catch (e) {
-      expect(e).to.equal(error);
     }
   });
 });
