@@ -9,6 +9,7 @@
     "bootstrap": "npm run compile",
     "pretest": "npm run compile",
     "install": "node-gyp rebuild",
+    "prettier": "prettier",
     "typecheck": "tsc --noEmit",
     "test": "mocha",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
@@ -17,7 +18,8 @@
     "depcheck": "depcheck",
     "check": "npm run typecheck && npm run lint && npm run depcheck",
     "prepublishOnly": "npm run compile",
-    "benchmark": "ts-node scripts/benchmark.ts"
+    "benchmark": "ts-node scripts/benchmark.ts",
+    "reformat": "npm run prettier -- --write ."
   },
   "author": "Compass Team <compass@mongodb.com>",
   "gypfile": true,
@@ -62,6 +64,7 @@
     "mocha": "^8.4.0",
     "depcheck": "^1.4.7",
     "node-machine-id": "^1.1.12",
+    "prettier": "^3.5.3",
     "typescript": "^5.0.4",
     "ts-node": "^10.9.2"
   },
