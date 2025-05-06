@@ -132,7 +132,7 @@ describe('getDeviceId', function () {
 
     let errorCalled = false;
     try {
-      const result = await getDeviceId({
+      await getDeviceId({
         getMachineId,
         onError: () => {
           errorCalled = true;
@@ -147,6 +147,9 @@ describe('getDeviceId', function () {
       expect((error as Error).message).to.equal('Operation timed out');
       expect(errorCalled).to.equal(false);
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    clearTimeout(timeoutId!);
   });
 
   it('handles external promise resolution', async function () {
