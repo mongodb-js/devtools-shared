@@ -86,9 +86,9 @@ describe('getDeviceId', function () {
     { fallbackValue: 'fallback-id', expectedResult: 'fallback-id' },
   ];
 
-  describe('when timed out', () => {
+  describe('when timed out', function () {
     for (const testCase of fallbackTestCases) {
-      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue}`, async function () {
+      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue ?? 'undefined'}`, async function () {
         let timeoutId: NodeJS.Timeout;
         const getMachineId = () =>
           new Promise<string>((resolve) => {
@@ -116,9 +116,9 @@ describe('getDeviceId', function () {
     }
   });
 
-  describe('when aborted', () => {
+  describe('when aborted', function () {
     for (const testCase of fallbackTestCases) {
-      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue}`, async function () {
+      it(`resolves with ${testCase.expectedResult} when fallback value is ${testCase.fallbackValue ?? 'undefined'}`, async function () {
         let timeoutId: NodeJS.Timeout;
         const getMachineId = () =>
           new Promise<string>((resolve) => {
