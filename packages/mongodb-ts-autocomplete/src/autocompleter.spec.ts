@@ -50,7 +50,17 @@ describe('MongoDBAutocompleter', function () {
 
   it('completes a bson expression', async function () {
     const completions = await autocompleter.autocomplete('Ob');
-    expect(completions.filter((c) => c.name === 'ObjectId')).to.deep.equal([
+    expect(completions).to.deep.equal([
+      {
+        kind: 'keyword',
+        name: 'object',
+        result: 'object',
+      },
+      {
+        kind: 'var',
+        name: 'Object',
+        result: 'Object',
+      },
       {
         kind: 'const',
         name: 'ObjectId',
@@ -61,11 +71,7 @@ describe('MongoDBAutocompleter', function () {
 
   it('completes a db method', async function () {
     const completions = await autocompleter.autocomplete('db.hostIn');
-    expect(
-      completions
-        .filter((c) => /property|method/.test(c.kind))
-        .filter((c) => c.name === 'hostInfo'),
-    ).to.deep.equal([
+    expect(completions).to.deep.equal([
       {
         kind: 'method',
         name: 'hostInfo',
@@ -78,11 +84,7 @@ describe('MongoDBAutocompleter', function () {
     const completions = await autocompleter.autocomplete('db.fo');
     // Note that the types are all blank objects for now because we haven't
     // sampled any of these collections' schemas yet
-    expect(
-      completions
-        .filter((c) => /property|method/.test(c.kind))
-        .filter((c) => c.name === 'foo'),
-    ).to.deep.equal([
+    expect(completions).to.deep.equal([
       {
         kind: 'property',
         name: 'foo',
@@ -93,15 +95,36 @@ describe('MongoDBAutocompleter', function () {
 
   it('completes a collection method', async function () {
     const completions = await autocompleter.autocomplete('db.foo.fi');
-    expect(
-      completions
-        .filter((c) => /property|method/.test(c.kind))
-        .filter((c) => c.name === 'find'),
-    ).to.deep.equal([
+    expect(completions).to.deep.equal([
       {
         kind: 'method',
         name: 'find',
         result: 'db.foo.find',
+      },
+      {
+        kind: 'method',
+        name: 'findAndModify',
+        result: 'db.foo.findAndModify',
+      },
+      {
+        kind: 'method',
+        name: 'findOne',
+        result: 'db.foo.findOne',
+      },
+      {
+        kind: 'method',
+        name: 'findOneAndDelete',
+        result: 'db.foo.findOneAndDelete',
+      },
+      {
+        kind: 'method',
+        name: 'findOneAndReplace',
+        result: 'db.foo.findOneAndReplace',
+      },
+      {
+        kind: 'method',
+        name: 'findOneAndUpdate',
+        result: 'db.foo.findOneAndUpdate',
       },
     ]);
   });

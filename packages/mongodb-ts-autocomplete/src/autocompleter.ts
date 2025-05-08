@@ -1,8 +1,5 @@
 import Autocompleter from '@mongodb-js/ts-autocomplete';
-import type {
-  AutocompleterOptions,
-  AutoCompletion,
-} from '@mongodb-js/ts-autocomplete';
+import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
 import autocompleteTypes from './fixtures/autocomplete-types';
 
 import type { JSONSchema } from 'mongodb-schema';
@@ -18,7 +15,6 @@ import type { AutocompletionContext } from './autocompletion-context';
 
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
-  autocompleterOptions?: AutocompleterOptions;
 };
 
 class DatabaseSchema {
@@ -110,14 +106,56 @@ class ConnectionSchema {
   }
 }
 
+function filterStartingWith({
+  kind,
+  name,
+  trigger,
+}: {
+  kind: string;
+  name: string;
+  trigger: string;
+}): boolean {
+  name = name.toLocaleLowerCase();
+  trigger = trigger.toLocaleLowerCase();
+
+  /*
+  1. If the trigger was blank and the kind is not property/method filter out the
+     result. This way if you autocomplete db.test.find({ you don't get all the
+     global variables, just the known collection field names and mql but you can
+     still autocomplete global variables and functions if you type part of the
+     name.
+  2. Don't filter out exact matches (where filter === name) so that we match the
+     behaviour of the node completer.
+  3. Make sure the name starts with the trigger, otherwise it will return every
+     possible property/name that's available at that level. ie. all the "peer"
+     properties of the things that match.
+
+  TODO(MONGOSH-2207): This can be improved further if we first see if there are
+  any property/method kind completions and then just use those, then if there
+  aren't return all completions.
+  
+  The reason is that db.test.find({m makes it through this filter and then you
+  get all globals starting with m anyway. But to properly solve it we need more
+  context.
+  
+  ie. if you're after { (ie.  inside an object literal) and you're to the left
+  of a : (or there isn't one) then you probably don't want globals regardless.
+  If you're to the right of a : it is probably fine because you could be using a
+  variable.
+  */
+  return (
+    (trigger !== '' || kind === 'property' || kind === 'method') &&
+    name.startsWith(trigger)
+  );
+}
 export class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
   private readonly connectionSchemas: Record<string, ConnectionSchema>;
   private readonly autocompleter: Autocompleter;
 
-  constructor({ context, autocompleterOptions }: MongoDBAutocompleterOptions) {
+  constructor({ context }: MongoDBAutocompleterOptions) {
     this.context = CachingAutocompletionContext.caching(context);
-    this.autocompleter = new Autocompleter(autocompleterOptions);
+    this.autocompleter = new Autocompleter({ filter: filterStartingWith });
 
     this.connectionSchemas = Object.create(null);
 
