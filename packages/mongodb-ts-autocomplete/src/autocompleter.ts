@@ -25,11 +25,6 @@ class DatabaseSchema {
   private collectionSchemas: Record<string, JSONSchema | undefined>;
 
   constructor() {
-    // TODO: this is kinda the only real reason for this class: So we can keep
-    // track of the known collectionNames for a database. It could be all the
-    // names from a listCollections() or it could just be all the ones we've
-    // auto-completed for. The schemas can come from the autocompletion context.
-    // This can probably be added to the autocompletion context.
     this.collectionSchemas = Object.create(null);
   }
 
@@ -75,11 +70,6 @@ class ConnectionSchema {
   private readonly databaseSchemas: Record<string, DatabaseSchema>;
 
   constructor() {
-    // TODO: this is kinda the only real reason for this class: So we can keep
-    // track of the known databaseNames for a connection. It could be all the
-    // names from a listDatabases() or it could just be all the ones we've
-    // auto-completed for. The schemas can come from the autocompletion context.
-    // This can probably be added to the autocompletion context.
     this.databaseSchemas = Object.create(null);
   }
 
@@ -169,10 +159,6 @@ declare global {
     const { connectionId, databaseName } =
       this.context.currentDatabaseAndConnection();
 
-    // TODO: we're now compiling the source twice: autocomplete will also
-    // compile if it finds completions in order to filter them. Does it matter?
-    // Maybe. Not so much for a typical short shell line, probably more for a
-    // large document or aggregation.
     const tsAst = compileSourceFile(code);
     const collectionName = inferCollectionNameFromFunctionCall(tsAst) || 'test';
 
@@ -191,10 +177,6 @@ declare global {
     );
     connection.setDatabaseCollectionNames(databaseName, collectionNames);
 
-    // TODO: the problem with doing it this way is that, while the collection
-    // schema might be cached, we'll be generating TypeScript for it (and every
-    // other collection in the db and in fact every db in the server) every
-    // time.
     this.autocompleter.updateCode({
       [`/${connectionId}.ts`]: this.getConnectionCode(connectionId),
     });
