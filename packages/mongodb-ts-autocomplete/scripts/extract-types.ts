@@ -6,10 +6,7 @@ import ShellApiText from '@mongosh/shell-api/api';
 function replaceImports(code: string) {
   // This just makes it possible to work on mql.ts because then the
   // IDE finds the import.
-  return code.replace(
-    "import type * as bson from 'bson'",
-    "import type * as bson from '/bson.ts'",
-  );
+  return code.replace(/'bson'/g, "'/bson.ts'");
 }
 
 async function loadSources(sources: Record<string, string>) {
