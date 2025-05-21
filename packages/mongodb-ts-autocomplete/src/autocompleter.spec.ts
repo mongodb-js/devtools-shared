@@ -3,6 +3,17 @@ import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
 
+/*
+This is intended as deliberately diabolical database and collection names to
+make sure that we escape in all the right places. Does not apply for
+connectionId because we're in control of connection ids and it is being used as
+a file name for the language service so it needs to be somewhat reasonable
+anyway.
+*/
+const connectionId = 'connection-1';
+const databaseName = "my-'\ndatabaseName";
+const collectionName = "my-'\ncollectionName";
+
 describe('MongoDBAutocompleter', function () {
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
@@ -10,8 +21,8 @@ describe('MongoDBAutocompleter', function () {
   beforeEach(function () {
     autocompleterContext = {
       currentDatabaseAndConnection: () => ({
-        connectionId: 'my-connectionId',
-        databaseName: 'my-databaseName',
+        connectionId,
+        databaseName,
       }),
       databasesForConnection: () => Promise.resolve(['db1', 'db2']),
       collectionsForDatabase: () => Promise.resolve(['foo', 'bar', 'baz']),
@@ -172,20 +183,16 @@ describe('MongoDBAutocompleter', function () {
       const analyzedDocuments = await analyzeDocuments(docs);
       const schema = await analyzedDocuments.getMongoDBJsonSchema();
 
-      const connection = autocompleter.addConnection('my-connectionId');
-      connection.addCollectionSchema(
-        'my-databaseName',
-        'my-collectionName',
-        schema,
-      );
-      const code = autocompleter.getConnectionCode('my-connectionId');
+      const connection = autocompleter.addConnection(connectionId);
+      connection.addCollectionSchema(databaseName, collectionName, schema);
+      const code = autocompleter.getConnectionCode(connectionId);
       expect(code).to.equal(`
 import * as ShellAPI from '/shell-api.ts';
 import * as bson from '/bson.ts';
 
 export type ServerSchema = {
-  'my-databaseName': {
-    'my-collectionName': {
+  ${JSON.stringify(databaseName)}: {
+    ${JSON.stringify(collectionName)}: {
       schema: {
         bar?: bson.Double | number;
         baz?: {

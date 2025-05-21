@@ -50,7 +50,7 @@ class DatabaseSchema {
       ([collectionName, schema]) => {
         const def: string = schema ? toTypescriptTypeDefinition(schema) : `{}`;
         const lines = def.split(/\n/g).map((line) => `      ${line}`);
-        return `  '${collectionName}': {
+        return `  ${JSON.stringify(collectionName)}: {
       schema: ${lines.join('\n').trim()}
     };`;
       },
@@ -96,7 +96,7 @@ class ConnectionSchema {
     const databaseProperties = Object.entries(this.databaseSchemas).map(
       ([databaseName, schema]) => {
         const def = schema.toTypescriptTypeDefinition();
-        return `'${databaseName}': ${def}`;
+        return `${JSON.stringify(databaseName)}: ${def}`;
       },
     );
 
@@ -185,7 +185,7 @@ export type ServerSchema = ${this.connectionSchemas[
 import * as ShellAPI from '/shell-api.ts';
 import { ServerSchema } from '/${connectionId}.ts';
 
-type CurrentDatabaseSchema = ServerSchema['${databaseName}'];
+type CurrentDatabaseSchema = ServerSchema[${JSON.stringify(databaseName)}];
 
 declare global {
   const db: ShellAPI.DatabaseWithSchema<ServerSchema, CurrentDatabaseSchema>;
