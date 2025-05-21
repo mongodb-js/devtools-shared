@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { promises as fs } from 'fs';
 import path from 'path';
-import ShellApiText from '@mongosh/shell-api/api';
+import { api as ShellApiText } from '@mongosh/shell-api/api';
 
 function replaceImports(code: string) {
   // This just makes it possible to work on mql.ts because then the
