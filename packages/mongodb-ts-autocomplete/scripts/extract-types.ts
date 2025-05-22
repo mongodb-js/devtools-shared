@@ -23,14 +23,9 @@ async function run() {
   const input: Record<string, string> = {
     '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
     '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
-    '/shell-api.ts': path.join(
-      require.resolve('@mongosh/shell-api'),
-      '..',
-      'api-processed.d.ts',
-    ),
   };
   const files = await loadSources(input);
-  files['./shell-api.ts'] = replaceImports(ShellApiText);
+  files['/shell-api.ts'] = replaceImports(ShellApiText);
   const code = `
 const files = ${JSON.stringify(files)};
 export default files;
