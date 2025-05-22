@@ -1,0 +1,13 @@
+{
+  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "allowJs": true,
+    "strict": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["./src/fixtures/*"],
+  "exclude": ["./src/**/*.spec.*"]
+}

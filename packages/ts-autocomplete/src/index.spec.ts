@@ -13,7 +13,7 @@ function filterStartingWith({
   name = name.toLocaleLowerCase();
   trigger = trigger.toLocaleLowerCase();
 
-  return name !== trigger && name.startsWith(trigger);
+  return name.startsWith(trigger);
 }
 
 describe('Autocompleter', function () {
@@ -53,11 +53,15 @@ describe('Autocompleter', function () {
       expect(completions.length).to.be.gt(100);
 
       // one of them is the myGlobalFunction() function
-      expect(completions).to.deep.include({
-        kind: 'function',
-        name: 'myGlobalFunction',
-        type: 'myGlobalFunction',
-      });
+      expect(
+        completions.filter((c) => c.name.includes('myGlobalFunction')),
+      ).to.deep.equal([
+        {
+          kind: 'function',
+          name: 'myGlobalFunction',
+          result: 'myGlobalFunction',
+        },
+      ]);
     });
 
     it('returns nothing for a member of a variable that does not exist', function () {
@@ -79,9 +83,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
-          type: '(p1: number) => void',
+          result: 'myGlobalObject.functionProp',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+        },
       ]);
     });
 
@@ -94,9 +102,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
-          type: '(p1: number) => void',
+          result: 'myGlobalObject.functionProp',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+        },
       ]);
     });
 
@@ -111,9 +123,13 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
-          type: '(p1: number) => void',
+          result: 'myGlobalObject.functionProp',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+        },
       ]);
     });
 
@@ -138,12 +154,12 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
-          type: 'string',
+          result: 'myGlobalFunction({ param1',
         },
         {
           kind: 'property',
           name: 'param2',
-          type: 'string',
+          result: 'myGlobalFunction({ param2',
         },
       ]);
     });
@@ -159,12 +175,12 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
-          type: 'string',
+          result: 'myGlobalFunction({ param1',
         },
         {
           kind: 'property',
           name: 'param2',
-          type: 'string',
+          result: 'myGlobalFunction({ param2',
         },
       ]);
     });
@@ -181,12 +197,12 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
-          type: 'string',
+          result: 'myGlobalFunction({ param1',
         },
         {
           kind: 'property',
           name: 'param2',
-          type: 'string',
+          result: 'myGlobalFunction({ param2',
         },
       ]);
     });
@@ -202,8 +218,6 @@ describe('Autocompleter', function () {
     it('returns nothing when it has no code', function () {
       expect(autoCompleter.autocomplete('myGlobalOb')).to.deep.equal([]);
       expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([]);
-      expect(autoCompleter.autocomplete('myGlobalObject', 0)).to.deep.equal([]);
-      expect(autoCompleter.autocomplete('myGlobalObject', 1)).to.deep.equal([]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([]);
     });
 
@@ -217,7 +231,7 @@ describe('Autocompleter', function () {
         {
           kind: 'function',
           name: 'myGlobalFunction',
-          type: 'myGlobalFunction',
+          result: 'myGlobalFunction',
         },
       ]);
     });
@@ -227,28 +241,25 @@ describe('Autocompleter', function () {
         '/code.d.ts': CODE_TS,
       });
 
-      expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([]);
+      expect(autoCompleter.autocomplete('myGlobalObject')).to.deep.equal([
+        {
+          kind: 'const',
+          name: 'myGlobalObject',
+          result: 'myGlobalObject',
+        },
+      ]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([
         {
           kind: 'property',
           name: 'functionProp',
-          type: '(p1: number) => void',
+          result: 'myGlobalObject.functionProp',
         },
-        { kind: 'property', name: 'stringProp', type: 'string' },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+        },
       ]);
-
-      expect(autoCompleter.autocomplete('myGlobalObject.', 0)).to.deep.equal(
-        [],
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 1)).to.deep.equal(
-        [],
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 2)).to.deep.equal(
-        [],
-      );
-      expect(autoCompleter.autocomplete('myGlobalObject.', 3)).to.deep.equal(
-        [],
-      );
 
       expect(
         autoCompleter.autocomplete('myGlobalObject.functionPr'),
@@ -256,13 +267,9 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'functionProp',
-          type: '(p1: number) => void',
+          result: 'myGlobalObject.functionProp',
         },
       ]);
-
-      expect(
-        autoCompleter.autocomplete('myGlobalObject.typo', 4),
-      ).to.deep.equal([]);
     });
 
     it('returns completions for the fields of object function parameters', function () {
@@ -276,12 +283,12 @@ describe('Autocompleter', function () {
         {
           kind: 'property',
           name: 'param1',
-          type: 'string',
+          result: 'myGlobalFunction({ param1',
         },
         {
           kind: 'property',
           name: 'param2',
-          type: 'string',
+          result: 'myGlobalFunction({ param2',
         },
       ]);
     });
