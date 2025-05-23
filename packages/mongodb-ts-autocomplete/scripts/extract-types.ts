@@ -1,13 +1,7 @@
 /* eslint-disable no-console */
 import { promises as fs } from 'fs';
 import path from 'path';
-import { api as ShellApiText } from '@mongosh/shell-api/api';
-
-function replaceImports(code: string) {
-  // This just makes it possible to work on mql.ts because then the
-  // IDE finds the import.
-  return code.replace(/'bson'/g, "'/bson.ts'");
-}
+import { replaceImports } from '../src/utils';
 
 async function loadSources(sources: Record<string, string>) {
   const result: Record<string, string> = {};
@@ -25,7 +19,6 @@ async function run() {
     '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
   };
   const files = await loadSources(input);
-  files['/shell-api.ts'] = replaceImports(ShellApiText);
   const code = `
 const files = ${JSON.stringify(files)};
 export default files;
@@ -38,6 +31,7 @@ export default files;
     'fixtures',
     'autocomplete-types.ts',
   );
+  console.log(filepath);
   await fs.writeFile(filepath, code, 'utf-8');
 }
 
