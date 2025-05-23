@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -47,7 +47,7 @@
     "extract-types": "ts-node scripts/extract-types.ts"
   },
   "dependencies": {
-    "@mongodb-js/ts-autocomplete": "^0.3.0",
+    "@mongodb-js/ts-autocomplete": "^0.3.1",
     "@mongosh/shell-api": "^3.11.0",
     "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
