@@ -1,6 +1,8 @@
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
 import autocompleteTypes from './fixtures/autocomplete-types';
+import { api as ShellApiText } from '@mongosh/shell-api/api';
+import { replaceImports } from './utils';
 
 import type { JSONSchema } from 'mongodb-schema';
 import { toTypescriptTypeDefinition } from 'mongodb-schema';
@@ -159,7 +161,10 @@ export class MongoDBAutocompleter {
 
     this.connectionSchemas = Object.create(null);
 
-    this.autocompleter.updateCode(autocompleteTypes);
+    this.autocompleter.updateCode({
+      ...autocompleteTypes,
+      '/shell-api.ts': replaceImports(ShellApiText),
+    });
   }
 
   addConnection(connectionId: string): ConnectionSchema {
