@@ -1,0 +1,27 @@
+import * as schema from '../../out/schema';
+
+import * as bson from 'bson';
+
+/**
+ * Example
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/type/#example}
+ */
+function test0() {
+  type TestCollection = {
+    _id: number;
+    a:
+      | number
+      | Array<number>
+      | {
+          a: string;
+          b: string;
+          c: string;
+        }
+      | string
+      | bson.Long;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { a: { $type: '$a' } } },
+  ];
+}

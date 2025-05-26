@@ -7,6 +7,10 @@ type ArgType = NonNullable<
   typeof Operator._type.arguments
 >[number]['type'][number];
 
+type SyntheticVariables = NonNullable<
+  typeof Operator._type.arguments
+>[number]['syntheticVariables'];
+
 export class SchemaGenerator extends GeneratorBase {
   constructor() {
     super();
@@ -27,7 +31,6 @@ export class SchemaGenerator extends GeneratorBase {
     date: 'Date',
     null: 'null',
     timestamp: 'bson.Timestamp',
-    decimal: 'bson.Decimal128',
     array: 'unknown[]',
     binData: 'bson.Binary',
     objectId: 'bson.ObjectId',
@@ -36,11 +39,16 @@ export class SchemaGenerator extends GeneratorBase {
   };
 
   private typeMappings: Record<string, string[]> = {
-    int: ['number', 'bson.Int32'],
-    double: ['number', 'bson.Double'],
-    regex: ['RegExp', 'bson.BSONRegExp'],
-    long: ['bigint', 'bson.Long'],
-    javascript: ['bson.Code', 'Function'],
+    int: ['number', 'bson.Int32', '{ $numberInt: string }'],
+    double: ['number', 'bson.Double', '{ $numberDouble: string }'],
+    decimal: ['bson.Decimal128', '{ $numberDecimal: string }'],
+    regex: [
+      'RegExp',
+      'bson.BSONRegExp',
+      '{ pattern: string, options?: string }',
+    ],
+    long: ['bigint', 'bson.Long', '{ $numberLong: string }'],
+    javascript: ['bson.Code', 'Function', 'string'],
 
     number: [
       this.toTypeName('int'),
@@ -73,6 +81,9 @@ export class SchemaGenerator extends GeneratorBase {
     geoPoint: ['unknown'],
     sortSpec: ['-1', '1'],
     timeUnit: [
+      '"year"',
+      '"quarter"',
+      '"month"',
       '"week"',
       '"day"',
       '"hour"',
@@ -85,24 +96,26 @@ export class SchemaGenerator extends GeneratorBase {
     whenNotMatched: ['string'],
 
     expression_S: [
-      this.toTypeName('C_expression<S>'),
+      this.toTypeName('ExpressionOperator<S>'),
       this.toTypeName('fieldPath<S>'),
       this.toTypeName('bsonPrimitive'),
       'FieldExpression<S>',
       'FieldPath<S>[]',
     ],
-    stage_S: [this.toTypeName('C_stage<S>')],
+    expressionMap_S: [`{ [k: string]: ${this.toTypeName('Expression<S>')} }`],
+    stage_S: [this.toTypeName('StageOperator<S>')],
     pipeline_S: [this.toTypeName('stage<S>[]')],
     query_S: [
-      this.toTypeName('C_query<S>'),
+      this.toTypeName('QueryOperator<S>'),
       'Partial<{ [k in keyof S]: Condition<S[k]> }>',
     ],
     accumulator_S: [],
-    searchOperator_S: [],
+    // searchOperator_S: [],
     geometry_S: [],
 
     // Need to be adjusted to match the real schema
     fieldPath_S: ['`$${AFieldPath<S, any>}`'],
+    unprefixedFieldPath_S: ['AFieldPath<S, any>'],
     numberFieldPath_S: [this.toTypeFieldTypeName('number')],
     doubleFieldPath_S: [this.toTypeFieldTypeName('double')],
     stringFieldPath_S: [this.toTypeFieldTypeName('string')],
@@ -121,66 +134,89 @@ export class SchemaGenerator extends GeneratorBase {
     decimalFieldPath_S: [this.toTypeFieldTypeName('decimal')],
 
     resolvesToNumber_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('numberFieldPath<S>'),
       this.toTypeName('number'),
+      this.toTypeName('resolvesToInt<S>'),
+      this.toTypeName('resolvesToDouble<S>'),
+      this.toTypeName('resolvesToLong<S>'),
+      this.toTypeName('resolvesToDecimal<S>'),
     ],
     resolvesToDouble_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('doubleFieldPath<S>'),
       this.toTypeName('double'),
     ],
     resolvesToString_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('stringFieldPath<S>'),
       this.toTypeName('string'),
     ],
     resolvesToObject_S: [
+      "'$$ROOT'",
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('objectFieldPath<S>'),
       this.toTypeName('object'),
     ],
     resolvesToArray_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('arrayFieldPath<S>'),
       this.toTypeName('array'),
     ],
     resolvesToBinData_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('binDataFieldPath<S>'),
       this.toTypeName('binData'),
     ],
     resolvesToObjectId_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('objectIdFieldPath<S>'),
       this.toTypeName('objectId'),
     ],
     resolvesToBool_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('boolFieldPath<S>'),
       this.toTypeName('bool'),
     ],
     resolvesToDate_S: [
+      "'$$NOW'",
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('dateFieldPath<S>'),
       this.toTypeName('date'),
     ],
     resolvesToNull_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('nullFieldPath<S>'),
       this.toTypeName('null'),
     ],
     resolvesToRegex_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('regexFieldPath<S>'),
       this.toTypeName('regex'),
     ],
     resolvesToJavascript_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('javascriptFieldPath<S>'),
       this.toTypeName('javascript'),
     ],
     resolvesToInt_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('intFieldPath<S>'),
       this.toTypeName('int'),
     ],
     resolvesToTimestamp_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('timestampFieldPath<S>'),
       this.toTypeName('timestamp'),
+      "'$clusterTime'",
     ],
     resolvesToLong_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('longFieldPath<S>'),
       this.toTypeName('long'),
     ],
     resolvesToDecimal_S: [
+      this.toTypeName('resolvesToAny<S>'),
       this.toTypeName('decimalFieldPath<S>'),
       this.toTypeName('decimal'),
     ],
@@ -208,13 +244,25 @@ export class SchemaGenerator extends GeneratorBase {
       `);
   }
 
-  private getArgumentTypeName(type: ArgType): string | undefined {
+  private getArgumentTypeName(
+    type: ArgType,
+    syntheticVariables?: SyntheticVariables,
+  ): string | undefined {
     if (this.typeMappings[type]) {
       return this.toTypeName(type);
     }
 
     if (this.typeMappings[`${type}_S`]) {
-      return this.toTypeName(`${type}<S>`);
+      let genericArg = 'S';
+      if (syntheticVariables) {
+        // If we have synthetic variables for this argument, we need to construct a temporary type and merge it with S
+        const syntheticFields = syntheticVariables
+          .map((v) => `${this.toComment(v.description)}$${v.name}: any`)
+          .join(';\n');
+
+        genericArg = `S & { ${syntheticFields}; }`;
+      }
+      return this.toTypeName(`${type}<${genericArg}>`);
     }
 
     if (this.trivialTypeMappings[type]) {
@@ -233,7 +281,7 @@ export class SchemaGenerator extends GeneratorBase {
     }
 
     for (const type of arg.type) {
-      const name = this.getArgumentTypeName(type);
+      const name = this.getArgumentTypeName(type, arg.syntheticVariables);
 
       if (!name) {
         throw new Error(`Unknown type ${type}`);
@@ -316,7 +364,7 @@ export class SchemaGenerator extends GeneratorBase {
     this.emitHeader();
 
     for await (const file of yamlFiles) {
-      const namespace = `${capitalize(file.category)}Operators`;
+      const namespace = `Aggregation.${capitalize(file.category)}`;
       this.emit(`export namespace ${namespace} {\n`);
 
       for await (const operator of file.operators()) {
@@ -337,12 +385,11 @@ export class SchemaGenerator extends GeneratorBase {
             `${namespace}.${ifaceName}<S>`,
           );
         }
-        for (const type of parsed.type) {
-          // TODO: why?
-          (this.typeMappings[`C_${file.category}_S`] ??= []).push(
-            `${namespace}.${ifaceName}<S>`,
-          );
-        }
+
+        (this.typeMappings[`${file.category}Operator_S`] ??= []).push(
+          `${namespace}.${ifaceName}<S>`,
+        );
+
         if (!parsed.arguments) {
           this.emit(`Record<string, never>`);
         } else {

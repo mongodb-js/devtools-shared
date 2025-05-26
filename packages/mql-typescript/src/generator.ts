@@ -7,16 +7,56 @@ import * as bson from 'bson';
 
 export type YamlFiles = ReturnType<GeneratorBase['listSourceYAMLFiles']>;
 
+class BsonDate extends Date {
+  constructor(value: string | number | Date) {
+    if (typeof value === 'string') {
+      const number = Number(value);
+      if (!Number.isNaN(number)) {
+        value = number;
+      }
+    }
+    super(value);
+  }
+
+  toString(): string {
+    if (this.getTime() === 0) {
+      return '0';
+    }
+
+    return this.toISOString();
+  }
+}
+
 export abstract class GeneratorBase {
   private outputBuffer: StringWriter | undefined;
   private outputStream?: NodeJS.WritableStream;
+
+  constructor() {
+    if ('implicit' in yaml.DEFAULT_SCHEMA) {
+      const implicit = yaml.DEFAULT_SCHEMA.implicit as yaml.Type[];
+      const timestamp = implicit.find((type) => type.instanceOf === Date);
+      if (timestamp) {
+        timestamp.instanceOf = null;
+        timestamp.predicate = (data) => {
+          return data instanceof Date && !(data instanceof BsonDate);
+        };
+      }
+    }
+  }
 
   public static loadOptions: yaml.LoadOptions = {
     schema: yaml.DEFAULT_SCHEMA.extend([
       new yaml.Type('!bson_utcdatetime', {
         kind: 'scalar',
         construct(data) {
-          return new Date(data);
+          return new BsonDate(data);
+        },
+        instanceOf: BsonDate,
+        represent(data) {
+          if (data instanceof BsonDate) {
+            return data.toString();
+          }
+          throw new Error(`Expected Date, but got ${data.constructor.name}`);
         },
       }),
       new yaml.Type('!bson_objectId', {
@@ -24,11 +64,35 @@ export abstract class GeneratorBase {
         construct(data) {
           return bson.ObjectId.createFromHexString(data);
         },
+        predicate(data) {
+          return data instanceof bson.ObjectId;
+        },
+        represent(data) {
+          if (data instanceof bson.ObjectId) {
+            return data.toHexString();
+          }
+
+          throw new Error(
+            `Expected bson.ObjectId, but got ${data.constructor.name}`,
+          );
+        },
       }),
       new yaml.Type('!bson_uuid', {
         kind: 'scalar',
         construct(data) {
           return bson.UUID.createFromHexString(data);
+        },
+        predicate(data) {
+          return data instanceof bson.UUID;
+        },
+        represent(data) {
+          if (data instanceof bson.UUID) {
+            return data.toHexString();
+          }
+
+          throw new Error(
+            `Expected bson.UUID, but got ${data.constructor.name}`,
+          );
         },
       }),
       new yaml.Type('!bson_regex', {
@@ -36,41 +100,89 @@ export abstract class GeneratorBase {
         construct(data) {
           return new bson.BSONRegExp(data);
         },
+        predicate(data) {
+          return data instanceof bson.BSONRegExp && !data.options;
+        },
+        represent(data) {
+          if (data instanceof bson.BSONRegExp) {
+            return data.pattern;
+          }
+
+          throw new Error(
+            `Expected bson.BSONRegExp, but got ${data.constructor.name}`,
+          );
+        },
       }),
       new yaml.Type('!bson_regex', {
         kind: 'sequence',
         construct([data, flags]) {
           return new bson.BSONRegExp(data, flags);
         },
+        predicate(data) {
+          return data instanceof bson.BSONRegExp && !!data.options;
+        },
+        represent(data) {
+          if (data instanceof bson.BSONRegExp) {
+            return [data.pattern, data.options];
+          }
+
+          throw new Error(
+            `Expected bson.BSONRegExp, but got ${data.constructor.name}`,
+          );
+        },
       }),
       new yaml.Type('!bson_binary', {
         kind: 'scalar',
-        construct([data]) {
+        construct(data) {
           return bson.Binary.createFromBase64(data);
+        },
+        predicate(data) {
+          return data instanceof bson.Binary;
+        },
+        represent(data) {
+          if (data instanceof bson.Binary) {
+            return data.toString('base64');
+          }
+
+          throw new Error(
+            `Expected bson.Binary, but got ${data.constructor.name}`,
+          );
         },
       }),
       new yaml.Type('!bson_decimal128', {
         kind: 'scalar',
-        construct([data]) {
+        construct(data) {
           return bson.Decimal128.fromString(data);
+        },
+        predicate(data) {
+          return data instanceof bson.Decimal128;
+        },
+        represent(data) {
+          if (data instanceof bson.Decimal128) {
+            return data.toString();
+          }
+
+          throw new Error(
+            `Expected bson.Decimal128, but got ${data.constructor.name}`,
+          );
         },
       }),
     ]),
   };
 
+  protected configDir = path.join(
+    __dirname,
+    '..',
+    'mongo-php-library',
+    'generator',
+    'config',
+  );
+
   private async *listCategories(): AsyncIterable<{
     category: string;
     folder: string;
   }> {
-    const configDir = path.join(
-      __dirname,
-      '..',
-      'mongo-php-library',
-      'generator',
-      'config',
-    );
-
-    for await (const folder of await fs.readdir(configDir, {
+    for await (const folder of await fs.readdir(this.configDir, {
       withFileTypes: true,
     })) {
       if (folder.isDirectory()) {

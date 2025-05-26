@@ -50,8 +50,10 @@ export const Operator = z
                 'pipeline',
                 'window',
                 'expression',
+                'expressionMap',
                 'geometry',
                 'fieldPath',
+                'unprefixedFieldPath',
                 'timeUnit',
                 'sortSpec',
                 'any',
@@ -128,6 +130,14 @@ export const Operator = z
               .union([z.array(z.any()), z.boolean(), z.number(), z.string()])
               .optional(),
             mergeObject: z.boolean().default(false),
+            syntheticVariables: z
+              .array(
+                z.object({
+                  name: z.string().regex(new RegExp('^[$]?[a-zA-Z0-9]*$')),
+                  description: z.string().optional(),
+                }),
+              )
+              .optional(),
           })
           .strict(),
       )
@@ -161,6 +171,7 @@ export const Operator = z
                                   'Double',
                                   'Int32',
                                   'Int64',
+                                  'Long',
                                   'MaxKey',
                                   'MinKey',
                                   'Null',

@@ -1,5 +1,5 @@
 import type * as bson from 'bson';
-import type { FilterOperators } from 'mongodb';
+import { FilterOperators } from 'mongodb';
 
 type Condition<T> = AlternativeType<T> | FilterOperators<T>;
 type AlternativeType<T> =
@@ -15,7 +15,7 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
 type FieldExpression<T> = { [k: string]: FieldPath<T> };
-export namespace AccumulatorOperators {
+export namespace Aggregation.Accumulator {
   /**
    * A type describing the `$accumulator` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/accumulator/}
@@ -349,7 +349,7 @@ export namespace AccumulatorOperators {
       /**
        * An expression that resolves to the array from which to return n elements.
        */
-      input: ResolvesToArray<S>;
+      input: Expression<S>;
 
       /**
        * An expression that resolves to a positive integer. The integer specifies the number of array elements that $firstN returns.
@@ -682,7 +682,7 @@ export namespace AccumulatorOperators {
     };
   }
 }
-export namespace ExpressionOperators {
+export namespace Aggregation.Expression {
   /**
    * A type describing the `$abs` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/abs/}
@@ -1944,12 +1944,12 @@ export namespace ExpressionOperators {
 
   /**
    * A type describing the `$lastN` operator.
-   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/#array-operator}
    */
   export interface $lastN<S> {
     /**
      * Returns a specified number of elements from the end of an array.
-     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/#array-operator}
      */
     $lastN: {
       /**
@@ -1979,7 +1979,7 @@ export namespace ExpressionOperators {
        * Assignment block for the variables accessible in the in expression. To assign a variable, specify a string for the variable name and assign a valid expression for the value.
        * The variable assignments have no meaning outside the in expression, not even within the vars block itself.
        */
-      vars: Record<string, unknown>;
+      vars: ExpressionMap<S>;
 
       /**
        * The expression to evaluate.
@@ -2523,7 +2523,33 @@ export namespace ExpressionOperators {
        * - value is the variable that represents the cumulative value of the expression.
        * - this is the variable that refers to the element being processed.
        */
-      in: Expression<S>;
+      in:
+        | Expression<
+            S & {
+              /**
+               * The variable that represents the cumulative value of the expression.
+               */
+              $this: any;
+
+              /**
+               * The variable that refers to the element being processed.
+               */
+              $value: any;
+            }
+          >
+        | ExpressionMap<
+            S & {
+              /**
+               * The variable that represents the cumulative value of the expression.
+               */
+              $this: any;
+
+              /**
+               * The variable that refers to the element being processed.
+               */
+              $value: any;
+            }
+          >;
     };
   }
 
@@ -3519,7 +3545,7 @@ export namespace ExpressionOperators {
     };
   }
 }
-export namespace QueryOperators {
+export namespace Aggregation.Query {
   /**
    * A type describing the `$all` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/all/}
@@ -3626,18 +3652,6 @@ export namespace QueryOperators {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/}
      */
     $centerSphere: unknown[];
-  }
-
-  /**
-   * A type describing the `$comment` operator.
-   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
-   */
-  export interface $comment<S> {
-    /**
-     * Adds a comment to a query predicate.
-     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
-     */
-    $comment: string;
   }
 
   /**
@@ -4038,7 +4052,7 @@ export namespace QueryOperators {
     $where: Javascript;
   }
 }
-export namespace SearchOperators {
+export namespace Aggregation.Search {
   /**
    * A type describing the `autocomplete` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/autocomplete/}
@@ -4333,7 +4347,7 @@ export namespace SearchOperators {
     };
   }
 }
-export namespace StageOperators {
+export namespace Aggregation.Stage {
   /**
    * A type describing the `$addFields` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/}
@@ -4752,7 +4766,7 @@ export namespace StageOperators {
         /**
          * The _id expression specifies the group key. If you specify an _id value of null, or any other constant value, the $group stage returns a single document that aggregates values across all of the input documents.
          */
-        _id: Expression<S>;
+        _id: Expression<S> | ExpressionMap<S>;
       },
       /**
        * Computed using the accumulator operators.
@@ -5200,7 +5214,7 @@ export namespace StageOperators {
      * Alias for $project stage that removes or excludes fields.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/}
      */
-    $unset: [...FieldPath<S>[]];
+    $unset: [...UnprefixedFieldPath<S>[]];
   }
 
   /**
@@ -5281,12 +5295,16 @@ export namespace StageOperators {
   }
 }
 
-export type Int = number | bson.Int32;
-export type Double = number | bson.Double;
-export type Regex = RegExp | bson.BSONRegExp;
-export type Long = bigint | bson.Long;
-export type Javascript = bson.Code | Function;
-export type Number = Int | Long | Double | bson.Decimal128;
+export type Int = number | bson.Int32 | { $numberInt: string };
+export type Double = number | bson.Double | { $numberDouble: string };
+export type Decimal = bson.Decimal128 | { $numberDecimal: string };
+export type Regex =
+  | RegExp
+  | bson.BSONRegExp
+  | { pattern: string; options?: string };
+export type Long = bigint | bson.Long | { $numberLong: string };
+export type Javascript = bson.Code | Function | string;
+export type Number = Int | Long | Double | Decimal;
 export type BsonPrimitive =
   | Number
   | bson.Binary
@@ -5309,6 +5327,9 @@ export type SortBy = unknown;
 export type GeoPoint = unknown;
 export type SortSpec = -1 | 1;
 export type TimeUnit =
+  | 'year'
+  | 'quarter'
+  | 'month'
   | 'week'
   | 'day'
   | 'hour'
@@ -5319,118 +5340,101 @@ export type OutCollection = unknown;
 export type WhenMatched = string;
 export type WhenNotMatched = string;
 export type Expression<S> =
-  | C_expression<S>
+  | ExpressionOperator<S>
   | FieldPath<S>
   | BsonPrimitive
   | FieldExpression<S>
   | FieldPath<S>[];
+export type ExpressionMap<S> = { [k: string]: Expression<S> };
 export type Stage<S> =
-  | C_stage<S>
-  | StageOperators.$addFields<S>
-  | StageOperators.$bucket<S>
-  | StageOperators.$bucketAuto<S>
-  | StageOperators.$changeStream<S>
-  | StageOperators.$changeStreamSplitLargeEvent<S>
-  | StageOperators.$collStats<S>
-  | StageOperators.$count<S>
-  | StageOperators.$currentOp<S>
-  | StageOperators.$densify<S>
-  | StageOperators.$documents<S>
-  | StageOperators.$facet<S>
-  | StageOperators.$fill<S>
-  | StageOperators.$geoNear<S>
-  | StageOperators.$graphLookup<S>
-  | StageOperators.$group<S>
-  | StageOperators.$indexStats<S>
-  | StageOperators.$limit<S>
-  | StageOperators.$listLocalSessions<S>
-  | StageOperators.$listSampledQueries<S>
-  | StageOperators.$listSearchIndexes<S>
-  | StageOperators.$listSessions<S>
-  | StageOperators.$lookup<S>
-  | StageOperators.$match<S>
-  | StageOperators.$merge<S>
-  | StageOperators.$out<S>
-  | StageOperators.$planCacheStats<S>
-  | StageOperators.$project<S>
-  | StageOperators.$redact<S>
-  | StageOperators.$replaceRoot<S>
-  | StageOperators.$replaceWith<S>
-  | StageOperators.$sample<S>
-  | StageOperators.$search<S>
-  | StageOperators.$searchMeta<S>
-  | StageOperators.$set<S>
-  | StageOperators.$setWindowFields<S>
-  | StageOperators.$shardedDataDistribution<S>
-  | StageOperators.$skip<S>
-  | StageOperators.$sort<S>
-  | StageOperators.$sortByCount<S>
-  | StageOperators.$unionWith<S>
-  | StageOperators.$unset<S>
-  | StageOperators.$unwind<S>
-  | StageOperators.$vectorSearch<S>;
+  | StageOperator<S>
+  | Aggregation.Stage.$addFields<S>
+  | Aggregation.Stage.$bucket<S>
+  | Aggregation.Stage.$bucketAuto<S>
+  | Aggregation.Stage.$changeStream<S>
+  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
+  | Aggregation.Stage.$collStats<S>
+  | Aggregation.Stage.$count<S>
+  | Aggregation.Stage.$currentOp<S>
+  | Aggregation.Stage.$densify<S>
+  | Aggregation.Stage.$documents<S>
+  | Aggregation.Stage.$facet<S>
+  | Aggregation.Stage.$fill<S>
+  | Aggregation.Stage.$geoNear<S>
+  | Aggregation.Stage.$graphLookup<S>
+  | Aggregation.Stage.$group<S>
+  | Aggregation.Stage.$indexStats<S>
+  | Aggregation.Stage.$limit<S>
+  | Aggregation.Stage.$listLocalSessions<S>
+  | Aggregation.Stage.$listSampledQueries<S>
+  | Aggregation.Stage.$listSearchIndexes<S>
+  | Aggregation.Stage.$listSessions<S>
+  | Aggregation.Stage.$lookup<S>
+  | Aggregation.Stage.$match<S>
+  | Aggregation.Stage.$merge<S>
+  | Aggregation.Stage.$out<S>
+  | Aggregation.Stage.$planCacheStats<S>
+  | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$redact<S>
+  | Aggregation.Stage.$replaceRoot<S>
+  | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$sample<S>
+  | Aggregation.Stage.$search<S>
+  | Aggregation.Stage.$searchMeta<S>
+  | Aggregation.Stage.$set<S>
+  | Aggregation.Stage.$setWindowFields<S>
+  | Aggregation.Stage.$shardedDataDistribution<S>
+  | Aggregation.Stage.$skip<S>
+  | Aggregation.Stage.$sort<S>
+  | Aggregation.Stage.$sortByCount<S>
+  | Aggregation.Stage.$unionWith<S>
+  | Aggregation.Stage.$unset<S>
+  | Aggregation.Stage.$unwind<S>
+  | Aggregation.Stage.$vectorSearch<S>;
 export type Pipeline<S> = Stage<S>[];
 export type Query<S> =
-  | C_query<S>
+  | QueryOperator<S>
   | Partial<{ [k in keyof S]: Condition<S[k]> }>
-  | QueryOperators.$and<S>
-  | QueryOperators.$comment<S>
-  | QueryOperators.$expr<S>
-  | QueryOperators.$jsonSchema<S>
-  | QueryOperators.$nor<S>
-  | QueryOperators.$or<S>
-  | QueryOperators.$sampleRate<S>
-  | QueryOperators.$text<S>
-  | QueryOperators.$where<S>;
+  | Aggregation.Query.$and<S>
+  | Aggregation.Query.$expr<S>
+  | Aggregation.Query.$jsonSchema<S>
+  | Aggregation.Query.$nor<S>
+  | Aggregation.Query.$or<S>
+  | Aggregation.Query.$sampleRate<S>
+  | Aggregation.Query.$text<S>
+  | Aggregation.Query.$where<S>;
 export type Accumulator<S> =
-  | AccumulatorOperators.$accumulator<S>
-  | AccumulatorOperators.$addToSet<S>
-  | AccumulatorOperators.$avg<S>
-  | AccumulatorOperators.$bottom<S>
-  | AccumulatorOperators.$bottomN<S>
-  | AccumulatorOperators.$count<S>
-  | AccumulatorOperators.$first<S>
-  | AccumulatorOperators.$firstN<S>
-  | AccumulatorOperators.$last<S>
-  | AccumulatorOperators.$lastN<S>
-  | AccumulatorOperators.$max<S>
-  | AccumulatorOperators.$maxN<S>
-  | AccumulatorOperators.$median<S>
-  | AccumulatorOperators.$mergeObjects<S>
-  | AccumulatorOperators.$min<S>
-  | AccumulatorOperators.$minN<S>
-  | AccumulatorOperators.$percentile<S>
-  | AccumulatorOperators.$push<S>
-  | AccumulatorOperators.$stdDevPop<S>
-  | AccumulatorOperators.$stdDevSamp<S>
-  | AccumulatorOperators.$sum<S>
-  | AccumulatorOperators.$top<S>
-  | AccumulatorOperators.$topN<S>;
-export type SearchOperator<S> =
-  | SearchOperators.Autocomplete<S>
-  | SearchOperators.Compound<S>
-  | SearchOperators.EmbeddedDocument<S>
-  | SearchOperators.Equals<S>
-  | SearchOperators.Exists<S>
-  | SearchOperators.Facet<S>
-  | SearchOperators.GeoShape<S>
-  | SearchOperators.GeoWithin<S>
-  | SearchOperators.In<S>
-  | SearchOperators.MoreLikeThis<S>
-  | SearchOperators.Near<S>
-  | SearchOperators.Phrase<S>
-  | SearchOperators.QueryString<S>
-  | SearchOperators.Range<S>
-  | SearchOperators.Regex<S>
-  | SearchOperators.Text<S>
-  | SearchOperators.Wildcard<S>;
+  | Aggregation.Accumulator.$accumulator<S>
+  | Aggregation.Accumulator.$addToSet<S>
+  | Aggregation.Accumulator.$avg<S>
+  | Aggregation.Accumulator.$bottom<S>
+  | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$count<S>
+  | Aggregation.Accumulator.$first<S>
+  | Aggregation.Accumulator.$firstN<S>
+  | Aggregation.Accumulator.$last<S>
+  | Aggregation.Accumulator.$lastN<S>
+  | Aggregation.Accumulator.$max<S>
+  | Aggregation.Accumulator.$maxN<S>
+  | Aggregation.Accumulator.$median<S>
+  | Aggregation.Accumulator.$mergeObjects<S>
+  | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minN<S>
+  | Aggregation.Accumulator.$percentile<S>
+  | Aggregation.Accumulator.$push<S>
+  | Aggregation.Accumulator.$stdDevPop<S>
+  | Aggregation.Accumulator.$stdDevSamp<S>
+  | Aggregation.Accumulator.$sum<S>
+  | Aggregation.Accumulator.$top<S>
+  | Aggregation.Accumulator.$topN<S>;
 export type Geometry<S> =
-  | QueryOperators.$box<S>
-  | QueryOperators.$center<S>
-  | QueryOperators.$centerSphere<S>
-  | QueryOperators.$geometry<S>
-  | QueryOperators.$polygon<S>;
+  | Aggregation.Query.$box<S>
+  | Aggregation.Query.$center<S>
+  | Aggregation.Query.$centerSphere<S>
+  | Aggregation.Query.$geometry<S>
+  | Aggregation.Query.$polygon<S>;
 export type FieldPath<S> = `$${AFieldPath<S, any>}`;
+export type UnprefixedFieldPath<S> = AFieldPath<S, any>;
 export type NumberFieldPath<S> = `$${AFieldPath<S, Number>}`;
 export type DoubleFieldPath<S> = `$${AFieldPath<S, Double>}`;
 export type StringFieldPath<S> = `$${AFieldPath<S, string>}`;
@@ -5446,625 +5450,619 @@ export type JavascriptFieldPath<S> = `$${AFieldPath<S, Javascript>}`;
 export type IntFieldPath<S> = `$${AFieldPath<S, Int>}`;
 export type TimestampFieldPath<S> = `$${AFieldPath<S, bson.Timestamp>}`;
 export type LongFieldPath<S> = `$${AFieldPath<S, Long>}`;
-export type DecimalFieldPath<S> = `$${AFieldPath<S, bson.Decimal128>}`;
+export type DecimalFieldPath<S> = `$${AFieldPath<S, Decimal>}`;
 export type ResolvesToNumber<S> =
+  | ResolvesToAny<S>
   | NumberFieldPath<S>
   | Number
-  | ExpressionOperators.$abs<S>
-  | ExpressionOperators.$avg<S>
-  | ExpressionOperators.$pow<S>
-  | ExpressionOperators.$sum<S>;
+  | ResolvesToInt<S>
+  | ResolvesToDouble<S>
+  | ResolvesToLong<S>
+  | ResolvesToDecimal<S>
+  | Aggregation.Expression.$abs<S>
+  | Aggregation.Expression.$avg<S>
+  | Aggregation.Expression.$pow<S>
+  | Aggregation.Expression.$sum<S>;
 export type ResolvesToDouble<S> =
+  | ResolvesToAny<S>
   | DoubleFieldPath<S>
   | Double
-  | ExpressionOperators.$acos<S>
-  | ExpressionOperators.$acosh<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$asin<S>
-  | ExpressionOperators.$asinh<S>
-  | ExpressionOperators.$atan<S>
-  | ExpressionOperators.$atan2<S>
-  | ExpressionOperators.$atanh<S>
-  | ExpressionOperators.$cos<S>
-  | ExpressionOperators.$cosh<S>
-  | ExpressionOperators.$degreesToRadians<S>
-  | ExpressionOperators.$divide<S>
-  | ExpressionOperators.$exp<S>
-  | ExpressionOperators.$ln<S>
-  | ExpressionOperators.$log<S>
-  | ExpressionOperators.$log10<S>
-  | ExpressionOperators.$median<S>
-  | ExpressionOperators.$radiansToDegrees<S>
-  | ExpressionOperators.$rand<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$sin<S>
-  | ExpressionOperators.$sinh<S>
-  | ExpressionOperators.$sqrt<S>
-  | ExpressionOperators.$stdDevPop<S>
-  | ExpressionOperators.$stdDevSamp<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$tan<S>
-  | ExpressionOperators.$tanh<S>
-  | ExpressionOperators.$toDouble<S>
-  | QueryOperators.$rand<S>;
+  | Aggregation.Expression.$acos<S>
+  | Aggregation.Expression.$acosh<S>
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$asin<S>
+  | Aggregation.Expression.$asinh<S>
+  | Aggregation.Expression.$atan<S>
+  | Aggregation.Expression.$atan2<S>
+  | Aggregation.Expression.$atanh<S>
+  | Aggregation.Expression.$cos<S>
+  | Aggregation.Expression.$cosh<S>
+  | Aggregation.Expression.$degreesToRadians<S>
+  | Aggregation.Expression.$divide<S>
+  | Aggregation.Expression.$exp<S>
+  | Aggregation.Expression.$ln<S>
+  | Aggregation.Expression.$log<S>
+  | Aggregation.Expression.$log10<S>
+  | Aggregation.Expression.$median<S>
+  | Aggregation.Expression.$radiansToDegrees<S>
+  | Aggregation.Expression.$rand<S>
+  | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$sin<S>
+  | Aggregation.Expression.$sinh<S>
+  | Aggregation.Expression.$sqrt<S>
+  | Aggregation.Expression.$stdDevPop<S>
+  | Aggregation.Expression.$stdDevSamp<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$tan<S>
+  | Aggregation.Expression.$tanh<S>
+  | Aggregation.Expression.$toDouble<S>
+  | Aggregation.Query.$rand<S>;
 export type ResolvesToString<S> =
+  | ResolvesToAny<S>
   | StringFieldPath<S>
   | string
-  | ExpressionOperators.$concat<S>
-  | ExpressionOperators.$dateToString<S>
-  | ExpressionOperators.$ltrim<S>
-  | ExpressionOperators.$replaceAll<S>
-  | ExpressionOperators.$replaceOne<S>
-  | ExpressionOperators.$rtrim<S>
-  | ExpressionOperators.$substr<S>
-  | ExpressionOperators.$substrBytes<S>
-  | ExpressionOperators.$substrCP<S>
-  | ExpressionOperators.$toLower<S>
-  | ExpressionOperators.$toString<S>
-  | ExpressionOperators.$toUpper<S>
-  | ExpressionOperators.$trim<S>
-  | ExpressionOperators.$trunc<S>
-  | ExpressionOperators.$type<S>;
+  | Aggregation.Expression.$concat<S>
+  | Aggregation.Expression.$dateToString<S>
+  | Aggregation.Expression.$ltrim<S>
+  | Aggregation.Expression.$replaceAll<S>
+  | Aggregation.Expression.$replaceOne<S>
+  | Aggregation.Expression.$rtrim<S>
+  | Aggregation.Expression.$substr<S>
+  | Aggregation.Expression.$substrBytes<S>
+  | Aggregation.Expression.$substrCP<S>
+  | Aggregation.Expression.$toLower<S>
+  | Aggregation.Expression.$toString<S>
+  | Aggregation.Expression.$toUpper<S>
+  | Aggregation.Expression.$trim<S>
+  | Aggregation.Expression.$trunc<S>
+  | Aggregation.Expression.$type<S>;
 export type ResolvesToObject<S> =
+  | '$$ROOT'
+  | ResolvesToAny<S>
   | ObjectFieldPath<S>
   | Record<string, unknown>
-  | ExpressionOperators.$arrayToObject<S>
-  | ExpressionOperators.$dateToParts<S>
-  | ExpressionOperators.$mergeObjects<S>
-  | ExpressionOperators.$regexFind<S>
-  | ExpressionOperators.$setField<S>
-  | ExpressionOperators.$unsetField<S>;
+  | Aggregation.Expression.$arrayToObject<S>
+  | Aggregation.Expression.$dateToParts<S>
+  | Aggregation.Expression.$mergeObjects<S>
+  | Aggregation.Expression.$regexFind<S>
+  | Aggregation.Expression.$setField<S>
+  | Aggregation.Expression.$unsetField<S>;
 export type ResolvesToArray<S> =
+  | ResolvesToAny<S>
   | ArrayFieldPath<S>
   | unknown[]
-  | ExpressionOperators.$concatArrays<S>
-  | ExpressionOperators.$filter<S>
-  | ExpressionOperators.$firstN<S>
-  | ExpressionOperators.$lastN<S>
-  | ExpressionOperators.$map<S>
-  | ExpressionOperators.$maxN<S>
-  | ExpressionOperators.$minN<S>
-  | ExpressionOperators.$objectToArray<S>
-  | ExpressionOperators.$percentile<S>
-  | ExpressionOperators.$range<S>
-  | ExpressionOperators.$regexFindAll<S>
-  | ExpressionOperators.$reverseArray<S>
-  | ExpressionOperators.$setDifference<S>
-  | ExpressionOperators.$setIntersection<S>
-  | ExpressionOperators.$setUnion<S>
-  | ExpressionOperators.$slice<S>
-  | ExpressionOperators.$sortArray<S>
-  | ExpressionOperators.$split<S>
-  | ExpressionOperators.$zip<S>;
-export type ResolvesToBinData<S> = BinDataFieldPath<S> | bson.Binary;
+  | Aggregation.Expression.$concatArrays<S>
+  | Aggregation.Expression.$filter<S>
+  | Aggregation.Expression.$firstN<S>
+  | Aggregation.Expression.$lastN<S>
+  | Aggregation.Expression.$map<S>
+  | Aggregation.Expression.$maxN<S>
+  | Aggregation.Expression.$minN<S>
+  | Aggregation.Expression.$objectToArray<S>
+  | Aggregation.Expression.$percentile<S>
+  | Aggregation.Expression.$range<S>
+  | Aggregation.Expression.$regexFindAll<S>
+  | Aggregation.Expression.$reverseArray<S>
+  | Aggregation.Expression.$setDifference<S>
+  | Aggregation.Expression.$setIntersection<S>
+  | Aggregation.Expression.$setUnion<S>
+  | Aggregation.Expression.$slice<S>
+  | Aggregation.Expression.$sortArray<S>
+  | Aggregation.Expression.$split<S>
+  | Aggregation.Expression.$zip<S>;
+export type ResolvesToBinData<S> =
+  | ResolvesToAny<S>
+  | BinDataFieldPath<S>
+  | bson.Binary;
 export type ResolvesToObjectId<S> =
+  | ResolvesToAny<S>
   | ObjectIdFieldPath<S>
   | bson.ObjectId
-  | ExpressionOperators.$toObjectId<S>;
+  | Aggregation.Expression.$toObjectId<S>;
 export type ResolvesToBool<S> =
+  | ResolvesToAny<S>
   | BoolFieldPath<S>
   | boolean
-  | ExpressionOperators.$allElementsTrue<S>
-  | ExpressionOperators.$and<S>
-  | ExpressionOperators.$anyElementTrue<S>
-  | ExpressionOperators.$eq<S>
-  | ExpressionOperators.$gt<S>
-  | ExpressionOperators.$gte<S>
-  | ExpressionOperators.$in<S>
-  | ExpressionOperators.$isArray<S>
-  | ExpressionOperators.$isNumber<S>
-  | ExpressionOperators.$lt<S>
-  | ExpressionOperators.$lte<S>
-  | ExpressionOperators.$ne<S>
-  | ExpressionOperators.$not<S>
-  | ExpressionOperators.$or<S>
-  | ExpressionOperators.$regexMatch<S>
-  | ExpressionOperators.$setEquals<S>
-  | ExpressionOperators.$setIsSubset<S>
-  | ExpressionOperators.$toBool<S>;
+  | Aggregation.Expression.$allElementsTrue<S>
+  | Aggregation.Expression.$and<S>
+  | Aggregation.Expression.$anyElementTrue<S>
+  | Aggregation.Expression.$eq<S>
+  | Aggregation.Expression.$gt<S>
+  | Aggregation.Expression.$gte<S>
+  | Aggregation.Expression.$in<S>
+  | Aggregation.Expression.$isArray<S>
+  | Aggregation.Expression.$isNumber<S>
+  | Aggregation.Expression.$lt<S>
+  | Aggregation.Expression.$lte<S>
+  | Aggregation.Expression.$ne<S>
+  | Aggregation.Expression.$not<S>
+  | Aggregation.Expression.$or<S>
+  | Aggregation.Expression.$regexMatch<S>
+  | Aggregation.Expression.$setEquals<S>
+  | Aggregation.Expression.$setIsSubset<S>
+  | Aggregation.Expression.$toBool<S>;
 export type ResolvesToDate<S> =
+  | '$$NOW'
+  | ResolvesToAny<S>
   | DateFieldPath<S>
   | Date
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$dateAdd<S>
-  | ExpressionOperators.$dateFromParts<S>
-  | ExpressionOperators.$dateFromString<S>
-  | ExpressionOperators.$dateSubtract<S>
-  | ExpressionOperators.$dateTrunc<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$toDate<S>;
-export type ResolvesToNull<S> = NullFieldPath<S> | null;
-export type ResolvesToRegex<S> = RegexFieldPath<S> | Regex;
-export type ResolvesToJavascript<S> = JavascriptFieldPath<S> | Javascript;
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$dateAdd<S>
+  | Aggregation.Expression.$dateFromParts<S>
+  | Aggregation.Expression.$dateFromString<S>
+  | Aggregation.Expression.$dateSubtract<S>
+  | Aggregation.Expression.$dateTrunc<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$toDate<S>;
+export type ResolvesToNull<S> = ResolvesToAny<S> | NullFieldPath<S> | null;
+export type ResolvesToRegex<S> = ResolvesToAny<S> | RegexFieldPath<S> | Regex;
+export type ResolvesToJavascript<S> =
+  | ResolvesToAny<S>
+  | JavascriptFieldPath<S>
+  | Javascript;
 export type ResolvesToInt<S> =
+  | ResolvesToAny<S>
   | IntFieldPath<S>
   | Int
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$binarySize<S>
-  | ExpressionOperators.$bitAnd<S>
-  | ExpressionOperators.$bitNot<S>
-  | ExpressionOperators.$bitOr<S>
-  | ExpressionOperators.$bitXor<S>
-  | ExpressionOperators.$bsonSize<S>
-  | ExpressionOperators.$ceil<S>
-  | ExpressionOperators.$cmp<S>
-  | ExpressionOperators.$dateDiff<S>
-  | ExpressionOperators.$dayOfMonth<S>
-  | ExpressionOperators.$dayOfWeek<S>
-  | ExpressionOperators.$dayOfYear<S>
-  | ExpressionOperators.$floor<S>
-  | ExpressionOperators.$hour<S>
-  | ExpressionOperators.$indexOfArray<S>
-  | ExpressionOperators.$indexOfBytes<S>
-  | ExpressionOperators.$indexOfCP<S>
-  | ExpressionOperators.$isoDayOfWeek<S>
-  | ExpressionOperators.$isoWeek<S>
-  | ExpressionOperators.$isoWeekYear<S>
-  | ExpressionOperators.$millisecond<S>
-  | ExpressionOperators.$minute<S>
-  | ExpressionOperators.$mod<S>
-  | ExpressionOperators.$month<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$second<S>
-  | ExpressionOperators.$size<S>
-  | ExpressionOperators.$strLenBytes<S>
-  | ExpressionOperators.$strLenCP<S>
-  | ExpressionOperators.$strcasecmp<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$toInt<S>
-  | ExpressionOperators.$week<S>
-  | ExpressionOperators.$year<S>;
-export type ResolvesToTimestamp<S> = TimestampFieldPath<S> | bson.Timestamp;
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$binarySize<S>
+  | Aggregation.Expression.$bitAnd<S>
+  | Aggregation.Expression.$bitNot<S>
+  | Aggregation.Expression.$bitOr<S>
+  | Aggregation.Expression.$bitXor<S>
+  | Aggregation.Expression.$bsonSize<S>
+  | Aggregation.Expression.$ceil<S>
+  | Aggregation.Expression.$cmp<S>
+  | Aggregation.Expression.$dateDiff<S>
+  | Aggregation.Expression.$dayOfMonth<S>
+  | Aggregation.Expression.$dayOfWeek<S>
+  | Aggregation.Expression.$dayOfYear<S>
+  | Aggregation.Expression.$floor<S>
+  | Aggregation.Expression.$hour<S>
+  | Aggregation.Expression.$indexOfArray<S>
+  | Aggregation.Expression.$indexOfBytes<S>
+  | Aggregation.Expression.$indexOfCP<S>
+  | Aggregation.Expression.$isoDayOfWeek<S>
+  | Aggregation.Expression.$isoWeek<S>
+  | Aggregation.Expression.$isoWeekYear<S>
+  | Aggregation.Expression.$millisecond<S>
+  | Aggregation.Expression.$minute<S>
+  | Aggregation.Expression.$mod<S>
+  | Aggregation.Expression.$month<S>
+  | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$second<S>
+  | Aggregation.Expression.$size<S>
+  | Aggregation.Expression.$strLenBytes<S>
+  | Aggregation.Expression.$strLenCP<S>
+  | Aggregation.Expression.$strcasecmp<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$toInt<S>
+  | Aggregation.Expression.$week<S>
+  | Aggregation.Expression.$year<S>;
+export type ResolvesToTimestamp<S> =
+  | ResolvesToAny<S>
+  | TimestampFieldPath<S>
+  | bson.Timestamp
+  | '$clusterTime';
 export type ResolvesToLong<S> =
+  | ResolvesToAny<S>
   | LongFieldPath<S>
   | Long
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$bitAnd<S>
-  | ExpressionOperators.$bitNot<S>
-  | ExpressionOperators.$bitOr<S>
-  | ExpressionOperators.$bitXor<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$toHashedIndexKey<S>
-  | ExpressionOperators.$toLong<S>
-  | ExpressionOperators.$tsIncrement<S>
-  | ExpressionOperators.$tsSecond<S>;
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$bitAnd<S>
+  | Aggregation.Expression.$bitNot<S>
+  | Aggregation.Expression.$bitOr<S>
+  | Aggregation.Expression.$bitXor<S>
+  | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$toHashedIndexKey<S>
+  | Aggregation.Expression.$toLong<S>
+  | Aggregation.Expression.$tsIncrement<S>
+  | Aggregation.Expression.$tsSecond<S>;
 export type ResolvesToDecimal<S> =
+  | ResolvesToAny<S>
   | DecimalFieldPath<S>
-  | bson.Decimal128
-  | ExpressionOperators.$acos<S>
-  | ExpressionOperators.$acosh<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$asin<S>
-  | ExpressionOperators.$asinh<S>
-  | ExpressionOperators.$atan<S>
-  | ExpressionOperators.$atan2<S>
-  | ExpressionOperators.$atanh<S>
-  | ExpressionOperators.$cos<S>
-  | ExpressionOperators.$cosh<S>
-  | ExpressionOperators.$degreesToRadians<S>
-  | ExpressionOperators.$multiply<S>
-  | ExpressionOperators.$radiansToDegrees<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$sin<S>
-  | ExpressionOperators.$sinh<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$tan<S>
-  | ExpressionOperators.$tanh<S>
-  | ExpressionOperators.$toDecimal<S>;
-export type C_accumulator<S> =
-  | AccumulatorOperators.$accumulator<S>
-  | AccumulatorOperators.$addToSet<S>
-  | AccumulatorOperators.$addToSet<S>
-  | AccumulatorOperators.$avg<S>
-  | AccumulatorOperators.$avg<S>
-  | AccumulatorOperators.$bottom<S>
-  | AccumulatorOperators.$bottom<S>
-  | AccumulatorOperators.$bottomN<S>
-  | AccumulatorOperators.$bottomN<S>
-  | AccumulatorOperators.$count<S>
-  | AccumulatorOperators.$count<S>
-  | AccumulatorOperators.$covariancePop<S>
-  | AccumulatorOperators.$covarianceSamp<S>
-  | AccumulatorOperators.$denseRank<S>
-  | AccumulatorOperators.$derivative<S>
-  | AccumulatorOperators.$documentNumber<S>
-  | AccumulatorOperators.$expMovingAvg<S>
-  | AccumulatorOperators.$first<S>
-  | AccumulatorOperators.$first<S>
-  | AccumulatorOperators.$firstN<S>
-  | AccumulatorOperators.$firstN<S>
-  | AccumulatorOperators.$integral<S>
-  | AccumulatorOperators.$last<S>
-  | AccumulatorOperators.$last<S>
-  | AccumulatorOperators.$lastN<S>
-  | AccumulatorOperators.$lastN<S>
-  | AccumulatorOperators.$linearFill<S>
-  | AccumulatorOperators.$locf<S>
-  | AccumulatorOperators.$max<S>
-  | AccumulatorOperators.$max<S>
-  | AccumulatorOperators.$maxN<S>
-  | AccumulatorOperators.$maxN<S>
-  | AccumulatorOperators.$median<S>
-  | AccumulatorOperators.$median<S>
-  | AccumulatorOperators.$mergeObjects<S>
-  | AccumulatorOperators.$min<S>
-  | AccumulatorOperators.$min<S>
-  | AccumulatorOperators.$minN<S>
-  | AccumulatorOperators.$minN<S>
-  | AccumulatorOperators.$percentile<S>
-  | AccumulatorOperators.$percentile<S>
-  | AccumulatorOperators.$push<S>
-  | AccumulatorOperators.$push<S>
-  | AccumulatorOperators.$rank<S>
-  | AccumulatorOperators.$shift<S>
-  | AccumulatorOperators.$stdDevPop<S>
-  | AccumulatorOperators.$stdDevPop<S>
-  | AccumulatorOperators.$stdDevSamp<S>
-  | AccumulatorOperators.$stdDevSamp<S>
-  | AccumulatorOperators.$sum<S>
-  | AccumulatorOperators.$sum<S>
-  | AccumulatorOperators.$top<S>
-  | AccumulatorOperators.$topN<S>;
+  | Decimal
+  | Aggregation.Expression.$acos<S>
+  | Aggregation.Expression.$acosh<S>
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$asin<S>
+  | Aggregation.Expression.$asinh<S>
+  | Aggregation.Expression.$atan<S>
+  | Aggregation.Expression.$atan2<S>
+  | Aggregation.Expression.$atanh<S>
+  | Aggregation.Expression.$cos<S>
+  | Aggregation.Expression.$cosh<S>
+  | Aggregation.Expression.$degreesToRadians<S>
+  | Aggregation.Expression.$multiply<S>
+  | Aggregation.Expression.$radiansToDegrees<S>
+  | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$sin<S>
+  | Aggregation.Expression.$sinh<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$tan<S>
+  | Aggregation.Expression.$tanh<S>
+  | Aggregation.Expression.$toDecimal<S>;
+export type AccumulatorOperator<S> =
+  | Aggregation.Accumulator.$accumulator<S>
+  | Aggregation.Accumulator.$addToSet<S>
+  | Aggregation.Accumulator.$avg<S>
+  | Aggregation.Accumulator.$bottom<S>
+  | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$count<S>
+  | Aggregation.Accumulator.$covariancePop<S>
+  | Aggregation.Accumulator.$covarianceSamp<S>
+  | Aggregation.Accumulator.$denseRank<S>
+  | Aggregation.Accumulator.$derivative<S>
+  | Aggregation.Accumulator.$documentNumber<S>
+  | Aggregation.Accumulator.$expMovingAvg<S>
+  | Aggregation.Accumulator.$first<S>
+  | Aggregation.Accumulator.$firstN<S>
+  | Aggregation.Accumulator.$integral<S>
+  | Aggregation.Accumulator.$last<S>
+  | Aggregation.Accumulator.$lastN<S>
+  | Aggregation.Accumulator.$linearFill<S>
+  | Aggregation.Accumulator.$locf<S>
+  | Aggregation.Accumulator.$max<S>
+  | Aggregation.Accumulator.$maxN<S>
+  | Aggregation.Accumulator.$median<S>
+  | Aggregation.Accumulator.$mergeObjects<S>
+  | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minN<S>
+  | Aggregation.Accumulator.$percentile<S>
+  | Aggregation.Accumulator.$push<S>
+  | Aggregation.Accumulator.$rank<S>
+  | Aggregation.Accumulator.$shift<S>
+  | Aggregation.Accumulator.$stdDevPop<S>
+  | Aggregation.Accumulator.$stdDevSamp<S>
+  | Aggregation.Accumulator.$sum<S>
+  | Aggregation.Accumulator.$top<S>
+  | Aggregation.Accumulator.$topN<S>;
 export type Window<S> =
-  | AccumulatorOperators.$addToSet<S>
-  | AccumulatorOperators.$avg<S>
-  | AccumulatorOperators.$bottom<S>
-  | AccumulatorOperators.$bottomN<S>
-  | AccumulatorOperators.$count<S>
-  | AccumulatorOperators.$covariancePop<S>
-  | AccumulatorOperators.$covarianceSamp<S>
-  | AccumulatorOperators.$denseRank<S>
-  | AccumulatorOperators.$derivative<S>
-  | AccumulatorOperators.$documentNumber<S>
-  | AccumulatorOperators.$expMovingAvg<S>
-  | AccumulatorOperators.$first<S>
-  | AccumulatorOperators.$firstN<S>
-  | AccumulatorOperators.$integral<S>
-  | AccumulatorOperators.$last<S>
-  | AccumulatorOperators.$lastN<S>
-  | AccumulatorOperators.$linearFill<S>
-  | AccumulatorOperators.$locf<S>
-  | AccumulatorOperators.$max<S>
-  | AccumulatorOperators.$maxN<S>
-  | AccumulatorOperators.$median<S>
-  | AccumulatorOperators.$min<S>
-  | AccumulatorOperators.$minN<S>
-  | AccumulatorOperators.$percentile<S>
-  | AccumulatorOperators.$push<S>
-  | AccumulatorOperators.$rank<S>
-  | AccumulatorOperators.$shift<S>
-  | AccumulatorOperators.$stdDevPop<S>
-  | AccumulatorOperators.$stdDevSamp<S>
-  | AccumulatorOperators.$sum<S>;
-export type C_expression<S> =
-  | ExpressionOperators.$abs<S>
-  | ExpressionOperators.$acos<S>
-  | ExpressionOperators.$acos<S>
-  | ExpressionOperators.$acosh<S>
-  | ExpressionOperators.$acosh<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$add<S>
-  | ExpressionOperators.$allElementsTrue<S>
-  | ExpressionOperators.$and<S>
-  | ExpressionOperators.$anyElementTrue<S>
-  | ExpressionOperators.$arrayElemAt<S>
-  | ExpressionOperators.$arrayToObject<S>
-  | ExpressionOperators.$asin<S>
-  | ExpressionOperators.$asin<S>
-  | ExpressionOperators.$asinh<S>
-  | ExpressionOperators.$asinh<S>
-  | ExpressionOperators.$atan<S>
-  | ExpressionOperators.$atan<S>
-  | ExpressionOperators.$atan2<S>
-  | ExpressionOperators.$atan2<S>
-  | ExpressionOperators.$atanh<S>
-  | ExpressionOperators.$atanh<S>
-  | ExpressionOperators.$avg<S>
-  | ExpressionOperators.$binarySize<S>
-  | ExpressionOperators.$bitAnd<S>
-  | ExpressionOperators.$bitAnd<S>
-  | ExpressionOperators.$bitNot<S>
-  | ExpressionOperators.$bitNot<S>
-  | ExpressionOperators.$bitOr<S>
-  | ExpressionOperators.$bitOr<S>
-  | ExpressionOperators.$bitXor<S>
-  | ExpressionOperators.$bitXor<S>
-  | ExpressionOperators.$bsonSize<S>
-  | ExpressionOperators.$case<S>
-  | ExpressionOperators.$ceil<S>
-  | ExpressionOperators.$cmp<S>
-  | ExpressionOperators.$concat<S>
-  | ExpressionOperators.$concatArrays<S>
-  | ExpressionOperators.$cond<S>
-  | ExpressionOperators.$convert<S>
-  | ExpressionOperators.$cos<S>
-  | ExpressionOperators.$cos<S>
-  | ExpressionOperators.$cosh<S>
-  | ExpressionOperators.$cosh<S>
-  | ExpressionOperators.$dateAdd<S>
-  | ExpressionOperators.$dateDiff<S>
-  | ExpressionOperators.$dateFromParts<S>
-  | ExpressionOperators.$dateFromString<S>
-  | ExpressionOperators.$dateSubtract<S>
-  | ExpressionOperators.$dateToParts<S>
-  | ExpressionOperators.$dateToString<S>
-  | ExpressionOperators.$dateTrunc<S>
-  | ExpressionOperators.$dayOfMonth<S>
-  | ExpressionOperators.$dayOfWeek<S>
-  | ExpressionOperators.$dayOfYear<S>
-  | ExpressionOperators.$degreesToRadians<S>
-  | ExpressionOperators.$degreesToRadians<S>
-  | ExpressionOperators.$divide<S>
-  | ExpressionOperators.$eq<S>
-  | ExpressionOperators.$exp<S>
-  | ExpressionOperators.$filter<S>
-  | ExpressionOperators.$first<S>
-  | ExpressionOperators.$firstN<S>
-  | ExpressionOperators.$floor<S>
-  | ExpressionOperators.$function<S>
-  | ExpressionOperators.$getField<S>
-  | ExpressionOperators.$gt<S>
-  | ExpressionOperators.$gte<S>
-  | ExpressionOperators.$hour<S>
-  | ExpressionOperators.$ifNull<S>
-  | ExpressionOperators.$in<S>
-  | ExpressionOperators.$indexOfArray<S>
-  | ExpressionOperators.$indexOfBytes<S>
-  | ExpressionOperators.$indexOfCP<S>
-  | ExpressionOperators.$isArray<S>
-  | ExpressionOperators.$isNumber<S>
-  | ExpressionOperators.$isoDayOfWeek<S>
-  | ExpressionOperators.$isoWeek<S>
-  | ExpressionOperators.$isoWeekYear<S>
-  | ExpressionOperators.$last<S>
-  | ExpressionOperators.$lastN<S>
-  | ExpressionOperators.$let<S>
-  | ExpressionOperators.$literal<S>
-  | ExpressionOperators.$ln<S>
-  | ExpressionOperators.$log<S>
-  | ExpressionOperators.$log10<S>
-  | ExpressionOperators.$lt<S>
-  | ExpressionOperators.$lte<S>
-  | ExpressionOperators.$ltrim<S>
-  | ExpressionOperators.$map<S>
-  | ExpressionOperators.$max<S>
-  | ExpressionOperators.$maxN<S>
-  | ExpressionOperators.$median<S>
-  | ExpressionOperators.$mergeObjects<S>
-  | ExpressionOperators.$meta<S>
-  | ExpressionOperators.$millisecond<S>
-  | ExpressionOperators.$min<S>
-  | ExpressionOperators.$minN<S>
-  | ExpressionOperators.$minute<S>
-  | ExpressionOperators.$mod<S>
-  | ExpressionOperators.$month<S>
-  | ExpressionOperators.$multiply<S>
-  | ExpressionOperators.$ne<S>
-  | ExpressionOperators.$not<S>
-  | ExpressionOperators.$objectToArray<S>
-  | ExpressionOperators.$or<S>
-  | ExpressionOperators.$percentile<S>
-  | ExpressionOperators.$pow<S>
-  | ExpressionOperators.$radiansToDegrees<S>
-  | ExpressionOperators.$radiansToDegrees<S>
-  | ExpressionOperators.$rand<S>
-  | ExpressionOperators.$range<S>
-  | ExpressionOperators.$reduce<S>
-  | ExpressionOperators.$regexFind<S>
-  | ExpressionOperators.$regexFindAll<S>
-  | ExpressionOperators.$regexMatch<S>
-  | ExpressionOperators.$replaceAll<S>
-  | ExpressionOperators.$replaceOne<S>
-  | ExpressionOperators.$reverseArray<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$round<S>
-  | ExpressionOperators.$rtrim<S>
-  | ExpressionOperators.$second<S>
-  | ExpressionOperators.$setDifference<S>
-  | ExpressionOperators.$setEquals<S>
-  | ExpressionOperators.$setField<S>
-  | ExpressionOperators.$setIntersection<S>
-  | ExpressionOperators.$setIsSubset<S>
-  | ExpressionOperators.$setUnion<S>
-  | ExpressionOperators.$sin<S>
-  | ExpressionOperators.$sin<S>
-  | ExpressionOperators.$sinh<S>
-  | ExpressionOperators.$sinh<S>
-  | ExpressionOperators.$size<S>
-  | ExpressionOperators.$slice<S>
-  | ExpressionOperators.$sortArray<S>
-  | ExpressionOperators.$split<S>
-  | ExpressionOperators.$sqrt<S>
-  | ExpressionOperators.$stdDevPop<S>
-  | ExpressionOperators.$stdDevSamp<S>
-  | ExpressionOperators.$strLenBytes<S>
-  | ExpressionOperators.$strLenCP<S>
-  | ExpressionOperators.$strcasecmp<S>
-  | ExpressionOperators.$substr<S>
-  | ExpressionOperators.$substrBytes<S>
-  | ExpressionOperators.$substrCP<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$subtract<S>
-  | ExpressionOperators.$sum<S>
-  | ExpressionOperators.$switch<S>
-  | ExpressionOperators.$tan<S>
-  | ExpressionOperators.$tan<S>
-  | ExpressionOperators.$tanh<S>
-  | ExpressionOperators.$tanh<S>
-  | ExpressionOperators.$toBool<S>
-  | ExpressionOperators.$toDate<S>
-  | ExpressionOperators.$toDecimal<S>
-  | ExpressionOperators.$toDouble<S>
-  | ExpressionOperators.$toHashedIndexKey<S>
-  | ExpressionOperators.$toInt<S>
-  | ExpressionOperators.$toLong<S>
-  | ExpressionOperators.$toLower<S>
-  | ExpressionOperators.$toObjectId<S>
-  | ExpressionOperators.$toString<S>
-  | ExpressionOperators.$toUpper<S>
-  | ExpressionOperators.$trim<S>
-  | ExpressionOperators.$trunc<S>
-  | ExpressionOperators.$tsIncrement<S>
-  | ExpressionOperators.$tsSecond<S>
-  | ExpressionOperators.$type<S>
-  | ExpressionOperators.$unsetField<S>
-  | ExpressionOperators.$week<S>
-  | ExpressionOperators.$year<S>
-  | ExpressionOperators.$zip<S>;
+  | Aggregation.Accumulator.$addToSet<S>
+  | Aggregation.Accumulator.$avg<S>
+  | Aggregation.Accumulator.$bottom<S>
+  | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$count<S>
+  | Aggregation.Accumulator.$covariancePop<S>
+  | Aggregation.Accumulator.$covarianceSamp<S>
+  | Aggregation.Accumulator.$denseRank<S>
+  | Aggregation.Accumulator.$derivative<S>
+  | Aggregation.Accumulator.$documentNumber<S>
+  | Aggregation.Accumulator.$expMovingAvg<S>
+  | Aggregation.Accumulator.$first<S>
+  | Aggregation.Accumulator.$firstN<S>
+  | Aggregation.Accumulator.$integral<S>
+  | Aggregation.Accumulator.$last<S>
+  | Aggregation.Accumulator.$lastN<S>
+  | Aggregation.Accumulator.$linearFill<S>
+  | Aggregation.Accumulator.$locf<S>
+  | Aggregation.Accumulator.$max<S>
+  | Aggregation.Accumulator.$maxN<S>
+  | Aggregation.Accumulator.$median<S>
+  | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minN<S>
+  | Aggregation.Accumulator.$percentile<S>
+  | Aggregation.Accumulator.$push<S>
+  | Aggregation.Accumulator.$rank<S>
+  | Aggregation.Accumulator.$shift<S>
+  | Aggregation.Accumulator.$stdDevPop<S>
+  | Aggregation.Accumulator.$stdDevSamp<S>
+  | Aggregation.Accumulator.$sum<S>;
+export type ExpressionOperator<S> =
+  | Aggregation.Expression.$abs<S>
+  | Aggregation.Expression.$acos<S>
+  | Aggregation.Expression.$acosh<S>
+  | Aggregation.Expression.$add<S>
+  | Aggregation.Expression.$allElementsTrue<S>
+  | Aggregation.Expression.$and<S>
+  | Aggregation.Expression.$anyElementTrue<S>
+  | Aggregation.Expression.$arrayElemAt<S>
+  | Aggregation.Expression.$arrayToObject<S>
+  | Aggregation.Expression.$asin<S>
+  | Aggregation.Expression.$asinh<S>
+  | Aggregation.Expression.$atan<S>
+  | Aggregation.Expression.$atan2<S>
+  | Aggregation.Expression.$atanh<S>
+  | Aggregation.Expression.$avg<S>
+  | Aggregation.Expression.$binarySize<S>
+  | Aggregation.Expression.$bitAnd<S>
+  | Aggregation.Expression.$bitNot<S>
+  | Aggregation.Expression.$bitOr<S>
+  | Aggregation.Expression.$bitXor<S>
+  | Aggregation.Expression.$bsonSize<S>
+  | Aggregation.Expression.$case<S>
+  | Aggregation.Expression.$ceil<S>
+  | Aggregation.Expression.$cmp<S>
+  | Aggregation.Expression.$concat<S>
+  | Aggregation.Expression.$concatArrays<S>
+  | Aggregation.Expression.$cond<S>
+  | Aggregation.Expression.$convert<S>
+  | Aggregation.Expression.$cos<S>
+  | Aggregation.Expression.$cosh<S>
+  | Aggregation.Expression.$dateAdd<S>
+  | Aggregation.Expression.$dateDiff<S>
+  | Aggregation.Expression.$dateFromParts<S>
+  | Aggregation.Expression.$dateFromString<S>
+  | Aggregation.Expression.$dateSubtract<S>
+  | Aggregation.Expression.$dateToParts<S>
+  | Aggregation.Expression.$dateToString<S>
+  | Aggregation.Expression.$dateTrunc<S>
+  | Aggregation.Expression.$dayOfMonth<S>
+  | Aggregation.Expression.$dayOfWeek<S>
+  | Aggregation.Expression.$dayOfYear<S>
+  | Aggregation.Expression.$degreesToRadians<S>
+  | Aggregation.Expression.$divide<S>
+  | Aggregation.Expression.$eq<S>
+  | Aggregation.Expression.$exp<S>
+  | Aggregation.Expression.$filter<S>
+  | Aggregation.Expression.$first<S>
+  | Aggregation.Expression.$firstN<S>
+  | Aggregation.Expression.$floor<S>
+  | Aggregation.Expression.$function<S>
+  | Aggregation.Expression.$getField<S>
+  | Aggregation.Expression.$gt<S>
+  | Aggregation.Expression.$gte<S>
+  | Aggregation.Expression.$hour<S>
+  | Aggregation.Expression.$ifNull<S>
+  | Aggregation.Expression.$in<S>
+  | Aggregation.Expression.$indexOfArray<S>
+  | Aggregation.Expression.$indexOfBytes<S>
+  | Aggregation.Expression.$indexOfCP<S>
+  | Aggregation.Expression.$isArray<S>
+  | Aggregation.Expression.$isNumber<S>
+  | Aggregation.Expression.$isoDayOfWeek<S>
+  | Aggregation.Expression.$isoWeek<S>
+  | Aggregation.Expression.$isoWeekYear<S>
+  | Aggregation.Expression.$last<S>
+  | Aggregation.Expression.$lastN<S>
+  | Aggregation.Expression.$let<S>
+  | Aggregation.Expression.$literal<S>
+  | Aggregation.Expression.$ln<S>
+  | Aggregation.Expression.$log<S>
+  | Aggregation.Expression.$log10<S>
+  | Aggregation.Expression.$lt<S>
+  | Aggregation.Expression.$lte<S>
+  | Aggregation.Expression.$ltrim<S>
+  | Aggregation.Expression.$map<S>
+  | Aggregation.Expression.$max<S>
+  | Aggregation.Expression.$maxN<S>
+  | Aggregation.Expression.$median<S>
+  | Aggregation.Expression.$mergeObjects<S>
+  | Aggregation.Expression.$meta<S>
+  | Aggregation.Expression.$millisecond<S>
+  | Aggregation.Expression.$min<S>
+  | Aggregation.Expression.$minN<S>
+  | Aggregation.Expression.$minute<S>
+  | Aggregation.Expression.$mod<S>
+  | Aggregation.Expression.$month<S>
+  | Aggregation.Expression.$multiply<S>
+  | Aggregation.Expression.$ne<S>
+  | Aggregation.Expression.$not<S>
+  | Aggregation.Expression.$objectToArray<S>
+  | Aggregation.Expression.$or<S>
+  | Aggregation.Expression.$percentile<S>
+  | Aggregation.Expression.$pow<S>
+  | Aggregation.Expression.$radiansToDegrees<S>
+  | Aggregation.Expression.$rand<S>
+  | Aggregation.Expression.$range<S>
+  | Aggregation.Expression.$reduce<S>
+  | Aggregation.Expression.$regexFind<S>
+  | Aggregation.Expression.$regexFindAll<S>
+  | Aggregation.Expression.$regexMatch<S>
+  | Aggregation.Expression.$replaceAll<S>
+  | Aggregation.Expression.$replaceOne<S>
+  | Aggregation.Expression.$reverseArray<S>
+  | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$rtrim<S>
+  | Aggregation.Expression.$second<S>
+  | Aggregation.Expression.$setDifference<S>
+  | Aggregation.Expression.$setEquals<S>
+  | Aggregation.Expression.$setField<S>
+  | Aggregation.Expression.$setIntersection<S>
+  | Aggregation.Expression.$setIsSubset<S>
+  | Aggregation.Expression.$setUnion<S>
+  | Aggregation.Expression.$sin<S>
+  | Aggregation.Expression.$sinh<S>
+  | Aggregation.Expression.$size<S>
+  | Aggregation.Expression.$slice<S>
+  | Aggregation.Expression.$sortArray<S>
+  | Aggregation.Expression.$split<S>
+  | Aggregation.Expression.$sqrt<S>
+  | Aggregation.Expression.$stdDevPop<S>
+  | Aggregation.Expression.$stdDevSamp<S>
+  | Aggregation.Expression.$strLenBytes<S>
+  | Aggregation.Expression.$strLenCP<S>
+  | Aggregation.Expression.$strcasecmp<S>
+  | Aggregation.Expression.$substr<S>
+  | Aggregation.Expression.$substrBytes<S>
+  | Aggregation.Expression.$substrCP<S>
+  | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$sum<S>
+  | Aggregation.Expression.$switch<S>
+  | Aggregation.Expression.$tan<S>
+  | Aggregation.Expression.$tanh<S>
+  | Aggregation.Expression.$toBool<S>
+  | Aggregation.Expression.$toDate<S>
+  | Aggregation.Expression.$toDecimal<S>
+  | Aggregation.Expression.$toDouble<S>
+  | Aggregation.Expression.$toHashedIndexKey<S>
+  | Aggregation.Expression.$toInt<S>
+  | Aggregation.Expression.$toLong<S>
+  | Aggregation.Expression.$toLower<S>
+  | Aggregation.Expression.$toObjectId<S>
+  | Aggregation.Expression.$toString<S>
+  | Aggregation.Expression.$toUpper<S>
+  | Aggregation.Expression.$trim<S>
+  | Aggregation.Expression.$trunc<S>
+  | Aggregation.Expression.$tsIncrement<S>
+  | Aggregation.Expression.$tsSecond<S>
+  | Aggregation.Expression.$type<S>
+  | Aggregation.Expression.$unsetField<S>
+  | Aggregation.Expression.$week<S>
+  | Aggregation.Expression.$year<S>
+  | Aggregation.Expression.$zip<S>;
 export type ResolvesToAny<S> =
-  | ExpressionOperators.$arrayElemAt<S>
-  | ExpressionOperators.$cond<S>
-  | ExpressionOperators.$convert<S>
-  | ExpressionOperators.$first<S>
-  | ExpressionOperators.$function<S>
-  | ExpressionOperators.$getField<S>
-  | ExpressionOperators.$ifNull<S>
-  | ExpressionOperators.$last<S>
-  | ExpressionOperators.$let<S>
-  | ExpressionOperators.$literal<S>
-  | ExpressionOperators.$max<S>
-  | ExpressionOperators.$meta<S>
-  | ExpressionOperators.$min<S>
-  | ExpressionOperators.$reduce<S>
-  | ExpressionOperators.$switch<S>;
-export type SwitchBranch<S> = ExpressionOperators.$case<S>;
+  | Aggregation.Expression.$arrayElemAt<S>
+  | Aggregation.Expression.$cond<S>
+  | Aggregation.Expression.$convert<S>
+  | Aggregation.Expression.$first<S>
+  | Aggregation.Expression.$function<S>
+  | Aggregation.Expression.$getField<S>
+  | Aggregation.Expression.$ifNull<S>
+  | Aggregation.Expression.$last<S>
+  | Aggregation.Expression.$let<S>
+  | Aggregation.Expression.$literal<S>
+  | Aggregation.Expression.$max<S>
+  | Aggregation.Expression.$meta<S>
+  | Aggregation.Expression.$min<S>
+  | Aggregation.Expression.$reduce<S>
+  | Aggregation.Expression.$switch<S>;
+export type SwitchBranch<S> = Aggregation.Expression.$case<S>;
 export type FieldQuery<S> =
-  | QueryOperators.$all<S>
-  | QueryOperators.$bitsAllClear<S>
-  | QueryOperators.$bitsAllSet<S>
-  | QueryOperators.$bitsAnyClear<S>
-  | QueryOperators.$bitsAnySet<S>
-  | QueryOperators.$elemMatch<S>
-  | QueryOperators.$eq<S>
-  | QueryOperators.$exists<S>
-  | QueryOperators.$geoIntersects<S>
-  | QueryOperators.$geoWithin<S>
-  | QueryOperators.$gt<S>
-  | QueryOperators.$gte<S>
-  | QueryOperators.$in<S>
-  | QueryOperators.$lt<S>
-  | QueryOperators.$lte<S>
-  | QueryOperators.$maxDistance<S>
-  | QueryOperators.$minDistance<S>
-  | QueryOperators.$mod<S>
-  | QueryOperators.$ne<S>
-  | QueryOperators.$near<S>
-  | QueryOperators.$nearSphere<S>
-  | QueryOperators.$nin<S>
-  | QueryOperators.$not<S>
-  | QueryOperators.$regex<S>
-  | QueryOperators.$size<S>
-  | QueryOperators.$type<S>;
-export type C_query<S> =
-  | QueryOperators.$all<S>
-  | QueryOperators.$and<S>
-  | QueryOperators.$bitsAllClear<S>
-  | QueryOperators.$bitsAllSet<S>
-  | QueryOperators.$bitsAnyClear<S>
-  | QueryOperators.$bitsAnySet<S>
-  | QueryOperators.$box<S>
-  | QueryOperators.$center<S>
-  | QueryOperators.$centerSphere<S>
-  | QueryOperators.$comment<S>
-  | QueryOperators.$elemMatch<S>
-  | QueryOperators.$eq<S>
-  | QueryOperators.$exists<S>
-  | QueryOperators.$expr<S>
-  | QueryOperators.$geoIntersects<S>
-  | QueryOperators.$geoWithin<S>
-  | QueryOperators.$geometry<S>
-  | QueryOperators.$gt<S>
-  | QueryOperators.$gte<S>
-  | QueryOperators.$in<S>
-  | QueryOperators.$jsonSchema<S>
-  | QueryOperators.$lt<S>
-  | QueryOperators.$lte<S>
-  | QueryOperators.$maxDistance<S>
-  | QueryOperators.$minDistance<S>
-  | QueryOperators.$mod<S>
-  | QueryOperators.$ne<S>
-  | QueryOperators.$near<S>
-  | QueryOperators.$nearSphere<S>
-  | QueryOperators.$nin<S>
-  | QueryOperators.$nor<S>
-  | QueryOperators.$not<S>
-  | QueryOperators.$or<S>
-  | QueryOperators.$polygon<S>
-  | QueryOperators.$rand<S>
-  | QueryOperators.$regex<S>
-  | QueryOperators.$sampleRate<S>
-  | QueryOperators.$size<S>
-  | QueryOperators.$text<S>
-  | QueryOperators.$type<S>
-  | QueryOperators.$where<S>;
-export type C_search<S> =
-  | SearchOperators.Autocomplete<S>
-  | SearchOperators.Compound<S>
-  | SearchOperators.EmbeddedDocument<S>
-  | SearchOperators.Equals<S>
-  | SearchOperators.Exists<S>
-  | SearchOperators.Facet<S>
-  | SearchOperators.GeoShape<S>
-  | SearchOperators.GeoWithin<S>
-  | SearchOperators.In<S>
-  | SearchOperators.MoreLikeThis<S>
-  | SearchOperators.Near<S>
-  | SearchOperators.Phrase<S>
-  | SearchOperators.QueryString<S>
-  | SearchOperators.Range<S>
-  | SearchOperators.Regex<S>
-  | SearchOperators.Text<S>
-  | SearchOperators.Wildcard<S>;
-export type C_stage<S> =
-  | StageOperators.$addFields<S>
-  | StageOperators.$bucket<S>
-  | StageOperators.$bucketAuto<S>
-  | StageOperators.$changeStream<S>
-  | StageOperators.$changeStreamSplitLargeEvent<S>
-  | StageOperators.$collStats<S>
-  | StageOperators.$count<S>
-  | StageOperators.$currentOp<S>
-  | StageOperators.$densify<S>
-  | StageOperators.$documents<S>
-  | StageOperators.$facet<S>
-  | StageOperators.$fill<S>
-  | StageOperators.$geoNear<S>
-  | StageOperators.$graphLookup<S>
-  | StageOperators.$group<S>
-  | StageOperators.$indexStats<S>
-  | StageOperators.$limit<S>
-  | StageOperators.$listLocalSessions<S>
-  | StageOperators.$listSampledQueries<S>
-  | StageOperators.$listSearchIndexes<S>
-  | StageOperators.$listSessions<S>
-  | StageOperators.$lookup<S>
-  | StageOperators.$match<S>
-  | StageOperators.$merge<S>
-  | StageOperators.$out<S>
-  | StageOperators.$planCacheStats<S>
-  | StageOperators.$project<S>
-  | StageOperators.$redact<S>
-  | StageOperators.$replaceRoot<S>
-  | StageOperators.$replaceWith<S>
-  | StageOperators.$sample<S>
-  | StageOperators.$search<S>
-  | StageOperators.$searchMeta<S>
-  | StageOperators.$set<S>
-  | StageOperators.$setWindowFields<S>
-  | StageOperators.$shardedDataDistribution<S>
-  | StageOperators.$skip<S>
-  | StageOperators.$sort<S>
-  | StageOperators.$sortByCount<S>
-  | StageOperators.$unionWith<S>
-  | StageOperators.$unset<S>
-  | StageOperators.$unwind<S>
-  | StageOperators.$vectorSearch<S>;
+  | Aggregation.Query.$all<S>
+  | Aggregation.Query.$bitsAllClear<S>
+  | Aggregation.Query.$bitsAllSet<S>
+  | Aggregation.Query.$bitsAnyClear<S>
+  | Aggregation.Query.$bitsAnySet<S>
+  | Aggregation.Query.$elemMatch<S>
+  | Aggregation.Query.$eq<S>
+  | Aggregation.Query.$exists<S>
+  | Aggregation.Query.$geoIntersects<S>
+  | Aggregation.Query.$geoWithin<S>
+  | Aggregation.Query.$gt<S>
+  | Aggregation.Query.$gte<S>
+  | Aggregation.Query.$in<S>
+  | Aggregation.Query.$lt<S>
+  | Aggregation.Query.$lte<S>
+  | Aggregation.Query.$maxDistance<S>
+  | Aggregation.Query.$minDistance<S>
+  | Aggregation.Query.$mod<S>
+  | Aggregation.Query.$ne<S>
+  | Aggregation.Query.$near<S>
+  | Aggregation.Query.$nearSphere<S>
+  | Aggregation.Query.$nin<S>
+  | Aggregation.Query.$not<S>
+  | Aggregation.Query.$regex<S>
+  | Aggregation.Query.$size<S>
+  | Aggregation.Query.$type<S>;
+export type QueryOperator<S> =
+  | Aggregation.Query.$all<S>
+  | Aggregation.Query.$and<S>
+  | Aggregation.Query.$bitsAllClear<S>
+  | Aggregation.Query.$bitsAllSet<S>
+  | Aggregation.Query.$bitsAnyClear<S>
+  | Aggregation.Query.$bitsAnySet<S>
+  | Aggregation.Query.$box<S>
+  | Aggregation.Query.$center<S>
+  | Aggregation.Query.$centerSphere<S>
+  | Aggregation.Query.$elemMatch<S>
+  | Aggregation.Query.$eq<S>
+  | Aggregation.Query.$exists<S>
+  | Aggregation.Query.$expr<S>
+  | Aggregation.Query.$geoIntersects<S>
+  | Aggregation.Query.$geoWithin<S>
+  | Aggregation.Query.$geometry<S>
+  | Aggregation.Query.$gt<S>
+  | Aggregation.Query.$gte<S>
+  | Aggregation.Query.$in<S>
+  | Aggregation.Query.$jsonSchema<S>
+  | Aggregation.Query.$lt<S>
+  | Aggregation.Query.$lte<S>
+  | Aggregation.Query.$maxDistance<S>
+  | Aggregation.Query.$minDistance<S>
+  | Aggregation.Query.$mod<S>
+  | Aggregation.Query.$ne<S>
+  | Aggregation.Query.$near<S>
+  | Aggregation.Query.$nearSphere<S>
+  | Aggregation.Query.$nin<S>
+  | Aggregation.Query.$nor<S>
+  | Aggregation.Query.$not<S>
+  | Aggregation.Query.$or<S>
+  | Aggregation.Query.$polygon<S>
+  | Aggregation.Query.$rand<S>
+  | Aggregation.Query.$regex<S>
+  | Aggregation.Query.$sampleRate<S>
+  | Aggregation.Query.$size<S>
+  | Aggregation.Query.$text<S>
+  | Aggregation.Query.$type<S>
+  | Aggregation.Query.$where<S>;
+export type SearchOperator<S> =
+  | Aggregation.Search.Autocomplete<S>
+  | Aggregation.Search.Autocomplete<S>
+  | Aggregation.Search.Compound<S>
+  | Aggregation.Search.Compound<S>
+  | Aggregation.Search.EmbeddedDocument<S>
+  | Aggregation.Search.EmbeddedDocument<S>
+  | Aggregation.Search.Equals<S>
+  | Aggregation.Search.Equals<S>
+  | Aggregation.Search.Exists<S>
+  | Aggregation.Search.Exists<S>
+  | Aggregation.Search.Facet<S>
+  | Aggregation.Search.Facet<S>
+  | Aggregation.Search.GeoShape<S>
+  | Aggregation.Search.GeoShape<S>
+  | Aggregation.Search.GeoWithin<S>
+  | Aggregation.Search.GeoWithin<S>
+  | Aggregation.Search.In<S>
+  | Aggregation.Search.In<S>
+  | Aggregation.Search.MoreLikeThis<S>
+  | Aggregation.Search.MoreLikeThis<S>
+  | Aggregation.Search.Near<S>
+  | Aggregation.Search.Near<S>
+  | Aggregation.Search.Phrase<S>
+  | Aggregation.Search.Phrase<S>
+  | Aggregation.Search.QueryString<S>
+  | Aggregation.Search.QueryString<S>
+  | Aggregation.Search.Range<S>
+  | Aggregation.Search.Range<S>
+  | Aggregation.Search.Regex<S>
+  | Aggregation.Search.Regex<S>
+  | Aggregation.Search.Text<S>
+  | Aggregation.Search.Text<S>
+  | Aggregation.Search.Wildcard<S>
+  | Aggregation.Search.Wildcard<S>;
+export type StageOperator<S> =
+  | Aggregation.Stage.$addFields<S>
+  | Aggregation.Stage.$bucket<S>
+  | Aggregation.Stage.$bucketAuto<S>
+  | Aggregation.Stage.$changeStream<S>
+  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
+  | Aggregation.Stage.$collStats<S>
+  | Aggregation.Stage.$count<S>
+  | Aggregation.Stage.$currentOp<S>
+  | Aggregation.Stage.$densify<S>
+  | Aggregation.Stage.$documents<S>
+  | Aggregation.Stage.$facet<S>
+  | Aggregation.Stage.$fill<S>
+  | Aggregation.Stage.$geoNear<S>
+  | Aggregation.Stage.$graphLookup<S>
+  | Aggregation.Stage.$group<S>
+  | Aggregation.Stage.$indexStats<S>
+  | Aggregation.Stage.$limit<S>
+  | Aggregation.Stage.$listLocalSessions<S>
+  | Aggregation.Stage.$listSampledQueries<S>
+  | Aggregation.Stage.$listSearchIndexes<S>
+  | Aggregation.Stage.$listSessions<S>
+  | Aggregation.Stage.$lookup<S>
+  | Aggregation.Stage.$match<S>
+  | Aggregation.Stage.$merge<S>
+  | Aggregation.Stage.$out<S>
+  | Aggregation.Stage.$planCacheStats<S>
+  | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$redact<S>
+  | Aggregation.Stage.$replaceRoot<S>
+  | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$sample<S>
+  | Aggregation.Stage.$search<S>
+  | Aggregation.Stage.$searchMeta<S>
+  | Aggregation.Stage.$set<S>
+  | Aggregation.Stage.$setWindowFields<S>
+  | Aggregation.Stage.$shardedDataDistribution<S>
+  | Aggregation.Stage.$skip<S>
+  | Aggregation.Stage.$sort<S>
+  | Aggregation.Stage.$sortByCount<S>
+  | Aggregation.Stage.$unionWith<S>
+  | Aggregation.Stage.$unset<S>
+  | Aggregation.Stage.$unwind<S>
+  | Aggregation.Stage.$vectorSearch<S>;

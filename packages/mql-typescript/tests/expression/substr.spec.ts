@@ -1,0 +1,26 @@
+import * as schema from '../../out/schema';
+
+import * as bson from 'bson';
+
+/**
+ * Example
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substr/#example}
+ */
+function test0() {
+  type inventory = {
+    _id: number;
+    item: string;
+    quarter: string;
+    description: string | null;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    {
+      $project: {
+        item: 1,
+        yearSubstring: { $substr: ['$quarter', 0, 2] },
+        quarterSubtring: { $substr: ['$quarter', 2, -1] },
+      },
+    },
+  ];
+}

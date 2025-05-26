@@ -1,13 +1,16 @@
-import { GeneratorBase, YamlFiles } from './generator';
-import { Operator } from './metaschema';
+import { GeneratorBase, YamlFiles } from '../generator';
+import { Operator } from '../metaschema';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs/promises';
 import { DocsCrawler } from './docsCrawler';
+import { spawn } from 'child_process';
+import path from 'path';
+import { getStaticSchema } from './staticSchemas';
 
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
 export class DriverSchemaGenerator extends GeneratorBase {
-  private async getYamlSchema(test: TestType): Promise<object | string> {
+  private async getSchemaFromDocs(test: TestType): Promise<object | string> {
     if (!test.link) {
       console.error(`No docs reference found for ${test.name}`);
       return '// TODO: No docs reference found';
@@ -19,6 +22,7 @@ export class DriverSchemaGenerator extends GeneratorBase {
 
     const docsCrawler = new DocsCrawler(test.link);
     const schema = await docsCrawler.getSchema();
+
     if (!schema) {
       console.error(
         `Could not extract schema for ${test.name} at ${test.link}`,
@@ -31,20 +35,27 @@ export class DriverSchemaGenerator extends GeneratorBase {
     };
   }
 
-  private async updateTestSchema(test: TestType, rawYaml: any): Promise<void> {
+  private async updateTestSchema({
+    category,
+    operator,
+    test,
+    rawYaml,
+  }: {
+    category: string;
+    operator: string;
+    test: TestType;
+    rawYaml: any;
+  }): Promise<void> {
     const yamlTest = rawYaml.tests.find(
       (t: { name: string }) => t.name === test.name,
     );
 
-    yamlTest.schema = await this.getYamlSchema(test);
+    yamlTest.schema =
+      getStaticSchema({ category, operator, test: test.name! }) ??
+      (await this.getSchemaFromDocs(test));
   }
 
   override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
-    const problematicTests = [
-      // 'https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromParts/#example',
-      '',
-    ];
-
     for await (const file of yamlFiles) {
       for await (const operator of file.operators()) {
         const parsed = Operator.parse(operator.yaml);
@@ -57,10 +68,12 @@ export class DriverSchemaGenerator extends GeneratorBase {
         }
 
         for (const test of parsed.tests ?? []) {
-          // if (!test.link || !problematicTests.includes(test.link)) {
-          //   continue;
-          // }
-          await this.updateTestSchema(test, operatorYaml);
+          await this.updateTestSchema({
+            category: file.category,
+            operator: operatorYaml.name,
+            test,
+            rawYaml: operatorYaml,
+          });
         }
 
         let updatedYaml = yaml.dump(operatorYaml, {
@@ -74,5 +87,21 @@ export class DriverSchemaGenerator extends GeneratorBase {
         await fs.writeFile(operator.path, updatedYaml, 'utf8');
       }
     }
+
+    const process = spawn('yamlfix', [
+      '-c',
+      path.join(this.configDir, '.yamlfix.toml'),
+      this.configDir,
+    ]);
+
+    await new Promise((resolve, reject) => {
+      process.once('exit', (code) => {
+        if (code !== 0) {
+          reject(new Error(`yamlfix exited with code ${code}`));
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
   }
 }

@@ -1,5 +1,5 @@
 import JSON5 from 'json5';
-import { removeNewlines } from './utils';
+import { removeNewlines, removeTrailingComments } from '../utils';
 import { getSimplifiedSchema } from 'mongodb-schema';
 import type { SimplifiedSchema } from 'mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
@@ -58,7 +58,7 @@ class IsoDateProcessor extends RegexCustomTypeProcessor {
         s || '00'
       }.${ms || '000'}${tz || 'Z'}`;
       const date = new Date(normalized);
-      // Make sur we're in the range 0000-01-01T00:00:00.000Z - 9999-12-31T23:59:59.999Z
+      // Make surd we're in the range 0000-01-01T00:00:00.000Z - 9999-12-31T23:59:59.999Z
       if (
         date.getTime() >= -62167219200000 &&
         date.getTime() <= 253402300799999
@@ -91,9 +91,19 @@ class ObjectIdProcessor extends RegexCustomTypeProcessor {
   }
 }
 
+class UUIDProcessor extends RegexCustomTypeProcessor {
+  constructor() {
+    super('\\bUUID\\(\\s*"([^"]*)"\\s*\\)');
+  }
+
+  public reviveCore(value: string): any {
+    return new BSON.UUID(value);
+  }
+}
+
 class NumberDecimalProcessor extends RegexCustomTypeProcessor {
   constructor() {
-    super('\\b(?:NumberDecimal|Decimal128)\\(\\s*"([^"]*)"\\s*\\)');
+    super('\\b(?:NumberDecimal|Decimal128)\\(\\s*"?([^"]*)"?\\s*\\)');
   }
 
   public reviveCore(value: string): any {
@@ -152,11 +162,38 @@ class BinDataProcessor extends CustomTypeProcessor {
 
 class NumberIntProcessor extends RegexCustomTypeProcessor {
   constructor() {
-    super('\\bNumberInt\\(\\s*(\\d*)\\s*\\)');
+    super('\\b(?:NumberInt|Int32)\\(\\s*"?(\\d*)\\"?\\s*\\)');
   }
 
   public reviveCore(value: string): any {
     return new BSON.Int32(value);
+  }
+}
+
+class NumberLongProcessor extends RegexCustomTypeProcessor {
+  constructor() {
+    super('\\bNumberLong\\(\\s*"?([\\d\.]*)"?\\s*\\)');
+  }
+
+  public reviveCore(value: string): any {
+    return new BSON.Long(value);
+  }
+}
+
+class TimestampProcessor extends RegexCustomTypeProcessor {
+  constructor() {
+    super('\\bTimestamp\\(\\s*(\\d*,\\s*\\d*)\\s*\\)');
+  }
+
+  public reviveCore(value: string): any {
+    const match = /(?<t>\d*),\s(?<i>\d*)/.exec(value);
+
+    if (match && match.groups) {
+      const { t, i } = match.groups;
+      return new BSON.Timestamp({ t: parseInt(t, 10), i: parseInt(i, 10) });
+    }
+
+    throw new Error(`Invalid Timestamp format: ${value}`);
   }
 }
 
@@ -172,7 +209,14 @@ export class DocsCrawler {
 
   private fuzzyParse(json: string): any[] | undefined {
     try {
-      return JSON5.parse(json) as any[];
+      const result = JSON5.parse(json);
+      if (Array.isArray(result)) {
+        return result;
+      }
+
+      if (typeof result === 'object') {
+        return [result];
+      }
     } catch {
       // Ignore parse errors
     }
@@ -189,17 +233,20 @@ export class DocsCrawler {
     }
 
     // Insert commas between array elements
-    json = json.replace(/\}\{/g, '},{');
+    json = json.replace(/\}\s*\{/g, '},{');
 
     const processors: CustomTypeProcessor[] = [
       new IsoDateProcessor(),
       new DateProcessor(),
       new ObjectIdProcessor(),
+      new UUIDProcessor(),
       new NumberDecimalProcessor(),
       new UndefinedProcessor(),
       new NullProcessor(),
       new BinDataProcessor(),
       new NumberIntProcessor(),
+      new NumberLongProcessor(),
+      new TimestampProcessor(),
     ];
 
     for (const processor of processors) {
@@ -209,7 +256,7 @@ export class DocsCrawler {
     try {
       // The docs use quoted/unquoted shell syntax inconsistently, so use JSON5 instead of regular JSON
       // to parse the documents.
-      return JSON5.parse(json, (key, value) => {
+      const result = JSON5.parse(json, (key, value) => {
         for (const processor of processors) {
           if (processor.canRevive(value)) {
             return processor.revive(value);
@@ -217,7 +264,17 @@ export class DocsCrawler {
         }
 
         return value;
-      }) as any[];
+      });
+
+      if (Array.isArray(result)) {
+        return result;
+      }
+
+      if (typeof result === 'object') {
+        return [result];
+      }
+
+      throw new Error(`Unexpected json output: ${result}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       console.error('Failed to parse JSON', json, message);
@@ -227,23 +284,44 @@ export class DocsCrawler {
 
   private getInsertionCode(
     element: Element | null | undefined,
+    extendedSearch = false,
   ): { collectionName: string; documents: unknown[] } | undefined {
-    const codeSnippetJson = element?.querySelector('script')?.innerHTML;
+    if (!element) {
+      return undefined;
+    }
 
-    if (codeSnippetJson !== undefined) {
-      let codeSnippet = removeNewlines(
-        JSON.parse(codeSnippetJson).text as string,
-      );
+    // For concrete examples we only want the first code snippet as the second
+    // typically shows the output. Conversely, for the "Examples" section, we want
+    // all code snippets as it's possible that the first one is not the insertion code.
+    // E.g. https://www.mongodb.com/docs/manual/reference/operator/query/text/#examples
+    const snippets = [...element.querySelectorAll('script')].slice(
+      0,
+      extendedSearch ? 2 : 1,
+    );
+
+    for (const snippet of snippets) {
+      let codeSnippet = JSON.parse(snippet.innerHTML).text as string;
+
+      codeSnippet = removeTrailingComments(codeSnippet);
+      codeSnippet = removeNewlines(codeSnippet);
       let collectionName: string | undefined = undefined;
 
       const insertionCode =
-        /db\.(?<collectionName>[^.]*)\.(insertMany|insertOne)\(\s*(?<documents>(?:\[|{).*(?:]|}))\s*\)/gm.exec(
+        /db(?:\..*)?\.(?<collectionName>[^.]*)\.(insertMany|insertOne)\s*\(\s*(?<documents>(?:\[|{).*(?:]|}))\s*\)/gm.exec(
           codeSnippet,
         );
 
       if (insertionCode && insertionCode.groups) {
         collectionName = insertionCode.groups.collectionName;
         codeSnippet = insertionCode.groups.documents;
+      } else {
+        const aggregationDocs =
+          /db\.aggregate\(\s*\[\s*{\s*\$documents:\s*(?<documents>\[.*])\s*},\s*{\s*\$/gm.exec(
+            codeSnippet,
+          );
+        if (aggregationDocs && aggregationDocs.groups) {
+          codeSnippet = aggregationDocs.groups.documents;
+        }
       }
 
       const documents = this.fuzzyParse(codeSnippet);
@@ -263,9 +341,11 @@ export class DocsCrawler {
     // Sometimes insertion code for the collection will be in the parent examples section. We fallback to it if we can't find it in the current section.
     while (element) {
       element = element?.parentElement?.closest('section');
-      const examples = element?.querySelector("a[href='#examples']");
+      const examples =
+        element?.querySelector("a[href='#examples']") ??
+        element?.querySelector("a[href='#example']");
       if (examples) {
-        return this.getInsertionCode(element);
+        return this.getInsertionCode(element, true);
       }
     }
 
@@ -280,22 +360,28 @@ export class DocsCrawler {
       return;
     }
 
-    const dom = await JSDOM.fromURL(this.url, {
-      virtualConsole: this.virtualConsole,
-    });
-    const exampleSection = dom.window.document
-      .querySelector(`a[href='${fragment}']:not([target])`)
-      ?.closest('section');
+    try {
+      const dom = await JSDOM.fromURL(this.url, {
+        virtualConsole: this.virtualConsole,
+      });
+      const exampleSection = dom.window.document
+        .querySelector(`a[href='${fragment}']:not([target])`)
+        ?.closest('section');
 
-    const insertionCode = this.getInsertionCode(exampleSection);
+      const insertionCode = this.getInsertionCode(exampleSection);
 
-    if (!insertionCode) {
+      if (!insertionCode) {
+        return;
+      }
+
+      return {
+        schema: await getSimplifiedSchema(insertionCode.documents),
+        collectionName: insertionCode.collectionName,
+      };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error('Failed to parse schema', this.url, message);
       return;
     }
-
-    return {
-      schema: await getSimplifiedSchema(insertionCode.documents),
-      collectionName: insertionCode.collectionName,
-    };
   }
 }

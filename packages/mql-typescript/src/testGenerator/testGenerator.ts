@@ -1,15 +1,15 @@
 import path from 'path';
-import { GeneratorBase, YamlFiles } from './generator';
+import { GeneratorBase, YamlFiles } from '../generator';
 import * as fs from 'fs/promises';
-import { Operator } from './metaschema';
-import { capitalize, removeNewlines } from './utils';
+import { Operator } from '../metaschema';
+import { capitalize, removeNewlines } from '../utils';
 import {
   SimplifiedSchema,
   SimplifiedSchemaType,
   SimplifiedSchemaBaseType,
 } from 'mongodb-schema';
+import { unsupportedAggregations } from './unsupportedAggregations';
 
-import * as bson from 'bson';
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
 export class TestGenerator extends GeneratorBase {
@@ -33,8 +33,9 @@ export class TestGenerator extends GeneratorBase {
         return 'bson.Double | number';
       case 'Int32':
         return 'bson.Int32';
+      case 'Long' as any:
       case 'Int64':
-        return 'bson.Int64';
+        return 'bson.Long';
       case 'MaxKey':
         return 'bson.MaxKey';
       case 'MinKey':
@@ -78,28 +79,32 @@ export class TestGenerator extends GeneratorBase {
   private simplifiedSchemaToTS(schema: SimplifiedSchema): string {
     let result = '{\n';
     for (const [key, value] of Object.entries(schema)) {
-      result += `${key}: ${this.simplifiedTypesToTS(value.types)};\n`;
+      result += `'${key}': ${this.simplifiedTypesToTS(value.types)};\n`;
     }
     result += '}\n';
     return result;
   }
 
-  private async emitTestBody(category: string, test: TestType): Promise<void> {
+  private async emitTestBody(
+    category: string,
+    operator: string,
+    test: TestType,
+  ): Promise<void> {
     if (!test.link) {
       this.emit(
-        `// TODO: No docs reference found for ${category}.${test.name}\n`,
+        `// TODO: No docs reference found for ${operator}.${test.name}\n`,
       );
       return;
     }
 
     if (!test.pipeline) {
-      this.emit(`// TODO: No pipeline found for ${category}.${test.name}\n`);
+      this.emit(`// TODO: No pipeline found for ${operator}.${test.name}\n`);
       return;
     }
 
     if (!test.schema || typeof test.schema === 'string') {
       this.emit(
-        `// TODO: no schema found for ${category}.${test.name}${test.schema ? `: ${test.schema}` : ''}\n`,
+        `// TODO: no schema found for ${operator}.${test.name}${test.schema ? `: ${test.schema}` : ''}\n`,
       );
       return;
     }
@@ -113,9 +118,11 @@ export class TestGenerator extends GeneratorBase {
 
     this.emit(`const aggregation: schema.Pipeline<${collectionName}> = [\n`);
 
-    for (const stage of test.pipeline) {
+    for (let i = 0; i < test.pipeline.length; i++) {
+      const stage = test.pipeline[i];
       const json = JSON.stringify(stage, (_, value: any): any => {
         if (
+          value &&
           typeof value === 'object' &&
           '$code' in value &&
           typeof value.$code === 'string'
@@ -126,13 +133,26 @@ export class TestGenerator extends GeneratorBase {
         return value;
       });
 
-      this.emit(
-        json.replaceAll(
-          /"(?<functionBody>function[^"]*)"/gm,
-          '$<functionBody>',
-        ),
-      );
+      const test2 = unsupportedAggregations[category];
 
+      // Some pipelines project to new types, which is not supported by the static type system.
+      // In this case, we typecast to any to suppress the type error.
+      const unsupportedStage =
+        unsupportedAggregations[category]?.[operator]?.[test.name!];
+      const isUnsupportedStage =
+        unsupportedStage && i >= unsupportedStage.stage;
+
+      if (isUnsupportedStage) {
+        this.emitComment(
+          `This stage is unsupported by the static type system, so we're casting it to 'any' (${unsupportedStage.comment ?? 'it may involve a projected field'}).`,
+        );
+      }
+
+      this.emit(json);
+
+      if (isUnsupportedStage) {
+        this.emit(' as any');
+      }
       this.emit(',\n');
     }
 
@@ -140,25 +160,33 @@ export class TestGenerator extends GeneratorBase {
   }
 
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
-    const whitelisted = ['$accumulator', '$addToSet', '$avg', '$bottom']; // TODO: whitelist all
-
     for await (const file of yamlFiles) {
+      if (file.category !== 'expression') {
+        // TODO: enable for others
+        continue;
+      }
+
       const namespace = `${capitalize(file.category)}Operators`;
 
-      const basePath = path.resolve(__dirname, '..', 'tests', file.category);
+      const basePath = path.resolve(
+        __dirname,
+        '..',
+        '..',
+        'tests',
+        file.category,
+      );
       fs.mkdir(basePath, { recursive: true });
 
       for await (const operator of file.operators()) {
         const parsed = Operator.parse(operator.yaml);
-        if (whitelisted.indexOf(parsed.name) === -1) {
-          // TODO: enable for others
-          return;
-        }
 
-        const filePath = path.join(basePath, `${parsed.name}.spec.ts`);
+        const operatorName = parsed.name.replace(/^\$/, '');
+
+        const filePath = path.join(basePath, `${operatorName}.spec.ts`);
         this.emitToFile(filePath);
 
         this.emit(`import * as schema from '../../out/schema';\n\n`);
+        this.emit("import * as bson from 'bson';\n\n");
 
         let i = 0;
         for (const test of parsed.tests ?? []) {
@@ -168,7 +196,7 @@ export class TestGenerator extends GeneratorBase {
           );
           this.emit(`function test${i++}() {\n`);
 
-          await this.emitTestBody(parsed.name, test);
+          await this.emitTestBody(file.category, operatorName, test);
 
           this.emit('}\n\n');
         }

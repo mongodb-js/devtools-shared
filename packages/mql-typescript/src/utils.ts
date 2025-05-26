@@ -17,3 +17,7 @@ export function capitalize(str: string): string {
 export function removeNewlines(str: string): string {
   return str.replace(/\r?\n|\r/gm, '');
 }
+
+export function removeTrailingComments(str: string): string {
+  return str.replace(/\/\/.*\r?\n/gm, '');
+}
