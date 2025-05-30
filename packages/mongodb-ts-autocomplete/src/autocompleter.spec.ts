@@ -49,6 +49,17 @@ describe('MongoDBAutocompleter', function () {
     });
   });
 
+  it('deals with no connection', async function () {
+    autocompleterContext.currentDatabaseAndConnection = () => {
+      const error = new Error('No connection');
+      error.name = 'MongoshInvalidInputError';
+      throw error;
+    };
+
+    const completions = await autocompleter.autocomplete('db.');
+    expect(completions).to.deep.equal([]);
+  });
+
   it('does not leak the bson package', async function () {
     const completions = await autocompleter.autocomplete('bson.');
     expect(completions).to.deep.equal([]);
