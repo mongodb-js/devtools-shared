@@ -9,6 +9,7 @@ import {
   SimplifiedSchemaBaseType,
 } from 'mongodb-schema';
 import { unsupportedAggregations } from './unsupportedAggregations';
+import * as bson from 'bson';
 
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
@@ -32,7 +33,7 @@ export class TestGenerator extends GeneratorBase {
       case 'Double':
         return 'bson.Double | number';
       case 'Int32':
-        return 'bson.Int32';
+        return 'bson.Int32 | number';
       case 'Long' as any:
       case 'Int64':
         return 'bson.Long';
@@ -85,6 +86,38 @@ export class TestGenerator extends GeneratorBase {
     return result;
   }
 
+  private stageToTS(stage: any): string {
+    switch (typeof stage) {
+      case 'object':
+        if (stage === null) {
+          return 'null';
+        }
+
+        if (Array.isArray(stage)) {
+          return `[${stage.map((s) => this.stageToTS(s)).join(', ')}]`;
+        }
+
+        if (stage instanceof bson.Binary) {
+          return `bson.Binary.createFromBase64('${stage.toString('base64')}', ${stage.sub_type})`;
+        }
+
+        if ('$code' in stage && typeof stage.$code === 'string') {
+          return JSON.stringify(removeNewlines(stage.$code));
+        }
+
+        let result = '{';
+        for (const [key, value] of Object.entries(stage)) {
+          result += `${JSON.stringify(key)}: ${this.stageToTS(value)},`;
+        }
+        result += '}';
+        return result;
+      case 'undefined':
+        return 'undefined';
+      default:
+        return JSON.stringify(stage);
+    }
+  }
+
   private async emitTestBody(
     category: string,
     operator: string,
@@ -120,20 +153,6 @@ export class TestGenerator extends GeneratorBase {
 
     for (let i = 0; i < test.pipeline.length; i++) {
       const stage = test.pipeline[i];
-      const json = JSON.stringify(stage, (_, value: any): any => {
-        if (
-          value &&
-          typeof value === 'object' &&
-          '$code' in value &&
-          typeof value.$code === 'string'
-        ) {
-          return removeNewlines(value.$code);
-        }
-
-        return value;
-      });
-
-      const test2 = unsupportedAggregations[category];
 
       // Some pipelines project to new types, which is not supported by the static type system.
       // In this case, we typecast to any to suppress the type error.
@@ -148,7 +167,9 @@ export class TestGenerator extends GeneratorBase {
         );
       }
 
-      this.emit(json);
+      const temp = this.stageToTS(stage);
+
+      this.emit(this.stageToTS(stage));
 
       if (isUnsupportedStage) {
         this.emit(' as any');
@@ -161,7 +182,11 @@ export class TestGenerator extends GeneratorBase {
 
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
-      if (file.category !== 'expression') {
+      if (
+        file.category !== 'query' &&
+        file.category !== 'expression' &&
+        file.category !== 'accumulator'
+      ) {
         // TODO: enable for others
         continue;
       }
@@ -185,7 +210,7 @@ export class TestGenerator extends GeneratorBase {
         const filePath = path.join(basePath, `${operatorName}.spec.ts`);
         this.emitToFile(filePath);
 
-        this.emit(`import * as schema from '../../out/schema';\n\n`);
+        this.emit("import * as schema from '../../out/schema';\n");
         this.emit("import * as bson from 'bson';\n\n");
 
         let i = 0;

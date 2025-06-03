@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -31,7 +30,7 @@ function test0() {
  */
 function test1() {
   type budget = {
-    _id: bson.Int32;
+    _id: bson.Int32 | number;
     allowedRoles: Array<string>;
     comment: string;
     yearlyBudget: bson.Double | number;

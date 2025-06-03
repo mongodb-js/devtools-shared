@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -10,7 +9,7 @@ function test0() {
   type orders = {
     _id: number;
     item: string;
-    qty: string | bson.Int32 | bson.Long;
+    qty: string | bson.Int32 | number | bson.Long;
   };
 
   const aggregation: schema.Pipeline<orders> = [

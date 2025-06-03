@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -142,7 +141,26 @@ function test4() {
               'Gratis',
               { a: null },
               { a: { sale: true, price: 19 } },
-              { $numberDecimal: '10.23' },
+              {
+                bytes: {
+                  '0': 255,
+                  '1': 3,
+                  '2': 0,
+                  '3': 0,
+                  '4': 0,
+                  '5': 0,
+                  '6': 0,
+                  '7': 0,
+                  '8': 0,
+                  '9': 0,
+                  '10': 0,
+                  '11': 0,
+                  '12': 0,
+                  '13': 0,
+                  '14': 60,
+                  '15': 48,
+                },
+              },
               { a: 'On sale' },
             ],
             sortBy: 1,

@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -9,8 +8,8 @@ import * as bson from 'bson';
 function test0() {
   type switches = {
     _id: number;
-    a: bson.Int32;
-    b: bson.Int32;
+    a: bson.Int32 | number;
+    b: bson.Int32 | number;
   };
 
   const aggregation: schema.Pipeline<switches> = [
@@ -25,8 +24,8 @@ function test0() {
 function test1() {
   type switches = {
     _id: number;
-    a: bson.Int32;
-    b: bson.Int32;
+    a: bson.Int32 | number;
+    b: bson.Int32 | number;
   };
 
   const aggregation: schema.Pipeline<switches> = [

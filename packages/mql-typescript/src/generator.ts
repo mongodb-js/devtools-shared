@@ -32,6 +32,9 @@ export abstract class GeneratorBase {
   private outputStream?: NodeJS.WritableStream;
 
   constructor() {
+    // The default YAML schema will represent BsonDate using the Date representation because
+    // it's a subclass of Date. We find the implicit type for Date and modify it to use predicate
+    // instead of instanceOf, so it will only match Date instances that are not BsonDate.
     if ('implicit' in yaml.DEFAULT_SCHEMA) {
       const implicit = yaml.DEFAULT_SCHEMA.implicit as yaml.Type[];
       const timestamp = implicit.find((type) => type.instanceOf === Date);
@@ -178,14 +181,16 @@ export abstract class GeneratorBase {
     'config',
   );
 
-  private async *listCategories(): AsyncIterable<{
+  private async *listCategories(
+    filterRegex: RegExp | undefined,
+  ): AsyncIterable<{
     category: string;
     folder: string;
   }> {
     for await (const folder of await fs.readdir(this.configDir, {
       withFileTypes: true,
     })) {
-      if (folder.isDirectory()) {
+      if (folder.isDirectory() && filterRegex?.test(folder.name) !== false) {
         yield {
           category: folder.name,
           folder: path.join(folder.parentPath, folder.name),
@@ -194,18 +199,27 @@ export abstract class GeneratorBase {
     }
   }
 
-  private async *listSourceYAMLFiles(): AsyncIterable<{
+  private async *listSourceYAMLFiles(
+    categoryRegex: RegExp | undefined,
+    operatorRegex: RegExp | undefined,
+  ): AsyncIterable<{
     category: string;
     operators: () => AsyncIterable<{ yaml: unknown; path: string }>;
   }> {
-    for await (const { category, folder } of this.listCategories()) {
+    for await (const { category, folder } of this.listCategories(
+      categoryRegex,
+    )) {
       yield {
         category,
         operators: async function* () {
           for await (const file of await fs.readdir(folder, {
             withFileTypes: true,
           })) {
-            if (file.isFile() && file.name.endsWith('.yaml')) {
+            if (
+              file.isFile() &&
+              file.name.endsWith('.yaml') &&
+              operatorRegex?.test(file.name) !== false
+            ) {
               const filePath = path.join(file.parentPath, file.name);
               const content = await fs.readFile(filePath, 'utf8');
               const parsed = yaml.load(content, GeneratorBase.loadOptions);
@@ -261,8 +275,18 @@ export abstract class GeneratorBase {
 
   protected abstract generateImpl(iterable: YamlFiles): Promise<void>;
 
-  public generate(): Promise<void> {
-    const files = this.listSourceYAMLFiles();
+  public generate(
+    categoryFilter?: string,
+    operatorFilter?: string,
+  ): Promise<void> {
+    const categoryRegex = categoryFilter
+      ? new RegExp(categoryFilter)
+      : undefined;
+    const operatorRegex = operatorFilter
+      ? new RegExp(operatorFilter)
+      : undefined;
+
+    const files = this.listSourceYAMLFiles(categoryRegex, operatorRegex);
     return this.generateImpl(files);
   }
 }

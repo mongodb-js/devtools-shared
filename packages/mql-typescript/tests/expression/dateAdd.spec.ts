@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -30,7 +29,7 @@ function test0() {
  */
 function test1() {
   type shipping = {
-    custId: number;
+    custId: bson.Int32 | number;
     purchaseDate: Date;
     deliveryDate: Date;
   };

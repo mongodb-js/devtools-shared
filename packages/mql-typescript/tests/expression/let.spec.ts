@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -7,14 +6,14 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/let/#example}
  */
 function test0() {
-  type TestCollection = {
+  type sales = {
     _id: number;
     price: number;
     tax: number;
     applyDiscount: boolean;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<sales> = [
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' ($multiply references a variable that is not available statically).
      */

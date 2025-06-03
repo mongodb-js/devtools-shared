@@ -1,10 +1,10 @@
 import type * as bson from 'bson';
 import { FilterOperators } from 'mongodb';
 
-type Condition<T> = AlternativeType<T> | FilterOperators<T>;
+type Condition<T> = AlternativeType<T> | FilterOperators<T> | QueryOperator<T>;
 type AlternativeType<T> =
   T extends ReadonlyArray<infer U> ? T | RegExpOrString<U> : RegExpOrString<T>;
-type RegExpOrString<T> = T extends string ? bson.BSONRegExp | RegExp | T : T;
+type RegExpOrString<T> = T extends string ? Regex | T : T;
 type KeysOfAType<T, Type> = {
   [k in keyof T]: NonNullable<T[k]> extends Type ? k : never;
 }[keyof T];
@@ -3675,7 +3675,7 @@ export namespace Aggregation.Query {
      * Matches values that are equal to a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/eq/}
      */
-    $eq: any;
+    $eq: Expression<S>;
   }
 
   /**

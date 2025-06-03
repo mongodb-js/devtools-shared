@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -127,8 +126,8 @@ function test5() {
   type inventory = {
     _id: number;
     item: string;
-    price: number;
     qty: number;
+    $price: number;
   };
 
   const aggregation: schema.Pipeline<inventory> = [

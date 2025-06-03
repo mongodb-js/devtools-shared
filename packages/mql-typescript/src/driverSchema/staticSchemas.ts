@@ -81,8 +81,14 @@ const inventorySchema: SchemaInfo = {
     qty: {
       types: [{ bsonType: 'Int32' }, { bsonType: 'Undefined' }],
     },
+    quantity: {
+      types: [{ bsonType: 'Int32' }, { bsonType: 'Undefined' }],
+    },
     sale: {
       types: [{ bsonType: 'Boolean' }],
+    },
+    tags: {
+      types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
     },
   },
 };
@@ -1458,11 +1464,18 @@ const staticSchemas: SchemaMap = {
   },
   query: {
     and: inventorySchema,
-    exists: {
-      ['Exists and Not Equal To']: inventorySchema,
+    eq: {
+      ['Regex Match Behaviour']: {
+        collectionName: 'companies',
+        schema: {
+          _id: { types: [{ bsonType: 'Int32' }] },
+          company: { types: [{ bsonType: 'String' }] },
+        },
+      },
     },
+    exists: inventorySchema,
     geoIntersects: geoPolygonSchema,
-    geoWithin: geoPointSchema,
+    geoWithin: geoPolygonSchema,
     jsonSchema: {
       collectionName: 'TestCollection',
       schema: {

@@ -1,4 +1,5 @@
 import * as schema from '../../out/schema';
+import * as bson from 'bson';
 
 /**
  * Use $accumulator to Implement the $avg Operator
@@ -18,22 +19,13 @@ function test0() {
         _id: '$author',
         avgCopies: {
           $accumulator: {
-            init: function () {
-              return { count: 0, sum: 0 };
-            },
-            accumulate: function (state, numCopies) {
-              return { count: state.count + 1, sum: state.sum + numCopies };
-            },
+            init: 'function() {    return { count: 0, sum: 0 }}',
+            accumulate:
+              'function(state, numCopies) {    return { count: state.count + 1, sum: state.sum + numCopies }}',
             accumulateArgs: ['$copies'],
-            merge: function (state1, state2) {
-              return {
-                count: state1.count + state2.count,
-                sum: state1.sum + state2.sum,
-              };
-            },
-            finalize: function (state) {
-              return state.sum / state.count;
-            },
+            merge:
+              'function(state1, state2) {    return {        count: state1.count + state2.count,        sum: state1.sum + state2.sum    }}',
+            finalize: 'function(state) {    return (state.sum / state.count)}',
             lang: 'js',
           },
         },
@@ -60,28 +52,14 @@ function test1() {
         _id: { city: '$city' },
         restaurants: {
           $accumulator: {
-            init: function (city, userProfileCity) {
-              return { max: city === userProfileCity ? 3 : 1, restaurants: [] };
-            },
+            init: 'function(city, userProfileCity) {    return { max: city === userProfileCity ? 3 : 1, restaurants: [] }}',
             initArgs: ['$city', 'Bettles'],
-            accumulate: function (state, restaurantName) {
-              if (state.restaurants.length < state.max) {
-                state.restaurants.push(restaurantName);
-              }
-              return state;
-            },
+            accumulate:
+              'function(state, restaurantName) {    if (state.restaurants.length < state.max) {        state.restaurants.push(restaurantName);    }    return state;}',
             accumulateArgs: ['$name'],
-            merge: function (state1, state2) {
-              return {
-                max: state1.max,
-                restaurants: state1.restaurants
-                  .concat(state2.restaurants)
-                  .slice(0, state1.max),
-              };
-            },
-            finalize: function (state) {
-              return state.restaurants;
-            },
+            merge:
+              'function(state1, state2) {    return {        max: state1.max,        restaurants: state1.restaurants.concat(state2.restaurants).slice(0, state1.max)    }}',
+            finalize: 'function(state) {    return state.restaurants}',
             lang: 'js',
           },
         },

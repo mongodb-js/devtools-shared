@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -13,6 +12,7 @@ function test0() {
       | bson.Decimal128
       | bson.Long
       | bson.Int32
+      | number
       | number
       | string
       | Array<bson.Decimal128>;

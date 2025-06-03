@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -7,7 +6,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/add/#add-numbers}
  */
 function test0() {
-  type TestCollection = {
+  type sales = {
     _id: number;
     item: string;
     price: number;
@@ -15,7 +14,7 @@ function test0() {
     date: Date;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<sales> = [
     { $project: { item: 1, total: { $add: ['$price', '$fee'] } } },
   ];
 }
@@ -25,7 +24,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/add/#perform-addition-on-a-date}
  */
 function test1() {
-  type TestCollection = {
+  type sales = {
     _id: number;
     item: string;
     price: number;
@@ -33,7 +32,7 @@ function test1() {
     date: Date;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<sales> = [
     { $project: { item: 1, billing_date: { $add: ['$date', 259200000] } } },
   ];
 }

@@ -1,17 +1,18 @@
 import * as schema from '../../out/schema';
+import * as bson from 'bson';
 
 /**
  * Use in $group Stage
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevSamp/#use-in--group-stage}
  */
 function test0() {
-  type TestCollection = {
+  type users = {
     _id: number;
     username: string;
     age: number;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<users> = [
     { $sample: { size: 100 } },
     { $group: { _id: null, ageStdDev: { $stdDevSamp: '$age' } } },
   ];

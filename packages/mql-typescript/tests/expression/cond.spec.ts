@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -7,13 +6,13 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cond/#example}
  */
 function test0() {
-  type TestCollection = {
+  type inventory = {
     _id: number;
     item: string;
     qty: number;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<inventory> = [
     {
       $project: {
         item: 1,

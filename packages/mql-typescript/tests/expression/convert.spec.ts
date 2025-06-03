@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -22,7 +21,26 @@ function test0() {
             input: '$price',
             to: 'decimal',
             onError: 'Error',
-            onNull: { $numberDecimal: '0' },
+            onNull: {
+              bytes: {
+                '0': 0,
+                '1': 0,
+                '2': 0,
+                '3': 0,
+                '4': 0,
+                '5': 0,
+                '6': 0,
+                '7': 0,
+                '8': 0,
+                '9': 0,
+                '10': 0,
+                '11': 0,
+                '12': 0,
+                '13': 0,
+                '14': 64,
+                '15': 48,
+              },
+            },
           },
         },
         convertedQty: {

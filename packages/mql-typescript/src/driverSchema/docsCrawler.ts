@@ -58,7 +58,7 @@ class IsoDateProcessor extends RegexCustomTypeProcessor {
         s || '00'
       }.${ms || '000'}${tz || 'Z'}`;
       const date = new Date(normalized);
-      // Make surd we're in the range 0000-01-01T00:00:00.000Z - 9999-12-31T23:59:59.999Z
+      // Make sure we're in the range 0000-01-01T00:00:00.000Z - 9999-12-31T23:59:59.999Z
       if (
         date.getTime() >= -62167219200000 &&
         date.getTime() <= 253402300799999

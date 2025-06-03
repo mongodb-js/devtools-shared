@@ -1,4 +1,5 @@
 import * as schema from '../../out/schema';
+import * as bson from 'bson';
 
 /**
  * Example
@@ -26,7 +27,7 @@ function test0() {
     },
 
     /**
-     * This stage is unsupported by the static type system (it may involve a projection), so we're casting it to 'any'.
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).
      */
     { $match: { truckAverageSpeed: { $gt: 50 } } } as any,
   ];

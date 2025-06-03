@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -7,7 +6,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sqrt/#example}
  */
 function test0() {
-  type TestCollection = {
+  type points = {
     _id: number;
     p1: {
       x: number;
@@ -19,7 +18,7 @@ function test0() {
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<points> = [
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
      */

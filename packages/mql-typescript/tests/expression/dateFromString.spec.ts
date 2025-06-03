@@ -1,5 +1,4 @@
 import * as schema from '../../out/schema';
-
 import * as bson from 'bson';
 
 /**
@@ -72,7 +71,7 @@ function test2() {
           $dateFromString: {
             dateString: '$date',
             timezone: '$timezone',
-            onNull: '1970-01-01T00:00:00.000Z',
+            onNull: {},
           },
         },
       },

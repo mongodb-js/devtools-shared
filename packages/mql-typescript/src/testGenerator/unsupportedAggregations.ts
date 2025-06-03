@@ -94,4 +94,12 @@ export const unsupportedAggregations: {
       },
     },
   },
+  query: {
+    eq: {
+      'Field in Embedded Document Equals a Value': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+  },
 };
