@@ -131,13 +131,6 @@ export class TestGenerator extends GeneratorBase {
     operator: string,
     test: TestType,
   ): Promise<void> {
-    if (!test.link) {
-      this.emit(
-        `// TODO: No docs reference found for ${operator}.${test.name}\n`,
-      );
-      return;
-    }
-
     if (!test.pipeline) {
       this.emit(`// TODO: No pipeline found for ${operator}.${test.name}\n`);
       return;
@@ -189,9 +182,9 @@ export class TestGenerator extends GeneratorBase {
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
       if (
-        // file.category !== 'query' &&
-        // file.category !== 'expression' &&
-        // file.category !== 'accumulator' &&
+        file.category !== 'query' &&
+        file.category !== 'expression' &&
+        file.category !== 'accumulator' &&
         file.category !== 'search'
       ) {
         // TODO: enable for others

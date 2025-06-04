@@ -464,6 +464,7 @@ export class SchemaGenerator extends GeneratorBase {
                     mergedArgs.push(arg);
                     continue;
                   }
+
                   if (arg.description) {
                     this.emitComment(arg.description);
                   }
@@ -555,11 +556,7 @@ export class SchemaGenerator extends GeneratorBase {
       this.emit(
         `\nexport type ${this.toTypeName(name)}${
           isTemplated ? '<S>' : ''
-        } = |` +
-          [...new Set(interfaces)]
-            .map((i) => `(${i}${i.endsWith('_S') ? '<S>' : ''})`)
-            .join('|') +
-          ';',
+        } = ${[...new Set(interfaces)].join('|')};`,
       );
     }
   }

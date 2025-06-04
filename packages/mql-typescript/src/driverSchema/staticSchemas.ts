@@ -1468,6 +1468,22 @@ const staticSchemas: SchemaMap = {
         },
       },
     },
+    first: {
+      collectionName: 'collection',
+      schema: {
+        items: {
+          types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+        },
+      },
+    },
+    last: {
+      collectionName: 'collection',
+      schema: {
+        items: {
+          types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+        },
+      },
+    },
   },
   query: {
     and: inventorySchema,
