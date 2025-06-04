@@ -49,6 +49,14 @@ export class SchemaGenerator extends GeneratorBase {
     ],
     long: ['bigint', 'bson.Long', '{ $numberLong: string }'],
     javascript: ['bson.Code', 'Function', 'string'],
+    geometry_S: [
+      '{type: "Point", coordinates: number[] }',
+      '{type:"MultiPoint", coordinates: number[][] }',
+      '{type:"LineString", coordinates: number[][] }',
+      '{type:"MultiLineString", coordinates: number[][][] }',
+      '{type:"Polygon", coordinates: number[][][] }',
+      '{type:"MultiPolygon", coordinates: number[][][][] }',
+    ],
 
     number: [
       this.toTypeName('int'),
@@ -70,7 +78,11 @@ export class SchemaGenerator extends GeneratorBase {
     ],
 
     // Can be improved:
-    searchPath: ['string', 'string[]'],
+    searchPath_S: [
+      'UnprefixedFieldPath<S>',
+      'UnprefixedFieldPath<S>[]',
+      '{ wildcard: string }',
+    ],
     searchScore: ['unknown'],
     granularity: ['string'],
     fullDocument: ['string'],
@@ -110,8 +122,20 @@ export class SchemaGenerator extends GeneratorBase {
       'Partial<{ [k in keyof S]: Condition<S[k]> }>',
     ],
     accumulator_S: [],
-    // searchOperator_S: [],
-    geometry_S: [],
+    searchHighlight_S: [
+      `{
+        path:
+          | UnprefixedFieldPath<S>
+          | UnprefixedFieldPath<S>[]
+          | { wildcard: string }
+          | '*'
+          | MultiAnalyzerSpec<S>
+          | (UnprefixedFieldPath<S> | MultiAnalyzerSpec<S>)[];
+
+        maxCharsToExamine?: number;
+        maxNumPassages?: number;
+      }`,
+    ],
 
     // Need to be adjusted to match the real schema
     fieldPath_S: ['`$${AFieldPath<S, any>}`'],
@@ -241,6 +265,11 @@ export class SchemaGenerator extends GeneratorBase {
       // TBD: Nested fields
       type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
       type FieldExpression<T> = { [k: string]: FieldPath<T> };
+
+      type MultiAnalyzerSpec<T> = {
+        value: KeysOfAType<T, string>;
+        multi: string;
+      };
       `);
   }
 
@@ -280,14 +309,26 @@ export class SchemaGenerator extends GeneratorBase {
       this.emit(`${arg.name}${arg.optional ? '?' : ''}: `);
     }
 
-    for (const type of arg.type) {
-      const name = this.getArgumentTypeName(type, arg.syntheticVariables);
+    const allowsArrays = arg.type.includes('array');
+    const argTypes = arg.type
+      .filter((t) => t !== 'array')
+      .map((type) => {
+        const name = this.getArgumentTypeName(type, arg.syntheticVariables);
+        if (!name) {
+          throw new Error(`Unknown type ${type}`);
+        }
+        return name;
+      })
+      .join(' | ');
 
-      if (!name) {
-        throw new Error(`Unknown type ${type}`);
+    if (allowsArrays) {
+      if (arg.type.length > 1) {
+        this.emit(`(${argTypes}) | (${argTypes})[]`);
+      } else {
+        this.emit('unknown[]');
       }
-
-      this.emit(`| ${name}`);
+    } else {
+      this.emit(argTypes);
     }
   }
 
@@ -474,6 +515,8 @@ export class SchemaGenerator extends GeneratorBase {
                       );
                     case undefined:
                       this.emitArg(arg, false);
+                      this.emit(' & ');
+                      this.emit(objectType);
                       break;
                   }
                   break;
@@ -513,7 +556,7 @@ export class SchemaGenerator extends GeneratorBase {
         `\nexport type ${this.toTypeName(name)}${
           isTemplated ? '<S>' : ''
         } = |` +
-          interfaces
+          [...new Set(interfaces)]
             .map((i) => `(${i}${i.endsWith('_S') ? '<S>' : ''})`)
             .join('|') +
           ';',

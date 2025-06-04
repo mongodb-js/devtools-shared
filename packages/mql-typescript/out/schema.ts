@@ -15,6 +15,11 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
 type FieldExpression<T> = { [k: string]: FieldPath<T> };
+
+type MultiAnalyzerSpec<T> = {
+  value: KeysOfAType<T, string>;
+  multi: string;
+};
 export namespace Aggregation.Accumulator {
   /**
    * A type describing the `$accumulator` operator.
@@ -2176,7 +2181,7 @@ export namespace Aggregation.Expression {
       /**
        * $median calculates the 50th percentile value of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $median calculation ignores it.
        */
-      input: ResolvesToNumber<S> | unknown[];
+      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
 
       /**
        * The method that mongod uses to calculate the 50th percentile value. The method must be 'approximate'.
@@ -2417,7 +2422,7 @@ export namespace Aggregation.Expression {
       /**
        * $percentile calculates the percentile values of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $percentile calculation ignores it.
        */
-      input: ResolvesToNumber<S> | unknown[];
+      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
 
       /**
        * $percentile calculates a percentile value for each element in p. The elements represent percentages and must evaluate to numeric values in the range 0.0 to 1.0, inclusive.
@@ -3579,7 +3584,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which a set of bit positions all have a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllClear/}
      */
-    $bitsAllClear: Int | bson.Binary | unknown[];
+    $bitsAllClear: (Int | bson.Binary) | (Int | bson.Binary)[];
   }
 
   /**
@@ -3591,7 +3596,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which a set of bit positions all have a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllSet/}
      */
-    $bitsAllSet: Int | bson.Binary | unknown[];
+    $bitsAllSet: (Int | bson.Binary) | (Int | bson.Binary)[];
   }
 
   /**
@@ -3603,7 +3608,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnyClear/}
      */
-    $bitsAnyClear: Int | bson.Binary | unknown[];
+    $bitsAnyClear: (Int | bson.Binary) | (Int | bson.Binary)[];
   }
 
   /**
@@ -3615,7 +3620,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/}
      */
-    $bitsAnySet: Int | bson.Binary | unknown[];
+    $bitsAnySet: (Int | bson.Binary) | (Int | bson.Binary)[];
   }
 
   /**
@@ -3711,7 +3716,7 @@ export namespace Aggregation.Query {
      * Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports $geoIntersects.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/}
      */
-    $geoIntersects: Geometry<S>;
+    $geoIntersects: Geometry<S> & {};
   }
 
   /**
@@ -3723,7 +3728,7 @@ export namespace Aggregation.Query {
      * Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support $geoWithin.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/}
      */
-    $geoWithin: Geometry<S>;
+    $geoWithin: Geometry<S> & {};
   }
 
   /**
@@ -3871,7 +3876,17 @@ export namespace Aggregation.Query {
      * Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support $near.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/near/}
      */
-    $near: Geometry<S>;
+    $near: Geometry<S> & {
+      /**
+       * Distance in meters. Limits the results to those documents that are at most the specified distance from the center point.
+       */
+      $maxDistance?: Number;
+
+      /**
+       * Distance in meters. Limits the results to those documents that are at least the specified distance from the center point.
+       */
+      $minDistance?: Number;
+    };
   }
 
   /**
@@ -3883,7 +3898,17 @@ export namespace Aggregation.Query {
      * Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support $nearSphere.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nearSphere/}
      */
-    $nearSphere: Geometry<S>;
+    $nearSphere: Geometry<S> & {
+      /**
+       * Distance in meters.
+       */
+      $maxDistance?: Number;
+
+      /**
+       * Distance in meters. Limits the results to those documents that are at least the specified distance from the center point.
+       */
+      $minDistance?: Number;
+    };
   }
 
   /**
@@ -4066,7 +4091,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/autocomplete/}
      */
     autocomplete: {
-      path: SearchPath;
+      path: SearchPath<S>;
       query: string;
       tokenOrder?: string;
       fuzzy?: Record<string, unknown>;
@@ -4086,10 +4111,10 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/compound/}
      */
     compound: {
-      must?: SearchOperator<S> | unknown[];
-      mustNot?: SearchOperator<S> | unknown[];
-      should?: SearchOperator<S> | unknown[];
-      filter?: SearchOperator<S> | unknown[];
+      must?: SearchOperator<S> | SearchOperator<S>[];
+      mustNot?: SearchOperator<S> | SearchOperator<S>[];
+      should?: SearchOperator<S> | SearchOperator<S>[];
+      filter?: SearchOperator<S> | SearchOperator<S>[];
       minimumShouldMatch?: Int;
       score?: SearchScore;
     };
@@ -4108,7 +4133,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/embedded-document/}
      */
     embeddedDocument: {
-      path: SearchPath;
+      path: SearchPath<S>;
       operator: SearchOperator<S>;
       score?: SearchScore;
     };
@@ -4124,7 +4149,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/equals/}
      */
     equals: {
-      path: SearchPath;
+      path: SearchPath<S>;
       value:
         | bson.Binary
         | boolean
@@ -4146,7 +4171,7 @@ export namespace Aggregation.Search {
      * The exists operator tests if a path to a specified indexed field name exists in a document.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/exists/}
      */
-    exists: { path: SearchPath; score?: SearchScore };
+    exists: { path: SearchPath<S>; score?: SearchScore };
   }
 
   /**
@@ -4173,7 +4198,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoShape/}
      */
     geoShape: {
-      path: SearchPath;
+      path: SearchPath<S>;
       relation: string;
       geometry: Geometry<S>;
       score?: SearchScore;
@@ -4192,7 +4217,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoWithin/}
      */
     geoWithin: {
-      path: SearchPath;
+      path: SearchPath<S>;
       box?: Record<string, unknown>;
       circle?: Record<string, unknown>;
       geometry?: Geometry<S>;
@@ -4209,7 +4234,7 @@ export namespace Aggregation.Search {
      * The in operator performs a search for an array of BSON values in a field.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
      */
-    in: { path: SearchPath; value: any | unknown[]; score?: SearchScore };
+    in: { path: SearchPath<S>; value: any | any[]; score?: SearchScore };
   }
 
   /**
@@ -4224,7 +4249,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/moreLikeThis/}
      */
     moreLikeThis: {
-      like: Record<string, unknown> | unknown[];
+      like: Record<string, unknown> | Record<string, unknown>[];
       score?: SearchScore;
     };
   }
@@ -4239,7 +4264,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/near/}
      */
     near: {
-      path: SearchPath;
+      path: SearchPath<S>;
       origin: Date | Number | Geometry<S>;
       pivot: Number;
       score?: SearchScore;
@@ -4256,8 +4281,8 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/phrase/}
      */
     phrase: {
-      path: SearchPath;
-      query: string | unknown[];
+      path: SearchPath<S>;
+      query: string | string[];
       slop?: Int;
       synonyms?: string;
       score?: SearchScore;
@@ -4269,7 +4294,7 @@ export namespace Aggregation.Search {
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/queryString/}
    */
   export interface QueryString<S> {
-    queryString: { defaultPath: SearchPath; query: string };
+    queryString: { defaultPath: SearchPath<S>; query: string };
   }
 
   /**
@@ -4283,7 +4308,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/range/}
      */
     range: {
-      path: SearchPath;
+      path: SearchPath<S>;
       gt?: Date | Number | string | bson.ObjectId;
       gte?: Date | Number | string | bson.ObjectId;
       lt?: Date | Number | string | bson.ObjectId;
@@ -4303,7 +4328,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/regex/}
      */
     regex: {
-      path: SearchPath;
+      path: SearchPath<S>;
       query: string;
       allowAnalyzedField?: boolean;
       score?: SearchScore;
@@ -4321,7 +4346,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/text/}
      */
     text: {
-      path: SearchPath;
+      path: SearchPath<S>;
       query: string;
       fuzzy?: Record<string, unknown>;
       matchCriteria?: string;
@@ -4340,7 +4365,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/wildcard/}
      */
     wildcard: {
-      path: SearchPath;
+      path: SearchPath<S>;
       query: string;
       allowAnalyzedField?: boolean;
       score?: SearchScore;
@@ -4718,7 +4743,7 @@ export namespace Aggregation.Stage {
       /**
        * Expression that specifies the value of the connectFromField with which to start the recursive search. Optionally, startWith may be array of values, each of which is individually followed through the traversal process.
        */
-      startWith: Expression<S> | unknown[];
+      startWith: Expression<S> | Expression<S>[];
 
       /**
        * Field name whose value $graphLookup uses to recursively match against the connectToField of other documents in the collection. If the value is an array, each element is individually followed through the traversal process.
@@ -4954,7 +4979,7 @@ export namespace Aggregation.Stage {
       /**
        * Field or fields that act as a unique identifier for a document. The identifier determines if a results document matches an existing document in the output collection.
        */
-      on?: string | unknown[];
+      on?: string | string[];
 
       /**
        * Specifies variables for use in the whenMatched pipeline.
@@ -5073,7 +5098,59 @@ export namespace Aggregation.Stage {
      * NOTE: $search is only available for MongoDB Atlas clusters, and is not available for self-managed deployments.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/search/}
      */
-    $search: SearchOperator<S>;
+    $search: SearchOperator<S> & {
+      /**
+       * Name of the Atlas Search index to use. If omitted, defaults to "default".
+       */
+      index?: string;
+
+      /**
+       * Specifies the highlighting options for displaying search terms in their original context.
+       */
+      highlight?: SearchHighlight<S>;
+
+      /**
+       * Parallelize search across segments on dedicated search nodes.
+       * If you don't have separate search nodes on your cluster,
+       * Atlas Search ignores this flag. If omitted, defaults to false.
+       */
+      concurrent?: boolean;
+
+      /**
+       * Document that specifies the count options for retrieving a count of the results.
+       */
+      count?: Record<string, unknown>;
+
+      /**
+       * Reference point for retrieving results. searchAfter returns documents starting immediately following the specified reference point.
+       */
+      searchAfter?: string;
+
+      /**
+       * Reference point for retrieving results. searchBefore returns documents starting immediately before the specified reference point.
+       */
+      searchBefore?: string;
+
+      /**
+       * Flag that specifies whether to retrieve a detailed breakdown of the score for the documents in the results. If omitted, defaults to false.
+       */
+      scoreDetails?: boolean;
+
+      /**
+       * Document that specifies the fields to sort the Atlas Search results by in ascending or descending order.
+       */
+      sort?: Record<string, unknown>;
+
+      /**
+       * Flag that specifies whether to perform a full document lookup on the backend database or return only stored source fields directly from Atlas Search.
+       */
+      returnStoredSource?: boolean;
+
+      /**
+       * Document that specifies the tracking option to retrieve analytics information on the search terms.
+       */
+      tracking?: Record<string, unknown>;
+    };
   }
 
   /**
@@ -5086,7 +5163,17 @@ export namespace Aggregation.Stage {
      * NOTE: $searchMeta is only available for MongoDB Atlas clusters running MongoDB v4.4.9 or higher, and is not available for self-managed deployments.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/searchMeta/}
      */
-    $searchMeta: SearchOperator<S>;
+    $searchMeta: SearchOperator<S> & {
+      /**
+       * Name of the Atlas Search index to use. If omitted, defaults to default.
+       */
+      index?: string;
+
+      /**
+       * Document that specifies the count options for retrieving a count of the results.
+       */
+      count?: Record<string, unknown>;
+    };
   }
 
   /**
@@ -5304,6 +5391,18 @@ export type Regex =
   | { pattern: string; options?: string };
 export type Long = bigint | bson.Long | { $numberLong: string };
 export type Javascript = bson.Code | Function | string;
+export type Geometry<S> =
+  | { type: 'Point'; coordinates: number[] }
+  | { type: 'MultiPoint'; coordinates: number[][] }
+  | { type: 'LineString'; coordinates: number[][] }
+  | { type: 'MultiLineString'; coordinates: number[][][] }
+  | { type: 'Polygon'; coordinates: number[][][] }
+  | { type: 'MultiPolygon'; coordinates: number[][][][] }
+  | Aggregation.Query.$box<S>
+  | Aggregation.Query.$center<S>
+  | Aggregation.Query.$centerSphere<S>
+  | Aggregation.Query.$geometry<S>
+  | Aggregation.Query.$polygon<S>;
 export type Number = Int | Long | Double | Decimal;
 export type BsonPrimitive =
   | Number
@@ -5316,7 +5415,10 @@ export type BsonPrimitive =
   | Regex
   | Javascript
   | bson.Timestamp;
-export type SearchPath = string | string[];
+export type SearchPath<S> =
+  | UnprefixedFieldPath<S>
+  | UnprefixedFieldPath<S>[]
+  | { wildcard: string };
 export type SearchScore = unknown;
 export type Granularity = string;
 export type FullDocument = string;
@@ -5427,12 +5529,18 @@ export type Accumulator<S> =
   | Aggregation.Accumulator.$sum<S>
   | Aggregation.Accumulator.$top<S>
   | Aggregation.Accumulator.$topN<S>;
-export type Geometry<S> =
-  | Aggregation.Query.$box<S>
-  | Aggregation.Query.$center<S>
-  | Aggregation.Query.$centerSphere<S>
-  | Aggregation.Query.$geometry<S>
-  | Aggregation.Query.$polygon<S>;
+export type SearchHighlight<S> = {
+  path:
+    | UnprefixedFieldPath<S>
+    | UnprefixedFieldPath<S>[]
+    | { wildcard: string }
+    | '*'
+    | MultiAnalyzerSpec<S>
+    | (UnprefixedFieldPath<S> | MultiAnalyzerSpec<S>)[];
+
+  maxCharsToExamine?: number;
+  maxNumPassages?: number;
+};
 export type FieldPath<S> = `$${AFieldPath<S, any>}`;
 export type UnprefixedFieldPath<S> = AFieldPath<S, any>;
 export type NumberFieldPath<S> = `$${AFieldPath<S, Number>}`;
@@ -5989,38 +6097,21 @@ export type QueryOperator<S> =
   | Aggregation.Query.$where<S>;
 export type SearchOperator<S> =
   | Aggregation.Search.Autocomplete<S>
-  | Aggregation.Search.Autocomplete<S>
-  | Aggregation.Search.Compound<S>
   | Aggregation.Search.Compound<S>
   | Aggregation.Search.EmbeddedDocument<S>
-  | Aggregation.Search.EmbeddedDocument<S>
-  | Aggregation.Search.Equals<S>
   | Aggregation.Search.Equals<S>
   | Aggregation.Search.Exists<S>
-  | Aggregation.Search.Exists<S>
-  | Aggregation.Search.Facet<S>
   | Aggregation.Search.Facet<S>
   | Aggregation.Search.GeoShape<S>
-  | Aggregation.Search.GeoShape<S>
-  | Aggregation.Search.GeoWithin<S>
   | Aggregation.Search.GeoWithin<S>
   | Aggregation.Search.In<S>
-  | Aggregation.Search.In<S>
-  | Aggregation.Search.MoreLikeThis<S>
   | Aggregation.Search.MoreLikeThis<S>
   | Aggregation.Search.Near<S>
-  | Aggregation.Search.Near<S>
-  | Aggregation.Search.Phrase<S>
   | Aggregation.Search.Phrase<S>
   | Aggregation.Search.QueryString<S>
-  | Aggregation.Search.QueryString<S>
-  | Aggregation.Search.Range<S>
   | Aggregation.Search.Range<S>
   | Aggregation.Search.Regex<S>
-  | Aggregation.Search.Regex<S>
   | Aggregation.Search.Text<S>
-  | Aggregation.Search.Text<S>
-  | Aggregation.Search.Wildcard<S>
   | Aggregation.Search.Wildcard<S>;
 export type StageOperator<S> =
   | Aggregation.Stage.$addFields<S>

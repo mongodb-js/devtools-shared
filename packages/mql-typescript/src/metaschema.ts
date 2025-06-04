@@ -118,6 +118,7 @@ export const Operator = z
                 'searchPath',
                 'searchScore',
                 'searchOperator',
+                'searchHighlight',
               ]),
             ),
             description: z.string().optional(),

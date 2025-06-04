@@ -102,4 +102,75 @@ export const unsupportedAggregations: {
       },
     },
   },
+  search: {
+    embeddedDocument: {
+      'Query for Matching Embedded Documents Only': {
+        stage: 2,
+        comment: nestedFieldsExplanation,
+      },
+      Basic: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      Facet: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      ['Query and Sort']: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    facet: {
+      Facet: {
+        stage: 2,
+        comment:
+          'this uses $$SEARCH_META, which is a synthetic field not available statically',
+      },
+    },
+    geoShape: {
+      Disjoint: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      Intersect: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      Within: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    exists: {
+      Embedded: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    geoWithin: {
+      box: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      circle: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      geometry: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    near: {
+      ['GeoJSON Point']: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      Compound: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+  },
 };

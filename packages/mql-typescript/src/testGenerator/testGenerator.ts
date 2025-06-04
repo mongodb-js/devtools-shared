@@ -101,6 +101,14 @@ export class TestGenerator extends GeneratorBase {
           return `bson.Binary.createFromBase64('${stage.toString('base64')}', ${stage.sub_type})`;
         }
 
+        if (stage instanceof bson.ObjectId) {
+          return `bson.ObjectId.createFromHexString('${stage.toHexString()}')`;
+        }
+
+        if (stage instanceof Date) {
+          return `new Date('${stage.toISOString()}')`;
+        }
+
         if ('$code' in stage && typeof stage.$code === 'string') {
           return JSON.stringify(removeNewlines(stage.$code));
         }
@@ -167,8 +175,6 @@ export class TestGenerator extends GeneratorBase {
         );
       }
 
-      const temp = this.stageToTS(stage);
-
       this.emit(this.stageToTS(stage));
 
       if (isUnsupportedStage) {
@@ -183,9 +189,10 @@ export class TestGenerator extends GeneratorBase {
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
       if (
-        file.category !== 'query' &&
-        file.category !== 'expression' &&
-        file.category !== 'accumulator'
+        // file.category !== 'query' &&
+        // file.category !== 'expression' &&
+        // file.category !== 'accumulator' &&
+        file.category !== 'search'
       ) {
         // TODO: enable for others
         continue;

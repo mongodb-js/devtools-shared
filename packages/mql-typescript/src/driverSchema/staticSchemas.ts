@@ -1281,6 +1281,13 @@ const listingsAndReviewsSchema: SchemaInfo = {
 const analyticsCustomersSchema: SchemaInfo = {
   collectionName: 'customers',
   schema: {
+    _id: {
+      types: [
+        {
+          bsonType: 'ObjectId',
+        },
+      ],
+    },
     username: {
       types: [
         {
