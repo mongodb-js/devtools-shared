@@ -87,21 +87,5 @@ export class DriverSchemaGenerator extends GeneratorBase {
         await fs.writeFile(operator.path, updatedYaml, 'utf8');
       }
     }
-
-    const process = spawn('yamlfix', [
-      '-c',
-      path.join(this.configDir, '.yamlfix.toml'),
-      this.configDir,
-    ]);
-
-    await new Promise((resolve, reject) => {
-      process.once('exit', (code) => {
-        if (code !== 0) {
-          reject(new Error(`yamlfix exited with code ${code}`));
-        } else {
-          resolve(undefined);
-        }
-      });
-    });
   }
 }

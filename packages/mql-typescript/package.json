@@ -51,7 +51,7 @@
     "pregenerate-tests": "npm run extract-metaschema",
     "generate-tests": "ts-node src/cli.ts tests && npm run prettier -- --write tests/**/*.ts",
     "pregenerate-driver-schema": "npm run extract-metaschema",
-    "generate-driver-schema": "ts-node src/cli.ts driver-schema"
+    "generate-driver-schema": "ts-node src/cli.ts driver-schema && yamlfix -c mongo-php-library/generator/config/.yamlfix.toml mongo-php-library/generator/config"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.11",
