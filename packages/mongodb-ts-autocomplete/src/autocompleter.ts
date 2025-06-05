@@ -202,21 +202,14 @@ declare global {
   }
 
   async autocomplete(code: string): Promise<AutoCompletion[]> {
-    let connectionId: string;
-    let databaseName: string;
-
-    // If there's no known connection, currentDatabaseAndConnection() will
-    // error, but we won't be able to generate types for a connection, db
-    // object, etc, anyway. So just return no results in that case.
-    try {
-      ({ connectionId, databaseName } =
-        this.context.currentDatabaseAndConnection());
-    } catch (err: any) {
-      if (err.name === 'MongoshInvalidInputError') {
-        return [];
-      }
-      throw err;
+    // If there's no known connection we won't be able to generate types for a
+    // connection, db object, etc. So just return no results in that case.
+    const dbAndConnection = this.context.currentDatabaseAndConnection();
+    if (!dbAndConnection) {
+      return [];
     }
+
+    const { connectionId, databaseName } = dbAndConnection;
 
     const tsAst = compileSourceFile(code);
     const collectionName = inferCollectionNameFromFunctionCall(tsAst) || 'test';

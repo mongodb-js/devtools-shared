@@ -9,10 +9,12 @@ type CacheOptions = {
 };
 
 export interface AutocompletionContext {
-  currentDatabaseAndConnection(): {
-    connectionId: string;
-    databaseName: string;
-  };
+  currentDatabaseAndConnection():
+    | {
+        connectionId: string;
+        databaseName: string;
+      }
+    | undefined;
   databasesForConnection(connectionId: string): Promise<string[]>;
   collectionsForDatabase(
     connectionId: string,
