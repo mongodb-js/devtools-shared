@@ -51,9 +51,7 @@ describe('MongoDBAutocompleter', function () {
 
   it('deals with no connection', async function () {
     autocompleterContext.currentDatabaseAndConnection = () => {
-      const error = new Error('No connection');
-      error.name = 'MongoshInvalidInputError';
-      throw error;
+      return undefined;
     };
 
     const completions = await autocompleter.autocomplete('db.');
