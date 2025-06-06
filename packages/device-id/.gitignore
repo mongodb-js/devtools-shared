@@ -12,7 +12,8 @@ report.json
 .compiled-sources
 expansions.yml
 .nvmrc
-.vscode/settings.json
+.vscode
+!.vscode/extentions.json
 .migration-cache
 lerna-debug.log
 packages/**/*.tgz
@@ -27,5 +28,3 @@ coverage
 env-vars.sh
 mongocryptd.pid
 mongodb-csfle
-.esm-wrapper.mjs
-packages/mongodb-ts-autocomplete/src/fixtures/autocomplete-types.ts

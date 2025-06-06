@@ -87,4 +87,15 @@ describe('getCloudInfo', function () {
       isAzure: true,
     });
   });
+
+  it('returns {isAws: true} if CNAME resolves to an AWS host', async function () {
+    const cloudInfo = await getCloudInfo(
+      'compass-data-sets-shard-00-00.e06dc.mongodb.net',
+    );
+    expect(cloudInfo).to.deep.equal({
+      isAws: true,
+      isGcp: false,
+      isAzure: false,
+    });
+  });
 }).timeout(5000);
