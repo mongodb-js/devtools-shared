@@ -1,0 +1,2 @@
+tests/**/*.spec.ts linguist-generated=true
+src/metaschema.ts linguist-generated=true

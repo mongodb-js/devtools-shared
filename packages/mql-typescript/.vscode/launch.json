@@ -1,0 +1,54 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run CLI",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/bin/runner.js",
+      "args": ["${input:command}"],
+      "preLaunchTask": "npm: compile",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run CLI with filters",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/bin/runner.js",
+      "args": [
+        "${input:command}",
+        "--category",
+        "${input:categoryFilter}",
+        "--operator",
+        "${input:operatorFilter}"
+      ],
+      "preLaunchTask": "npm: compile",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "command",
+      "type": "pickString",
+      "description": "Select the command to run.",
+      "options": ["schema", "driver-schema", "tests"],
+      "default": "schema"
+    },
+    {
+      "id": "categoryFilter",
+      "type": "pickString",
+      "description": "Select the category filter to apply.",
+      "options": ["accumulator", "expression", "query", "search", "stage"]
+    },
+    {
+      "id": "operatorFilter",
+      "type": "promptString",
+      "description": "Enter the operator filter to apply"
+    }
+  ]
+}
