@@ -4,6 +4,7 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ - 'json-schema-to-zod'
 ignore-patterns:
  - 'dist'
  - 'mongo-php-library'
