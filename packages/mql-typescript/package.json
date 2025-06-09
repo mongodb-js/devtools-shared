@@ -47,11 +47,15 @@
     "reformat": "npm run prettier -- --write .",
     "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
     "pregenerate-schema": "npm run extract-metaschema",
-    "generate-schema": "ts-node src/cli.ts schema && npm run prettier -- --write out/*",
+    "generate-schema": "ts-node src/cli.ts schema",
+    "postgenerate-schema": "npm run prettier -- --write out/*",
     "pregenerate-tests": "npm run extract-metaschema",
-    "generate-tests": "ts-node src/cli.ts tests && npm run prettier -- --write tests/**/*.ts",
+    "generate-tests": "ts-node src/cli.ts tests",
+    "postgenerate-tests": "npm run prettier -- --write tests/**/*.ts",
     "pregenerate-driver-schema": "npm run extract-metaschema",
-    "generate-driver-schema": "ts-node src/cli.ts driver-schema && yamlfix -c mongo-php-library/generator/config/.yamlfix.toml mongo-php-library/generator/config"
+    "generate-driver-schema": "ts-node src/cli.ts driver-schema",
+    "postgenerate-driver-schema": "yamlfix -c mongo-php-library/generator/config/.yamlfix.toml mongo-php-library/generator/config",
+    "format-generated-files": "npm run postgenerate-schema && npm run postgenerate-tests && npm run postgenerate-driver-schema"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.11",
@@ -71,6 +75,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@mongodb-js/shell-bson-parser": "^1.2.2",
     "bson": "^6.10.3",
     "js-yaml": "^4.1.0",
     "jsdom": "^24.1.3",

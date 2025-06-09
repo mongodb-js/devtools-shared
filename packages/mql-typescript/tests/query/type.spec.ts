@@ -46,15 +46,35 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-minkey-and-maxkey}
  */
 function test2() {
-  type addressBook = {
+  type restaurants = {
     _id: number;
-    address: string;
-    zipCode: string | number | bson.Long | bson.Int32 | number | Array<string>;
+    address: {
+      building: string;
+      coord: Array<number>;
+      street: string;
+      zipcode: string;
+    };
+    borough: string;
+    cuisine: string;
+    grades: Array<{
+      date: Date;
+      grade: string | bson.MinKey;
+      score: number;
+    }>;
+    name: string;
+    restaurant_id: string;
   };
 
-  const aggregation: schema.Pipeline<addressBook> = [
-    { $match: { zipCode: { $type: ['minKey'] } } },
-    { $match: { zipCode: { $type: ['maxKey'] } } },
+  const aggregation: schema.Pipeline<restaurants> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $match: { zipCode: { $type: ['minKey'] } } } as any,
+
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $match: { zipCode: { $type: ['maxKey'] } } } as any,
   ];
 }
 

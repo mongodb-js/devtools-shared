@@ -1,201 +1,8 @@
-import JSON5 from 'json5';
 import { removeNewlines, removeTrailingComments } from '../utils';
 import { getSimplifiedSchema } from 'mongodb-schema';
 import type { SimplifiedSchema } from 'mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { createHash } from 'crypto';
-import { BSON } from 'bson';
-
-abstract class CustomTypeProcessor {
-  public abstract process(json: string): string;
-
-  public abstract canRevive(value: unknown): boolean;
-
-  public abstract revive(value: unknown): unknown;
-}
-
-abstract class RegexCustomTypeProcessor extends CustomTypeProcessor {
-  private regex: RegExp;
-  private replacementPrefix: string;
-  protected abstract reviveCore(value: string): unknown;
-
-  protected constructor(regex: string) {
-    super();
-    this.regex = new RegExp(regex, 'g');
-    this.replacementPrefix =
-      '!rctp-' + createHash('sha256').update(regex).digest('base64');
-  }
-
-  public process(json: string): string {
-    return json.replace(this.regex, `"${this.replacementPrefix}$1"`);
-  }
-
-  public canRevive(value: unknown): boolean {
-    return (
-      typeof value === 'string' && value.startsWith(this.replacementPrefix)
-    );
-  }
-
-  public revive(value: string): unknown {
-    return this.reviveCore(value.replace(this.replacementPrefix, ''));
-  }
-}
-
-class IsoDateProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bISODate\\(\\s*"([^"]*)"\\s*\\)');
-  }
-
-  public reviveCore(value: string): Date | undefined {
-    const isoDateRegex =
-      /^(?<Y>\d{4})-?(?<M>\d{2})-?(?<D>\d{2})([T ](?<h>\d{2})(:?(?<m>\d{2})(:?((?<s>\d{2})(\.(?<ms>\d+))?))?)?(?<tz>Z|([+-])(\d{2}):?(\d{2})?)?)?$/;
-    const match = isoDateRegex.exec(value);
-    if (match !== null && match.groups !== undefined) {
-      // Normalize the representation because ISO-8601 accepts e.g.
-      // '20201002T102950Z' without : and -, but `new Date()` does not.
-      const { Y, M, D, h, m, s, ms, tz } = match.groups;
-      const normalized = `${Y}-${M}-${D}T${h || '00'}:${m || '00'}:${
-        s || '00'
-      }.${ms || '000'}${tz || 'Z'}`;
-      const date = new Date(normalized);
-      // Make sure we're in the range 0000-01-01T00:00:00.000Z - 9999-12-31T23:59:59.999Z
-      if (
-        date.getTime() >= -62167219200000 &&
-        date.getTime() <= 253402300799999
-      ) {
-        return date;
-      }
-    }
-
-    return new Date(value);
-  }
-}
-
-class DateProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\b(?:new )?Date\\(\\s*"([^"]*)"\\s*\\)');
-  }
-
-  public reviveCore(value: string): Date {
-    return new Date(value);
-  }
-}
-
-class ObjectIdProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bObjectId\\(\\s*"([^"]*)"\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    return new BSON.ObjectId(value);
-  }
-}
-
-class UUIDProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bUUID\\(\\s*"([^"]*)"\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    return new BSON.UUID(value);
-  }
-}
-
-class NumberDecimalProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\b(?:NumberDecimal|Decimal128)\\(\\s*"?([^"]*)"?\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    return new BSON.Decimal128(value);
-  }
-}
-
-class UndefinedProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bundefined\\b');
-  }
-
-  public reviveCore(): unknown {
-    return undefined;
-  }
-}
-
-class NullProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bnull\\b');
-  }
-
-  public reviveCore(): unknown {
-    return null;
-  }
-}
-
-class BinDataProcessor extends CustomTypeProcessor {
-  private regex = /\b(?:new )?BinData\(\s*(\d*), "([^")]*)"\s*\)/g;
-  private replacementPrefix =
-    '!bdp-' + createHash('sha256').update(this.regex.source).digest('base64');
-
-  public process(json: string): string {
-    return json.replace(this.regex, `"${this.replacementPrefix}$1-$2"`);
-  }
-
-  public canRevive(value: unknown): boolean {
-    return (
-      typeof value === 'string' && value.startsWith(this.replacementPrefix)
-    );
-  }
-
-  public revive(value: string): unknown {
-    const match = /(?<subType>\d)-(?<base64>.*)/.exec(
-      value.replace(this.replacementPrefix, ''),
-    );
-
-    if (match && match.groups) {
-      const { subType, base64 } = match.groups;
-      return BSON.Binary.createFromBase64(base64, parseInt(subType, 10));
-    }
-
-    throw new Error(`Invalid BinData format: ${value}`);
-  }
-}
-
-class NumberIntProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\b(?:NumberInt|Int32)\\(\\s*"?(\\d*)\\"?\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    return new BSON.Int32(value);
-  }
-}
-
-class NumberLongProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bNumberLong\\(\\s*"?([\\d.]*)"?\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    return new BSON.Long(value);
-  }
-}
-
-class TimestampProcessor extends RegexCustomTypeProcessor {
-  constructor() {
-    super('\\bTimestamp\\(\\s*(\\d*,\\s*\\d*)\\s*\\)');
-  }
-
-  public reviveCore(value: string): unknown {
-    const match = /(?<t>\d*),\s(?<i>\d*)/.exec(value);
-
-    if (match && match.groups) {
-      const { t, i } = match.groups;
-      return new BSON.Timestamp({ t: parseInt(t, 10), i: parseInt(i, 10) });
-    }
-
-    throw new Error(`Invalid Timestamp format: ${value}`);
-  }
-}
+import parse, { ParseMode } from '@mongodb-js/shell-bson-parser';
 
 export class DocsCrawler {
   constructor(private readonly url: string) {
@@ -208,19 +15,6 @@ export class DocsCrawler {
   private virtualConsole: VirtualConsole;
 
   private fuzzyParse(json: string): unknown[] | undefined {
-    try {
-      const result = JSON5.parse(json);
-      if (Array.isArray(result)) {
-        return result;
-      }
-
-      if (typeof result === 'object') {
-        return [result];
-      }
-    } catch {
-      // Ignore parse errors
-    }
-
     // Sometimes the snippet will end with ellipsis instead of json
     json = json.replace(/\.\.\.$/g, '');
 
@@ -235,43 +29,28 @@ export class DocsCrawler {
     // Insert commas between array elements
     json = json.replace(/\}\s*\{/g, '},{');
 
-    const processors: CustomTypeProcessor[] = [
-      new IsoDateProcessor(),
-      new DateProcessor(),
-      new ObjectIdProcessor(),
-      new UUIDProcessor(),
-      new NumberDecimalProcessor(),
-      new UndefinedProcessor(),
-      new NullProcessor(),
-      new BinDataProcessor(),
-      new NumberIntProcessor(),
-      new NumberLongProcessor(),
-      new TimestampProcessor(),
-    ];
-
-    for (const processor of processors) {
-      json = processor.process(json);
-    }
-
     try {
-      // The docs use quoted/unquoted shell syntax inconsistently, so use JSON5 instead of regular JSON
-      // to parse the documents.
-      const result = JSON5.parse(json, (key, value) => {
-        for (const processor of processors) {
-          if (processor.canRevive(value)) {
-            return processor.revive(value);
-          }
-        }
+      let result = parse(json, { mode: ParseMode.Loose });
 
-        return value;
-      });
-
-      if (Array.isArray(result)) {
-        return result;
+      if (!Array.isArray(result)) {
+        result = [result];
       }
 
-      if (typeof result === 'object') {
-        return [result];
+      if (result.length > 0) {
+        const firstDoc = result[0];
+        if (
+          typeof firstDoc !== 'object' ||
+          Object.keys(firstDoc as object).find((k) => k.startsWith('$'))
+        ) {
+          // If the array doesn't contain objects or the object keys start with $,
+          // we're likely dealing with an aggregation pipeline rather than an insertion code.
+          // return undefined and let the caller move on to the next section.
+          throw new Error(
+            'Result is not an array of documents or contains aggregation pipeline stages',
+          );
+        }
+
+        return result;
       }
 
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

@@ -12,7 +12,8 @@
       "program": "${workspaceFolder}/bin/runner.js",
       "args": ["${input:command}"],
       "preLaunchTask": "npm: compile",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "postDebugTask": "npm: format-generated-files"
     },
     {
       "type": "node",
@@ -28,7 +29,8 @@
         "${input:operatorFilter}"
       ],
       "preLaunchTask": "npm: compile",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "postDebugTask": "npm: format-generated-files"
     }
   ],
   "inputs": [

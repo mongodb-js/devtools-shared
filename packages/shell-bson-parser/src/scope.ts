@@ -60,7 +60,14 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     return bson.Decimal128.fromString(s);
   },
   NumberDecimal: function (s: any) {
-    return bson.Decimal128.fromString(s);
+    switch (typeof s) {
+      case 'string':
+        return bson.Decimal128.fromString(s);
+      case 'number':
+        return bson.Decimal128.fromString(s.toString());
+      default:
+        throw new Error(`${JSON.stringify(s)} is not a valid Decimal128`);
+    }
   },
   Double: function (s: any) {
     return new bson.Double(s);
@@ -69,7 +76,7 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     return new bson.Int32(i);
   },
   NumberInt: function (s: any) {
-    return parseInt(s, 10);
+    return new bson.Int32(s);
   },
   Long: function (low: any, high: any) {
     return new bson.Long(low, high);

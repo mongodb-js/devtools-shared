@@ -101,6 +101,12 @@ export const unsupportedAggregations: {
         comment: nestedFieldsExplanation,
       },
     },
+    type: {
+      'Querying by MinKey and MaxKey': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
   },
   search: {
     embeddedDocument: {
