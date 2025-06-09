@@ -16,7 +16,12 @@ async function loadSources(sources: Record<string, string>) {
 async function run() {
   const input: Record<string, string> = {
     '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
-    '/mql.ts': path.join(__dirname, '..', 'src', 'fixtures', 'mql.ts'),
+    '/mongodb.ts': path.join(
+      require.resolve('mongodb'),
+      '..',
+      '..',
+      'mongodb.d.ts',
+    ),
   };
   const files = await loadSources(input);
   const code = `

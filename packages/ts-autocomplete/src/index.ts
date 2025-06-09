@@ -169,6 +169,10 @@ function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
       delete result.text;
     }
 
+    if (result.fileName === '/mql.ts') {
+      delete result.text;
+    }
+
     return result;
   });
 }

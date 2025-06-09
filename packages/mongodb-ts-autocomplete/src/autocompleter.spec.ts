@@ -152,7 +152,7 @@ describe('MongoDBAutocompleter', function () {
   // TODO: We need MONGOSH-2170 so that we can use the generated MQL types via
   // the Shell API to autocomplete fields in
   // ServerSchema[databaseName][collectionName].schema
-  it.skip('completes a collection field name in a query', async function () {
+  it.only('completes a collection field name in a query', async function () {
     const completions = await autocompleter.autocomplete('db.foo.find({ fo');
 
     expect(
@@ -198,6 +198,7 @@ describe('MongoDBAutocompleter', function () {
       expect(code).to.equal(`
 import * as ShellAPI from '/shell-api.ts';
 import * as bson from '/bson.ts';
+import * as mql from '/mql.ts';
 
 export type ServerSchema = {
   ${JSON.stringify(databaseName)}: {

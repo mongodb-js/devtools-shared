@@ -21,6 +21,12 @@ export class SchemaGenerator extends GeneratorBase {
     'out',
     'schema-export.js',
   );
+  private schemaExportDefinitionFile = path.resolve(
+    __dirname,
+    '..',
+    'out',
+    'schema-export.d.ts',
+  );
 
   private toTypeName(type: string): string {
     return this.trivialTypeMappings[type as ArgType] ?? capitalize(type);
@@ -589,5 +595,11 @@ export class SchemaGenerator extends GeneratorBase {
         .replace(/\n/g, '\\n'), // Escape newlines
     );
     this.emit("'\n");
+
+    await fs.writeFile(
+      this.schemaExportDefinitionFile,
+      'export declare const schema;',
+      'utf8',
+    );
   }
 }

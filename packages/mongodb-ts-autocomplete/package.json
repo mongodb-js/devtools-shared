@@ -61,6 +61,7 @@
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
     "@mongodb-js/tsconfig-devtools": "^1.0.2",
     "@mongosh/shell-api": "^3.11.0",
+    "@mongodb-js/mql-typescript": "^0.1.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",

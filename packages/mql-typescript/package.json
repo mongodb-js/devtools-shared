@@ -27,11 +27,17 @@
   },
   "license": "Apache-2.0",
   "main": "dist/index.js",
-  "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs"
-  },
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./schema": {
+      "default": "./out/schema-export.js",
+      "types": "./out/schema-export.d.ts"
+    }
+  },
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
