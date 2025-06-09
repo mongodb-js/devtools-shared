@@ -1,5 +1,6 @@
 import path from 'path';
-import { GeneratorBase, YamlFiles } from './generator';
+import type { YamlFiles } from './generator';
+import { GeneratorBase } from './generator';
 import { Operator } from './metaschema';
 import { capitalize } from './utils';
 
@@ -248,8 +249,13 @@ export class SchemaGenerator extends GeneratorBase {
 
   private emitHeader(): void {
     this.emit(`
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      /* eslint-disable @typescript-eslint/no-namespace */
+      /* eslint-disable @typescript-eslint/ban-types */
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+
       import type * as bson from 'bson';
-      import { FilterOperators } from 'mongodb';
+      import type { FilterOperators } from 'mongodb';
 
       type Condition<T> = AlternativeType<T> | FilterOperators<T> | QueryOperator<T>;
       type AlternativeType<T> =
@@ -451,7 +457,8 @@ export class SchemaGenerator extends GeneratorBase {
                 break;
               }
 
-            case 'object':
+            // eslint-disable-next-line no-fallthrough
+            case 'object': {
               // We're temporarily switching to writing to an in-memory buffer in case we need to merge objects. Due to
               // limitations of merging objects with records, we need to use some type magic, requiring a helper type.
               // { foo: number } & { [key: string]: string } results in foo being a string due to the indexer. To avoid it
@@ -459,7 +466,7 @@ export class SchemaGenerator extends GeneratorBase {
               const mergedArgs: (typeof parsed.arguments)[number][] = [];
               const objectType = this.getOutputOf(() => {
                 this.emit(encode === 'array' ? '[' : '{');
-                for (const arg of parsed.arguments!) {
+                for (const arg of parsed.arguments ?? []) {
                   if (arg.mergeObject) {
                     mergedArgs.push(arg);
                     continue;
@@ -493,32 +500,34 @@ export class SchemaGenerator extends GeneratorBase {
                   this.emit(objectType);
                   break;
                 case 1:
-                  const arg = mergedArgs[0];
-                  switch (arg.variadic) {
-                    case 'object':
-                      if (objectType === '{}') {
-                        this.emit(`{ [${arg.name}: string]: `);
-                        this.emitArg(arg, false);
-                        this.emit(`}`);
-                      } else {
-                        this.emit(
-                          `RecordWithStaticFields<${objectType}, ${this.toComment(
-                            arg.description,
-                          )} ${arg.type
-                            .map((t) => this.getArgumentTypeName(t))
-                            .join(' | ')}>`,
+                  {
+                    const arg = mergedArgs[0];
+                    switch (arg.variadic) {
+                      case 'object':
+                        if (objectType === '{}') {
+                          this.emit(`{ [${arg.name}: string]: `);
+                          this.emitArg(arg, false);
+                          this.emit(`}`);
+                        } else {
+                          this.emit(
+                            `RecordWithStaticFields<${objectType}, ${this.toComment(
+                              arg.description,
+                            )} ${arg.type
+                              .map((t) => this.getArgumentTypeName(t))
+                              .join(' | ')}>`,
+                          );
+                        }
+                        break;
+                      case 'array':
+                        throw new Error(
+                          `invalid mergeObject combination: variadic=${arg.variadic}, encode=${parsed.encode}`,
                         );
-                      }
-                      break;
-                    case 'array':
-                      throw new Error(
-                        `invalid mergeObject combination: variadic=${arg.variadic}, encode=${parsed.encode}`,
-                      );
-                    case undefined:
-                      this.emitArg(arg, false);
-                      this.emit(' & ');
-                      this.emit(objectType);
-                      break;
+                      case undefined:
+                        this.emitArg(arg, false);
+                        this.emit(' & ');
+                        this.emit(objectType);
+                        break;
+                    }
                   }
                   break;
                 default:
@@ -531,6 +540,7 @@ export class SchemaGenerator extends GeneratorBase {
                   );
               }
               break;
+            }
             case 'single':
               if (parsed.arguments.length !== 1) {
                 throw new Error(

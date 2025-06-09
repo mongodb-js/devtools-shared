@@ -1,5 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type * as bson from 'bson';
-import { FilterOperators } from 'mongodb';
+import type { FilterOperators } from 'mongodb';
 
 type Condition<T> = AlternativeType<T> | FilterOperators<T> | QueryOperator<T>;
 type AlternativeType<T> =

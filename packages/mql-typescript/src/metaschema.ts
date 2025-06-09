@@ -147,9 +147,9 @@ export const Operator = z
       .array(
         z
           .object({
-            name: z.string().optional(),
+            name: z.string(),
             link: z.string().url().regex(new RegExp('^https://')).optional(),
-            pipeline: z.array(z.record(z.any())).optional(),
+            pipeline: z.array(z.record(z.any())),
             schema: z
               .union([
                 z.string(),

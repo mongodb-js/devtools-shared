@@ -1,5 +1,5 @@
 export class StringWriter {
-  private buffer: string = '';
+  private buffer = '';
 
   public write(text: string) {
     this.buffer += text;

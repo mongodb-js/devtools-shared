@@ -1,8 +1,8 @@
 import yargs from 'yargs';
-import { SchemaGenerator } from './schemaGenerator';
-import { TestGenerator } from './testGenerator/testGenerator';
-import { DriverSchemaGenerator } from './driverSchema/driverSchemaGenerator';
-import { GeneratorBase } from './generator';
+import { SchemaGenerator } from './schema-generator';
+import { TestGenerator } from './testGenerator/test-generator';
+import { DriverSchemaGenerator } from './driverSchema/driver-schema-generator';
+import type { GeneratorBase } from './generator';
 
 async function main() {
   const argv = await yargs

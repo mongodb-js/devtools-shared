@@ -51,7 +51,7 @@ export abstract class GeneratorBase {
     schema: yaml.DEFAULT_SCHEMA.extend([
       new yaml.Type('!bson_utcdatetime', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return new BsonDate(data);
         },
         instanceOf: BsonDate,
@@ -64,7 +64,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_objectId', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return bson.ObjectId.createFromHexString(data);
         },
         predicate(data) {
@@ -82,7 +82,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_uuid', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return bson.UUID.createFromHexString(data);
         },
         predicate(data) {
@@ -100,7 +100,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_regex', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return new bson.BSONRegExp(data);
         },
         predicate(data) {
@@ -118,7 +118,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_regex', {
         kind: 'sequence',
-        construct([data, flags]) {
+        construct([data, flags]: [string, string]) {
           return new bson.BSONRegExp(data, flags);
         },
         predicate(data) {
@@ -136,7 +136,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_binary', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return bson.Binary.createFromBase64(data);
         },
         predicate(data) {
@@ -154,7 +154,7 @@ export abstract class GeneratorBase {
       }),
       new yaml.Type('!bson_decimal128', {
         kind: 'scalar',
-        construct(data) {
+        construct(data: string) {
           return bson.Decimal128.fromString(data);
         },
         predicate(data) {

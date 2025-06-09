@@ -1,2 +1,2 @@
-export { SchemaGenerator } from './schemaGenerator';
-export { TestGenerator } from './testGenerator/testGenerator';
+export { SchemaGenerator } from './schema-generator';
+export { TestGenerator } from './testGenerator/test-generator';

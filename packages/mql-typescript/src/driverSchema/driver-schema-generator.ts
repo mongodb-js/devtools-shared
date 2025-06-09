@@ -1,11 +1,10 @@
-import { GeneratorBase, YamlFiles } from '../generator';
+import type { YamlFiles } from '../generator';
+import { GeneratorBase } from '../generator';
 import { Operator } from '../metaschema';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs/promises';
-import { DocsCrawler } from './docsCrawler';
-import { spawn } from 'child_process';
-import path from 'path';
-import { getStaticSchema } from './staticSchemas';
+import { DocsCrawler } from './docs-crawler';
+import { getStaticSchema } from './static-schemas';
 
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
@@ -44,14 +43,21 @@ export class DriverSchemaGenerator extends GeneratorBase {
     category: string;
     operator: string;
     test: TestType;
-    rawYaml: any;
+    rawYaml: { tests: { name: string; schema: object | string }[] };
   }): Promise<void> {
     const yamlTest = rawYaml.tests.find(
       (t: { name: string }) => t.name === test.name,
     );
 
+    if (!yamlTest) {
+      console.error(
+        `Test ${test.name} not found in operator ${operator} in category ${category}`,
+      );
+      return;
+    }
+
     yamlTest.schema =
-      getStaticSchema({ category, operator, test: test.name! }) ??
+      getStaticSchema({ category, operator, test: test.name }) ??
       (await this.getSchemaFromDocs(test));
   }
 
@@ -60,12 +66,10 @@ export class DriverSchemaGenerator extends GeneratorBase {
       for await (const operator of file.operators()) {
         const parsed = Operator.parse(operator.yaml);
 
-        const operatorYaml = operator.yaml as any;
-        if (typeof operatorYaml !== 'object' || operatorYaml === null) {
-          throw new Error(
-            `Unexpected yaml format for ${operator.path}: ${operatorYaml}`,
-          );
-        }
+        const operatorYaml = operator.yaml as {
+          name: string;
+          tests: { name: string; schema: object | string }[];
+        };
 
         for (const test of parsed.tests ?? []) {
           await this.updateTestSchema({

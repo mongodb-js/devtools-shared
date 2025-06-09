@@ -1,5 +1,4 @@
-import { SimplifiedSchema } from 'mongodb-schema';
-import { types } from 'util';
+import type { SimplifiedSchema } from 'mongodb-schema';
 
 interface SchemaInfo {
   collectionName: string;

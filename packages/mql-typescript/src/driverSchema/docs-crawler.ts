@@ -9,15 +9,15 @@ import { BSON } from 'bson';
 abstract class CustomTypeProcessor {
   public abstract process(json: string): string;
 
-  public abstract canRevive(value: any): boolean;
+  public abstract canRevive(value: unknown): boolean;
 
-  public abstract revive(value: any): any;
+  public abstract revive(value: unknown): unknown;
 }
 
 abstract class RegexCustomTypeProcessor extends CustomTypeProcessor {
   private regex: RegExp;
   private replacementPrefix: string;
-  protected abstract reviveCore(value: string): any;
+  protected abstract reviveCore(value: string): unknown;
 
   protected constructor(regex: string) {
     super();
@@ -30,13 +30,13 @@ abstract class RegexCustomTypeProcessor extends CustomTypeProcessor {
     return json.replace(this.regex, `"${this.replacementPrefix}$1"`);
   }
 
-  public canRevive(value: any): boolean {
+  public canRevive(value: unknown): boolean {
     return (
       typeof value === 'string' && value.startsWith(this.replacementPrefix)
     );
   }
 
-  public revive(value: string): any {
+  public revive(value: string): unknown {
     return this.reviveCore(value.replace(this.replacementPrefix, ''));
   }
 }
@@ -86,7 +86,7 @@ class ObjectIdProcessor extends RegexCustomTypeProcessor {
     super('\\bObjectId\\(\\s*"([^"]*)"\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     return new BSON.ObjectId(value);
   }
 }
@@ -96,7 +96,7 @@ class UUIDProcessor extends RegexCustomTypeProcessor {
     super('\\bUUID\\(\\s*"([^"]*)"\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     return new BSON.UUID(value);
   }
 }
@@ -106,7 +106,7 @@ class NumberDecimalProcessor extends RegexCustomTypeProcessor {
     super('\\b(?:NumberDecimal|Decimal128)\\(\\s*"?([^"]*)"?\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     return new BSON.Decimal128(value);
   }
 }
@@ -116,7 +116,7 @@ class UndefinedProcessor extends RegexCustomTypeProcessor {
     super('\\bundefined\\b');
   }
 
-  public reviveCore(_: string): any {
+  public reviveCore(): unknown {
     return undefined;
   }
 }
@@ -126,7 +126,7 @@ class NullProcessor extends RegexCustomTypeProcessor {
     super('\\bnull\\b');
   }
 
-  public reviveCore(_: string): any {
+  public reviveCore(): unknown {
     return null;
   }
 }
@@ -140,13 +140,13 @@ class BinDataProcessor extends CustomTypeProcessor {
     return json.replace(this.regex, `"${this.replacementPrefix}$1-$2"`);
   }
 
-  public canRevive(value: any): boolean {
+  public canRevive(value: unknown): boolean {
     return (
       typeof value === 'string' && value.startsWith(this.replacementPrefix)
     );
   }
 
-  public revive(value: string): any {
+  public revive(value: string): unknown {
     const match = /(?<subType>\d)-(?<base64>.*)/.exec(
       value.replace(this.replacementPrefix, ''),
     );
@@ -165,17 +165,17 @@ class NumberIntProcessor extends RegexCustomTypeProcessor {
     super('\\b(?:NumberInt|Int32)\\(\\s*"?(\\d*)\\"?\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     return new BSON.Int32(value);
   }
 }
 
 class NumberLongProcessor extends RegexCustomTypeProcessor {
   constructor() {
-    super('\\bNumberLong\\(\\s*"?([\\d\.]*)"?\\s*\\)');
+    super('\\bNumberLong\\(\\s*"?([\\d.]*)"?\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     return new BSON.Long(value);
   }
 }
@@ -185,7 +185,7 @@ class TimestampProcessor extends RegexCustomTypeProcessor {
     super('\\bTimestamp\\(\\s*(\\d*,\\s*\\d*)\\s*\\)');
   }
 
-  public reviveCore(value: string): any {
+  public reviveCore(value: string): unknown {
     const match = /(?<t>\d*),\s(?<i>\d*)/.exec(value);
 
     if (match && match.groups) {
@@ -207,7 +207,7 @@ export class DocsCrawler {
 
   private virtualConsole: VirtualConsole;
 
-  private fuzzyParse(json: string): any[] | undefined {
+  private fuzzyParse(json: string): unknown[] | undefined {
     try {
       const result = JSON5.parse(json);
       if (Array.isArray(result)) {
@@ -274,6 +274,7 @@ export class DocsCrawler {
         return [result];
       }
 
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`Unexpected json output: ${result}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);

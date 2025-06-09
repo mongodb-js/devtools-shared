@@ -1,22 +1,23 @@
 import path from 'path';
-import { GeneratorBase, YamlFiles } from '../generator';
+import type { YamlFiles } from '../generator';
+import { GeneratorBase } from '../generator';
 import * as fs from 'fs/promises';
 import { Operator } from '../metaschema';
 import { capitalize, removeNewlines } from '../utils';
-import {
+import type {
   SimplifiedSchema,
   SimplifiedSchemaType,
   SimplifiedSchemaBaseType,
 } from 'mongodb-schema';
-import { unsupportedAggregations } from './unsupportedAggregations';
+import { unsupportedAggregations } from './unsupported-aggregations';
 import * as bson from 'bson';
 
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
+type SchemaBSONType = SimplifiedSchemaBaseType['bsonType'] | 'Long' | 'Number';
+
 export class TestGenerator extends GeneratorBase {
-  private schemaBsonTypeToTS(
-    type: SimplifiedSchemaBaseType['bsonType'],
-  ): string {
+  private schemaBsonTypeToTS(type: SchemaBSONType): string {
     switch (type) {
       case 'Binary':
         return 'bson.Binary';
@@ -34,7 +35,7 @@ export class TestGenerator extends GeneratorBase {
         return 'bson.Double | number';
       case 'Int32':
         return 'bson.Int32 | number';
-      case 'Long' as any:
+      case 'Long':
       case 'Int64':
         return 'bson.Long';
       case 'MaxKey':
@@ -55,7 +56,7 @@ export class TestGenerator extends GeneratorBase {
         return `bson.Timestamp`;
       case 'Undefined':
         return `undefined`;
-      case 'Number' as any:
+      case 'Number':
         return 'number';
       default:
         throw new Error(`Unknown BSON type: ${type}`);
@@ -86,9 +87,9 @@ export class TestGenerator extends GeneratorBase {
     return result;
   }
 
-  private stageToTS(stage: any): string {
+  private stageToTS(stage: unknown): string {
     switch (typeof stage) {
-      case 'object':
+      case 'object': {
         if (stage === null) {
           return 'null';
         }
@@ -119,6 +120,7 @@ export class TestGenerator extends GeneratorBase {
         }
         result += '}';
         return result;
+      }
       case 'undefined':
         return 'undefined';
       default:
@@ -126,11 +128,11 @@ export class TestGenerator extends GeneratorBase {
     }
   }
 
-  private async emitTestBody(
+  private emitTestBody(
     category: string,
     operator: string,
     test: TestType,
-  ): Promise<void> {
+  ): void {
     if (!test.pipeline) {
       this.emit(`// TODO: No pipeline found for ${operator}.${test.name}\n`);
       return;
@@ -158,7 +160,7 @@ export class TestGenerator extends GeneratorBase {
       // Some pipelines project to new types, which is not supported by the static type system.
       // In this case, we typecast to any to suppress the type error.
       const unsupportedStage =
-        unsupportedAggregations[category]?.[operator]?.[test.name!];
+        unsupportedAggregations[category]?.[operator]?.[test.name];
       const isUnsupportedStage =
         unsupportedStage && i >= unsupportedStage.stage;
 
@@ -200,7 +202,7 @@ export class TestGenerator extends GeneratorBase {
         'tests',
         file.category,
       );
-      fs.mkdir(basePath, { recursive: true });
+      await fs.mkdir(basePath, { recursive: true });
 
       for await (const operator of file.operators()) {
         const parsed = Operator.parse(operator.yaml);
@@ -210,7 +212,12 @@ export class TestGenerator extends GeneratorBase {
         const filePath = path.join(basePath, `${operatorName}.spec.ts`);
         this.emitToFile(filePath);
 
-        this.emit("import * as schema from '../../out/schema';\n");
+        this.emit('/* eslint-disable @typescript-eslint/no-unused-vars */\n');
+        this.emit('/* eslint-disable filename-rules/match */\n');
+        this.emit(
+          '/* eslint-disable @typescript-eslint/consistent-type-imports */\n',
+        );
+        this.emit("import type * as schema from '../../out/schema';\n");
         this.emit("import * as bson from 'bson';\n\n");
 
         let i = 0;
@@ -219,9 +226,10 @@ export class TestGenerator extends GeneratorBase {
             test.name ?? `Test ${namespace}.${parsed.name}`,
             test.link,
           );
+
           this.emit(`function test${i++}() {\n`);
 
-          await this.emitTestBody(file.category, operatorName, test);
+          this.emitTestBody(file.category, operatorName, test);
 
           this.emit('}\n\n');
         }

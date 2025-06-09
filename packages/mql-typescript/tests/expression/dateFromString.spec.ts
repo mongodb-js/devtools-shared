@@ -1,4 +1,7 @@
-import * as schema from '../../out/schema';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable filename-rules/match */
+/* eslint-disable @typescript-eslint/consistent-type-imports */
+import type * as schema from '../../out/schema';
 import * as bson from 'bson';
 
 /**
@@ -71,7 +74,7 @@ function test2() {
           $dateFromString: {
             dateString: '$date',
             timezone: '$timezone',
-            onNull: {},
+            onNull: new Date('1970-01-01T00:00:00.000Z'),
           },
         },
       },
