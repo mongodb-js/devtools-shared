@@ -1,3 +1,4 @@
+import type { WriteStream } from 'fs';
 import { createWriteStream } from 'fs';
 import { StringWriter } from './utils';
 import path from 'path';
@@ -29,7 +30,7 @@ class BsonDate extends Date {
 
 export abstract class GeneratorBase {
   private outputBuffer: StringWriter | undefined;
-  private outputStream?: NodeJS.WritableStream;
+  private outputStream?: WriteStream;
 
   constructor() {
     // The default YAML schema will represent BsonDate using the Date representation because
@@ -232,8 +233,26 @@ export abstract class GeneratorBase {
     }
   }
 
-  protected emitToFile(filePath: string): void {
+  protected async emitToFile(filePath: string): Promise<void> {
+    await this.flushFile();
+
     this.outputStream = createWriteStream(filePath, { encoding: 'utf8' });
+  }
+
+  private flushFile(): Promise<void> {
+    if (this.outputStream) {
+      return new Promise((resolve, reject) => {
+        this.outputStream?.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    }
+
+    return Promise.resolve();
   }
 
   protected emit(str: string): void {
@@ -275,7 +294,7 @@ export abstract class GeneratorBase {
 
   protected abstract generateImpl(iterable: YamlFiles): Promise<void>;
 
-  public generate(
+  public async generate(
     categoryFilter?: string,
     operatorFilter?: string,
   ): Promise<void> {
@@ -287,6 +306,8 @@ export abstract class GeneratorBase {
       : undefined;
 
     const files = this.listSourceYAMLFiles(categoryRegex, operatorRegex);
-    return this.generateImpl(files);
+    await this.generateImpl(files);
+
+    await this.flushFile();
   }
 }

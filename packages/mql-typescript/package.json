@@ -47,7 +47,7 @@
     "reformat": "npm run prettier -- --write .",
     "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
     "pregenerate-schema": "npm run extract-metaschema",
-    "generate-schema": "ts-node src/cli.ts schema && npm run prettier -- --write out/schema.ts",
+    "generate-schema": "ts-node src/cli.ts schema && npm run prettier -- --write out/*",
     "pregenerate-tests": "npm run extract-metaschema",
     "generate-tests": "ts-node src/cli.ts tests && npm run prettier -- --write tests/**/*.ts",
     "pregenerate-driver-schema": "npm run extract-metaschema",
