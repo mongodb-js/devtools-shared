@@ -119,9 +119,12 @@ export class SchemaGenerator extends GeneratorBase {
       'FieldExpression<S>',
       'FieldPath<S>[]',
     ],
-    expressionMap_S: [`{ [k: string]: ${this.toTypeName('Expression<S>')} }`],
+    expressionMap_S: [
+      `{ [k: string]: ${this.toTypeName('Expression<S>')} | ${this.toTypeName('ExpressionMap<S>')} }`,
+    ],
     stage_S: [this.toTypeName('StageOperator<S>')],
     pipeline_S: [this.toTypeName('stage<S>[]')],
+    untypedPipeline: [this.toTypeName('Pipeline<any>')],
     query_S: [
       this.toTypeName('QueryOperator<S>'),
       'Partial<{ [k in keyof S]: Condition<S[k]> }>',
@@ -266,8 +269,8 @@ export class SchemaGenerator extends GeneratorBase {
         T extends ReadonlyArray<infer U> ? T | RegExpOrString<U> : RegExpOrString<T>;
       type RegExpOrString<T> = T extends string ? Regex | T : T;
       type KeysOfAType<T, Type> = {
-        [k in keyof T]: NonNullable<T[k]> extends Type ? k : never;
-      }[keyof T];
+        [k in keyof T]: Extract<T[k], Type> extends never ? never : k;
+      }[keyof T]
       type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
         [key: string]: TValue | T[keyof T];
       };
@@ -293,6 +296,7 @@ export class SchemaGenerator extends GeneratorBase {
 
     if (this.typeMappings[`${type}_S`]) {
       let genericArg = 'S';
+
       if (syntheticVariables) {
         // If we have synthetic variables for this argument, we need to construct a temporary type and merge it with S
         const syntheticFields = syntheticVariables

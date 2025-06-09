@@ -1619,6 +1619,9 @@ const staticSchemas: SchemaMap = {
     searchMeta: mflixMoviesSchema,
     shardedDataDistribution: dummySchema,
     skip: dummySchema,
+    vectorSearch: {
+      'ANN Filter': mflixMoviesSchema,
+    },
   },
 };
 

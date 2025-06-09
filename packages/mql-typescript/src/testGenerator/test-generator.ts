@@ -183,16 +183,6 @@ export class TestGenerator extends GeneratorBase {
 
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
-      if (
-        file.category !== 'query' &&
-        file.category !== 'expression' &&
-        file.category !== 'accumulator' &&
-        file.category !== 'search'
-      ) {
-        // TODO: enable for others
-        continue;
-      }
-
       const namespace = `${capitalize(file.category)}Operators`;
 
       const basePath = path.resolve(

@@ -179,4 +179,90 @@ export const unsupportedAggregations: {
       },
     },
   },
+  stage: {
+    addFields: {
+      'Using Two $addFields Stages': {
+        stage: 1,
+      },
+    },
+    bucket: {
+      'Bucket by Year and Filter by Bucket Results': {
+        stage: 1,
+        comment:
+          'the output field of the $bucket stage generates new fields that are not available statically',
+      },
+    },
+    currentOp: {
+      'Inactive Sessions': {
+        stage: 1,
+        comment:
+          '$currentOp emits new fields that are not available statically',
+      },
+      'Sampled Queries': {
+        stage: 1,
+        comment:
+          '$currentOp emits new fields that are not available statically',
+      },
+    },
+    group: {
+      'Group by Item Having': {
+        stage: 1,
+      },
+      'Group Documents by author': {
+        stage: 1,
+      },
+    },
+    planCacheStats: {
+      'Find Cache Entry Details for a Query Hash': {
+        stage: 1,
+        comment:
+          '$planCacheStats emits new fields that are not available statically',
+      },
+    },
+    replaceRoot: {
+      'with a Document Nested in an Array': {
+        stage: 1,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    replaceWith: {
+      'a Document Nested in an Array': {
+        stage: 1,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    search: {
+      Example: {
+        stage: 3,
+        comment:
+          '$search emits new fields that are not available statically, such as $$SEARCH_META',
+      },
+      'Number Search and Sort': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      'Return Stored Source Fields': {
+        stage: 1,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    set: {
+      'Using Two $set Stages': {
+        stage: 1,
+        comment: 'second $set stage references fields created in the first',
+      },
+    },
+    unset: {
+      'Remove Embedded Fields': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    unwind: {
+      'Unwind Embedded Arrays': {
+        stage: 1,
+        comment: nestedFieldsExplanation,
+      },
+    },
+  },
 };

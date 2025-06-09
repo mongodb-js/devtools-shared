@@ -11,7 +11,7 @@ type AlternativeType<T> =
   T extends ReadonlyArray<infer U> ? T | RegExpOrString<U> : RegExpOrString<T>;
 type RegExpOrString<T> = T extends string ? Regex | T : T;
 type KeysOfAType<T, Type> = {
-  [k in keyof T]: NonNullable<T[k]> extends Type ? k : never;
+  [k in keyof T]: Extract<T[k], Type> extends never ? never : k;
 }[keyof T];
 type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
   [key: string]: TValue | T[keyof T];
@@ -4944,7 +4944,7 @@ export namespace Aggregation.Stage {
        * The pipeline cannot include the $out stage or the $merge stage. Starting in v6.0, the pipeline can contain the Atlas Search $search stage as the first stage inside the pipeline.
        * The pipeline cannot directly access the joined document fields. Instead, define variables for the joined document fields using the let option and then reference the variables in the pipeline stages.
        */
-      pipeline?: Pipeline<S>;
+      pipeline?: UntypedPipeline;
 
       /**
        * Specifies the name of the new array field to add to the input documents. The new array field contains the matching documents from the from collection. If the specified name already exists in the input document, the existing field is overwritten.
@@ -4994,7 +4994,7 @@ export namespace Aggregation.Stage {
       /**
        * The behavior of $merge if a result document and an existing document in the collection have the same value for the specified on field(s).
        */
-      whenMatched?: WhenMatched | Pipeline<S>;
+      whenMatched?: WhenMatched | UntypedPipeline;
 
       /**
        * The behavior of $merge if a result document does not match an existing document in the out collection.
@@ -5036,7 +5036,9 @@ export namespace Aggregation.Stage {
      * Reshapes each document in the stream, such as by adding new fields or removing existing fields. For each input document, outputs one document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/}
      */
-    $project: {} & { [specification: string]: Expression<S> };
+    $project: {} & {
+      [specification: string]: Expression<S> | ExpressionMap<S>;
+    };
   }
 
   /**
@@ -5292,7 +5294,7 @@ export namespace Aggregation.Stage {
        * An aggregation pipeline to apply to the specified coll.
        * The pipeline cannot include the $out and $merge stages. Starting in v6.0, the pipeline can contain the Atlas Search $search stage as the first stage inside the pipeline.
        */
-      pipeline?: Pipeline<S>;
+      pipeline?: UntypedPipeline;
     };
   }
 
@@ -5452,7 +5454,9 @@ export type Expression<S> =
   | BsonPrimitive
   | FieldExpression<S>
   | FieldPath<S>[];
-export type ExpressionMap<S> = { [k: string]: Expression<S> };
+export type ExpressionMap<S> = {
+  [k: string]: Expression<S> | ExpressionMap<S>;
+};
 export type Stage<S> =
   | StageOperator<S>
   | Aggregation.Stage.$addFields<S>
@@ -5499,6 +5503,7 @@ export type Stage<S> =
   | Aggregation.Stage.$unwind<S>
   | Aggregation.Stage.$vectorSearch<S>;
 export type Pipeline<S> = Stage<S>[];
+export type UntypedPipeline = Pipeline<any>;
 export type Query<S> =
   | QueryOperator<S>
   | Partial<{ [k in keyof S]: Condition<S[k]> }>

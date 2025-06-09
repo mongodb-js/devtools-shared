@@ -48,6 +48,7 @@ export const Operator = z
                 'query',
                 'fieldQuery',
                 'pipeline',
+                'untypedPipeline',
                 'window',
                 'expression',
                 'expressionMap',
