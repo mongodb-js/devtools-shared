@@ -210,7 +210,7 @@ export class TestGenerator extends GeneratorBase {
         const operatorName = parsed.name.replace(/^\$/, '');
 
         const filePath = path.join(basePath, `${operatorName}.spec.ts`);
-        this.emitToFile(filePath);
+        await this.emitToFile(filePath);
 
         this.emit('/* eslint-disable @typescript-eslint/no-unused-vars */\n');
         this.emit('/* eslint-disable filename-rules/match */\n');
