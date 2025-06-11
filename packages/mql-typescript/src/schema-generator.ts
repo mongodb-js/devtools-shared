@@ -3,7 +3,6 @@ import type { YamlFiles } from './generator';
 import { GeneratorBase } from './generator';
 import { Operator } from './metaschema';
 import { capitalize } from './utils';
-import * as fs from 'fs/promises';
 
 type ArgType = NonNullable<
   typeof Operator._type.arguments
@@ -14,12 +13,11 @@ type SyntheticVariables = NonNullable<
 >[number]['syntheticVariables'];
 
 export class SchemaGenerator extends GeneratorBase {
-  private schemaOutputFile = path.resolve(__dirname, '..', 'out', 'schema.ts');
-  private schemaExportFile = path.resolve(
+  private schemaOutputFile = path.resolve(
     __dirname,
     '..',
     'out',
-    'schema-export.js',
+    'schema.d.ts',
   );
 
   private toTypeName(type: string): string {
@@ -579,19 +577,5 @@ export class SchemaGenerator extends GeneratorBase {
         } = ${[...new Set(interfaces)].join('|')};`,
       );
     }
-
-    // Generate the schema-export.js which will be used by the autocomplete package to load the types
-    // Switch to the new file that will just export the types as a giant string:
-    // exports.schema = "** contents of the out/schema.ts file **";
-    await this.emitToFile(this.schemaExportFile);
-    const schemaDefinition = await fs.readFile(this.schemaOutputFile, 'utf8');
-    this.emit("exports.schema = '");
-    this.emit(
-      schemaDefinition
-        .replace(/\\/g, '\\\\') // Escape backslashes
-        .replace(/'/g, "\\'") // Escape double quotes
-        .replace(/\n/g, '\\n'), // Escape newlines
-    );
-    this.emit("'\n");
   }
 }

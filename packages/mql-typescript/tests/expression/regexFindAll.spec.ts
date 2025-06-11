@@ -87,7 +87,7 @@ function test2() {
           $regexFindAll: {
             input: '$comment',
             regex: new bson.BSONRegExp(
-              '[a-z0-9_.+-]+@[a-z0-9_.+-]+\.[a-z0-9_.+-]+',
+              '[a-z0-9_.+-]+@[a-z0-9_.+-]+\\.[a-z0-9_.+-]+',
               'i',
             ),
           },
@@ -115,7 +115,7 @@ function test3() {
           $regexFindAll: {
             input: '$comment',
             regex: new bson.BSONRegExp(
-              '([a-z0-9_.+-]+)@[a-z0-9_.+-]+\.[a-z0-9_.+-]+',
+              '([a-z0-9_.+-]+)@[a-z0-9_.+-]+\\.[a-z0-9_.+-]+',
               'i',
             ),
           },
