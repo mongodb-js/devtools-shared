@@ -291,15 +291,11 @@ describe('mongodb-query-parser', function () {
       });
 
       it('should support NumberInt', function () {
-        assert.deepEqual(convert('NumberInt("1234567890")'), {
-          $numberInt: '1234567890',
-        });
+        assert.deepEqual(convert('NumberInt("1234567890")'), 1234567890);
       });
 
       it('should support NumberInt with number', function () {
-        assert.deepEqual(convert('NumberInt(1234567890)'), {
-          $numberInt: '1234567890',
-        });
+        assert.deepEqual(convert('NumberInt(1234567890)'), 1234567890);
       });
 
       it('should support NumberDecimal', function () {
