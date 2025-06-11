@@ -16,7 +16,7 @@ function test0() {
   };
 
   const aggregation: schema.Pipeline<products> = [
-    { $match: { sku: { $regex: { pattern: '789$', options: '' } } } },
+    { $match: { sku: { $regex: new bson.BSONRegExp('789$', '') } } },
   ];
 }
 
@@ -32,6 +32,6 @@ function test1() {
   };
 
   const aggregation: schema.Pipeline<products> = [
-    { $match: { sku: { $regex: { pattern: '^ABC', options: 'i' } } } },
+    { $match: { sku: { $regex: new bson.BSONRegExp('^ABC', 'i') } } },
   ];
 }

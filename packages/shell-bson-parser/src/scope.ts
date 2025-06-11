@@ -60,14 +60,7 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     return bson.Decimal128.fromString(s);
   },
   NumberDecimal: function (s: any) {
-    switch (typeof s) {
-      case 'string':
-        return bson.Decimal128.fromString(s);
-      case 'number':
-        return bson.Decimal128.fromString(s.toString());
-      default:
-        throw new Error(`${JSON.stringify(s)} is not a valid Decimal128`);
-    }
+    return bson.Decimal128.fromString(s);
   },
   Double: function (s: any) {
     return new bson.Double(s);

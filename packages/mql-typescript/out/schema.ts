@@ -5389,14 +5389,11 @@ export namespace Aggregation.Stage {
   }
 }
 
-export type Int = number | bson.Int32 | { $numberInt: string };
-export type Double = number | bson.Double | { $numberDouble: string };
-export type Decimal = bson.Decimal128 | { $numberDecimal: string };
-export type Regex =
-  | RegExp
-  | bson.BSONRegExp
-  | { pattern: string; options?: string };
-export type Long = bigint | bson.Long | { $numberLong: string };
+export type Int = number | bson.Int32;
+export type Double = number | bson.Double;
+export type Decimal = bson.Decimal128;
+export type Regex = RegExp | bson.BSONRegExp;
+export type Long = bigint | bson.Long;
 export type Javascript = bson.Code | Function | string;
 export type Geometry<S> =
   | { type: 'Point'; coordinates: number[] }

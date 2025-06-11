@@ -36,6 +36,6 @@ function test1() {
   };
 
   const aggregation: schema.Pipeline<inventory> = [
-    { $match: { price: { $not: { pattern: '^p.*', options: '' } } } },
+    { $match: { price: { $not: new bson.BSONRegExp('^p.*', '') } } },
   ];
 }

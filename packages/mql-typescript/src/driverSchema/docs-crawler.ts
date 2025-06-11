@@ -29,6 +29,14 @@ export class DocsCrawler {
     // Insert commas between array elements
     json = json.replace(/\}\s*\{/g, '},{');
 
+    // There are a few cases in the docs examples where we construct a NumberDecimal
+    // from a js number rather than a string, which is deprecated (due to being imprecise).
+    // See https://jira.mongodb.org/browse/DOCSP-50657
+    json = json.replace(
+      /NumberDecimal\((?<number>[\d.]*)\)/g,
+      'NumberDecimal("$<number>")',
+    );
+
     try {
       let result = parse(json, { mode: ParseMode.Loose });
 

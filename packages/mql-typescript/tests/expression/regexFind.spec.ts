@@ -20,7 +20,7 @@ function test0() {
         returnObject: {
           $regexFind: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
           },
         },
       },
@@ -44,7 +44,7 @@ function test1() {
         returnObject: {
           $regexFind: {
             input: '$description',
-            regex: { pattern: 'line', options: 'i' },
+            regex: new bson.BSONRegExp('line', 'i'),
           },
         },
       },
@@ -61,7 +61,7 @@ function test1() {
         returnObject: {
           $regexFind: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
             options: 'i',
           },
         },

@@ -26,7 +26,7 @@ function test0() {
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).
      */
-    { $match: { city_state: { pattern: '[A-Z]{2}', options: '' } } } as any,
+    { $match: { city_state: new bson.BSONRegExp('[A-Z]{2}', '') } } as any,
 
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).

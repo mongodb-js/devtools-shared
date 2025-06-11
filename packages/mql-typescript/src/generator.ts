@@ -171,6 +171,24 @@ export abstract class GeneratorBase {
           );
         },
       }),
+      new yaml.Type('!bson_int64', {
+        kind: 'scalar',
+        construct(data: string) {
+          return bson.Long.fromString(data);
+        },
+        predicate(data) {
+          return data instanceof bson.Long;
+        },
+        represent(data) {
+          if (data instanceof bson.Long) {
+            return data.toString();
+          }
+
+          throw new Error(
+            `Expected bson.Long, but got ${data.constructor.name}`,
+          );
+        },
+      }),
     ]),
   };
 

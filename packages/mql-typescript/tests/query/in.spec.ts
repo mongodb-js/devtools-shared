@@ -35,10 +35,7 @@ function test1() {
     {
       $match: {
         tags: {
-          $in: [
-            { pattern: '^be', options: '' },
-            { pattern: '^st', options: '' },
-          ],
+          $in: [new bson.BSONRegExp('^be', ''), new bson.BSONRegExp('^st', '')],
         },
       },
     },

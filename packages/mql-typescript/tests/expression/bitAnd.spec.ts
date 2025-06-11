@@ -32,6 +32,6 @@ function test1() {
   };
 
   const aggregation: schema.Pipeline<switches> = [
-    { $project: { result: { $bitAnd: ['$a', { $numberLong: '63' }] } } },
+    { $project: { result: { $bitAnd: ['$a', new bson.Long('63')] } } },
   ];
 }

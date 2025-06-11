@@ -106,8 +106,16 @@ export class TestGenerator extends GeneratorBase {
           return `bson.ObjectId.createFromHexString('${stage.toHexString()}')`;
         }
 
+        if (stage instanceof bson.Long) {
+          return `new bson.Long('${stage.toString()}')`;
+        }
+
         if (stage instanceof Date) {
           return `new Date('${stage.toISOString()}')`;
+        }
+
+        if (stage instanceof bson.BSONRegExp) {
+          return `new bson.BSONRegExp('${stage.pattern}', '${stage.options}')`;
         }
 
         if ('$code' in stage && typeof stage.$code === 'string') {

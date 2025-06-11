@@ -20,7 +20,7 @@ function test0() {
         returnObject: {
           $regexFindAll: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
           },
         },
       },
@@ -44,7 +44,7 @@ function test1() {
         returnObject: {
           $regexFindAll: {
             input: '$description',
-            regex: { pattern: 'line', options: 'i' },
+            regex: new bson.BSONRegExp('line', 'i'),
           },
         },
       },
@@ -61,7 +61,7 @@ function test1() {
         returnObject: {
           $regexFindAll: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
             options: 'i',
           },
         },
@@ -86,10 +86,10 @@ function test2() {
         email: {
           $regexFindAll: {
             input: '$comment',
-            regex: {
-              pattern: '[a-z0-9_.+-]+@[a-z0-9_.+-]+\\.[a-z0-9_.+-]+',
-              options: 'i',
-            },
+            regex: new bson.BSONRegExp(
+              '[a-z0-9_.+-]+@[a-z0-9_.+-]+\.[a-z0-9_.+-]+',
+              'i',
+            ),
           },
         },
       },
@@ -114,10 +114,10 @@ function test3() {
         names: {
           $regexFindAll: {
             input: '$comment',
-            regex: {
-              pattern: '([a-z0-9_.+-]+)@[a-z0-9_.+-]+\\.[a-z0-9_.+-]+',
-              options: 'i',
-            },
+            regex: new bson.BSONRegExp(
+              '([a-z0-9_.+-]+)@[a-z0-9_.+-]+\.[a-z0-9_.+-]+',
+              'i',
+            ),
           },
         },
       },

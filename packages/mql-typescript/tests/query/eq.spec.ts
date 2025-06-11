@@ -80,7 +80,7 @@ function test3() {
   const aggregation: schema.Pipeline<companies> = [
     { $match: { company: 'MongoDB' } },
     { $match: { company: { $eq: 'MongoDB' } } },
-    { $match: { company: { pattern: '^MongoDB', options: '' } } },
-    { $match: { company: { $eq: { pattern: '^MongoDB', options: '' } } } },
+    { $match: { company: new bson.BSONRegExp('^MongoDB', '') } },
+    { $match: { company: { $eq: new bson.BSONRegExp('^MongoDB', '') } } },
   ];
 }

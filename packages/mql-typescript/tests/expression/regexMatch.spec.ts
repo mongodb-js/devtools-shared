@@ -20,7 +20,7 @@ function test0() {
         result: {
           $regexMatch: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
           },
         },
       },
@@ -44,7 +44,7 @@ function test1() {
         result: {
           $regexMatch: {
             input: '$description',
-            regex: { pattern: 'line', options: 'i' },
+            regex: new bson.BSONRegExp('line', 'i'),
           },
         },
       },
@@ -61,7 +61,7 @@ function test1() {
         result: {
           $regexMatch: {
             input: '$description',
-            regex: { pattern: 'line', options: '' },
+            regex: new bson.BSONRegExp('line', ''),
             options: 'i',
           },
         },
@@ -88,7 +88,7 @@ function test2() {
             if: {
               $regexMatch: {
                 input: '$comment',
-                regex: { pattern: '[a-z0-9_.+-]+@mongodb.com', options: 'i' },
+                regex: new bson.BSONRegExp('[a-z0-9_.+-]+@mongodb.com', 'i'),
               },
             },
             then: 'Employee',
