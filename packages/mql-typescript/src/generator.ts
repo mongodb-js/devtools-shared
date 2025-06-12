@@ -5,6 +5,7 @@ import path from 'path';
 import * as fs from 'fs/promises';
 import * as yaml from 'js-yaml';
 import * as bson from 'bson';
+import { once } from 'events';
 
 export type YamlFiles = ReturnType<GeneratorBase['listSourceYAMLFiles']>;
 
@@ -257,20 +258,11 @@ export abstract class GeneratorBase {
     this.outputStream = createWriteStream(filePath, { encoding: 'utf8' });
   }
 
-  private flushFile(): Promise<void> {
+  private async flushFile(): Promise<void> {
     if (this.outputStream) {
-      return new Promise((resolve, reject) => {
-        this.outputStream?.close((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      });
+      this.outputStream.end();
+      await once(this.outputStream, 'close');
     }
-
-    return Promise.resolve();
   }
 
   protected emit(str: string): void {
