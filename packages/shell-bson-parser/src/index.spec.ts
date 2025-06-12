@@ -98,7 +98,7 @@ describe('@mongodb-js/shell-bson-parser', function () {
       NumberDecimal: bson.Decimal128.fromString('12345'),
       Double: new bson.Double(10.1),
       Int32: new bson.Int32(10),
-      NumberInt: 100,
+      NumberInt: new bson.Int32(100),
       Long: new bson.Long(234, 200),
       NumberLong: bson.Long.fromNumber(123456789),
       Int64: bson.Long.fromNumber(120),

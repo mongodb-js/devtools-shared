@@ -69,7 +69,7 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     return new bson.Int32(i);
   },
   NumberInt: function (s: any) {
-    return parseInt(s, 10);
+    return new bson.Int32(s);
   },
   Long: function (low: any, high: any) {
     return new bson.Long(low, high);

@@ -5,15 +5,35 @@ import path from 'path';
 import pkgUp from 'pkg-up';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
+import * as fs from 'fs/promises';
 const execFileAsync = promisify(execFile);
 
 const monorepoRoot = path.resolve(__dirname, '..', '..');
+const repoRoot = path.resolve(monorepoRoot, '..');
 
 async function main(fileList: string[]) {
   const filesToPrettify: string[] = [];
 
+  const submodules = [
+    ...(
+      await fs.readFile(path.resolve(repoRoot, '.gitmodules'), {
+        encoding: 'utf8',
+      })
+    ).matchAll(/^\s+path = (?<submodulePath>.*)$/gm),
+  ]
+    .map((r) => r.groups?.submodulePath)
+    .filter((p) => p)
+    .map((p) => path.resolve(repoRoot, p!));
+
   await Promise.all(
     fileList.map(async (filePath) => {
+      if (
+        submodules.some((submodulePath) => filePath.startsWith(submodulePath))
+      ) {
+        console.log(`Skipping submodule ${filePath}`);
+        return;
+      }
+
       const packageJsonPath = await pkgUp({ cwd: path.dirname(filePath) });
 
       if (!packageJsonPath) {
