@@ -73,7 +73,7 @@ export function findAllProdDepsTreeLocations(from = process.cwd()): string[] {
       ...Object.keys(optionalDependencies),
     ].forEach((dep) => {
       try {
-        const depLocation = findPackageLocation(dep, from);
+        const depLocation = findPackageLocation(dep, packageLocation);
 
         if (depLocation) {
           allLocations.add(depLocation);

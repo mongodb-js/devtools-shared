@@ -185,6 +185,7 @@ describe('WebpackDependenciesPlugin', function () {
         version: '0.1.0',
         dependencies: {
           pkg2: '^0.1.0',
+          pkg4: '^1.2.3',
         },
       }),
       'node_modules/pkg1/index.js': '',
@@ -206,6 +207,16 @@ describe('WebpackDependenciesPlugin', function () {
         version: '0.1.0',
       }),
       'node_modules/pkg3/index.js': '',
+      'node_modules/pkg4/package.json': JSON.stringify({
+        name: 'pkg4',
+        version: '1.2.4', // should be ignored in favor of nested one
+      }),
+      'node_modules/pkg4/index.js': '',
+      'node_modules/pkg1/node_modules/pkg4/package.json': JSON.stringify({
+        name: 'pkg4',
+        version: '1.2.5',
+      }),
+      'node_modules/pkg1/node_modules/pkg4/index.js': '',
     };
 
     const dependencies = await runPlugin(structure, {
@@ -232,6 +243,11 @@ describe('WebpackDependenciesPlugin', function () {
         licenseFiles: [],
         name: 'pkg3',
         version: '0.1.0',
+      },
+      {
+        licenseFiles: [],
+        name: 'pkg4',
+        version: '1.2.5',
       },
     ]);
   });
