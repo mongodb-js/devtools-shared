@@ -1,6 +1,6 @@
 {
   "name": "native-machine-id",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
