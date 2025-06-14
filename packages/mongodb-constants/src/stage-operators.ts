@@ -752,6 +752,48 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$rankFusion',
+    value: '$rankFusion',
+    label: '$rankFusion',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS],
+    meta: 'stage',
+    version: '8.1.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Combines multiple pipelines using reciprocal rank fusion to create hybrid search results.',
+    comment: `/**
+ * input.pipelines: Required. Map from name to input pipeline. Each pipeline must be a Ranked Selection Pipeline operating on the same collection. Minimum of one pipeline.
+ * combination.weights: Optional. Map from pipeline name to numbers (non-negative). If unspecified, default weight is 1 for each pipeline.
+ * scoreDetails: Optional. Default false. Set to true to include detailed scoring information in {$meta: "scoreDetails"} for debugging and tuning.
+ */
+`,
+    snippet: `{
+  input: {
+    pipelines: {
+      \${1:searchPipeline}: [
+        {$search: {\${2:searchStage}}},
+        {$limit: \${3:limit}}
+      ],
+      \${4:vectorPipeline}: [
+        {$vectorSearch: {\${5:vectorSearchStage}}}
+      ]
+    }
+  },
+  combination: {
+    weights: {
+      \${1:searchPipeline}: \${6:number},
+      \${4:vectorPipeline}: \${7:number}
+    }
+  },
+  scoreDetails: \${8:false}
+}`,
+  },
+  {
     name: '$redact',
     value: '$redact',
     label: '$redact',
