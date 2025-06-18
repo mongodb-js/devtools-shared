@@ -786,11 +786,11 @@ const STAGE_OPERATORS = [
   },
   combination: {
     weights: {
-      \${1:searchPipeline}: \${6:number},
-      \${4:vectorPipeline}: \${7:number}
+      \${6:searchPipeline}: \${7:number},
+      \${8:vectorPipeline}: \${9:number}
     }
   },
-  scoreDetails: \${8:false}
+  scoreDetails: \${10:false}
 }`,
   },
   {
