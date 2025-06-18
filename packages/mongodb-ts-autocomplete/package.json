@@ -47,14 +47,6 @@
     "reformat": "npm run prettier -- --write .",
     "extract-types": "ts-node scripts/extract-types.ts"
   },
-  "peerDependencies": {
-    "@mongosh/shell-api": "^3.13.0"
-  },
-  "peerDependenciesMeta": {
-    "@mongosh/shell-api": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@mongodb-js/ts-autocomplete": "^0.3.2",
     "mongodb-schema": "^12.6.2",
