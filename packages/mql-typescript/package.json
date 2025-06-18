@@ -29,7 +29,7 @@
   "main": "dist/index.js",
   "exports": {
     "./schema": {
-      "types": "./dist/schema/schema.d.ts"
+      "types": "./out/schema.d.ts"
     }
   },
   "types": "./dist/index.d.ts",

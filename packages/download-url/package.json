@@ -23,7 +23,8 @@
   "main": "lib/index.js",
   "exports": {
     "require": "./lib/index.js",
-    "import": "./.esm-wrapper.mjs"
+    "import": "./.esm-wrapper.mjs",
+    "types": "./lib/index.d.ts"
   },
   "typings": "lib/index.d.ts",
   "bin": {
