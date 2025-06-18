@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -50,7 +50,7 @@
     "debug": "^4.4.0",
     "tar": "^6.1.15",
     "decompress": "^4.2.1",
-    "mongodb-download-url": "^1.6.0",
+    "mongodb-download-url": "^1.6.1",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
