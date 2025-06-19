@@ -20,7 +20,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "out"
   ],
   "bin": {
     "mql-typescript": "bin/runner.js"
