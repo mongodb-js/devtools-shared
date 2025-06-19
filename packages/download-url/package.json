@@ -21,12 +21,17 @@
     "reformat": "npm run prettier -- --write ."
   },
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "exports": {
-    "require": "./lib/index.js",
-    "import": "./.esm-wrapper.mjs",
-    "types": "./lib/index.d.ts"
+    "require": {
+      "default": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "import": {
+      "default": "./.esm-wrapper.mjs",
+      "types": "./lib/index.d.ts"
+    }
   },
-  "typings": "lib/index.d.ts",
   "bin": {
     "mongodb-download-url": "bin/mongodb-download-url.js"
   },

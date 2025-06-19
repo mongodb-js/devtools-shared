@@ -23,12 +23,17 @@
   ],
   "license": "Apache-2.0",
   "main": "dist/index.js",
-  "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/.esm-wrapper.mjs",
-    "types": "./dist/index.d.ts"
-  },
   "types": "./dist/index.d.ts",
+  "exports": {
+    "require": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "import": {
+      "default": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "generate-config-from-schema": "json2ts -i src/download-center-config.schema.json -o src/download-center-config.ts --bannerComment \"/* AUTO-GENERATED DO NOT EDIT. */\"",
     "pretest": "npm run generate-config-from-schema && npm run reformat",

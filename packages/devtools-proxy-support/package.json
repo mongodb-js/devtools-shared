@@ -23,19 +23,29 @@
   ],
   "license": "Apache-2.0",
   "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/.esm-wrapper.mjs",
-      "types": "./dist/index.d.ts"
+      "require": {
+        "default": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "import": {
+        "default": "./dist/.esm-wrapper.mjs",
+        "types": "./dist/index.d.ts"
+      }
     },
     "./proxy-options": {
-      "require": "./dist/proxy-options-public.js",
-      "import": "./dist/.esm-wrapper-po.mjs",
-      "types": "./dist/proxy-options-public.d.ts"
+      "require": {
+        "default": "./dist/proxy-options-public.js",
+        "types": "./dist/proxy-options-public.d.ts"
+      },
+      "import": {
+        "default": "./dist/.esm-wrapper-po.mjs",
+        "types": "./dist/proxy-options-public.d.ts"
+      }
     }
   },
-  "types": "./dist/index.d.ts",
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
