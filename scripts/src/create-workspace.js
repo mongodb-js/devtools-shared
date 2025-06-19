@@ -168,11 +168,17 @@ async function main(argv) {
     files: ['dist'],
     license: license,
     main: 'dist/index.js',
-    exports: {
-      require: './dist/index.js',
-      import: './dist/.esm-wrapper.mjs',
-    },
     types: './dist/index.d.ts',
+    exports: {
+      require: {
+        default: './dist/index.js',
+        types: './dist/index.d.ts',
+      },
+      import: {
+        default: './dist/.esm-wrapper.mjs',
+        types: './dist/index.d.ts',
+      },
+    },
     scripts: {
       bootstrap: 'npm run compile',
       prepublishOnly: 'npm run compile',
