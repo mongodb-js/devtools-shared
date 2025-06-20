@@ -51,11 +51,10 @@ class Collection<
     return this._name;
   }
   async find(
-    query?: schema.Query<Document>,
+    query?: schema.Query<C['schema']>,
     projection?: Document,
     options: Document = {},
-  ): Promise<schema.Query<Document> | undefined> {
-    //): Promise<Document | undefined> {
+  ): Promise<schema.Query<C['schema']> | undefined> {
     return Promise.resolve(query);
   }
 }
