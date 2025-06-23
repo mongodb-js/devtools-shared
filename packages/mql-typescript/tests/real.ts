@@ -20,9 +20,9 @@ class Database<D extends GenericDatabaseSchema = GenericDatabaseSchema> {
     );
     this._collections = collections;
     const proxy = new Proxy(this, {
-      get: (target, prop): any => {
+      get(target: any, prop: string): any {
         if (prop in target) {
-          return (target as any)[prop];
+          return target[prop];
         }
 
         if (typeof prop !== 'string' || prop.startsWith('_')) {
@@ -30,10 +30,8 @@ class Database<D extends GenericDatabaseSchema = GenericDatabaseSchema> {
         }
 
         if (!collections[prop]) {
-          collections[prop] = new Collection<
-            D,
-            D[typeof prop]
-          >() as CollectionWithSchema<D, D[typeof prop]>;
+          collections[prop] =
+            new Collection<D>() as unknown as CollectionWithSchema<D>;
         }
 
         return collections[prop];
@@ -45,7 +43,9 @@ class Database<D extends GenericDatabaseSchema = GenericDatabaseSchema> {
 
 type DatabaseWithSchema<
   D extends GenericDatabaseSchema = GenericDatabaseSchema,
-> = Database<D>;
+> = Database<D> & {
+  [k in StringKey<D>]: Collection<D, D[k]>;
+};
 class Collection<
   D extends GenericDatabaseSchema = GenericDatabaseSchema,
   C extends GenericCollectionSchema = GenericCollectionSchema,
@@ -59,10 +59,13 @@ type CollectionWithSchema<
   C extends GenericCollectionSchema = D[keyof D],
 > = Collection<D, C>;
 
+type dbSchema = {
+  myCollection: { schema: { name: string } };
+};
+
 async function run() {
-  const database = new Database<{
-    myCollection: { schema: { name: string } };
-  }>();
+  const database = new Database<dbSchema>() as DatabaseWithSchema<dbSchema>;
+  const coll = database.myCollection;
   console.log(await database.myCollection.find({ name: 'foo' }));
 }
 
