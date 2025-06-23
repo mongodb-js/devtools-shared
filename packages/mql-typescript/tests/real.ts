@@ -2,111 +2,38 @@
 import type * as schema from '../out/schema';
 import type { Document } from 'bson';
 
-interface GenericCollectionSchema {
-  schema: Document;
-}
+type StringKey<T> = keyof T & string;
 interface GenericDatabaseSchema {
   [key: string]: GenericCollectionSchema;
 }
-interface GenericServerSideSchema {
-  [key: string]: GenericDatabaseSchema;
-}
-type StringKey<T> = keyof T & string;
 
-class Mongo<M extends GenericServerSideSchema = GenericServerSideSchema> {}
-
-type CollectionWithSchema<
-  M extends GenericServerSideSchema = GenericServerSideSchema,
-  D extends GenericDatabaseSchema = M[keyof M],
-  C extends GenericCollectionSchema = D[keyof D],
-  N extends StringKey<D> = StringKey<D>,
-> = Collection<M, D, C, N> & {
-  [k in StringKey<D> as k extends `${N}.${infer S}` ? S : never]: Collection<
-    M,
-    D,
-    D[k],
-    k
-  >;
-};
-
-class Collection<
-  M extends GenericServerSideSchema = GenericServerSideSchema,
-  D extends GenericDatabaseSchema = M[keyof M],
-  C extends GenericCollectionSchema = D[keyof D],
-  N extends StringKey<D> = StringKey<D>,
-> {
-  _mongo: Mongo<M>;
-  _database: DatabaseWithSchema<M, D>;
-  _name: N;
-  constructor(
-    mongo: Mongo<M>,
-    database: DatabaseWithSchema<M, D> | Database<M, D>,
-    name: N,
-  ) {
-    this._mongo = mongo;
-    this._database = database as DatabaseWithSchema<M, D>;
-    this._name = name;
-  }
-  getName(): N {
-    return this._name;
-  }
-  async find(
-    query?: schema.Query<C['schema']>,
-    projection?: Document,
-    options: Document = {},
-  ): Promise<schema.Query<C['schema']> | undefined> {
-    return Promise.resolve(query);
-  }
+interface GenericCollectionSchema {
+  schema: Document;
 }
 
-type DatabaseWithSchema<
-  M extends GenericServerSideSchema = GenericServerSideSchema,
-  D extends GenericDatabaseSchema = GenericDatabaseSchema,
-> = Database<M, D> & {
-  [k in StringKey<D>]: Collection<M, D, D[k], k>;
-};
+class Database<D extends GenericDatabaseSchema = GenericDatabaseSchema> {
+  _collections: Record<StringKey<D>, CollectionWithSchema<D>>;
 
-function isValidCollectionName(name: string): boolean {
-  return !!name && !/[$\0]/.test(name);
-}
-
-export class Database<
-  M extends GenericServerSideSchema = GenericServerSideSchema,
-  D extends GenericDatabaseSchema = GenericDatabaseSchema,
-> {
-  _mongo: Mongo<M>;
-  _name: StringKey<M>;
-  _collections: Record<StringKey<D>, CollectionWithSchema<M, D>>;
-
-  constructor(mongo: Mongo<M>, name: StringKey<M>) {
-    this._mongo = mongo;
-    this._name = name;
-    const collections: Record<
-      string,
-      CollectionWithSchema<M, D>
-    > = Object.create(null);
+  constructor() {
+    const collections: Record<string, CollectionWithSchema<D>> = Object.create(
+      null,
+    );
     this._collections = collections;
-
     const proxy = new Proxy(this, {
       get: (target, prop): any => {
         if (prop in target) {
           return (target as any)[prop];
         }
 
-        if (
-          typeof prop !== 'string' ||
-          prop.startsWith('_') ||
-          !isValidCollectionName(prop)
-        ) {
+        if (typeof prop !== 'string' || prop.startsWith('_')) {
           return;
         }
 
         if (!collections[prop]) {
-          collections[prop] = new Collection<M, D>(
-            mongo,
-            proxy,
-            prop,
-          ) as CollectionWithSchema<M, D>;
+          collections[prop] = new Collection<
+            D,
+            D[typeof prop]
+          >() as CollectionWithSchema<D, D[typeof prop]>;
         }
 
         return collections[prop];
@@ -114,42 +41,29 @@ export class Database<
     });
     return proxy;
   }
-
-  getCollection<K extends StringKey<D>>(
-    coll: K,
-  ): CollectionWithSchema<M, D, D[K], K> {
-    const collection = new Collection<M, D, D['myCollection']>(
-      this._mongo,
-      this,
-      'myCollection',
-    );
-
-    return collection as CollectionWithSchema<M, D, D[K], K>;
-  }
 }
 
+type DatabaseWithSchema<
+  D extends GenericDatabaseSchema = GenericDatabaseSchema,
+> = Database<D>;
+class Collection<
+  D extends GenericDatabaseSchema = GenericDatabaseSchema,
+  C extends GenericCollectionSchema = GenericCollectionSchema,
+> {
+  find(query: schema.Query<C['schema']>): Promise<schema.Query<C['schema']>> {
+    return Promise.resolve(query);
+  }
+}
+type CollectionWithSchema<
+  D extends GenericDatabaseSchema = GenericDatabaseSchema,
+  C extends GenericCollectionSchema = D[keyof D],
+> = Collection<D, C>;
+
 async function run() {
-  const serverSchema = {
-    myDatabase: {
-      myCollection: {
-        schema: {
-          _id: 'ObjectId',
-          name: 'string',
-          age: 'number',
-        },
-      },
-    },
-  };
-  const mongo = new Mongo<typeof serverSchema>();
-  const db = new Database<
-    typeof serverSchema,
-    (typeof serverSchema)['myDatabase']
-  >(mongo, 'myDatabase') as DatabaseWithSchema<
-    typeof serverSchema,
-    (typeof serverSchema)['myDatabase']
-  >;
-  const query = await db.myCollection.find({ name: 'foo' });
-  console.log(query);
+  const database = new Database<{
+    myCollection: { schema: { name: string } };
+  }>();
+  console.log(await database.myCollection.find({ name: 'foo' }));
 }
 
 run().catch(console.error);
