@@ -148,7 +148,9 @@ export class OIDCMockProvider {
       if (req.method === 'POST') {
         // For simplicity, just merge POST parameters with GET parameters...
         if (
-          req.headers['content-type'] !== 'application/x-www-form-urlencoded'
+          !/^application\/x-www-form-urlencoded(;charset=utf-?8)?$/i.test(
+            req.headers['content-type'] ?? '',
+          )
         ) {
           throw new Error(
             'Only accepting application/x-www-form-urlencoded POST bodies',
