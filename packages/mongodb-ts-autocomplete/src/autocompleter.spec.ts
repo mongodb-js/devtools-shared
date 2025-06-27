@@ -217,4 +217,52 @@ describe('MongoDBAutocompleter', function () {
       },
     ]);
   });
+
+  describe('getConnectionSchemaCode', function () {
+    it('generates code for a connection', async function () {
+      const docs = [
+        {
+          foo: 'foo',
+          bar: 1,
+          baz: {
+            a: 1,
+            b: 'b',
+          },
+        },
+      ];
+
+      const analyzedDocuments = await analyzeDocuments(docs);
+      const schema = await analyzedDocuments.getMongoDBJsonSchema();
+
+      const connection = autocompleter.addConnection(connectionId);
+      connection.addCollectionSchema(databaseName, collectionName, schema);
+      const code = autocompleter.getConnectionSchemaCode(
+        connectionId,
+        `ServerSchema[${JSON.stringify(databaseName)}][${JSON.stringify(collectionName)}]['schema']`,
+      );
+      expect(code).to.equal(`
+import * as bson from '/bson.ts';
+import * as mql from '/mql.ts';
+
+export type ServerSchema = {
+  "my-'\\ndatabaseName": {
+    "my-'\\ncollectionName": {
+      schema: {
+        bar?: bson.Double | number;
+        baz?: {
+          a?: bson.Double | number;
+          b?: string;
+        };
+        foo?: string;
+      }
+    };
+  }
+};
+
+export type ConnectionMQLQuery = mql.Query<ServerSchema["my-'\\ndatabaseName"]["my-'\\ncollectionName"]['schema']>;
+export type ConnectionMQLPipeline = mql.Pipeline<ServerSchema["my-'\\ndatabaseName"]["my-'\\ncollectionName"]['schema']>;
+export type ConnectionMQLDocument = ServerSchema["my-'\\ndatabaseName"]["my-'\\ncollectionName"]['schema'];
+`);
+    });
+  });
 });
