@@ -1,3 +1,5 @@
+import createDebug from 'debug';
+import _ from 'lodash';
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
 import autocompleteTypes from './fixtures/autocomplete-types';
@@ -15,6 +17,8 @@ import {
 import { CachingAutocompletionContext } from './autocompletion-context';
 import type { AutocompletionContext } from './autocompletion-context';
 
+const debug = createDebug('mongodb-ts-autocomplete');
+
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
 };
@@ -26,11 +30,14 @@ class DatabaseSchema {
     this.collectionSchemas = Object.create(null);
   }
 
-  setCollectionNames(collectionNames: string[]): void {
+  setCollectionNames(collectionNames: string[]): boolean {
+    let changed = false;
+
     // add the missing ones as undefined
     for (const collectionName of collectionNames) {
       if (!this.collectionSchemas[collectionName]) {
         this.collectionSchemas[collectionName] = undefined;
+        changed = true;
       }
     }
 
@@ -39,12 +46,16 @@ class DatabaseSchema {
     for (const key of Object.keys(this.collectionSchemas)) {
       if (!knownCollectionNames.has(key)) {
         delete this.collectionSchemas[key];
+        changed = true;
       }
     }
+    return changed;
   }
 
-  setCollectionSchema(collectionName: string, schema: JSONSchema): void {
+  setCollectionSchema(collectionName: string, schema: JSONSchema): boolean {
+    const isChanged = _.isEqual(this.collectionSchemas[collectionName], schema);
     this.collectionSchemas[collectionName] = schema;
+    return isChanged;
   }
 
   toTypescriptTypeDefinition(): string {
@@ -71,24 +82,29 @@ class ConnectionSchema {
     this.databaseSchemas = Object.create(null);
   }
 
-  addDatabase(databaseName: string) {
+  addDatabase(databaseName: string): void {
     if (!this.databaseSchemas[databaseName]) {
       this.databaseSchemas[databaseName] = new DatabaseSchema();
     }
   }
 
-  setDatabaseCollectionNames(databaseName: string, collectionNames: string[]) {
+  setDatabaseCollectionNames(
+    databaseName: string,
+    collectionNames: string[],
+  ): boolean {
     this.addDatabase(databaseName);
-    this.databaseSchemas[databaseName].setCollectionNames(collectionNames);
+    return this.databaseSchemas[databaseName].setCollectionNames(
+      collectionNames,
+    );
   }
 
   addCollectionSchema(
     databaseName: string,
     collectionName: string,
     collectionSchema: JSONSchema,
-  ) {
+  ): boolean {
     this.addDatabase(databaseName);
-    this.databaseSchemas[databaseName].setCollectionSchema(
+    return this.databaseSchemas[databaseName].setCollectionSchema(
       collectionName,
       collectionSchema,
     );
@@ -154,6 +170,10 @@ export class MongoDBAutocompleter {
   private readonly context: AutocompletionContext;
   private readonly connectionSchemas: Record<string, ConnectionSchema>;
   private readonly autocompleter: Autocompleter;
+  private previousConnectionDB:
+    | { databaseName: string; connectionId: string }
+    | undefined;
+  private previousCollectionName: string | undefined;
 
   constructor({ context }: MongoDBAutocompleterOptions) {
     this.context = CachingAutocompletionContext.caching(context);
@@ -163,7 +183,6 @@ export class MongoDBAutocompleter {
 
     this.autocompleter.updateCode({
       ...autocompleteTypes,
-      '/shell-api.ts': replaceImports(ShellApiText),
     });
   }
 
@@ -174,29 +193,48 @@ export class MongoDBAutocompleter {
     return this.connectionSchemas[connectionId];
   }
 
-  getConnectionCode(connectionId: string): string {
+  getConnectionSchemaCode(connectionId: string, schemaType: string): string {
     return `
-import * as ShellAPI from '/shell-api.ts';
 import * as bson from '/bson.ts';
+import * as mql from '/mql.ts';
 
 export type ServerSchema = ${this.connectionSchemas[
       connectionId
     ].toTypescriptTypeDefinition()};
+
+export type ConnectionMQLQuery = mql.Query<${schemaType}>;
+export type ConnectionMQLPipeline = mql.Pipeline<${schemaType}>;
+export type ConnectionMQLDocument = ${schemaType};
 `;
   }
 
-  getCurrentGlobalsCode(connectionId: string, databaseName: string) {
+  getConnectionShellAPICode(connectionId: string): string {
     return `
-import * as ShellAPI from '/shell-api.ts';
-import { ServerSchema } from '/${connectionId}.ts';
+    import {ConnectionMQLQuery, ConnectionMQLPipeline, ConnectionMQLDocument} from '/${connectionId}-schema.ts';
+    ${adjustShellApiForConnection(ShellApiText as string)}
+    `;
+  }
+
+  getCurrentGlobalsCode(connectionId: string, databaseName: string): string {
+    return `
+import * as mql from '/mql.ts';
+import {
+  ServerSchema,
+} from '/${connectionId}-schema.ts';
+import {
+  DatabaseWithSchema,
+  ReplicaSet,
+  Shard,
+  Streams
+} from '/${connectionId}-shell-api.ts';
 
 type CurrentDatabaseSchema = ServerSchema[${JSON.stringify(databaseName)}];
 
 declare global {
-  const db: ShellAPI.DatabaseWithSchema<ServerSchema, CurrentDatabaseSchema>;
-  const rs: ShellAPI.ReplicaSet<ServerSchema, CurrentDatabaseSchema>;
-  const sh: ShellAPI.Shard<ServerSchema, CurrentDatabaseSchema>;
-  const sp: ShellAPI.Streams<ServerSchema, CurrentDatabaseSchema>;
+  const db: DatabaseWithSchema<ServerSchema, CurrentDatabaseSchema>;
+  const rs: ReplicaSet<ServerSchema, CurrentDatabaseSchema>;
+  const sh: Shard<ServerSchema, CurrentDatabaseSchema>;
+  const sp: Streams<ServerSchema, CurrentDatabaseSchema>;
 }
 `;
   }
@@ -206,13 +244,25 @@ declare global {
     // connection, db object, etc. So just return no results in that case.
     const dbAndConnection = this.context.currentDatabaseAndConnection();
     if (!dbAndConnection) {
+      this.previousConnectionDB = undefined;
+      this.previousCollectionName = undefined;
       return [];
     }
+
+    const isConnectionDBChanged = _.isEqual(
+      this.previousConnectionDB,
+      dbAndConnection,
+    );
+    this.previousConnectionDB = dbAndConnection;
 
     const { connectionId, databaseName } = dbAndConnection;
 
     const tsAst = compileSourceFile(code);
     const collectionName = inferCollectionNameFromFunctionCall(tsAst) || 'test';
+
+    const isCollectionNameChanged =
+      this.previousCollectionName !== collectionName;
+    this.previousCollectionName = collectionName;
 
     const schema = await this.context.schemaInformationForCollection(
       connectionId,
@@ -221,24 +271,91 @@ declare global {
     );
 
     const connection = this.addConnection(connectionId);
-    connection.addCollectionSchema(databaseName, collectionName, schema);
+    const isSchemaChanged = connection.addCollectionSchema(
+      databaseName,
+      collectionName,
+      schema,
+    );
 
     const collectionNames = await this.context.collectionsForDatabase(
       connectionId,
       databaseName,
     );
-    connection.setDatabaseCollectionNames(databaseName, collectionNames);
+    const isCollectionsChanged = connection.setDatabaseCollectionNames(
+      databaseName,
+      collectionNames,
+    );
 
-    this.autocompleter.updateCode({
-      [`/${connectionId}.ts`]: this.getConnectionCode(connectionId),
-    });
-    this.autocompleter.updateCode({
-      '/current-globals.ts': this.getCurrentGlobalsCode(
-        connectionId,
-        databaseName,
-      ),
+    if (isSchemaChanged || isCollectionsChanged) {
+      // This is quit expensive because the connection code contains a modified
+      // copy of the whole shell-api, so we want to only do this if the things
+      // it uses actually changed.
+      const schemaType = collectionNames.includes(collectionName)
+        ? `ServerSchema[${JSON.stringify(databaseName)}][${JSON.stringify(collectionName)}]['schema']`
+        : '{}';
+      this.autocompleter.updateCode({
+        [`/${connectionId}-schema.ts`]: this.getConnectionSchemaCode(
+          connectionId,
+          schemaType,
+        ),
+        [`/${connectionId}-shell-api.ts`]:
+          this.getConnectionShellAPICode(connectionId),
+      });
+    }
+
+    if (
+      isSchemaChanged ||
+      isCollectionsChanged ||
+      isConnectionDBChanged ||
+      isCollectionNameChanged
+    ) {
+      // This is moderately expensive compared to recreating the connection
+      // code, but still worth doing.
+      this.autocompleter.updateCode({
+        '/current-globals.ts': this.getCurrentGlobalsCode(
+          connectionId,
+          databaseName,
+        ),
+      });
+    }
+
+    debug({
+      connectionId,
+      databaseName,
+      collectionName,
+      isSchemaChanged,
+      isCollectionsChanged,
+      isConnectionDBChanged,
+      isCollectionNameChanged,
+      code,
     });
 
     return this.autocompleter.autocomplete(code);
   }
+}
+
+function adjustShellApiForConnection(ShellApiText: string): string {
+  const replacements: [RegExp, string][] = [
+    // export type MQLQuery = Document; becomes declare type MQLQuery =
+    // Document_2; once api-extractor does its thing.
+    [/type MQLQuery = Document.*;/, 'type MQLQuery = ConnectionMQLQuery;'],
+    [
+      /type MQLPipeline = Document.*;/,
+      'type MQLPipeline = ConnectionMQLPipeline;',
+    ],
+    [
+      /type MQLDocument = Document.*;/,
+      'type MQLDocument = ConnectionMQLDocument;',
+    ],
+  ];
+  let result = replaceImports(ShellApiText);
+  for (const [searchValue, replaceValue] of replacements) {
+    if (!result.search(searchValue)) {
+      throw new Error(
+        `Expected shell-api to contain ${searchValue.toString()}`,
+      );
+    }
+    result = result.replace(searchValue, replaceValue);
+  }
+  return result;
 }
