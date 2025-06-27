@@ -19,7 +19,7 @@ async function run() {
     // those use into the files we generate using api-extractor, but maybe
     // including it just once is not so bad.
     '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
-    // mql imports the mongodb driver. We could also use api-extrctor there to
+    // mql imports the mongodb driver. We could also use api-extractor there to
     // bake the few mongodb types we use into the schema.
     '/mongodb.ts': path.join(
       require.resolve('mongodb'),

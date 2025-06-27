@@ -73,6 +73,8 @@ describe('MongoDBAutocompleter', function () {
   });
 
   it('deals with no connection', async function () {
+    // The body of tests are all wrapped in loops so that we exercise the
+    // caching logic in the autocompleter.
     for (let i = 0; i < 2; i++) {
       autocompleterContext.currentDatabaseAndConnection = () => {
         return undefined;
