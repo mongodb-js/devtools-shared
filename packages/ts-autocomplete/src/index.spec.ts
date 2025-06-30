@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path';
 import { promises as fs } from 'fs';
 import Autocompleter from './index';
@@ -33,13 +34,16 @@ describe('Autocompleter', function () {
       autoCompleter = new Autocompleter();
     });
 
-    it('returns the global scope for a global variable that does not exist', function () {
+    it.only('returns the global scope for a global variable that does not exist', function () {
       autoCompleter.updateCode({
         '/code.d.ts': CODE_TS,
       });
 
       const completions = autoCompleter.autocomplete('doesNotExist');
       expect(completions.length).to.be.gt(100);
+      console.log(
+        JSON.stringify(autoCompleter.listEncounteredPaths(), null, 2),
+      );
     });
 
     it('returns completions for global variables', function () {

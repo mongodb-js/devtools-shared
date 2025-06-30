@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import _ from 'lodash';
 import * as ts from 'typescript';
 import createDebug from 'debug';
@@ -10,10 +11,34 @@ type TypeFilename = string;
 
 type UpdateDefinitionFunction = (newDef: Record<TypeFilename, string>) => void;
 
+// TODO
+/*
+function createIOError(code: string, details = ""): NodeJS.ErrnoException {
+    const err: NodeJS.ErrnoException = new Error(`${code} ${details}`);
+    err.code = code;
+    if (Error.captureStackTrace) Error.captureStackTrace(err, createIOError);
+    return err;
+}
+    */
+function relativeNodePath(fileName: string): string {
+  const parts = fileName.split(/\/node_modules\//g);
+  return parts[parts.length - 1];
+}
+
+type EncounteredPaths = {
+  getScriptSnapshot: string[];
+  fileExists: string[];
+  readFile: string[];
+  //readDirectory: string[],
+  //directoryExists: string[],
+  //getDirectories: string[]
+};
+
 function getVirtualLanguageService(): {
   languageService: ts.LanguageService;
   updateCode: UpdateDefinitionFunction;
   listFiles: () => string[];
+  listEncounteredPaths: () => EncounteredPaths;
 } {
   const codeHolder: Record<TypeFilename, string> = Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
@@ -34,8 +59,20 @@ function getVirtualLanguageService(): {
     }
   };
 
-  const listFiles = () => {
+  const listFiles = (): string[] => {
     return Object.keys(codeHolder);
+  };
+
+  const encounteredPaths: EncounteredPaths = {
+    getScriptSnapshot: [],
+    fileExists: [],
+    readFile: [],
+    //readDirectory: [], // unused
+    //directoryExists: [], // unused
+    //getDirectories: [] // unused
+  };
+  const listEncounteredPaths = (): EncounteredPaths => {
+    return encounteredPaths;
   };
 
   const servicesHost: ts.LanguageServiceHost = {
@@ -50,24 +87,51 @@ function getVirtualLanguageService(): {
         return ts.ScriptSnapshot.fromString(codeHolder[fileName]);
       }
 
-      return ts.ScriptSnapshot.fromString(ts.sys.readFile(fileName) || '');
+      const result = ts.ScriptSnapshot.fromString(
+        ts.sys.readFile(fileName) || '',
+      );
+
+      encounteredPaths.getScriptSnapshot.push(relativeNodePath(fileName));
+      return result;
     },
     getCurrentDirectory: () => process.cwd(),
     getCompilationSettings: () => options,
-    getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+    getDefaultLibFileName: (options) => {
+      const defaultLibFileName = ts.getDefaultLibFilePath(options);
+      //console.log({ defaultLibFileName })
+      //return '/lib.es2022.full.d.ts'
+      return defaultLibFileName;
+    },
     fileExists: (fileName) => {
-      return fileName in codeHolder || ts.sys.fileExists(fileName);
+      if (fileName in codeHolder) {
+        return true;
+      }
+      const result = ts.sys.fileExists(fileName);
+      if (result) {
+        encounteredPaths.fileExists.push(relativeNodePath(fileName));
+      }
+      return result;
     },
     readFile: (fileName) => {
       if (fileName in codeHolder) {
         return codeHolder[fileName];
       }
-      return ts.sys.readFile(fileName);
+      const result = ts.sys.readFile(fileName);
+      encounteredPaths.readFile.push(relativeNodePath(fileName));
+      return result;
     },
-    readDirectory: (...args) => ts.sys.readDirectory(...args),
-    directoryExists: (...args) => ts.sys.directoryExists(...args),
-    getDirectories: (...args) => ts.sys.getDirectories(...args),
-
+    readDirectory: (...args) => {
+      const result = ts.sys.readDirectory(...args);
+      return result;
+    },
+    directoryExists: (...args) => {
+      const result = ts.sys.directoryExists(...args);
+      return result;
+    },
+    getDirectories: (...args) => {
+      const result = ts.sys.getDirectories(...args);
+      return result;
+    },
     log: (...args) => debugLog(args),
     trace: (...args) => debugTrace(args),
     error: (...args) => debugError(args),
@@ -80,6 +144,7 @@ function getVirtualLanguageService(): {
     ),
     updateCode,
     listFiles,
+    listEncounteredPaths,
   };
 }
 
@@ -178,6 +243,7 @@ export default class Autocompleter {
   private readonly languageService: ts.LanguageService;
   readonly updateCode: UpdateDefinitionFunction;
   readonly listFiles: () => string[];
+  readonly listEncounteredPaths: () => EncounteredPaths;
 
   constructor({ filter }: AutocompleterOptions = {}) {
     this.filter = filter ?? (() => true);
@@ -185,6 +251,7 @@ export default class Autocompleter {
       languageService: this.languageService,
       updateCode: this.updateCode,
       listFiles: this.listFiles,
+      listEncounteredPaths: this.listEncounteredPaths,
     } = getVirtualLanguageService());
   }
 
