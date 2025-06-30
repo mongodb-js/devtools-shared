@@ -165,10 +165,7 @@ function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
       ..._.pick(item, 'messageText'),
     };
 
-    if (
-      result.fileName === '/shell-api.ts' ||
-      result.fileName?.startsWith('/connection-')
-    ) {
+    if (result.fileName?.endsWith('shell-api.ts')) {
       delete result.text;
     }
 
