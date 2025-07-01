@@ -34,16 +34,19 @@ describe('Autocompleter', function () {
       autoCompleter = new Autocompleter();
     });
 
-    it.only('returns the global scope for a global variable that does not exist', function () {
+    it('returns the global scope for a global variable that does not exist', function () {
       autoCompleter.updateCode({
         '/code.d.ts': CODE_TS,
       });
 
       const completions = autoCompleter.autocomplete('doesNotExist');
-      expect(completions.length).to.be.gt(100);
-      console.log(
-        JSON.stringify(autoCompleter.listEncounteredPaths(), null, 2),
-      );
+      expect(completions.length).to.equal(69); // mostly keywords
+      const encounteredPaths = autoCompleter.listEncounteredPaths();
+      expect(encounteredPaths).to.deep.equal({
+        getScriptSnapshot: [],
+        fileExists: [],
+        readFile: [],
+      });
     });
 
     it('returns completions for global variables', function () {
@@ -54,7 +57,7 @@ describe('Autocompleter', function () {
       // this is just the entire global scope
       const completions = autoCompleter.autocomplete('myGlobalFunct');
 
-      expect(completions.length).to.be.gt(100);
+      expect(completions.length).to.equal(69);
 
       // one of them is the myGlobalFunction() function
       expect(
@@ -144,7 +147,7 @@ describe('Autocompleter', function () {
 
       const completions = autoCompleter.autocomplete('doesNotExist({');
 
-      expect(completions.length).to.be.gt(100);
+      expect(completions.length).to.equal(69);
     });
 
     it('returns matches for object parameters of a function that exists', function () {

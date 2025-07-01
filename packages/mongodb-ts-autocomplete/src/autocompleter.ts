@@ -210,9 +210,10 @@ export type ConnectionMQLDocument = ${schemaType};
 
   getConnectionShellAPICode(connectionId: string): string {
     return `
-    import {ConnectionMQLQuery, ConnectionMQLPipeline, ConnectionMQLDocument} from '/${connectionId}-schema.ts';
-    ${adjustShellApiForConnection(ShellApiText as string)}
-    `;
+/// <reference types="node" />
+import {ConnectionMQLQuery, ConnectionMQLPipeline, ConnectionMQLDocument} from '/${connectionId}-schema.ts';
+${adjustShellApiForConnection(ShellApiText as string)}
+`;
   }
 
   getCurrentGlobalsCode(connectionId: string, databaseName: string): string {
@@ -331,6 +332,10 @@ declare global {
     });
 
     return this.autocompleter.autocomplete(code);
+  }
+
+  listEncounteredPaths() {
+    return this.autocompleter.listEncounteredPaths();
   }
 }
 

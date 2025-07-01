@@ -202,6 +202,18 @@ describe('MongoDBAutocompleter', function () {
           result: 'db.foo.find({ foo',
         },
       ]);
+
+      // this is what tells us what we're missing in extract-types.ts
+      const encounteredPaths = autocompleter.listEncounteredPaths();
+      if (
+        encounteredPaths.getScriptSnapshot.length ||
+        encounteredPaths.fileExists.length ||
+        encounteredPaths.readFile.length
+      ) {
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify(encounteredPaths, null, 2));
+        expect.fail('There should be no encountered paths left over');
+      }
     }
 
     // then hit a different collection to make sure the caching works

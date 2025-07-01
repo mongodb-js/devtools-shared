@@ -21,7 +21,13 @@ function createIOError(code: string, details = ""): NodeJS.ErrnoException {
 }
     */
 function relativeNodePath(fileName: string): string {
+  //console.log(fileName);
   const parts = fileName.split(/\/node_modules\//g);
+  if (parts.length === 1 && fileName.endsWith('package.json')) {
+    // special case: when it looks up this package itself it isn't going to find
+    // it in node_modules
+    return '@mongodb-js/mongodb-ts-autocomplete/package.json';
+  }
   return parts[parts.length - 1];
 }
 
@@ -40,15 +46,17 @@ function getVirtualLanguageService(): {
   listFiles: () => string[];
   listEncounteredPaths: () => EncounteredPaths;
 } {
-  const codeHolder: Record<TypeFilename, string> = Object.create(null);
+  // as an optimization, the contents of a file can be string or true. This is
+  // because some files are only checked for existence during module resolution,
+  // but never loaded. In that case the contents is true, not a string.
+  const codeHolder: Record<TypeFilename, string | true> = Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
     allowJs: true,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
-    types: ['node'],
-    lib: ['es2019'],
-    //typeRoots: [],
+    types: [],
+    lib: ['es2023'],
     allowImportingTsExtensions: true,
   };
 
@@ -72,6 +80,9 @@ function getVirtualLanguageService(): {
     //getDirectories: [] // unused
   };
   const listEncounteredPaths = (): EncounteredPaths => {
+    encounteredPaths.getScriptSnapshot.sort();
+    encounteredPaths.fileExists.sort();
+    encounteredPaths.readFile.sort();
     return encounteredPaths;
   };
 
@@ -80,14 +91,18 @@ function getVirtualLanguageService(): {
       return Object.keys(codeHolder);
     },
     getScriptVersion: (fileName) => {
+      fileName = relativeNodePath(fileName);
       return (versions[fileName] ?? 1).toString();
     },
     getScriptSnapshot: (fileName) => {
+      fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return ts.ScriptSnapshot.fromString(codeHolder[fileName]);
+        return ts.ScriptSnapshot.fromString(codeHolder[fileName].toString());
       }
 
+      // TODO: this should not be encountered outside of CI
       const result = ts.ScriptSnapshot.fromString(
+        // NOTE: some files do not exist. A good example is "typescript/lib/es2023.ts"
         ts.sys.readFile(fileName) || '',
       );
 
@@ -103,9 +118,12 @@ function getVirtualLanguageService(): {
       return defaultLibFileName;
     },
     fileExists: (fileName) => {
+      fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
         return true;
       }
+
+      // TODO: this should not be encountered outside of CI when tests will fail
       const result = ts.sys.fileExists(fileName);
       if (result) {
         encounteredPaths.fileExists.push(relativeNodePath(fileName));
@@ -113,22 +131,28 @@ function getVirtualLanguageService(): {
       return result;
     },
     readFile: (fileName) => {
+      fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return codeHolder[fileName];
+        return codeHolder[fileName].toString();
       }
+
+      // TODO: this should not be encountered outside of CI when tests will fail
       const result = ts.sys.readFile(fileName);
       encounteredPaths.readFile.push(relativeNodePath(fileName));
       return result;
     },
     readDirectory: (...args) => {
+      // TODO: this should not be encountered outside of CI when tests will fail
       const result = ts.sys.readDirectory(...args);
       return result;
     },
     directoryExists: (...args) => {
+      // TODO: this should not be encountered outside of CI when tests will fail
       const result = ts.sys.directoryExists(...args);
       return result;
     },
     getDirectories: (...args) => {
+      // TODO: this should not be encountered outside of CI when tests will fail
       const result = ts.sys.getDirectories(...args);
       return result;
     },
@@ -270,8 +294,10 @@ export default class Autocompleter {
 
     if (debugLog.enabled) {
       for (const filename of this.listFiles()) {
-        this.debugLanguageService(filename, 'getSyntacticDiagnostics');
-        this.debugLanguageService(filename, 'getSemanticDiagnostics');
+        if (filename.startsWith('/')) {
+          this.debugLanguageService(filename, 'getSyntacticDiagnostics');
+          this.debugLanguageService(filename, 'getSemanticDiagnostics');
+        }
       }
     }
 
