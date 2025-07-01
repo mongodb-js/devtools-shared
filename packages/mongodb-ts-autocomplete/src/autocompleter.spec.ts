@@ -18,6 +18,12 @@ describe('MongoDBAutocompleter', function () {
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
 
+  before(function () {
+    // make sure that we fall back to the default ts.sys file methods so that
+    // encounteredPaths will be filled
+    process.env.CI = 'true';
+  });
+
   beforeEach(function () {
     autocompleterContext = {
       currentDatabaseAndConnection: () => ({
@@ -69,6 +75,16 @@ describe('MongoDBAutocompleter', function () {
 
     autocompleter = new MongoDBAutocompleter({
       context: autocompleterContext,
+    });
+  });
+
+  afterEach(function () {
+    // this is what tells us what we're missing in extract-types.ts
+    const encounteredPaths = autocompleter.listEncounteredPaths();
+    expect(encounteredPaths).to.deep.equal({
+      fileExists: [],
+      getScriptSnapshot: [],
+      readFile: [],
     });
   });
 
@@ -202,18 +218,6 @@ describe('MongoDBAutocompleter', function () {
           result: 'db.foo.find({ foo',
         },
       ]);
-
-      // this is what tells us what we're missing in extract-types.ts
-      const encounteredPaths = autocompleter.listEncounteredPaths();
-      if (
-        encounteredPaths.getScriptSnapshot.length ||
-        encounteredPaths.fileExists.length ||
-        encounteredPaths.readFile.length
-      ) {
-        // eslint-disable-next-line no-console
-        console.log(JSON.stringify(encounteredPaths, null, 2));
-        expect.fail('There should be no encountered paths left over');
-      }
     }
 
     // then hit a different collection to make sure the caching works

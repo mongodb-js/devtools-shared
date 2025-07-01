@@ -21,6 +21,10 @@ describe('Autocompleter', function () {
   let CODE_TS: string;
 
   before(async function () {
+    // make sure that we fall back to the default ts.sys file methods so that ts
+    // will load the lib files from disk
+    process.env.CI = 'true';
+
     CODE_TS = await fs.readFile(
       path.resolve(__dirname, '..', 'test', 'fixtures', 'code.ts'),
       'utf8',
@@ -41,12 +45,6 @@ describe('Autocompleter', function () {
 
       const completions = autoCompleter.autocomplete('doesNotExist');
       expect(completions.length).to.equal(69); // mostly keywords
-      const encounteredPaths = autoCompleter.listEncounteredPaths();
-      expect(encounteredPaths).to.deep.equal({
-        getScriptSnapshot: [],
-        fileExists: [],
-        readFile: [],
-      });
     });
 
     it('returns completions for global variables', function () {

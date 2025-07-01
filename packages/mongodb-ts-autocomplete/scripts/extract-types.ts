@@ -5,7 +5,7 @@ import path from 'path';
 import { replaceImports } from '../src/utils';
 
 async function loadSources(sources: Record<string, string>) {
-  const result: Record<string, string | true> = {};
+  const result: Record<string, string | boolean> = {};
 
   for (const [key, filePath] of Object.entries(sources)) {
     // for .js filepaths we're never going to read them, so just make the
@@ -28,6 +28,23 @@ async function loadSources(sources: Record<string, string>) {
 }
 
 function resolve(moduleName: string) {
+  if (moduleName === '@mongodb-js/mongodb-ts-autocomplete') {
+    // There's a chicken-and-egg problem here: we can't compile this module
+    // itself without the extracted types and we can't extract it before it is
+    // compiled because the module is not compiled, so its dist/index.js does
+    // not exist yet. With this workaround we're resolving the package.json
+    // which definitely already exists.
+    const result = {
+      resolvedModule: {
+        resolvedFileName: path.resolve(__dirname, '..', 'package.json'),
+        packageId: {
+          subModuleName: 'package.json',
+        },
+      },
+    };
+
+    return result;
+  }
   const result = ts.resolveModuleName(
     moduleName,
     __filename,
@@ -39,6 +56,14 @@ function resolve(moduleName: string) {
   );
 
   return result;
+}
+
+function resolveModulePath(moduleName: string): string {
+  const { resolvedModule } = resolve(moduleName);
+  if (!resolvedModule) {
+    throw new Error(`Could not resolve module: ${moduleName}`);
+  }
+  return resolvedModule.resolvedFileName;
 }
 
 const deps: Record<string, string[]> = {
@@ -190,30 +215,25 @@ const deps: Record<string, string[]> = {
 };
 
 async function run() {
-  // TODO: switch require.resolve() to resolve()
+  const mqlPath = path.join(
+    path.dirname(resolveModulePath('@mongodb-js/mql-typescript')),
+    '..',
+    'out',
+    'schema.d.ts',
+  );
+
   const input: Record<string, string> = {
     // mql imports bson but right now so does shell-api. We could bake the types
     // those use into the files we generate using api-extractor, but maybe
     // including it just once is not so bad.
-    '/bson.ts': path.join(require.resolve('bson'), '..', '..', 'bson.d.ts'),
+    '/bson.ts': resolveModulePath('bson'),
     // mql imports the mongodb driver. We could also use api-extractor there to
     // bake the few mongodb types we use into the schema.
-    '/mongodb.ts': path.join(
-      require.resolve('mongodb'),
-      '..',
-      '..',
-      'mongodb.d.ts',
-    ),
+    '/mongodb.ts': resolveModulePath('mongodb'),
     // We wouldn't have to include mql if we used it straight from shell-api,
     // but since we're using it straight here for now to bypass the complicated
     // generics on the shell-api side it is included here for now.
-    '/mql.ts': path.join(
-      require.resolve('@mongodb-js/mql-typescript'),
-      '..',
-      '..',
-      'out',
-      'schema.d.ts',
-    ),
+    '/mql.ts': mqlPath,
   };
   for (const [moduleName, filePaths] of Object.entries(deps)) {
     const { resolvedModule } = resolve(moduleName);
@@ -225,10 +245,8 @@ async function run() {
       0,
       -resolvedModule.packageId.subModuleName.length,
     );
-    //console.log({ basePath});
     for (const filePath of filePaths) {
       const fullPath = path.join(basePath, filePath);
-      //console.log({ fullPath });
       // these are in the format import of typescript imports
       input[`${moduleName}/${filePath}`] = fullPath;
     }

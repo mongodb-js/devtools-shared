@@ -9,19 +9,11 @@ const debugError = createDebug('ts-autocomplete:error');
 
 type TypeFilename = string;
 
-type UpdateDefinitionFunction = (newDef: Record<TypeFilename, string>) => void;
+type UpdateDefinitionFunction = (
+  newDef: Record<TypeFilename, string | boolean>,
+) => void;
 
-// TODO
-/*
-function createIOError(code: string, details = ""): NodeJS.ErrnoException {
-    const err: NodeJS.ErrnoException = new Error(`${code} ${details}`);
-    err.code = code;
-    if (Error.captureStackTrace) Error.captureStackTrace(err, createIOError);
-    return err;
-}
-    */
 function relativeNodePath(fileName: string): string {
-  //console.log(fileName);
   const parts = fileName.split(/\/node_modules\//g);
   if (parts.length === 1 && fileName.endsWith('package.json')) {
     // special case: when it looks up this package itself it isn't going to find
@@ -35,9 +27,6 @@ type EncounteredPaths = {
   getScriptSnapshot: string[];
   fileExists: string[];
   readFile: string[];
-  //readDirectory: string[],
-  //directoryExists: string[],
-  //getDirectories: string[]
 };
 
 function getVirtualLanguageService(): {
@@ -49,7 +38,8 @@ function getVirtualLanguageService(): {
   // as an optimization, the contents of a file can be string or true. This is
   // because some files are only checked for existence during module resolution,
   // but never loaded. In that case the contents is true, not a string.
-  const codeHolder: Record<TypeFilename, string | true> = Object.create(null);
+  const codeHolder: Record<TypeFilename, string | boolean> =
+    Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
@@ -60,7 +50,7 @@ function getVirtualLanguageService(): {
     allowImportingTsExtensions: true,
   };
 
-  const updateCode = (newDef: Record<TypeFilename, string>): void => {
+  const updateCode = (newDef: Record<TypeFilename, string | boolean>): void => {
     for (const [key, value] of Object.entries(newDef)) {
       codeHolder[key] = value;
       versions[key] = (versions[key] ?? 0) + 1;
@@ -75,9 +65,6 @@ function getVirtualLanguageService(): {
     getScriptSnapshot: [],
     fileExists: [],
     readFile: [],
-    //readDirectory: [], // unused
-    //directoryExists: [], // unused
-    //getDirectories: [] // unused
   };
   const listEncounteredPaths = (): EncounteredPaths => {
     encounteredPaths.getScriptSnapshot.sort();
@@ -100,22 +87,20 @@ function getVirtualLanguageService(): {
         return ts.ScriptSnapshot.fromString(codeHolder[fileName].toString());
       }
 
-      // TODO: this should not be encountered outside of CI
-      const result = ts.ScriptSnapshot.fromString(
-        // NOTE: some files do not exist. A good example is "typescript/lib/es2023.ts"
-        ts.sys.readFile(fileName) || '',
-      );
+      if (process.env.CI) {
+        const result = ts.ScriptSnapshot.fromString(
+          // NOTE: some files do not exist. A good example is "typescript/lib/es2023.ts"
+          ts.sys.readFile(fileName) || '',
+        );
 
-      encounteredPaths.getScriptSnapshot.push(relativeNodePath(fileName));
-      return result;
+        encounteredPaths.getScriptSnapshot.push(relativeNodePath(fileName));
+        return result;
+      }
     },
     getCurrentDirectory: () => process.cwd(),
     getCompilationSettings: () => options,
     getDefaultLibFileName: (options) => {
-      const defaultLibFileName = ts.getDefaultLibFilePath(options);
-      //console.log({ defaultLibFileName })
-      //return '/lib.es2022.full.d.ts'
-      return defaultLibFileName;
+      return ts.getDefaultLibFilePath(options);
     },
     fileExists: (fileName) => {
       fileName = relativeNodePath(fileName);
@@ -123,12 +108,15 @@ function getVirtualLanguageService(): {
         return true;
       }
 
-      // TODO: this should not be encountered outside of CI when tests will fail
-      const result = ts.sys.fileExists(fileName);
-      if (result) {
-        encounteredPaths.fileExists.push(relativeNodePath(fileName));
+      if (process.env.CI) {
+        const result = ts.sys.fileExists(fileName);
+        if (result) {
+          encounteredPaths.fileExists.push(relativeNodePath(fileName));
+        }
+        return result;
       }
-      return result;
+
+      return false;
     },
     readFile: (fileName) => {
       fileName = relativeNodePath(fileName);
@@ -136,25 +124,29 @@ function getVirtualLanguageService(): {
         return codeHolder[fileName].toString();
       }
 
-      // TODO: this should not be encountered outside of CI when tests will fail
-      const result = ts.sys.readFile(fileName);
-      encounteredPaths.readFile.push(relativeNodePath(fileName));
-      return result;
+      if (process.env.CI) {
+        const result = ts.sys.readFile(fileName);
+        encounteredPaths.readFile.push(relativeNodePath(fileName));
+        return result;
+      }
     },
     readDirectory: (...args) => {
-      // TODO: this should not be encountered outside of CI when tests will fail
-      const result = ts.sys.readDirectory(...args);
-      return result;
+      if (process.env.CI) {
+        return ts.sys.readDirectory(...args);
+      }
+      return [];
     },
     directoryExists: (...args) => {
-      // TODO: this should not be encountered outside of CI when tests will fail
-      const result = ts.sys.directoryExists(...args);
-      return result;
+      if (process.env.CI) {
+        return ts.sys.directoryExists(...args);
+      }
+      return false;
     },
     getDirectories: (...args) => {
-      // TODO: this should not be encountered outside of CI when tests will fail
-      const result = ts.sys.getDirectories(...args);
-      return result;
+      if (process.env.CI) {
+        return ts.sys.getDirectories(...args);
+      }
+      return [];
     },
     log: (...args) => debugLog(args),
     trace: (...args) => debugTrace(args),
