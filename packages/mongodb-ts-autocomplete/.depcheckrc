@@ -1,4 +1,5 @@
 ignores:
+ - '@mongodb-js/mql-typescript'
  - '@mongodb-js/prettier-config-devtools'
  - '@mongodb-js/tsconfig-devtools'
  - '@types/chai'

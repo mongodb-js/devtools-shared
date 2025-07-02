@@ -1,8 +1,9 @@
 import createDebug from 'debug';
 import _ from 'lodash';
+import type { LanguageServiceHost } from 'typescript';
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
-import autocompleteTypes from './fixtures/autocomplete-types';
+import autocompleteTypes from './types/autocomplete-types';
 import { api as ShellApiText } from '@mongosh/shell-api/api';
 import { replaceImports } from './utils';
 
@@ -21,6 +22,7 @@ const debug = createDebug('mongodb-ts-autocomplete');
 
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
+  fallbackServiceHost?: LanguageServiceHost;
 };
 
 class DatabaseSchema {
@@ -175,9 +177,12 @@ export class MongoDBAutocompleter {
     | undefined;
   private previousCollectionName: string | undefined;
 
-  constructor({ context }: MongoDBAutocompleterOptions) {
+  constructor({ context, fallbackServiceHost }: MongoDBAutocompleterOptions) {
     this.context = CachingAutocompletionContext.caching(context);
-    this.autocompleter = new Autocompleter({ filter: filterStartingWith });
+    this.autocompleter = new Autocompleter({
+      filter: filterStartingWith,
+      fallbackServiceHost,
+    });
 
     this.connectionSchemas = Object.create(null);
 
@@ -210,9 +215,10 @@ export type ConnectionMQLDocument = ${schemaType};
 
   getConnectionShellAPICode(connectionId: string): string {
     return `
-    import {ConnectionMQLQuery, ConnectionMQLPipeline, ConnectionMQLDocument} from '/${connectionId}-schema.ts';
-    ${adjustShellApiForConnection(ShellApiText as string)}
-    `;
+/// <reference types="node" />
+import {ConnectionMQLQuery, ConnectionMQLPipeline, ConnectionMQLDocument} from '/${connectionId}-schema.ts';
+${adjustShellApiForConnection(ShellApiText as string)}
+`;
   }
 
   getCurrentGlobalsCode(connectionId: string, databaseName: string): string {

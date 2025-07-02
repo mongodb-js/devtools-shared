@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import _ from 'lodash';
 import * as ts from 'typescript';
 import createDebug from 'debug';
@@ -8,66 +9,119 @@ const debugError = createDebug('ts-autocomplete:error');
 
 type TypeFilename = string;
 
-type UpdateDefinitionFunction = (newDef: Record<TypeFilename, string>) => void;
+type UpdateDefinitionFunction = (
+  newDef: Record<TypeFilename, string | boolean>,
+) => void;
 
-function getVirtualLanguageService(): {
+function relativeNodePath(fileName: string): string {
+  const parts = fileName.split(/\/node_modules\//g);
+  if (parts.length === 1 && fileName.endsWith('package.json')) {
+    // special case: when it looks up this package itself it isn't going to find
+    // it in node_modules
+    return '@mongodb-js/mongodb-ts-autocomplete/package.json';
+  }
+  return parts[parts.length - 1];
+}
+
+function getVirtualLanguageService(
+  fallbackServiceHost?: ts.LanguageServiceHost,
+): {
   languageService: ts.LanguageService;
   updateCode: UpdateDefinitionFunction;
   listFiles: () => string[];
 } {
-  const codeHolder: Record<TypeFilename, string> = Object.create(null);
+  // as an optimization, the contents of a file can be string or true. This is
+  // because some files are only checked for existence during module resolution,
+  // but never loaded. In that case the contents is true, not a string.
+  const codeHolder: Record<TypeFilename, string | boolean> =
+    Object.create(null);
   const versions: Record<TypeFilename, number> = Object.create(null);
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
     allowJs: true,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
-    types: ['node'],
-    lib: ['es2019'],
-    //typeRoots: [],
+    types: [],
+    lib: ['es2023'],
     allowImportingTsExtensions: true,
   };
 
-  const updateCode = (newDef: Record<TypeFilename, string>): void => {
+  const updateCode = (newDef: Record<TypeFilename, string | boolean>): void => {
     for (const [key, value] of Object.entries(newDef)) {
       codeHolder[key] = value;
       versions[key] = (versions[key] ?? 0) + 1;
     }
   };
 
-  const listFiles = () => {
+  const listFiles = (): string[] => {
     return Object.keys(codeHolder);
   };
 
-  const servicesHost: ts.LanguageServiceHost = {
+  const serviceHost: ts.LanguageServiceHost = {
     getScriptFileNames: () => {
       return Object.keys(codeHolder);
     },
     getScriptVersion: (fileName) => {
+      fileName = relativeNodePath(fileName);
       return (versions[fileName] ?? 1).toString();
     },
     getScriptSnapshot: (fileName) => {
+      fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return ts.ScriptSnapshot.fromString(codeHolder[fileName]);
+        // if its a boolean rather than code, just return a blank string if for
+        // some reason we ever get here.
+        const code =
+          typeof codeHolder[fileName] === 'string'
+            ? (codeHolder[fileName] as string)
+            : '';
+        return ts.ScriptSnapshot.fromString(code);
       }
 
-      return ts.ScriptSnapshot.fromString(ts.sys.readFile(fileName) || '');
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.getScriptSnapshot(fileName);
+      }
     },
     getCurrentDirectory: () => process.cwd(),
     getCompilationSettings: () => options,
-    getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+    getDefaultLibFileName: (options) => {
+      return ts.getDefaultLibFilePath(options);
+    },
     fileExists: (fileName) => {
-      return fileName in codeHolder || ts.sys.fileExists(fileName);
+      fileName = relativeNodePath(fileName);
+      if (fileName in codeHolder) {
+        return true;
+      }
+
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.fileExists(fileName);
+      }
+
+      return false;
     },
     readFile: (fileName) => {
+      fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return codeHolder[fileName];
+        // if its a boolean rather than code, just return a blank string if for
+        // some reason we ever get here.
+        const code =
+          typeof codeHolder[fileName] === 'string'
+            ? (codeHolder[fileName] as string)
+            : undefined;
+        return code;
       }
-      return ts.sys.readFile(fileName);
-    },
-    readDirectory: (...args) => ts.sys.readDirectory(...args),
-    directoryExists: (...args) => ts.sys.directoryExists(...args),
-    getDirectories: (...args) => ts.sys.getDirectories(...args),
 
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.readFile(fileName);
+      }
+    },
+    readDirectory: (...args) => {
+      return fallbackServiceHost?.readDirectory?.(...args) ?? [];
+    },
+    directoryExists: (...args) => {
+      return fallbackServiceHost?.directoryExists?.(...args) ?? false;
+    },
+    getDirectories: (...args) => {
+      return fallbackServiceHost?.getDirectories?.(...args) ?? [];
+    },
     log: (...args) => debugLog(args),
     trace: (...args) => debugTrace(args),
     error: (...args) => debugError(args),
@@ -75,7 +129,7 @@ function getVirtualLanguageService(): {
 
   return {
     languageService: ts.createLanguageService(
-      servicesHost,
+      serviceHost,
       ts.createDocumentRegistry(),
     ),
     updateCode,
@@ -152,6 +206,7 @@ type AutocompleteFilterFunction = (
 
 export type AutocompleterOptions = {
   filter?: AutocompleteFilterFunction;
+  fallbackServiceHost?: ts.LanguageServiceHost;
 };
 
 function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
@@ -179,13 +234,13 @@ export default class Autocompleter {
   readonly updateCode: UpdateDefinitionFunction;
   readonly listFiles: () => string[];
 
-  constructor({ filter }: AutocompleterOptions = {}) {
+  constructor({ filter, fallbackServiceHost }: AutocompleterOptions = {}) {
     this.filter = filter ?? (() => true);
     ({
       languageService: this.languageService,
       updateCode: this.updateCode,
       listFiles: this.listFiles,
-    } = getVirtualLanguageService());
+    } = getVirtualLanguageService(fallbackServiceHost));
   }
 
   autocomplete(code: string): AutoCompletion[] {
@@ -203,8 +258,10 @@ export default class Autocompleter {
 
     if (debugLog.enabled) {
       for (const filename of this.listFiles()) {
-        this.debugLanguageService(filename, 'getSyntacticDiagnostics');
-        this.debugLanguageService(filename, 'getSemanticDiagnostics');
+        if (filename.startsWith('/')) {
+          this.debugLanguageService(filename, 'getSyntacticDiagnostics');
+          this.debugLanguageService(filename, 'getSemanticDiagnostics');
+        }
       }
     }
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path';
 import { promises as fs } from 'fs';
 import Autocompleter from './index';
@@ -39,7 +40,7 @@ describe('Autocompleter', function () {
       });
 
       const completions = autoCompleter.autocomplete('doesNotExist');
-      expect(completions.length).to.be.gt(100);
+      expect(completions.length).to.equal(69); // mostly keywords
     });
 
     it('returns completions for global variables', function () {
@@ -50,7 +51,7 @@ describe('Autocompleter', function () {
       // this is just the entire global scope
       const completions = autoCompleter.autocomplete('myGlobalFunct');
 
-      expect(completions.length).to.be.gt(100);
+      expect(completions.length).to.equal(69);
 
       // one of them is the myGlobalFunction() function
       expect(
@@ -140,7 +141,7 @@ describe('Autocompleter', function () {
 
       const completions = autoCompleter.autocomplete('doesNotExist({');
 
-      expect(completions.length).to.be.gt(100);
+      expect(completions.length).to.equal(69);
     });
 
     it('returns matches for object parameters of a function that exists', function () {
