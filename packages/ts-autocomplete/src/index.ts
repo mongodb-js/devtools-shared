@@ -114,22 +114,13 @@ function getVirtualLanguageService(
       }
     },
     readDirectory: (...args) => {
-      if (fallbackServiceHost && fallbackServiceHost.readDirectory) {
-        return fallbackServiceHost.readDirectory(...args);
-      }
-      return [];
+      return fallbackServiceHost?.readDirectory?.(...args) ?? [];
     },
     directoryExists: (...args) => {
-      if (fallbackServiceHost && fallbackServiceHost.directoryExists) {
-        return fallbackServiceHost.directoryExists(...args);
-      }
-      return false;
+      return fallbackServiceHost?.directoryExists?.(...args) ?? false;
     },
     getDirectories: (...args) => {
-      if (fallbackServiceHost && fallbackServiceHost.getDirectories) {
-        return fallbackServiceHost.getDirectories(...args);
-      }
-      return [];
+      return fallbackServiceHost?.getDirectories?.(...args) ?? [];
     },
     log: (...args) => debugLog(args),
     trace: (...args) => debugTrace(args),
