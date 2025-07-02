@@ -1,4 +1,4 @@
 .nyc_output
 dist
 coverage
-src/fixtures/autocomplete-types.ts
+src/types/autocomplete-types.ts

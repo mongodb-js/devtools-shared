@@ -8,6 +8,6 @@
     "strict": true
   },
   "include": ["src/**/*"],
-  "exclude": ["./src/fixtures/*"],
+  "exclude": ["./src/types/*"],
   "exclude": ["./src/**/*.spec.*"]
 }

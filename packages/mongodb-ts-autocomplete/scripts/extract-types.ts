@@ -262,7 +262,7 @@ export default files;
     __dirname,
     '..',
     'src',
-    'fixtures',
+    'types',
     'autocomplete-types.ts',
   );
   console.log(filepath);

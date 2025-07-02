@@ -3,7 +3,7 @@ import _ from 'lodash';
 import type { LanguageServiceHost } from 'typescript';
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
-import autocompleteTypes from './fixtures/autocomplete-types';
+import autocompleteTypes from './types/autocomplete-types';
 import { api as ShellApiText } from '@mongosh/shell-api/api';
 import { replaceImports } from './utils';
 
