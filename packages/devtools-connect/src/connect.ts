@@ -549,7 +549,7 @@ async function connectMongoClientImpl({
       new DevtoolsConnectionState(clientOptions, logger, ca);
     const mongoClientOptions: MongoClientOptions &
       Partial<DevtoolsConnectOptions> = merge(
-      {},
+      { __skipPingOnConnect: true },
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
       { allowPartialTrustChain: true },
@@ -561,8 +561,6 @@ async function connectMongoClientImpl({
     mongoClientOptions.lookup = (hostname, options, callback) => {
       return dns.lookup(hostname, { verbatim: false, ...options }, callback);
     };
-
-    (mongoClientOptions as any).__skipPingOnConnect = true;
 
     delete (mongoClientOptions as any).useSystemCA; // can be removed once no product uses this anymore
     delete mongoClientOptions.productDocsLink;
