@@ -67,7 +67,13 @@ function getVirtualLanguageService(
     getScriptSnapshot: (fileName) => {
       fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return ts.ScriptSnapshot.fromString(codeHolder[fileName].toString());
+        // if its a boolean rather than code, just return a blank string if for
+        // some reason we ever get here.
+        const code =
+          typeof codeHolder[fileName] === 'string'
+            ? (codeHolder[fileName] as string)
+            : '';
+        return ts.ScriptSnapshot.fromString(code);
       }
 
       if (fallbackServiceHost) {
@@ -94,7 +100,13 @@ function getVirtualLanguageService(
     readFile: (fileName) => {
       fileName = relativeNodePath(fileName);
       if (fileName in codeHolder) {
-        return codeHolder[fileName].toString();
+        // if its a boolean rather than code, just return a blank string if for
+        // some reason we ever get here.
+        const code =
+          typeof codeHolder[fileName] === 'string'
+            ? (codeHolder[fileName] as string)
+            : undefined;
+        return code;
       }
 
       if (fallbackServiceHost) {
