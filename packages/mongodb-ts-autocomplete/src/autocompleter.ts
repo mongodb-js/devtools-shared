@@ -1,5 +1,6 @@
 import createDebug from 'debug';
 import _ from 'lodash';
+import type { LanguageServiceHost } from 'typescript';
 import Autocompleter from '@mongodb-js/ts-autocomplete';
 import type { AutoCompletion } from '@mongodb-js/ts-autocomplete';
 import autocompleteTypes from './fixtures/autocomplete-types';
@@ -21,6 +22,7 @@ const debug = createDebug('mongodb-ts-autocomplete');
 
 type MongoDBAutocompleterOptions = {
   context: AutocompletionContext;
+  fallbackServiceHost?: LanguageServiceHost;
 };
 
 class DatabaseSchema {
@@ -175,9 +177,12 @@ export class MongoDBAutocompleter {
     | undefined;
   private previousCollectionName: string | undefined;
 
-  constructor({ context }: MongoDBAutocompleterOptions) {
+  constructor({ context, fallbackServiceHost }: MongoDBAutocompleterOptions) {
     this.context = CachingAutocompletionContext.caching(context);
-    this.autocompleter = new Autocompleter({ filter: filterStartingWith });
+    this.autocompleter = new Autocompleter({
+      filter: filterStartingWith,
+      fallbackServiceHost,
+    });
 
     this.connectionSchemas = Object.create(null);
 
@@ -332,10 +337,6 @@ declare global {
     });
 
     return this.autocompleter.autocomplete(code);
-  }
-
-  listEncounteredPaths() {
-    return this.autocompleter.listEncounteredPaths();
   }
 }
 

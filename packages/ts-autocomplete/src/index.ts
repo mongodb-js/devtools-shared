@@ -23,17 +23,12 @@ function relativeNodePath(fileName: string): string {
   return parts[parts.length - 1];
 }
 
-type EncounteredPaths = {
-  getScriptSnapshot: string[];
-  fileExists: string[];
-  readFile: string[];
-};
-
-function getVirtualLanguageService(): {
+function getVirtualLanguageService(
+  fallbackServiceHost?: ts.LanguageServiceHost,
+): {
   languageService: ts.LanguageService;
   updateCode: UpdateDefinitionFunction;
   listFiles: () => string[];
-  listEncounteredPaths: () => EncounteredPaths;
 } {
   // as an optimization, the contents of a file can be string or true. This is
   // because some files are only checked for existence during module resolution,
@@ -61,19 +56,7 @@ function getVirtualLanguageService(): {
     return Object.keys(codeHolder);
   };
 
-  const encounteredPaths: EncounteredPaths = {
-    getScriptSnapshot: [],
-    fileExists: [],
-    readFile: [],
-  };
-  const listEncounteredPaths = (): EncounteredPaths => {
-    encounteredPaths.getScriptSnapshot.sort();
-    encounteredPaths.fileExists.sort();
-    encounteredPaths.readFile.sort();
-    return encounteredPaths;
-  };
-
-  const servicesHost: ts.LanguageServiceHost = {
+  const serviceHost: ts.LanguageServiceHost = {
     getScriptFileNames: () => {
       return Object.keys(codeHolder);
     },
@@ -87,14 +70,8 @@ function getVirtualLanguageService(): {
         return ts.ScriptSnapshot.fromString(codeHolder[fileName].toString());
       }
 
-      if (process.env.CI) {
-        const result = ts.ScriptSnapshot.fromString(
-          // NOTE: some files do not exist. A good example is "typescript/lib/es2023.ts"
-          ts.sys.readFile(fileName) || '',
-        );
-
-        encounteredPaths.getScriptSnapshot.push(relativeNodePath(fileName));
-        return result;
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.getScriptSnapshot(fileName);
       }
     },
     getCurrentDirectory: () => process.cwd(),
@@ -108,12 +85,8 @@ function getVirtualLanguageService(): {
         return true;
       }
 
-      if (process.env.CI) {
-        const result = ts.sys.fileExists(fileName);
-        if (result) {
-          encounteredPaths.fileExists.push(relativeNodePath(fileName));
-        }
-        return result;
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.fileExists(fileName);
       }
 
       return false;
@@ -124,27 +97,25 @@ function getVirtualLanguageService(): {
         return codeHolder[fileName].toString();
       }
 
-      if (process.env.CI) {
-        const result = ts.sys.readFile(fileName);
-        encounteredPaths.readFile.push(relativeNodePath(fileName));
-        return result;
+      if (fallbackServiceHost) {
+        return fallbackServiceHost.readFile(fileName);
       }
     },
     readDirectory: (...args) => {
-      if (process.env.CI) {
-        return ts.sys.readDirectory(...args);
+      if (fallbackServiceHost && fallbackServiceHost.readDirectory) {
+        return fallbackServiceHost.readDirectory(...args);
       }
       return [];
     },
     directoryExists: (...args) => {
-      if (process.env.CI) {
-        return ts.sys.directoryExists(...args);
+      if (fallbackServiceHost && fallbackServiceHost.directoryExists) {
+        return fallbackServiceHost.directoryExists(...args);
       }
       return false;
     },
     getDirectories: (...args) => {
-      if (process.env.CI) {
-        return ts.sys.getDirectories(...args);
+      if (fallbackServiceHost && fallbackServiceHost.getDirectories) {
+        return fallbackServiceHost.getDirectories(...args);
       }
       return [];
     },
@@ -155,12 +126,11 @@ function getVirtualLanguageService(): {
 
   return {
     languageService: ts.createLanguageService(
-      servicesHost,
+      serviceHost,
       ts.createDocumentRegistry(),
     ),
     updateCode,
     listFiles,
-    listEncounteredPaths,
   };
 }
 
@@ -233,6 +203,7 @@ type AutocompleteFilterFunction = (
 
 export type AutocompleterOptions = {
   filter?: AutocompleteFilterFunction;
+  fallbackServiceHost?: ts.LanguageServiceHost;
 };
 
 function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
@@ -259,16 +230,14 @@ export default class Autocompleter {
   private readonly languageService: ts.LanguageService;
   readonly updateCode: UpdateDefinitionFunction;
   readonly listFiles: () => string[];
-  readonly listEncounteredPaths: () => EncounteredPaths;
 
-  constructor({ filter }: AutocompleterOptions = {}) {
+  constructor({ filter, fallbackServiceHost }: AutocompleterOptions = {}) {
     this.filter = filter ?? (() => true);
     ({
       languageService: this.languageService,
       updateCode: this.updateCode,
       listFiles: this.listFiles,
-      listEncounteredPaths: this.listEncounteredPaths,
-    } = getVirtualLanguageService());
+    } = getVirtualLanguageService(fallbackServiceHost));
   }
 
   autocomplete(code: string): AutoCompletion[] {

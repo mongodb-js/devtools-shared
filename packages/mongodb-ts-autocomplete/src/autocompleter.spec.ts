@@ -1,3 +1,4 @@
+import * as ts from 'typescript';
 import { MongoDBAutocompleter } from './index';
 import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
@@ -14,17 +15,67 @@ const connectionId = 'connection-1';
 const databaseName = "my-'\ndatabaseName";
 const collectionName = "my-'\ncollectionName";
 
+type EncounteredPaths = {
+  getScriptSnapshot: string[];
+  fileExists: string[];
+  readFile: string[];
+};
+
 describe('MongoDBAutocompleter', function () {
+  let fallbackServiceHost: ts.LanguageServiceHost;
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
-
-  before(function () {
-    // make sure that we fall back to the default ts.sys file methods so that
-    // encounteredPaths will be filled
-    process.env.CI = 'true';
-  });
+  let encounteredPaths: EncounteredPaths;
 
   beforeEach(function () {
+    encounteredPaths = {
+      getScriptSnapshot: [],
+      fileExists: [],
+      readFile: [],
+    };
+
+    fallbackServiceHost = {
+      // most of these are required by the type, but we won't be using them
+      getDefaultLibFileName: (options) => {
+        return ts.getDefaultLibFilePath(options);
+      },
+      getScriptFileNames: () => [],
+      getScriptVersion: () => '1',
+      getCurrentDirectory: () => process.cwd(),
+      getCompilationSettings: () => ({}),
+
+      // these we'll call as fallbacks
+      getScriptSnapshot: (fileName) => {
+        const result = ts.ScriptSnapshot.fromString(
+          // NOTE: some files do not exist. A good example is "typescript/lib/es2023.ts"
+          ts.sys.readFile(fileName) || '',
+        );
+
+        encounteredPaths.getScriptSnapshot.push(fileName);
+        return result;
+      },
+      fileExists: (fileName: string) => {
+        const result = ts.sys.fileExists(fileName);
+        if (result) {
+          encounteredPaths.fileExists.push(fileName);
+        }
+        return result;
+      },
+      readFile: (fileName: string) => {
+        const result = ts.sys.readFile(fileName);
+        encounteredPaths.readFile.push(fileName);
+        return result;
+      },
+      readDirectory: (...args) => {
+        return ts.sys.readDirectory(...args);
+      },
+      directoryExists: (...args) => {
+        return ts.sys.directoryExists(...args);
+      },
+      getDirectories: (...args) => {
+        return ts.sys.getDirectories(...args);
+      },
+    };
     autocompleterContext = {
       currentDatabaseAndConnection: () => ({
         connectionId,
@@ -75,12 +126,12 @@ describe('MongoDBAutocompleter', function () {
 
     autocompleter = new MongoDBAutocompleter({
       context: autocompleterContext,
+      fallbackServiceHost,
     });
   });
 
   afterEach(function () {
     // this is what tells us what we're missing in extract-types.ts
-    const encounteredPaths = autocompleter.listEncounteredPaths();
     expect(encounteredPaths).to.deep.equal({
       fileExists: [],
       getScriptSnapshot: [],

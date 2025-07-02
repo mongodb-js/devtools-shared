@@ -21,10 +21,6 @@ describe('Autocompleter', function () {
   let CODE_TS: string;
 
   before(async function () {
-    // make sure that we fall back to the default ts.sys file methods so that ts
-    // will load the lib files from disk
-    process.env.CI = 'true';
-
     CODE_TS = await fs.readFile(
       path.resolve(__dirname, '..', 'test', 'fixtures', 'code.ts'),
       'utf8',
