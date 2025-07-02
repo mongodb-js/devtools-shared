@@ -28,4 +28,4 @@ env-vars.sh
 mongocryptd.pid
 mongodb-csfle
 .esm-wrapper.mjs
-packages/mongodb-ts-autocomplete/src/fixtures/autocomplete-types.ts
+packages/mongodb-ts-autocomplete/src/types/autocomplete-types.ts
