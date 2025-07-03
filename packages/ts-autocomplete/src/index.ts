@@ -117,7 +117,10 @@ function getVirtualLanguageService(
       return fallbackServiceHost?.readDirectory?.(...args) ?? [];
     },
     directoryExists: (...args) => {
-      return fallbackServiceHost?.directoryExists?.(...args) ?? false;
+      // Fallback to true so that it will use the first directory it checks and
+      // then try and load that file at which point we'll strip the prefix and
+      // service up the right file from codeHolder.
+      return fallbackServiceHost?.directoryExists?.(...args) ?? true;
     },
     getDirectories: (...args) => {
       return fallbackServiceHost?.getDirectories?.(...args) ?? [];
@@ -220,9 +223,8 @@ function filterDiagnostics(diagnostics: ts.Diagnostic[]): {
       ..._.pick(item, 'messageText'),
     };
 
-    if (result.fileName?.endsWith('shell-api.ts')) {
-      delete result.text;
-    }
+    // this just tends to be way too verbose
+    delete result.text;
 
     return result;
   });
