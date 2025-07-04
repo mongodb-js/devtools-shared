@@ -13,7 +13,6 @@ import type {
 } from 'mongodb';
 import type { ConnectDnsResolutionDetail } from './types';
 import type {
-  HttpOptions as OIDCHTTPOptions,
   MongoDBOIDCPlugin,
   MongoDBOIDCPluginOptions,
 } from '@mongodb-js/oidc-plugin';
@@ -32,6 +31,7 @@ import {
   useOrCreateAgent,
   Tunnel,
   systemCA,
+  createFetch,
 } from '@mongodb-js/devtools-proxy-support';
 export type { DevtoolsProxyOptions, AgentWithInitialize };
 
@@ -329,7 +329,6 @@ export class DevtoolsConnectionState {
       'productDocsLink' | 'productName' | 'oidc' | 'parentHandle'
     >,
     logger: ConnectLogEmitter,
-    ca: string | undefined,
   ) {
     this.productName = options.productName;
     if (options.parentHandle) {
@@ -350,7 +349,6 @@ export class DevtoolsConnectionState {
           null,
           options,
         ),
-        ...addToOIDCPluginHttpOptions(options.oidc, ca ? { ca } : {}),
       });
     }
   }
@@ -403,9 +401,10 @@ export interface DevtoolsConnectOptions extends MongoClientOptions {
   proxy?: DevtoolsProxyOptions | AgentWithInitialize;
   /**
    * Whether the proxy specified in `.proxy` should be applied to OIDC HTTP traffic as well.
-   * An explicitly specified `agent` in the options for the OIDC plugin will always take precedence.
+   * This can be an agent or proxy options object, in which case they will override the ones
+   * provided in `proxy` for OIDC traffic.
    */
-  applyProxyToOIDC?: boolean;
+  applyProxyToOIDC?: boolean | DevtoolsProxyOptions | AgentWithInitialize;
 }
 
 export type ConnectMongoClientResult = {
@@ -504,16 +503,28 @@ async function connectMongoClientImpl({
               ...(clientOptions.proxy as DevtoolsProxyOptions),
               ...(ca ? { ca } : {}),
             },
-        clientOptions.applyProxyToOIDC ? undefined : 'mongodb://',
+        clientOptions.applyProxyToOIDC === true ? undefined : 'mongodb://',
       );
     cleanupOnClientClose.push(() => proxyAgent?.destroy());
 
-    if (clientOptions.applyProxyToOIDC) {
+    let oidcProxyOptions:
+      | AgentWithInitialize
+      | DevtoolsProxyOptions
+      | undefined;
+    if (clientOptions.applyProxyToOIDC === true) {
+      oidcProxyOptions = proxyAgent;
+    } else if (clientOptions.applyProxyToOIDC) {
+      oidcProxyOptions = clientOptions.applyProxyToOIDC;
+    }
+    if (!oidcProxyOptions && ca) {
+      oidcProxyOptions = { ca };
+    }
+    if (oidcProxyOptions) {
       clientOptions.oidc = {
+        customFetch: createFetch(
+          oidcProxyOptions,
+        ) as unknown as MongoDBOIDCPluginOptions['customFetch'],
         ...clientOptions.oidc,
-        ...addToOIDCPluginHttpOptions(clientOptions.oidc, {
-          agent: proxyAgent,
-        }),
       };
     }
 
@@ -546,7 +557,7 @@ async function connectMongoClientImpl({
     const shouldAddOidcCallbacks = isHumanOidcFlow(uri, clientOptions);
     const state =
       clientOptions.parentState ??
-      new DevtoolsConnectionState(clientOptions, logger, ca);
+      new DevtoolsConnectionState(clientOptions, logger);
     const mongoClientOptions: MongoClientOptions &
       Partial<DevtoolsConnectOptions> = merge(
       {},
@@ -701,22 +712,4 @@ function closeMongoClientWhenAuthFails(
       onOIDCAuthFailed,
     ),
   );
-}
-
-function addToOIDCPluginHttpOptions(
-  existingOIDCPluginOptions: MongoDBOIDCPluginOptions | undefined,
-  addedOptions: Partial<OIDCHTTPOptions>,
-): Pick<MongoDBOIDCPluginOptions, 'customHttpOptions'> {
-  const existingCustomOptions = existingOIDCPluginOptions?.customHttpOptions;
-  if (typeof existingCustomOptions === 'function') {
-    return {
-      customHttpOptions: (url, options, ...restArgs) =>
-        existingCustomOptions(
-          url,
-          { ...options, ...addedOptions },
-          ...restArgs,
-        ),
-    };
-  }
-  return { customHttpOptions: { ...existingCustomOptions, ...addedOptions } };
 }
