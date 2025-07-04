@@ -141,7 +141,10 @@ const deps: Record<string, string[]> = {
     'assert.js', // exists only
   ],
   buffer: ['package.json', 'index.d.ts'],
-  events: ['package.json'],
+  events: [
+    'package.json',
+    'events.js', // exists only (also only on windows)
+  ],
   punycode: [
     'package.json',
     'punycode.js', // exists only
