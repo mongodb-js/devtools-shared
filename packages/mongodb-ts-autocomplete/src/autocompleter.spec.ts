@@ -3,6 +3,7 @@ import { MongoDBAutocompleter } from './index';
 import type { AutocompletionContext } from './autocompletion-context';
 import { analyzeDocuments } from 'mongodb-schema';
 import { expect } from 'chai';
+import { relativeNodePath } from '@mongodb-js/ts-autocomplete';
 
 /*
 This is intended as deliberately diabolical database and collection names to
@@ -25,6 +26,7 @@ describe('MongoDBAutocompleter', function () {
   let fallbackServiceHost: ts.LanguageServiceHost;
   let autocompleterContext: AutocompletionContext;
   let autocompleter: MongoDBAutocompleter;
+  let autocompleterWithFallback: MongoDBAutocompleter;
   let encounteredPaths: EncounteredPaths;
 
   beforeEach(function () {
@@ -51,19 +53,19 @@ describe('MongoDBAutocompleter', function () {
           ts.sys.readFile(fileName) || '',
         );
 
-        encounteredPaths.getScriptSnapshot.push(fileName);
+        encounteredPaths.getScriptSnapshot.push(relativeNodePath(fileName));
         return result;
       },
       fileExists: (fileName: string) => {
         const result = ts.sys.fileExists(fileName);
         if (result) {
-          encounteredPaths.fileExists.push(fileName);
+          encounteredPaths.fileExists.push(relativeNodePath(fileName));
         }
         return result;
       },
       readFile: (fileName: string) => {
         const result = ts.sys.readFile(fileName);
-        encounteredPaths.readFile.push(fileName);
+        encounteredPaths.readFile.push(relativeNodePath(fileName));
         return result;
       },
       readDirectory: (...args) => {
@@ -126,44 +128,38 @@ describe('MongoDBAutocompleter', function () {
 
     autocompleter = new MongoDBAutocompleter({
       context: autocompleterContext,
+    });
+
+    autocompleterWithFallback = new MongoDBAutocompleter({
+      context: autocompleterContext,
       fallbackServiceHost,
     });
   });
 
-  afterEach(function () {
+  /*
+This test can be used to recreate the list of deps in extract-types.ts.
+
+ie. if you comment out the deps structure so it is an empty object, run
+extract-types (so it is just everything except the node types and Javascript
+lib) and then run this test, then it will essentially print what that structure
+needs to be.
+
+The other tests would fail at the same time because they don't use the fallback
+service host, so typescript wouldn't load all the dependencies.
+  */
+  it('autocompletes', async function () {
+    await autocompleterWithFallback.autocomplete('db.foo.find({ fo');
+
+    encounteredPaths.fileExists.sort();
+    encounteredPaths.getScriptSnapshot.sort();
+    encounteredPaths.readFile.sort();
+
     // this is what tells us what we're missing in extract-types.ts
     expect(encounteredPaths).to.deep.equal({
       fileExists: [],
       getScriptSnapshot: [],
       readFile: [],
     });
-  });
-
-  it('deals with no connection', async function () {
-    // The body of tests are all wrapped in loops so that we exercise the
-    // caching logic in the autocompleter.
-    for (let i = 0; i < 2; i++) {
-      autocompleterContext.currentDatabaseAndConnection = () => {
-        return undefined;
-      };
-
-      const completions = await autocompleter.autocomplete('db.');
-      expect(completions).to.deep.equal([]);
-    }
-  });
-
-  it('does not leak the bson package', async function () {
-    for (let i = 0; i < 2; i++) {
-      const completions = await autocompleter.autocomplete('bson.');
-      expect(completions).to.deep.equal([]);
-    }
-  });
-
-  it('does not leak the ShellAPI package', async function () {
-    for (let i = 0; i < 2; i++) {
-      const completions = await autocompleter.autocomplete('ShellAPI.');
-      expect(completions).to.deep.equal([]);
-    }
   });
 
   it('completes a bson expression', async function () {
@@ -283,6 +279,33 @@ describe('MongoDBAutocompleter', function () {
         result: 'db.bar.find({ myField',
       },
     ]);
+  });
+
+  it('deals with no connection', async function () {
+    // The body of tests are all wrapped in loops so that we exercise the
+    // caching logic in the autocompleter.
+    for (let i = 0; i < 2; i++) {
+      autocompleterContext.currentDatabaseAndConnection = () => {
+        return undefined;
+      };
+
+      const completions = await autocompleter.autocomplete('db.');
+      expect(completions).to.deep.equal([]);
+    }
+  });
+
+  it('does not leak the bson package', async function () {
+    for (let i = 0; i < 2; i++) {
+      const completions = await autocompleter.autocomplete('bson.');
+      expect(completions).to.deep.equal([]);
+    }
+  });
+
+  it('does not leak the ShellAPI package', async function () {
+    for (let i = 0; i < 2; i++) {
+      const completions = await autocompleter.autocomplete('ShellAPI.');
+      expect(completions).to.deep.equal([]);
+    }
   });
 
   describe('getConnectionSchemaCode', function () {

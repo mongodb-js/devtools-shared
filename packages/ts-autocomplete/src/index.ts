@@ -13,7 +13,7 @@ type UpdateDefinitionFunction = (
   newDef: Record<TypeFilename, string | boolean>,
 ) => void;
 
-function relativeNodePath(fileName: string): string {
+export function relativeNodePath(fileName: string): string {
   const parts = fileName.split(/\/node_modules\//g);
   if (parts.length === 1 && fileName.endsWith('package.json')) {
     // special case: when it looks up this package itself it isn't going to find
@@ -65,13 +65,14 @@ function getVirtualLanguageService(
       return (versions[fileName] ?? 1).toString();
     },
     getScriptSnapshot: (fileName) => {
-      fileName = relativeNodePath(fileName);
-      if (fileName in codeHolder) {
+      const relativeFileName = relativeNodePath(fileName);
+
+      if (relativeFileName in codeHolder) {
         // if its a boolean rather than code, just return a blank string if for
         // some reason we ever get here.
         const code =
-          typeof codeHolder[fileName] === 'string'
-            ? (codeHolder[fileName] as string)
+          typeof codeHolder[relativeFileName] === 'string'
+            ? (codeHolder[relativeFileName] as string)
             : '';
         return ts.ScriptSnapshot.fromString(code);
       }
@@ -86,8 +87,8 @@ function getVirtualLanguageService(
       return ts.getDefaultLibFilePath(options);
     },
     fileExists: (fileName) => {
-      fileName = relativeNodePath(fileName);
-      if (fileName in codeHolder) {
+      const relativeFileName = relativeNodePath(fileName);
+      if (relativeFileName in codeHolder) {
         return true;
       }
 
@@ -98,13 +99,13 @@ function getVirtualLanguageService(
       return false;
     },
     readFile: (fileName) => {
-      fileName = relativeNodePath(fileName);
-      if (fileName in codeHolder) {
+      const relativeFileName = relativeNodePath(fileName);
+      if (relativeFileName in codeHolder) {
         // if its a boolean rather than code, just return a blank string if for
         // some reason we ever get here.
         const code =
-          typeof codeHolder[fileName] === 'string'
-            ? (codeHolder[fileName] as string)
+          typeof codeHolder[relativeFileName] === 'string'
+            ? (codeHolder[relativeFileName] as string)
             : undefined;
         return code;
       }
