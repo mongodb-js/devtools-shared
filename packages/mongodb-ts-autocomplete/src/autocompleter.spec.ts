@@ -136,6 +136,17 @@ describe('MongoDBAutocompleter', function () {
     });
   });
 
+  /*
+This test can be used to recreate the list of deps in extract-types.ts.
+
+ie. if you comment out the deps structure so it is an empty object, run
+extract-types (so it is just everything except the node types and Javascript
+lib) and then run this test, then it will essentially print what that structure
+needs to be.
+
+The other tests would fail at the same time because they don't use the fallback
+service host, so typescript wouldn't load all the dependencies.
+  */
   it('autocompletes', async function () {
     await autocompleterWithFallback.autocomplete('db.foo.find({ fo');
 
