@@ -256,6 +256,8 @@ export default class Autocompleter {
       code.length,
       {
         allowIncompleteCompletions: true,
+        // https://github.com/microsoft/TypeScript/blob/833a8d492c728d606454865e8c0fee84842f9f10/tests/baselines/reference/api/typescript.d.ts#L8311-L8315
+        includeCompletionsWithInsertText: true,
       },
     );
 
