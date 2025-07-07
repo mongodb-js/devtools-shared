@@ -83,6 +83,11 @@ describe('Autocompleter', function () {
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([
         {
           kind: 'property',
+          name: 'foo.bar',
+          result: 'myGlobalObject["foo.bar"]',
+        },
+        {
+          kind: 'property',
           name: 'functionProp',
           result: 'myGlobalObject.functionProp',
         },
@@ -100,6 +105,11 @@ describe('Autocompleter', function () {
       });
 
       expect(autoCompleter.autocomplete('myGlobalObject.str')).to.deep.equal([
+        {
+          kind: 'property',
+          name: 'foo.bar',
+          result: 'myGlobalObject["foo.bar"]',
+        },
         {
           kind: 'property',
           name: 'functionProp',
@@ -121,6 +131,11 @@ describe('Autocompleter', function () {
       expect(
         autoCompleter.autocomplete('myGlobalObject.doesNotExist'),
       ).to.deep.equal([
+        {
+          kind: 'property',
+          name: 'foo.bar',
+          result: 'myGlobalObject["foo.bar"]',
+        },
         {
           kind: 'property',
           name: 'functionProp',
@@ -207,6 +222,32 @@ describe('Autocompleter', function () {
         },
       ]);
     });
+
+    it('returns completions for variables with dots in their names', function () {
+      autoCompleter.updateCode({
+        '/code.d.ts': CODE_TS,
+      });
+
+      const completions = autoCompleter.autocomplete('myGlobalObject.fo');
+
+      expect(completions).to.deep.equal([
+        {
+          kind: 'property',
+          name: 'foo.bar',
+          result: 'myGlobalObject["foo.bar"]',
+        },
+        {
+          kind: 'property',
+          name: 'functionProp',
+          result: 'myGlobalObject.functionProp',
+        },
+        {
+          kind: 'property',
+          name: 'stringProp',
+          result: 'myGlobalObject.stringProp',
+        },
+      ]);
+    });
   });
 
   describe('with filter', function () {
@@ -250,6 +291,11 @@ describe('Autocompleter', function () {
         },
       ]);
       expect(autoCompleter.autocomplete('myGlobalObject.')).to.deep.equal([
+        {
+          kind: 'property',
+          name: 'foo.bar',
+          result: 'myGlobalObject["foo.bar"]',
+        },
         {
           kind: 'property',
           name: 'functionProp',
