@@ -220,7 +220,7 @@ service host, so typescript wouldn't load all the dependencies.
         {
           kind: 'property',
           name: 'one.two',
-          result: 'db.one.two',
+          result: 'db["one.two"]',
         },
       ]);
     }

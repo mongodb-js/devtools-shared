@@ -190,8 +190,23 @@ function mapCompletions(
   return completions.entries
     .filter((entry) => filter({ trigger, kind: entry.kind, name: entry.name }))
     .map((entry) => {
+      /*
+      With the includeCompletionsWithInsertText option set, auto-completions
+      might have an insertText property for cases like where a property has
+      to be escaped.
+
+      An obvious example is autocompleting a collection name that has a dot in
+      it. Let's say you have the text db.fo and the collection name is foo.bar.
+      name would be 'foo.bar' and insertText would be '["foo.bar"]'.
+
+      In that case we also want to strip the dot from the prefix.
+      */
+      const result = entry.insertText
+        ? prefix.slice(0, -1) + entry.insertText
+        : prefix + entry.name;
+
       return {
-        result: prefix + entry.name,
+        result,
         name: entry.name,
         kind: entry.kind,
       };
