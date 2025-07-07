@@ -84,7 +84,7 @@ describe('MongoDBAutocompleter', function () {
       databasesForConnection: () =>
         Promise.resolve(['db1', 'db2', databaseName]),
       collectionsForDatabase: () =>
-        Promise.resolve(['foo', 'bar', 'baz', collectionName]),
+        Promise.resolve(['foo', 'bar', 'baz', collectionName, 'one.two']),
       schemaInformationForCollection: async (
         connectionId: string,
         databaseName: string,
@@ -212,6 +212,19 @@ describe('MongoDBAutocompleter', function () {
           kind: 'property',
           name: 'foo',
           result: 'db.foo',
+        },
+      ]);
+    }
+  });
+
+  it('completes a collection name with a dot in it', async function () {
+    for (let i = 0; i < 2; i++) {
+      const completions = await autocompleter.autocomplete('db.on');
+      expect(completions).to.deep.equal([
+        {
+          kind: 'property',
+          name: 'one.two',
+          result: 'db.one.two',
         },
       ]);
     }
