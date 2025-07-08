@@ -493,6 +493,16 @@ describe('devtools connect', function () {
       ).to.equal(false);
     });
 
+    it('returns false if the OIDC_CALLBACK is set', function () {
+      expect(
+        isHumanOidcFlow('mongodb://example/?authMechanism=MONGODB-OIDC', {
+          authMechanismProperties: {
+            OIDC_CALLBACK: () => Promise.resolve({ accessToken: 'abc123' }),
+          },
+        }),
+      ).to.equal(false);
+    });
+
     it('returns false if the ENVIRONMENT url option is set', function () {
       expect(
         isHumanOidcFlow(
