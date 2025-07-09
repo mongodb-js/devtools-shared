@@ -900,7 +900,7 @@ const STAGE_OPERATORS = [
     description: 'Performs a full-text search on the specified field(s).',
     comment: `/**
  * index: The name of the Search index.
- * text: Analyzed search, with required fields of query and path, the analyzed field(s) to search.
+ * text: Analyzed search, with required fields of query and path, the analyzed field(s) to search. Use matchCriteria to match 'any' or 'all' query terms.
  * compound: Combines ops.
  * span: Find in text field regions.
  * exists: Test for presence of a field.
@@ -912,7 +912,8 @@ const STAGE_OPERATORS = [
   index: '\${1:string}',
   text: {
     query: '\${2:string}',
-    path: '\${3:string}'
+    path: '\${3:string}',
+    matchCriteria: '\${4:any}',
   }
 }`,
   },
