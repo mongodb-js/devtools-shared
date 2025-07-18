@@ -1195,7 +1195,7 @@ const STAGE_OPERATORS = [
     apiVersions: [],
     namespaces: [COLLECTION],
     description:
-      'Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.',
+      'Performs a kNN search on embeddings in the specified field(s)',
     comment: `/**
  * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)
  * path: The field to search. (Required)
