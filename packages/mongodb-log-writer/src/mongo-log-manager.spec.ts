@@ -22,7 +22,7 @@ describe('MongoLogManager', function () {
     onerror = sinon.stub();
     directory = path.join(
       os.tmpdir(),
-      `log-writer-test-${Math.random()}-${Date.now()}`
+      `log-writer-test-${Math.random()}-${Date.now()}`,
     );
     await fs.mkdir(directory, { recursive: true });
   });
@@ -84,10 +84,10 @@ describe('MongoLogManager', function () {
 
     const writer = await manager.createLogWriter();
     expect(
-      path.relative(directory, writer.logFilePath as string)[0]
+      path.relative(directory, writer.logFilePath as string)[0],
     ).to.not.equal('.');
     expect((writer.logFilePath as string).includes(writer.logId)).to.equal(
-      true
+      true,
     );
 
     writer.info('component', mongoLogId(12345), 'context', 'message', {
@@ -147,15 +147,54 @@ describe('MongoLogManager', function () {
     }
   });
 
+  it('can recursively clean up old files', async function () {
+    const childDirectory = path.join(directory, 'child', '1');
+    await fs.mkdir(childDirectory, { recursive: true });
+    // The child manager writes in a subdirectory of the log directory
+    // The expectation is that when the parent manager recursively cleans up the
+    // old log files, it will be able to delete the files of the child manager.
+    const childManager = new MongoLogManager({
+      directory: childDirectory,
+      retentionDays: 60,
+      onwarn,
+      onerror,
+    });
+
+    const childWriter = await childManager.createLogWriter();
+    childWriter.info('child', mongoLogId(12345), 'context', 'message');
+
+    childWriter.end();
+    await once(childWriter, 'finish');
+    await fs.stat(childWriter.logFilePath as string);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const parentManager = new MongoLogManager({
+      directory,
+      retentionDays: 0.000001, // 86.4 ms
+      onwarn,
+      onerror,
+    });
+
+    await parentManager.cleanupOldLogFiles({ recursive: true });
+
+    try {
+      await fs.stat(childWriter.logFilePath as string);
+
+      expect.fail('missed exception');
+    } catch (err: any) {
+      expect(err.code).to.equal('ENOENT');
+    }
+  });
+
   const getFilesState = async (paths: string[]) => {
     return (
       await Promise.all(
         paths.map((path) =>
           fs.stat(path).then(
             () => 1,
-            () => 0
-          )
-        )
+            () => 0,
+          ),
+        ),
       )
     ).join('');
   };
@@ -174,7 +213,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
       paths.unshift(filename);
@@ -198,7 +237,7 @@ describe('MongoLogManager', function () {
 
     const faultyFile = path.join(
       directory,
-      ObjectId.createFromTime(offset - 10).toHexString() + '_log'
+      ObjectId.createFromTime(offset - 10).toHexString() + '_log',
     );
     await fs.writeFile(faultyFile, '');
 
@@ -209,7 +248,7 @@ describe('MongoLogManager', function () {
     for (let i = 5; i >= 0; i--) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
       validFiles.push(filename);
@@ -254,7 +293,7 @@ describe('MongoLogManager', function () {
     for (let i = 1; i >= 0; i--) {
       const withoutPrefix = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(withoutPrefix, '');
       paths.push(withoutPrefix);
@@ -263,7 +302,7 @@ describe('MongoLogManager', function () {
         directory,
         'different_' +
           ObjectId.createFromTime(offset - i).toHexString() +
-          '_log'
+          '_log',
       );
       await fs.writeFile(withDifferentPrefix, '');
       paths.push(withDifferentPrefix);
@@ -273,7 +312,7 @@ describe('MongoLogManager', function () {
     for (let i = 9; i >= 0; i--) {
       const filename = path.join(
         directory,
-        `custom_${ObjectId.createFromTime(offset - i).toHexString()}_log`
+        `custom_${ObjectId.createFromTime(offset - i).toHexString()}_log`,
       );
       await fs.writeFile(filename, '');
       paths.push(filename);
@@ -305,7 +344,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '0'.repeat(1024));
       paths.unshift(filename);
@@ -332,7 +371,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
     }
@@ -345,11 +384,12 @@ describe('MongoLogManager', function () {
   describe('with a random file order', function () {
     let paths: string[] = [];
     const times = [92, 90, 1, 2, 3, 91];
+    let offset: number;
 
     beforeEach(async function () {
       const fileNames: string[] = [];
       paths = [];
-      const offset = Math.floor(Date.now() / 1000);
+      offset = Math.floor(Date.now() / 1000);
 
       for (const time of times) {
         const fileName =
@@ -359,19 +399,6 @@ describe('MongoLogManager', function () {
         fileNames.push(fileName);
         paths.push(fullPath);
       }
-
-      sinon.replace(fs, 'opendir', async () =>
-        Promise.resolve({
-          [Symbol.asyncIterator]: function* () {
-            for (const fileName of fileNames) {
-              yield {
-                name: fileName,
-                isFile: () => true,
-              };
-            }
-          },
-        } as unknown as Dir)
-      );
     });
 
     it('cleans up in the expected order with maxLogFileCount', async function () {
@@ -405,6 +432,44 @@ describe('MongoLogManager', function () {
 
       expect(await getFilesState(paths)).to.equal('001110');
     });
+
+    describe('with subdirectories', function () {
+      it('cleans up in the expected order with maxLogFileCount', async function () {
+        // This should exist since the file was created recently
+        const childPath1 = path.join(
+          directory,
+          'subdir1',
+          ObjectId.createFromTime(offset - 2).toHexString() + '_log',
+        );
+        await fs.mkdir(path.join(directory, 'subdir1'), { recursive: true });
+        await fs.writeFile(childPath1, '0'.repeat(1024));
+        paths.push(childPath1);
+
+        // This should not exist since it was created a long time ago
+        const childPath2 = path.join(
+          directory,
+          'subdir2',
+          ObjectId.createFromTime(offset - 20).toHexString() + '_log',
+        );
+        await fs.mkdir(path.join(directory, 'subdir2'), { recursive: true });
+        await fs.writeFile(childPath2, '0'.repeat(1024));
+        paths.push(childPath2);
+
+        const manager = new MongoLogManager({
+          directory,
+          retentionDays,
+          maxLogFileCount: 3,
+          onwarn,
+          onerror,
+        });
+
+        expect(await getFilesState(paths)).to.equal('11111111');
+
+        await manager.cleanupOldLogFiles({ recursive: true });
+
+        expect(await getFilesState(paths)).to.equal('00110010');
+      });
+    });
   });
 
   describe('with multiple log retention settings', function () {
@@ -426,13 +491,13 @@ describe('MongoLogManager', function () {
         const yesterday = today - 25 * 60 * 60;
         const todayFile = path.join(
           directory,
-          ObjectId.createFromTime(today - i).toHexString() + '_log'
+          ObjectId.createFromTime(today - i).toHexString() + '_log',
         );
         await fs.writeFile(todayFile, '0'.repeat(1024));
 
         const yesterdayFile = path.join(
           directory,
-          ObjectId.createFromTime(yesterday - i).toHexString() + '_log'
+          ObjectId.createFromTime(yesterday - i).toHexString() + '_log',
         );
         await fs.writeFile(yesterdayFile, '0'.repeat(1024));
 
@@ -467,7 +532,7 @@ describe('MongoLogManager', function () {
       for (let i = 0; i < 10; i++) {
         const filename = path.join(
           directory,
-          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+          ObjectId.createFromTime(offset - i).toHexString() + '_log',
         );
         await fs.writeFile(filename, '0'.repeat(1024));
         paths.unshift(filename);
@@ -496,7 +561,7 @@ describe('MongoLogManager', function () {
       for (let i = 0; i < 10; i++) {
         const filename = path.join(
           directory,
-          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+          ObjectId.createFromTime(offset - i).toHexString() + '_log',
         );
         await fs.writeFile(filename, '0'.repeat(1024));
         paths.unshift(filename);
@@ -528,7 +593,7 @@ describe('MongoLogManager', function () {
     });
 
     const writer = await manager.createLogWriter();
-    expect(onwarn).to.have.been.calledOnce; // eslint-disable-line
+    expect(onwarn).to.have.been.calledOnce;
     expect(writer.logFilePath).to.equal(null);
 
     writer.info('component', mongoLogId(12345), 'context', 'message', {
@@ -538,7 +603,7 @@ describe('MongoLogManager', function () {
     await once(writer, 'finish');
   });
 
-  it('optionally allow gzip’ed log files', async function () {
+  it("optionally allow gzip'ed log files", async function () {
     const manager = new MongoLogManager({
       directory,
       retentionDays,
@@ -566,7 +631,7 @@ describe('MongoLogManager', function () {
     expect(log[0].t.$date).to.be.a('string');
   });
 
-  it('optionally can read truncated gzip’ed log files', async function () {
+  it("optionally can read truncated gzip'ed log files", async function () {
     const manager = new MongoLogManager({
       directory,
       retentionDays,
@@ -608,7 +673,7 @@ describe('MongoLogManager', function () {
     };
     const opendirStub = sinon
       .stub(fs, 'opendir')
-      .resolves(fakeDirHandle as any);
+      .resolves(fakeDirHandle as unknown as Dir);
 
     retentionDays = 0.000001; // 86.4 ms
     const manager = new MongoLogManager({

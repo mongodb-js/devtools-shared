@@ -1,6 +1,7 @@
 import path from 'path';
 import { ObjectId } from 'bson';
 import { once } from 'events';
+import type { Dir } from 'fs';
 import { createWriteStream, promises as fs } from 'fs';
 import { createGzip, constants as zlibConstants } from 'zlib';
 import { Heap } from 'heap-js';
@@ -39,7 +40,7 @@ export class MongoLogManager {
     if (options.prefix) {
       if (!/^[a-z0-9_]+$/i.test(options.prefix)) {
         throw new Error(
-          'Prefix must only contain letters, numbers, and underscores'
+          'Prefix must only contain letters, numbers, and underscores',
         );
       }
     }
@@ -62,19 +63,24 @@ export class MongoLogManager {
   }
 
   /** Clean up log files older than `retentionDays`. */
-  async cleanupOldLogFiles(
+  async cleanupOldLogFiles({
     maxDurationMs = 5_000,
-    remainingRetries = 1
-  ): Promise<void> {
+    remainingRetries = 1,
+    recursive = false,
+  }: {
+    maxDurationMs?: number;
+    remainingRetries?: number;
+    recursive?: boolean;
+  } = {}): Promise<void> {
     const deletionStartTimestamp = Date.now();
     // Delete files older than N days
     const deletionCutoffTimestamp =
       deletionStartTimestamp - this._options.retentionDays * 86400 * 1000;
 
     const dir = this._options.directory;
-    let dirHandle;
+    let dirHandle: Dir;
     try {
-      dirHandle = await fs.opendir(dir);
+      dirHandle = await fs.opendir(dir, { recursive });
     } catch {
       return;
     }
@@ -101,18 +107,25 @@ export class MongoLogManager {
         // a large number of machines using a shared network-mounted $HOME directory
         // where lots and lots of log files end up and filesystem operations happen
         // with network latency.
-        if (Date.now() - deletionStartTimestamp > maxDurationMs) break;
+        if (Date.now() - deletionStartTimestamp > maxDurationMs) {
+          break;
+        }
 
-        if (!dirent.isFile()) continue;
+        if (!dirent.isFile()) {
+          continue;
+        }
+
         const logRegExp = new RegExp(
           `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
-          'i'
+          'i',
         );
         const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
-        if (!id) continue;
+        if (!id) {
+          continue;
+        }
 
         const fileTimestamp = +new ObjectId(id).getTimestamp();
-        const fullPath = path.join(dir, dirent.name);
+        const fullPath = path.join(dirent.parentPath ?? dir, dirent.name);
 
         // If the file is older than expected, delete it. If the file is recent,
         // add it to the list of seen files, and if that list is too large, remove
@@ -143,22 +156,34 @@ export class MongoLogManager {
           leastRecentFileHeap.size() > this._options.maxLogFileCount
         ) {
           const toDelete = leastRecentFileHeap.pop();
-          if (!toDelete) continue;
+          if (!toDelete) {
+            continue;
+          }
+
           await this.deleteFile(toDelete.fullPath);
           usedStorageSize -= toDelete.fileSize ?? 0;
         }
       }
-    } catch (statErr: any) {
+    } catch (err: unknown) {
       // Multiple processes may attempt to clean up log files in parallel.
       // A situation can arise where one process tries to read a file
       // that another process has already unlinked (see MONGOSH-1914).
       // To handle such scenarios, we will catch lstat errors and retry cleaning up
       // to let different processes reach out to different log files.
-      if (statErr.code === 'ENOENT' && remainingRetries > 0) {
-        await this.cleanupOldLogFiles(
-          maxDurationMs - (Date.now() - deletionStartTimestamp),
-          remainingRetries - 1
-        );
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        err.code === 'ENOENT' &&
+        remainingRetries > 0
+      ) {
+        await this.cleanupOldLogFiles({
+          maxDurationMs: maxDurationMs - (Date.now() - deletionStartTimestamp),
+          remainingRetries: remainingRetries - 1,
+          recursive,
+        });
+      } else {
+        this._options.onerror(err as Error, dir);
       }
     }
 
@@ -184,7 +209,7 @@ export class MongoLogManager {
     const doGzip = !!this._options.gzip;
     const logFilePath = path.join(
       this._options.directory,
-      `${this.prefix}${logId}_log${doGzip ? '.gz' : ''}`
+      `${this.prefix}${logId}_log${doGzip ? '.gz' : ''}`,
     );
 
     let originalTarget: Writable;
