@@ -28,7 +28,7 @@ describe('MongoLogManager', function () {
   });
 
   afterEach(async function () {
-    await fs.rmdir(directory, { recursive: true });
+    await fs.rm(directory, { recursive: true });
     sinon.restore();
   });
 
@@ -434,8 +434,8 @@ describe('MongoLogManager', function () {
     });
 
     describe('with subdirectories', function () {
-      it('cleans up in the expected order with maxLogFileCount', async function () {
-        // This should exist since the file was created recently
+      beforeEach(async function () {
+        // Add a recent child file
         const childPath1 = path.join(
           directory,
           'subdir1',
@@ -445,7 +445,7 @@ describe('MongoLogManager', function () {
         await fs.writeFile(childPath1, '0'.repeat(1024));
         paths.push(childPath1);
 
-        // This should not exist since it was created a long time ago
+        // Add an older child file
         const childPath2 = path.join(
           directory,
           'subdir2',
@@ -454,7 +454,9 @@ describe('MongoLogManager', function () {
         await fs.mkdir(path.join(directory, 'subdir2'), { recursive: true });
         await fs.writeFile(childPath2, '0'.repeat(1024));
         paths.push(childPath2);
+      });
 
+      it('cleans up in the expected order with maxLogFileCount', async function () {
         const manager = new MongoLogManager({
           directory,
           retentionDays,
@@ -468,6 +470,41 @@ describe('MongoLogManager', function () {
         await manager.cleanupOldLogFiles({ recursive: true });
 
         expect(await getFilesState(paths)).to.equal('00110010');
+      });
+
+      it('deletes empty directories after cleanup', async function () {
+        // Add an old file in subdir1 - it should be deleted, but subdir1 should remain
+        const oldSubdir1Child = path.join(
+          directory,
+          'subdir1',
+          ObjectId.createFromTime(offset - 50).toHexString() + '_log',
+        );
+        await fs.writeFile(oldSubdir1Child, '0'.repeat(1024));
+        paths.push(oldSubdir1Child);
+
+        const manager = new MongoLogManager({
+          directory,
+          retentionDays,
+          maxLogFileCount: 3,
+          onwarn,
+          onerror,
+        });
+
+        expect(await getFilesState(paths)).to.equal('111111111');
+
+        await manager.cleanupOldLogFiles({ recursive: true });
+
+        expect(await getFilesState(paths)).to.equal('001100100');
+
+        // subdir1 should have been left alone because of the newer child
+        // subdir2 should have been deleted because it was empty
+        await fs.stat(path.join(directory, 'subdir1'));
+        try {
+          await fs.stat(path.join(directory, 'subdir2'));
+          expect.fail('subdir2 should have been deleted');
+        } catch (err: any) {
+          expect(err.code).to.equal('ENOENT');
+        }
       });
     });
   });

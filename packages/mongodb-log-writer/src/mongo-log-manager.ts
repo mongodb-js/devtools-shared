@@ -47,14 +47,30 @@ export class MongoLogManager {
     this._options = options;
   }
 
-  private async deleteFile(path: string): Promise<void> {
+  private async deleteFile(filePath: string): Promise<void> {
     try {
-      await fs.unlink(path);
+      await fs.unlink(filePath);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err?.code !== 'ENOENT') {
-        this._options.onerror(err as Error, path);
+        this._options.onerror(err as Error, filePath);
       }
+    }
+
+    let basePath = path.dirname(filePath);
+    while (basePath !== this._options.directory) {
+      // Delete empty directories up to the base directory
+      try {
+        await fs.rmdir(path.dirname(filePath));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        // If the directory is not empty, we stop deleting.
+        if (err?.code === 'ENOTEMPTY' || err?.code === 'ENOENT') {
+          break;
+        }
+      }
+
+      basePath = path.dirname(basePath);
     }
   }
 
