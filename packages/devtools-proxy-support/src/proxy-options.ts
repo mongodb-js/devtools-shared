@@ -21,8 +21,11 @@ export interface DevtoolsProxyOptions {
   };
 
   // Not being honored by the translate-to-electron functionality
-  // This will be merged with the system CA list and the Node.js built-in CA list
+  // This will be merged with the system CA list and the Node.js built-in CA list,
+  // unless `caExcludeSystemCerts` is set
   ca?: ConnectionOptions['ca'];
+  // Exclude system certificates from the full certificate list.
+  caExcludeSystemCerts?: boolean;
 
   // Mostly intended for testing, defaults to `process.env`.
   // This should usually not be stored, and secrets will not be

@@ -58,6 +58,7 @@ export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
     tlsCAFile?: string | null | undefined;
+    excludeSystemCerts?: boolean;
   } = {},
 ): Promise<{
   ca: string;
@@ -81,9 +82,11 @@ export async function systemCA(
   const messages: string[] = [];
 
   try {
-    const systemCertsResult = await systemCertsCached();
-    asyncFallbackError = systemCertsResult.asyncFallbackError;
-    systemCerts = systemCertsResult.certs;
+    if (!existingOptions.excludeSystemCerts) {
+      const systemCertsResult = await systemCertsCached();
+      asyncFallbackError = systemCertsResult.asyncFallbackError;
+      systemCerts = systemCertsResult.certs;
+    }
   } catch (err: any) {
     systemCertsError = err;
   }

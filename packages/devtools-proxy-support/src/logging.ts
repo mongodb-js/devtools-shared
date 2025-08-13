@@ -3,6 +3,11 @@
 // values used here; in particular,
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 
+import type { AgentConnectOpts } from 'agent-base';
+import type { ClientRequest } from 'http';
+import type { SecureContextOptions } from 'tls';
+import type { AgentWithInitialize } from './agent';
+
 interface BaseSocks5RequestMetadata {
   srcAddr: string;
   srcPort: number;
@@ -44,6 +49,11 @@ export interface ProxyEventMap {
     host: string;
     retryableError: boolean;
     retriesLeft: number;
+  }) => void;
+  'proxy:connect': (ev: {
+    agent: AgentWithInitialize;
+    req: ClientRequest;
+    opts: AgentConnectOpts & Partial<SecureContextOptions>;
   }) => void;
 }
 

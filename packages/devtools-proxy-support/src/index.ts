@@ -1,6 +1,11 @@
 export * from './proxy-options-public';
 export { Tunnel, TunnelOptions, createSocks5Tunnel } from './socks5';
-export { createAgent, useOrCreateAgent, AgentWithInitialize } from './agent';
+export {
+  createAgent,
+  useOrCreateAgent,
+  isExistingAgentInstance,
+  AgentWithInitialize,
+} from './agent';
 export {
   createFetch,
   Request,
