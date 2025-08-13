@@ -71,7 +71,8 @@ function handleNestedErrors(
 ): (err: unknown) => boolean {
   const checker = (err: unknown): boolean => {
     if (
-      Object.prototype.toString.call(err).toLowerCase() !== '[object error]'
+      // e.g. node-fetch defines its FetchError class to be a `[object FetchError]`
+      !Object.prototype.toString.call(err).match(/\[object .*error\]/i)
     ) {
       return checker(new Error(String(err)));
     }

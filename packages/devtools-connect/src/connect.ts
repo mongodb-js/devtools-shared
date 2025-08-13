@@ -32,6 +32,7 @@ import {
   Tunnel,
   systemCA,
   createFetch,
+  isExistingAgentInstance,
 } from '@mongodb-js/devtools-proxy-support';
 export type { DevtoolsProxyOptions, AgentWithInitialize };
 
@@ -490,6 +491,17 @@ async function connectMongoClientImpl({
       ca = caWithSystemCerts;
     }
 
+    const addCAToProxyOptions = (
+      opts: AgentWithInitialize | DevtoolsProxyOptions | undefined,
+    ): AgentWithInitialize | DevtoolsProxyOptions => {
+      if (opts && isExistingAgentInstance(opts)) return opts;
+      return {
+        caExcludeSystemCerts: !useSystemCA,
+        ...opts,
+        ...(ca ? { ca } : {}),
+      };
+    };
+
     // Create a proxy agent, if requested. `useOrCreateAgent()` takes a target argument
     // that can be used to select a proxy for a specific procotol or host;
     // here we specify 'mongodb://' if we only intend to use the proxy for database
@@ -497,12 +509,7 @@ async function connectMongoClientImpl({
     const proxyAgent =
       clientOptions.proxy &&
       useOrCreateAgent(
-        'createConnection' in clientOptions.proxy
-          ? clientOptions.proxy
-          : {
-              ...(clientOptions.proxy as DevtoolsProxyOptions),
-              ...(ca ? { ca } : {}),
-            },
+        addCAToProxyOptions(clientOptions.proxy),
         clientOptions.applyProxyToOIDC === true ? undefined : 'mongodb://',
       );
     cleanupOnClientClose.push(() => proxyAgent?.destroy());
@@ -516,17 +523,16 @@ async function connectMongoClientImpl({
     } else if (clientOptions.applyProxyToOIDC) {
       oidcProxyOptions = clientOptions.applyProxyToOIDC;
     }
-    if (!oidcProxyOptions && ca) {
-      oidcProxyOptions = { ca };
-    }
-    if (oidcProxyOptions) {
-      clientOptions.oidc = {
-        customFetch: createFetch(
-          oidcProxyOptions,
-        ) as unknown as MongoDBOIDCPluginOptions['customFetch'],
+
+    const oidcFetch = createFetch(addCAToProxyOptions(oidcProxyOptions));
+    clientOptions = {
+      ...clientOptions,
+      oidc: {
+        customFetch:
+          oidcFetch as unknown as MongoDBOIDCPluginOptions['customFetch'],
         ...clientOptions.oidc,
-      };
-    }
+      },
+    };
 
     let tunnel: Tunnel | undefined;
     if (proxyAgent && !hasProxyHostOption(uri, clientOptions)) {
@@ -537,7 +543,11 @@ async function connectMongoClientImpl({
       );
       cleanupOnClientClose.push(() => tunnel?.close());
     }
-    for (const proxyLogger of new Set([tunnel?.logger, proxyAgent?.logger])) {
+    for (const proxyLogger of new Set([
+      tunnel?.logger,
+      proxyAgent?.logger,
+      oidcFetch?.agent?.logger,
+    ])) {
       if (proxyLogger) {
         copyEventEmitterEvents(proxyLogger, logger);
       }

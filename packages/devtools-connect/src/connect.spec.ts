@@ -6,6 +6,7 @@ import { MongoClient } from 'mongodb';
 import sinon, { stubConstructor } from 'ts-sinon';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
+import { Agent as HTTPSAgent } from 'https';
 
 chai.use(sinonChai);
 
@@ -375,7 +376,7 @@ describe('devtools connect', function () {
     });
 
     describe('retryable TLS errors', function () {
-      it('retries TLS errors without system CA integration enabled', async function () {
+      it('retries TLS errors without system CA integration enabled -- MongoClient error', async function () {
         const uri = 'localhost:27017';
         const mClient = new FakeMongoClient();
         const mClientType = sinon.stub().returns(mClient);
@@ -428,6 +429,67 @@ describe('devtools connect', function () {
         expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
 
         expect(earlyFailures).to.equal(2);
+      });
+
+      it('retries TLS errors without system CA integration enabled -- OIDC error', async function () {
+        const uri = 'localhost:27017';
+        const mClient = new FakeMongoClient();
+        let opts: DevtoolsConnectOptions;
+
+        const proxyConnectEvents: any[] = [];
+        bus.on('proxy:connect', (ev) => {
+          proxyConnectEvents.push({ ...ev, opts: { ...ev.opts } });
+          ev.opts.ca = 'abcdef'; // will always fail
+          ev.agent.httpsAgent = new HTTPSAgent({ ca: 'abcdef' });
+        });
+        const mClientType = sinon.stub().callsFake((url, clientOpts) => {
+          opts = clientOpts;
+          return mClient;
+        });
+
+        mClient.connect = sinon.stub().callsFake(async () => {
+          return await opts.authMechanismProperties?.OIDC_HUMAN_CALLBACK?.({
+            version: 1,
+            timeoutContext: new AbortController().signal,
+            idpInfo: {
+              issuer: 'https://mongodb.com/',
+              clientId: 'meow',
+            },
+          });
+        });
+        mClient.topology = {
+          description: {
+            servers: new Map([['localhost:27017', {}]]),
+          },
+        };
+
+        try {
+          await connectMongoClient(
+            uri,
+            {
+              ...defaultOpts,
+              authMechanism: 'MONGODB-OIDC',
+            },
+            bus,
+            mClientType as any,
+          );
+          expect.fail('missed exception');
+        } catch (err: any) {
+          expect(err.message).to.include('Unable to fetch issuer metadata');
+        }
+
+        expect(mClientType.getCalls()).to.have.lengthOf(2);
+        expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
+        expect(proxyConnectEvents).to.have.lengthOf(2);
+        expect(proxyConnectEvents[0].agent).to.not.equal(
+          proxyConnectEvents[1].agent,
+        );
+        expect(proxyConnectEvents[0].opts.ca).to.not.equal(
+          proxyConnectEvents[1].opts.ca,
+        );
+        expect(proxyConnectEvents[0].agent.proxyOptions.ca).to.not.equal(
+          proxyConnectEvents[1].agent.proxyOptions.ca,
+        );
       });
     });
   });

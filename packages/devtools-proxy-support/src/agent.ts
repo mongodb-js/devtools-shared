@@ -101,6 +101,7 @@ class DevtoolsProxyAgent extends ProxyAgent implements AgentWithInitialize {
     }
     this._req = req;
     this._reqLock = new Promise((resolve) => (this._reqLockResolve = resolve));
+    this.logger.emit('proxy:connect', { agent: this, req, opts });
     const agent = await super.connect(req, opts);
     // Work around https://github.com/TooTallNate/proxy-agents/pull/330
     if ('addRequest' in agent && typeof agent.addRequest === 'function') {
@@ -131,7 +132,10 @@ class DevtoolsProxyAgentWithSystemCA extends AgentBase {
     super();
     this.proxyOptions = proxyOptions;
     this.agent = (async () => {
-      const { ca } = await systemCA({ ca: proxyOptions.ca });
+      const { ca } = await systemCA({
+        ca: proxyOptions.ca,
+        excludeSystemCerts: proxyOptions.caExcludeSystemCerts,
+      });
       return new DevtoolsProxyAgent(
         { ...proxyOptions, ca, allowPartialTrustChain: true },
         this.logger,
@@ -167,8 +171,8 @@ export function useOrCreateAgent(
   target?: string,
   useTargetRegardlessOfExistingAgent = false,
 ): AgentWithInitialize | undefined {
-  if ('createConnection' in proxyOptions) {
-    const agent = proxyOptions as AgentWithInitialize;
+  if (isExistingAgentInstance(proxyOptions)) {
+    const agent = proxyOptions;
     if (
       useTargetRegardlessOfExistingAgent &&
       target !== undefined &&
@@ -179,12 +183,15 @@ export function useOrCreateAgent(
     }
     return agent;
   } else {
-    if (
-      target !== undefined &&
-      !proxyForUrl(proxyOptions as DevtoolsProxyOptions, target)
-    ) {
+    if (target !== undefined && !proxyForUrl(proxyOptions, target)) {
       return undefined;
     }
-    return createAgent(proxyOptions as DevtoolsProxyOptions);
+    return createAgent(proxyOptions);
   }
+}
+
+export function isExistingAgentInstance(
+  options: DevtoolsProxyOptions | AgentWithInitialize,
+): options is AgentWithInitialize {
+  return 'createConnection' in options;
 }
