@@ -16,3 +16,4 @@ export type {
   FilterOptions as CompletionFilterOptions,
 } from './filter';
 export * from './atlas-search-templates';
+export * from './pipeline';
