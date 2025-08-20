@@ -24,7 +24,7 @@ export const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
       const matchStage = stage['$match'] as Document;
       const matchKeys = Object.keys(matchStage || {});
 
-      if (!(matchKeys.length === 1 && matchKeys.includes('$expr'))) {
+      if (matchKeys.length !== 1 || !matchKeys.includes('$expr')) {
         return false;
       }
     }
