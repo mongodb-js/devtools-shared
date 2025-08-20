@@ -3,7 +3,11 @@
 import type { Document } from 'mongodb';
 
 /** A view pipeline is searchQueryable (ie: a search index can be created on view) if
- * a pipeline consists of only addFields, set and match with expr stages**/
+ * a pipeline consists of only addFields, set and match with expr stages*
+ *
+ * @param pipeline the view pipeline
+ * @returns whether pipeline is search queryable
+ * */
 export const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
   for (const stage of pipeline) {
     const stageKey = Object.keys(stage)[0];
