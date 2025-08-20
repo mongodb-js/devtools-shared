@@ -72,6 +72,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "mongodb": "^6.18.0",
     "semver": "^7.7.1"
   }
 }
