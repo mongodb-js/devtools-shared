@@ -6,6 +6,7 @@ describe('constants', function () {
     expect(Object.keys(constants)).to.deep.eq([
       'getFilteredCompletions',
       'wrapField',
+      'isPipelineSearchQueryable',
       'ACCUMULATORS',
       'BSON_TYPE_ALIASES',
       'BSON_TYPES',
