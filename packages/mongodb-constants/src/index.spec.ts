@@ -6,7 +6,6 @@ describe('constants', function () {
     expect(Object.keys(constants)).to.deep.eq([
       'getFilteredCompletions',
       'wrapField',
-      'isPipelineSearchQueryable',
       'ACCUMULATORS',
       'BSON_TYPE_ALIASES',
       'BSON_TYPES',
@@ -33,6 +32,7 @@ describe('constants', function () {
       'VALIDATION_TEMPLATE',
       'ATLAS_SEARCH_TEMPLATES',
       'ATLAS_VECTOR_SEARCH_TEMPLATE',
+      'VIEW_PIPELINE_UTILS',
     ]);
   });
 });

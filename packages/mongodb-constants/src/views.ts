@@ -3,19 +3,17 @@
 import type { Document } from 'mongodb';
 import semver from 'semver';
 
-/**
- * Constants for view compatibility;
- */
-export const MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_DE = '8.0.0';
-export const MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_COMPASS = '8.1.0';
+const MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_DE = '8.0.0';
+const MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_COMPASS = '8.1.0';
 
-/** A view pipeline is searchQueryable (ie: a search index can be created on view) if
- * a pipeline consists of only addFields, set and match with expr stages*
+/**
+ * A view pipeline is searchQueryable (ie: a search index can be created on view) if
+ * a pipeline consists of only addFields, set and match with expr stages
  *
  * @param pipeline the view pipeline
  * @returns whether pipeline is search queryable
- * */
-export const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
+ */
+const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
   for (const stage of pipeline) {
     const stageKey = Object.keys(stage)[0];
 
@@ -44,14 +42,15 @@ export const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
   return true;
 };
 
-/** Views allow search indexes to be made on them in DE for server version 8.1+
+/**
+ * Views allow search indexes to be made on them in DE for server version 8.1+
  *
  * @param serverVersion the server version
  * @returns whether serverVersion is search compatible for views in DE
- * */
-export const isVersionSearchCompatibleForViewsDataExplorer = (
+ */
+const isVersionSearchCompatibleForViewsDataExplorer = (
   serverVersion: string,
-) => {
+): boolean => {
   try {
     return semver.gte(
       serverVersion,
@@ -62,14 +61,15 @@ export const isVersionSearchCompatibleForViewsDataExplorer = (
   }
 };
 
-/** Views allow search indexes to be made on them in compass for mongodb version 8.0+
+/**
+ * Views allow search indexes to be made on them in compass for mongodb version 8.0+
  *
  * @param serverVersion the view pipeline
- * @returns whether serverVersion is search compatible for views in DE
- * */
-export const isVersionSearchCompatibleForViewsCompass = (
+ * @returns whether serverVersion is search compatible for views in Compass
+ */
+const isVersionSearchCompatibleForViewsCompass = (
   serverVersion: string,
-) => {
+): boolean => {
   try {
     return semver.gte(
       serverVersion,
@@ -78,4 +78,12 @@ export const isVersionSearchCompatibleForViewsCompass = (
   } catch {
     return false;
   }
+};
+
+export const VIEW_PIPELINE_UTILS = {
+  MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_DE,
+  MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_COMPASS,
+  isPipelineSearchQueryable,
+  isVersionSearchCompatibleForViewsDataExplorer,
+  isVersionSearchCompatibleForViewsCompass,
 };
