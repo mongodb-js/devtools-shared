@@ -64,7 +64,7 @@ const isVersionSearchCompatibleForViewsDataExplorer = (
 /**
  * Views allow search indexes to be made on them in compass for mongodb version 8.0+
  *
- * @param serverVersion the view pipeline
+ * @param serverVersion the server version
  * @returns whether serverVersion is search compatible for views in Compass
  */
 const isVersionSearchCompatibleForViewsCompass = (
