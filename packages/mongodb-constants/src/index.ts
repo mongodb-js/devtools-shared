@@ -16,4 +16,4 @@ export type {
   FilterOptions as CompletionFilterOptions,
 } from './filter';
 export * from './atlas-search-templates';
-export { isPipelineSearchQueryable } from './pipeline';
+export * from './views';
