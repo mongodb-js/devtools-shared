@@ -1,6 +1,6 @@
 /** utils related to view pipeline **/
 
-import type { Document } from 'mongodb';
+import type { Document } from 'bson';
 import semver from 'semver';
 
 const MIN_VERSION_FOR_VIEW_SEARCH_COMPATIBILITY_DE = '8.0.0';

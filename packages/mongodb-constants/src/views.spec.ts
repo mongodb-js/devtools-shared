@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { VIEW_PIPELINE_UTILS } from './views';
-import type { Document } from 'mongodb';
+import type { Document } from 'bson';
 
 describe('views', function () {
   describe('isPipelineSearchQueryable', function () {
