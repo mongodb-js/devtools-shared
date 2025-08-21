@@ -32,6 +32,7 @@ describe('constants', function () {
       'VALIDATION_TEMPLATE',
       'ATLAS_SEARCH_TEMPLATES',
       'ATLAS_VECTOR_SEARCH_TEMPLATE',
+      'VIEW_PIPELINE_UTILS',
     ]);
   });
 });

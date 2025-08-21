@@ -51,6 +51,9 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
+  "peerDependencies": {
+    "bson": "^6.10.3"
+  },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.11",
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
@@ -60,6 +63,7 @@
     "@types/mocha": "^9.1.1",
     "@types/semver": "^7.7.0",
     "@types/sinon-chai": "^3.2.5",
+    "bson": "^6.10.3",
     "acorn": "^8.14.1",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
