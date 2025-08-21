@@ -6,6 +6,7 @@ import {
   DATABASE,
   ANY_COLLECTION_NAMESPACE,
   COLLECTION,
+  VIEW,
 } from './ns';
 
 type StageOperator = {
@@ -896,7 +897,7 @@ const STAGE_OPERATORS = [
     meta: 'stage',
     version: '4.1.11',
     apiVersions: [],
-    namespaces: [COLLECTION],
+    namespaces: [COLLECTION, VIEW],
     description: 'Performs a full-text search on the specified field(s).',
     comment: `/**
  * index: The name of the Search index.
@@ -929,7 +930,7 @@ const STAGE_OPERATORS = [
     meta: 'stage',
     version: '4.4.9',
     apiVersions: [],
-    namespaces: [COLLECTION],
+    namespaces: [COLLECTION, VIEW],
     description:
       'Performs a full-text search on the specified field(s) and gets back only the generated search meta data from a query.',
     comment: `/**
@@ -1193,7 +1194,7 @@ const STAGE_OPERATORS = [
     meta: 'stage',
     version: '>=6.0.10 <7.0.0 || >=7.0.2',
     apiVersions: [],
-    namespaces: [COLLECTION],
+    namespaces: [COLLECTION, VIEW],
     description:
       'Performs a kNN search on embeddings in the specified field(s)',
     comment: `/**
