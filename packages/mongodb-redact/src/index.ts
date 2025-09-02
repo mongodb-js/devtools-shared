@@ -14,12 +14,15 @@ export function redact<T>(
   if (isPlainObject(message)) {
     // recursively walk through all values of an object
     return Object.fromEntries(
-      Object.entries(message).map(([key, value]) => [key, redact(value)]),
+      Object.entries(message).map(([key, value]) => [
+        key,
+        redact(value, secrets),
+      ]),
     ) as T;
   }
   if (Array.isArray(message)) {
     // walk through array and redact each value
-    return message.map((msg) => redact(msg)) as T;
+    return message.map((msg) => redact(msg, secrets)) as T;
   }
   if (typeof message !== 'string') {
     // all non-string types can be safely returned

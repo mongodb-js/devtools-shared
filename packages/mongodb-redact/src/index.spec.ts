@@ -25,9 +25,21 @@ db.history.updateOne({"_id": ObjectId("63ed1d522d8573fa5c203660")}, {$set:{chang
 
 describe('mongodb-redact', function () {
   describe('Secrets', function () {
-    it('should redact provided secrets', function () {
+    it('should redact provided secrets in strings', function () {
       const res = redact('foo@bar', [{ value: 'foo@bar', kind: 'password' }]);
       expect(res).to.equal('<password>');
+    });
+
+    it('should redact provided secrets in objects', function () {
+      const res = redact({ key: 'foo@bar' }, [
+        { value: 'foo@bar', kind: 'password' },
+      ]);
+      expect(res).to.deep.equal({ key: '<password>' });
+    });
+
+    it('should redact provided secrets in arrays', function () {
+      const res = redact(['foo@bar'], [{ value: 'foo@bar', kind: 'password' }]);
+      expect(res).to.deep.equal(['<password>']);
     });
   });
 
