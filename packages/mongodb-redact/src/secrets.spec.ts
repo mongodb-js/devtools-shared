@@ -1,14 +1,15 @@
 import { expect } from 'chai';
-import { SECRET_KIND, redactSecrets } from './secrets';
+import { SECRET_KIND } from './secrets';
 import type { SecretKind } from './secrets';
+import { redact } from './index';
 
-describe('secret redaction on a string', function () {
+describe('dictionary-based secret redaction', function () {
   for (const kind of SECRET_KIND) {
     it(`redacts content of kind '${kind}'`, function () {
       const secret = '123456';
       const content = '123456';
 
-      const redacted = redactSecrets(content, [{ value: secret, kind: kind }]);
+      const redacted = redact(content, [{ value: secret, kind: kind }]);
 
       expect(redacted).equal(`<${kind}>`);
     });
@@ -16,13 +17,22 @@ describe('secret redaction on a string', function () {
 
   for (const invalidValue of [null, undefined, false, 0]) {
     it(`returns itself on an invalid value like ${String(invalidValue)}`, function () {
-      expect(redactSecrets(invalidValue as any, [])).equal(invalidValue);
+      expect(redact(invalidValue as any, [])).equal(invalidValue);
     });
   }
 
+  it('redacts multiple coincidences of a secret', function () {
+    const secret = '123456';
+    const content = '123456 abc 123456';
+
+    const redacted = redact(content, [{ value: secret, kind: 'password' }]);
+
+    expect(redacted).to.equal('<password> abc <password>');
+  });
+
   it('rejects unknown types', function () {
     expect(() =>
-      redactSecrets('some content to redact', [
+      redact('some content to redact', [
         {
           value: 'some',
           kind: 'invalid' as SecretKind,
@@ -35,9 +45,7 @@ describe('secret redaction on a string', function () {
     const secret = '123456';
     const content = '.123456.';
 
-    const redacted = redactSecrets(content, [
-      { value: secret, kind: 'password' },
-    ]);
+    const redacted = redact(content, [{ value: secret, kind: 'password' }]);
 
     expect(redacted).equal('.<password>.');
   });
@@ -46,9 +54,7 @@ describe('secret redaction on a string', function () {
     const secret = '123456';
     const content = 'abc123456def';
 
-    const redacted = redactSecrets(content, [
-      { value: secret, kind: 'password' },
-    ]);
+    const redacted = redact(content, [{ value: secret, kind: 'password' }]);
 
     expect(redacted).equal('abc123456def');
   });
@@ -57,9 +63,7 @@ describe('secret redaction on a string', function () {
     const secret = '.+';
     const content = '.abcdef.';
 
-    const redacted = redactSecrets(content, [
-      { value: secret, kind: 'password' },
-    ]);
+    const redacted = redact(content, [{ value: secret, kind: 'password' }]);
 
     expect(redacted).equal('.abcdef.');
   });
@@ -68,9 +72,7 @@ describe('secret redaction on a string', function () {
     const secret = 'abc';
     const content = ['abc', 'cbd'];
 
-    const redacted = redactSecrets(content, [
-      { value: secret, kind: 'password' },
-    ]);
+    const redacted = redact(content, [{ value: secret, kind: 'password' }]);
 
     expect(redacted).deep.equal(['<password>', 'cbd']);
   });
@@ -81,7 +83,7 @@ describe('secret redaction on a string', function () {
 
     const content = { pwd: pwdSecret, usr: usrSecret };
 
-    const redacted = redactSecrets(content, [
+    const redacted = redact(content, [
       { value: pwdSecret, kind: 'password' },
       { value: usrSecret, kind: 'user' },
     ]);

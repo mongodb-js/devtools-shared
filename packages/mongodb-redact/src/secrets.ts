@@ -22,7 +22,7 @@ export type Secret = {
   readonly kind: SecretKind;
 };
 
-function redactSecretsOnString<T extends string>(
+export function redactSecretsOnString<T extends string>(
   content: T,
   secrets: Secret[],
 ): T {
@@ -34,30 +34,9 @@ function redactSecretsOnString<T extends string>(
       );
     }
 
-    const regex = new RegExp(`\\b${escape(value)}\\b`);
+    const regex = new RegExp(`\\b${escape(value)}\\b`, 'g');
     result = result.replace(regex, `<${kind}>`) as T;
   }
 
   return result;
-}
-
-export function redactSecrets<T>(message: T, secrets: Secret[]): T {
-  if (isPlainObject(message)) {
-    return Object.fromEntries(
-      Object.entries(message).map(([key, value]) => [
-        key,
-        redactSecrets(value, secrets),
-      ]),
-    ) as T;
-  }
-
-  if (Array.isArray(message)) {
-    return message.map((e) => redactSecrets(e, secrets)) as T;
-  }
-
-  if (typeof message === 'string') {
-    return redactSecretsOnString(message, secrets);
-  }
-
-  return message;
 }
