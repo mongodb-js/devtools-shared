@@ -7,5 +7,5 @@ export type {
   AgentWithInitialize,
   ConnectMongoClientResult,
 } from './connect';
-export { hookLogger } from './log-hook';
+export { hookLogger, MongoLogWriter } from './log-hook';
 export { oidcServerRequestHandler } from './oidc/handler';
