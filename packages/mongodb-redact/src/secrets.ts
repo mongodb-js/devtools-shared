@@ -1,5 +1,3 @@
-import { isPlainObject } from './utils';
-
 // RegExp.escape is not widely available yet, so we are going to use regexp.escape
 // as it's extremely simple and at some point we can get rid of it easily.
 import escape from 'regexp.escape';

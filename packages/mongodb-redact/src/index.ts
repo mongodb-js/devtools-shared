@@ -18,7 +18,10 @@ export function redact<T>(
 
     // make sure we inherit the prototype so we don't add new behaviour to the object
     // nobody is expecting
-    return Object.setPrototypeOf(newMessage, Object.getPrototypeOf(message));
+    return Object.setPrototypeOf(
+      newMessage,
+      Object.getPrototypeOf(message) as object | null,
+    );
   }
 
   if (Array.isArray(message)) {
