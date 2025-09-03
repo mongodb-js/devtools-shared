@@ -77,10 +77,10 @@ export interface ProxyLogEmitter {
   ): unknown;
 }
 
-interface MongoLogWriter {
-  info(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
-  warn(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
-  error(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
+export interface MongoLogWriter {
+  info(c: string, id: unknown, ctx: string, msg: string, attr?: unknown): void;
+  warn(c: string, id: unknown, ctx: string, msg: string, attr?: unknown): void;
+  error(c: string, id: unknown, ctx: string, msg: string, attr?: unknown): void;
   mongoLogId(this: void, id: number): unknown;
 }
 

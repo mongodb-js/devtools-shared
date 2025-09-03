@@ -13,5 +13,10 @@ export {
   RequestInfo,
   RequestInit,
 } from './fetch';
-export { ProxyEventMap, ProxyLogEmitter, hookLogger } from './logging';
+export {
+  ProxyEventMap,
+  ProxyLogEmitter,
+  hookLogger,
+  MongoLogWriter,
+} from './logging';
 export { systemCA, resetSystemCACache } from './system-ca';

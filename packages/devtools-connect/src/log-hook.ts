@@ -11,15 +11,18 @@ import type {
   ConnectRetryAfterTLSErrorEvent,
 } from './types';
 
-import { hookLoggerToMongoLogWriter as oidcHookLogger } from '@mongodb-js/oidc-plugin';
-import { hookLogger as proxyHookLogger } from '@mongodb-js/devtools-proxy-support';
+import {
+  hookLoggerToMongoLogWriter as oidcHookLogger,
+  MongoLogWriter as OIDCMongoLogWriter,
+} from '@mongodb-js/oidc-plugin';
+import {
+  hookLogger as proxyHookLogger,
+  MongoLogWriter as ProxyMongoLogWriter,
+} from '@mongodb-js/devtools-proxy-support';
 
-interface MongoLogWriter {
-  info(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
-  warn(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
-  error(c: string, id: unknown, ctx: string, msg: string, attr?: any): void;
-  mongoLogId(this: void, id: number): unknown;
-}
+export interface MongoLogWriter
+  extends OIDCMongoLogWriter,
+    ProxyMongoLogWriter {}
 
 export function hookLogger(
   emitter: ConnectLogEmitter,
