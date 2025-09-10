@@ -350,7 +350,8 @@ export class MongoServer {
     fn: Fn,
   ): Promise<ReturnType<Fn>> {
     const client = await MongoClient.connect(
-      `mongodb://${this.hostport}/?directConnection=true`,
+      // directConnection + retryWrites let us write to `local` db on secondaries
+      `mongodb://${this.hostport}/?directConnection=true&retryWrites=false`,
     );
     try {
       return await fn(client);
