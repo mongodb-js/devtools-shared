@@ -290,38 +290,49 @@ export class MongoServer {
     this.dbPath = undefined;
   }
 
+  private async _ensureMatchingMetadataColl(
+    client: MongoClient,
+    mode: 'insert-new' | 'restore-check',
+  ): Promise<void> {
+    const hello = await client.db('admin').command({ hello: 1 });
+    const isMongoS = hello.msg === 'isdbgrid';
+    const insertedInfo = pick(this.serialize(), [
+      '_id',
+      'pid',
+      'port',
+      'dbPath',
+      'startTime',
+    ]);
+    const runnerColl = client
+      .db(isMongoS ? 'config' : 'local')
+      .collection<SerializedServerProperties>('mongodbrunner');
+    if (mode === 'insert-new') {
+      await runnerColl.insertOne(insertedInfo);
+    } else {
+      const match = await runnerColl.findOne();
+      if (!match) {
+        throw new Error(
+          'Cannot find mongodbrunner entry, assuming that this instance was not started by mongodb-runner',
+        );
+      }
+      if (match._id !== insertedInfo._id) {
+        throw new Error(
+          `Mismatched mongodbrunner entry: ${JSON.stringify(match)} !== ${JSON.stringify(insertedInfo)}`,
+        );
+      }
+    }
+  }
+
   private async _populateBuildInfo(
     mode: 'insert-new' | 'restore-check',
   ): Promise<Error | null> {
     if (this.buildInfo?.version) return null;
     try {
       this.buildInfo = await this.withClient(async (client) => {
-        const admin = client.db('admin');
-        const coll =
-          admin.collection<SerializedServerProperties>('mongodbrunner');
-        const insertedInfo = pick(this.serialize(), [
-          '_id',
-          'pid',
-          'port',
-          'dbPath',
-          'startTime',
-        ]);
-        if (mode === 'insert-new') {
-          await coll.insertOne(insertedInfo);
-        } else {
-          const match = await coll.findOne();
-          if (!match) {
-            throw new Error(
-              'Cannot find mongodbrunner entry, assuming that this instance was not started by mongodb-runner',
-            );
-          }
-          if (match._id !== insertedInfo._id) {
-            throw new Error(
-              `Mismatched mongodbrunner entry: ${JSON.stringify(match)} !== ${JSON.stringify(insertedInfo)}`,
-            );
-          }
-        }
-        return await admin.command({ buildInfo: 1 });
+        // Insert the metadata entry, except if we're a freshly started mongos
+        // (which does not have its own storage to persist)
+        await this._ensureMatchingMetadataColl(client, mode);
+        return await client.db('admin').command({ buildInfo: 1 });
       });
     } catch (err) {
       debug('failed to get buildInfo, treating as closed server', err);

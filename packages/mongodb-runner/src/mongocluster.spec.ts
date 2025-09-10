@@ -259,7 +259,7 @@ describe('MongoCluster', function () {
     });
     cluster = await MongoCluster.deserialize(cluster.serialize());
     const doc = await cluster.withClient(async (client) => {
-      return await client.db('admin').collection('mongodbrunner').findOne();
+      return await client.db('config').collection('mongodbrunner').findOne();
     });
     expect(doc?._id).to.be.a('string');
     await cluster.close();
