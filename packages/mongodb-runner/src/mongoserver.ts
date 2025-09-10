@@ -306,10 +306,13 @@ export class MongoServer {
     const runnerColl = client
       .db(isMongoS ? 'config' : 'local')
       .collection<SerializedServerProperties>('mongodbrunner');
+    debug('ensuring metadata collection entry', insertedInfo, { isMongoS });
     if (mode === 'insert-new') {
       await runnerColl.insertOne(insertedInfo);
+      debug('inserted metadata collection entry', insertedInfo);
     } else {
       const match = await runnerColl.findOne();
+      debug('read metadata collection entry', insertedInfo, match);
       if (!match) {
         throw new Error(
           'Cannot find mongodbrunner entry, assuming that this instance was not started by mongodb-runner',
