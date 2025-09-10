@@ -28,3 +28,16 @@ export async function parallelForEach<T>(
 
   return await Promise.allSettled(result);
 }
+
+export function pick<T extends object, K extends keyof T>(
+  obj: T,
+  keys: K[],
+): Pick<T, K> {
+  const ret: Partial<Pick<T, K>> = {};
+  for (const key of Object.keys(obj) as K[]) {
+    if (keys.includes(key)) {
+      ret[key] = obj[key];
+    }
+  }
+  return ret as Pick<T, K>;
+}

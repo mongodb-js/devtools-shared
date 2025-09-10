@@ -258,10 +258,10 @@ describe('MongoCluster', function () {
       secondaries: 0,
     });
     cluster = await MongoCluster.deserialize(cluster.serialize());
-    const { ok } = await cluster.withClient(async (client) => {
-      return await client.db('admin').command({ ping: 1 });
+    const doc = await cluster.withClient(async (client) => {
+      return await client.db('admin').collection('mongodbrunner').findOne();
     });
-    expect(ok).to.equal(1);
+    expect(doc?._id).to.be.a('string');
     await cluster.close();
   });
 });

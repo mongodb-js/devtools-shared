@@ -84,14 +84,9 @@ export async function stop(argv: {
   id?: string;
   all?: boolean;
 }) {
-  const toStop: Array<StoredInstance> = [];
-  for await (const instance of instances(argv)) {
-    if (instance.id === argv.id || argv.all) toStop.push(instance);
-  }
-  await Promise.all(
-    toStop.map(async ({ filepath, serialized }) => {
-      await (await MongoCluster.deserialize(serialized)).close();
-      await fs.rm(filepath);
-    }),
-  );
+  await parallelForEach(instances(argv), async (instance: StoredInstance) => {
+    if (instance.id !== argv.id && !argv.all) return;
+    await (await MongoCluster.deserialize(instance.serialized)).close();
+    await fs.rm(instance.filepath);
+  });
 }

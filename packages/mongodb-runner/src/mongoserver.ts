@@ -13,7 +13,7 @@ import type { Document } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { once } from 'events';
-import { uuid, debug } from './util';
+import { uuid, debug, pick } from './util';
 
 export interface MongoServerOptions {
   binDir?: string;
@@ -24,32 +24,49 @@ export interface MongoServerOptions {
   docker?: string | string[]; // Image or docker options
 }
 
+interface SerializedServerProperties {
+  _id: string;
+  pid?: number;
+  port?: number;
+  dbPath?: string;
+  startTime: string;
+}
+
 export class MongoServer {
+  private uuid: string = uuid();
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
   private pid?: number;
   private port?: number;
   private dbPath?: string;
   private closing = false;
+  private startTime = new Date().toISOString();
 
   private constructor() {
     /* see .start() */
   }
 
-  serialize(): unknown /* JSON-serializable */ {
+  serialize(): SerializedServerProperties {
     return {
+      _id: this.uuid,
       pid: this.pid,
       port: this.port,
       dbPath: this.dbPath,
+      startTime: this.startTime,
     };
   }
 
-  static async deserialize(serialized: any): Promise<MongoServer> {
+  static async deserialize(
+    serialized: SerializedServerProperties,
+  ): Promise<MongoServer> {
     const srv = new MongoServer();
-    srv.pid = serialized.pid;
+    srv.uuid = serialized._id;
     srv.port = serialized.port;
-    srv.dbPath = serialized.dbPath;
-    await srv._populateBuildInfo();
+    srv.closing = !!(await srv._populateBuildInfo('restore-check'));
+    if (!srv.closing) {
+      srv.pid = serialized.pid;
+      srv.dbPath = serialized.dbPath;
+    }
     return srv;
   }
 
@@ -116,7 +133,7 @@ export class MongoServer {
     const srv = new MongoServer();
 
     if (!options.docker) {
-      const dbPath = path.join(options.tmpDir, `db-${uuid()}`);
+      const dbPath = path.join(options.tmpDir, `db-${srv.uuid}`);
       await fs.mkdir(dbPath, { recursive: true });
       srv.dbPath = dbPath;
     }
@@ -234,7 +251,10 @@ export class MongoServer {
       logEntryStream.resume();
 
       srv.port = port;
-      await srv._populateBuildInfo();
+      const buildInfoError = await srv._populateBuildInfo('insert-new');
+      if (buildInfoError) {
+        throw buildInfoError;
+      }
     } catch (err) {
       await srv.close();
       throw err;
@@ -270,16 +290,49 @@ export class MongoServer {
     this.dbPath = undefined;
   }
 
-  private async _populateBuildInfo(): Promise<void> {
-    if (this.buildInfo?.version) return;
-    this.buildInfo = await this.withClient(
-      async (client) => await client.db('admin').command({ buildInfo: 1 }),
-    );
+  private async _populateBuildInfo(
+    mode: 'insert-new' | 'restore-check',
+  ): Promise<Error | null> {
+    if (this.buildInfo?.version) return null;
+    try {
+      this.buildInfo = await this.withClient(async (client) => {
+        const admin = client.db('admin');
+        const coll =
+          admin.collection<SerializedServerProperties>('mongodbrunner');
+        const insertedInfo = pick(this.serialize(), [
+          '_id',
+          'pid',
+          'port',
+          'dbPath',
+          'startTime',
+        ]);
+        if (mode === 'insert-new') {
+          await coll.insertOne(insertedInfo);
+        } else {
+          const match = await coll.findOne();
+          if (!match) {
+            throw new Error(
+              'Cannot find mongodbrunner entry, assuming that this instance was not started by mongodb-runner',
+            );
+          }
+          if (match._id !== insertedInfo._id) {
+            throw new Error(
+              `Mismatched mongodbrunner entry: ${JSON.stringify(match)} !== ${JSON.stringify(insertedInfo)}`,
+            );
+          }
+        }
+        return await admin.command({ buildInfo: 1 });
+      });
+    } catch (err) {
+      debug('failed to get buildInfo, treating as closed server', err);
+      return err as Error;
+    }
     debug(
       'got server build info through client',
       this.serverVersion,
       this.serverVariant,
     );
+    return null;
   }
 
   async withClient<Fn extends (client: MongoClient) => any>(
