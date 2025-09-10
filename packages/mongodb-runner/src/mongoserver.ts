@@ -329,7 +329,6 @@ export class MongoServer {
   private async _populateBuildInfo(
     mode: 'insert-new' | 'restore-check',
   ): Promise<Error | null> {
-    if (this.buildInfo?.version) return null;
     try {
       this.buildInfo = await this.withClient(async (client) => {
         // Insert the metadata entry, except if we're a freshly started mongos
