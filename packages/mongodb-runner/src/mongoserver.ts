@@ -9,7 +9,7 @@ import {
   isFailureToSetupListener,
 } from './mongologreader';
 import { Readable } from 'stream';
-import type { Document } from 'mongodb';
+import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { once } from 'events';
@@ -342,12 +342,14 @@ export class MongoServer {
     mode: 'insert-new' | 'restore-check',
   ): Promise<Error | null> {
     try {
+      // directConnection + retryWrites let us write to `local` db on secondaries
+      const clientOpts = { retryWrites: false };
       this.buildInfo = await this.withClient(async (client) => {
         // Insert the metadata entry, except if we're a freshly started mongos
         // (which does not have its own storage to persist)
         await this._ensureMatchingMetadataColl(client, mode);
         return await client.db('admin').command({ buildInfo: 1 });
-      });
+      }, clientOpts);
     } catch (err) {
       debug('failed to get buildInfo, treating as closed server', err);
       return err as Error;
@@ -362,11 +364,12 @@ export class MongoServer {
 
   async withClient<Fn extends (client: MongoClient) => any>(
     fn: Fn,
+    clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(
-      // directConnection + retryWrites let us write to `local` db on secondaries
-      `mongodb://${this.hostport}/?directConnection=true&retryWrites=false`,
-    );
+    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
+      directConnection: true,
+      ...clientOptions,
+    });
     try {
       return await fn(client);
     } finally {
