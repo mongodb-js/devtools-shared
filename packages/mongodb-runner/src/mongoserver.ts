@@ -30,6 +30,7 @@ interface SerializedServerProperties {
   port?: number;
   dbPath?: string;
   startTime: string;
+  hasInsertedMetadataCollEntry: boolean;
 }
 
 export class MongoServer {
@@ -41,6 +42,7 @@ export class MongoServer {
   private dbPath?: string;
   private closing = false;
   private startTime = new Date().toISOString();
+  private hasInsertedMetadataCollEntry = false;
 
   private constructor() {
     /* see .start() */
@@ -53,6 +55,7 @@ export class MongoServer {
       port: this.port,
       dbPath: this.dbPath,
       startTime: this.startTime,
+      hasInsertedMetadataCollEntry: this.hasInsertedMetadataCollEntry,
     };
   }
 
@@ -253,7 +256,7 @@ export class MongoServer {
       srv.port = port;
       const buildInfoError = await srv._populateBuildInfo('insert-new');
       if (buildInfoError) {
-        throw buildInfoError;
+        debug('failed to get buildInfo', buildInfoError);
       }
     } catch (err) {
       await srv.close();
@@ -305,12 +308,21 @@ export class MongoServer {
     ]);
     const runnerColl = client
       .db(isMongoS ? 'config' : 'local')
-      .collection<SerializedServerProperties>('mongodbrunner');
+      .collection<
+        Omit<SerializedServerProperties, 'hasInsertedMetadataCollEntry'>
+      >('mongodbrunner');
     debug('ensuring metadata collection entry', insertedInfo, { isMongoS });
     if (mode === 'insert-new') {
       await runnerColl.insertOne(insertedInfo);
       debug('inserted metadata collection entry', insertedInfo);
+      this.hasInsertedMetadataCollEntry = true;
     } else {
+      if (!this.hasInsertedMetadataCollEntry) {
+        debug(
+          'skipping metadata collection match check as we never inserted metadata',
+        );
+        return;
+      }
       const match = await runnerColl.findOne();
       debug('read metadata collection entry', insertedInfo, match);
       if (!match) {
