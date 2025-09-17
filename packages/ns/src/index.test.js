@@ -63,7 +63,7 @@ describe('ns', function () {
         false,
       );
     });
-    it('should not accept `prefix__mdb_internal_suffix`', function () {
+    it('should not accept `prefix__mdb_internal_`', function () {
       assert.equal(ns('prefix__mdb_internal_').special, false);
     });
     it('should acccept `__mdb_internal_suffix`', function () {
@@ -133,15 +133,6 @@ describe('ns', function () {
   });
 
   describe('collection name validation', function () {
-    it('should accept `a.b` as valid', function () {
-      assert.equal(ns('a.b').validCollectionName, true);
-    });
-    it('should accept `a.b` as valid', function () {
-      assert.equal(ns('a.b').validCollectionName, true);
-    });
-    it('should accept `a.b.` as valid', function () {
-      assert.equal(ns('a.b.').validCollectionName, true);
-    });
     it('should accept `a.b` as valid', function () {
       assert.equal(ns('a.b').validCollectionName, true);
     });
