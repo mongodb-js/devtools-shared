@@ -1,5 +1,5 @@
 var assert = require('assert');
-var ns = require('./');
+var ns = require('..');
 
 describe('ns', function() {
   describe('normal', function() {
