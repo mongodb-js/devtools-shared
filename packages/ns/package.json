@@ -1,0 +1,31 @@
+{
+  "name": "mongodb-ns",
+  "version": "2.4.3",
+  "author": {
+    "name": "MongoDB Inc",
+    "email": "compass@mongodb.com"
+  },
+  "description": "MongoDB namespace parsing and validation",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "scripts": {
+    "test": "mocha",
+    "check": "mongodb-js-precommit"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mongodb-js/ns.git"
+  },
+  "keywords": [
+    "mongodb",
+    "mongodb.js"
+  ],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint-config-mongodb-js": "^5.0.3",
+    "mocha": "^7.0.0",
+    "mongodb-js-precommit": "^2.0.0"
+  }
+}
