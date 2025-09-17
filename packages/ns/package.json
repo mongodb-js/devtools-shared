@@ -1,6 +1,6 @@
 {
-  "name": "@mongodb-js/ns",
-  "description": "namespace parsing",
+  "name": "mongodb-ns",
+  "description": "MongoDB namespace parsing and validation",
   "author": {
     "name": "MongoDB Inc",
     "email": "compass@mongodb.com"

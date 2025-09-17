@@ -28,8 +28,3 @@ canadian-things.songs-aboot-bacon
   validCollectionName: true,
   databaseHash: 23620443216 }
 ```
-
-
-## license
-
-MIT
