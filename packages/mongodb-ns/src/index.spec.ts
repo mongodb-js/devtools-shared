@@ -1,5 +1,5 @@
-var assert = require('assert');
-var ns = require('..');
+import assert from 'assert';
+import ns from './index';
 
 describe('ns', function () {
   describe('normal', function () {
@@ -112,23 +112,23 @@ describe('ns', function () {
     it('should not accept `foo"bar` as a valid database name', function () {
       assert.equal(ns('foo"bar').validDatabaseName, false);
     });
-    it.skip('should not accept `foo*bar` as a valid database name', function () {
-      assert.equal(ns('foo*bar').validDatabaseName, false);
+    it('should accept `foo*bar` as a valid database name', function () {
+      assert.equal(ns('foo*bar').validDatabaseName, true);
     });
-    it.skip('should not accept `foo<bar` as a valid database name', function () {
-      assert.equal(ns('foo<bar').validDatabaseName, false);
+    it('should accept `foo<bar` as a valid database name', function () {
+      assert.equal(ns('foo<bar').validDatabaseName, true);
     });
-    it.skip('should not accept `foo>bar` as a valid database name', function () {
-      assert.equal(ns('foo>bar').validDatabaseName, false);
+    it('should accept `foo>bar` as a valid database name', function () {
+      assert.equal(ns('foo>bar').validDatabaseName, true);
     });
-    it.skip('should not accept `foo:bar` as a valid database name', function () {
-      assert.equal(ns('foo:bar').validDatabaseName, false);
+    it('should accept `foo:bar` as a valid database name', function () {
+      assert.equal(ns('foo:bar').validDatabaseName, true);
     });
-    it.skip('should not accept `foo|bar` as a valid database name', function () {
-      assert.equal(ns('foo|bar').validDatabaseName, false);
+    it('should accept `foo|bar` as a valid database name', function () {
+      assert.equal(ns('foo|bar').validDatabaseName, true);
     });
-    it.skip('should not accept `foo?bar` as a valid database name', function () {
-      assert.equal(ns('foo?bar').validDatabaseName, false);
+    it('should accept `foo?bar` as a valid database name', function () {
+      assert.equal(ns('foo?bar').validDatabaseName, true);
     });
   });
 
@@ -224,7 +224,7 @@ describe('ns', function () {
 
   describe('sorting', function () {
     it('should sort them', function () {
-      var names = [
+      const names = [
         'admin',
         'canadian-things',
         'github',
@@ -233,7 +233,7 @@ describe('ns', function () {
         'statsd',
         'test',
       ];
-      var expect = [
+      const expect = [
         'canadian-things',
         'github',
         'scope_stat',
