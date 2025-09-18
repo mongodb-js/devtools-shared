@@ -23,6 +23,7 @@ type NS = {
 };
 
 type NSConstructor = {
+  (ns: string | NS): NS;
   new (ns: string | NS): NS;
   prototype: NS;
   MAX_DATABASE_NAME_LENGTH: number;
