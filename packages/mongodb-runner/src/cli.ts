@@ -49,6 +49,11 @@ import * as utilities from './index';
       default: os.tmpdir(),
       describe: 'Directory for temporary files',
     })
+    .option('downloadDir', {
+      type: 'string',
+      describe:
+        'Directory for downloading and caching MongoDB binaries (uses tmpDir if not specified)',
+    })
     .option('runnerDir', {
       type: 'string',
       default: defaultRunnerDir,
