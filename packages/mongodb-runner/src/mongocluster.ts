@@ -17,6 +17,7 @@ export interface MongoClusterOptions
   secondaries?: number;
   shards?: number;
   version?: string;
+  downloadDir?: string;
   downloadOptions?: DownloadOptions;
 }
 
@@ -28,6 +29,14 @@ export class MongoCluster {
 
   private constructor() {
     /* see .start() */
+  }
+
+  private static downloadMongoDb(
+    tmpdir: string,
+    targetVersionSemverSpecifier?: string | undefined,
+    options?: DownloadOptions | undefined,
+  ): Promise<string> {
+    return downloadMongoDb(tmpdir, targetVersionSemverSpecifier, options);
   }
 
   serialize(): unknown /* JSON-serializable */ {
@@ -84,8 +93,8 @@ export class MongoCluster {
     const cluster = new MongoCluster();
     cluster.topology = options.topology;
     if (!options.binDir) {
-      options.binDir = await downloadMongoDb(
-        options.tmpDir,
+      options.binDir = await MongoCluster.downloadMongoDb(
+        options.downloadDir ?? options.tmpDir,
         options.version,
         options.downloadOptions,
       );

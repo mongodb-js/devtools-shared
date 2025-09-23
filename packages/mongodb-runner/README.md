@@ -37,6 +37,7 @@ Options:
       --version      MongoDB server version to use                      [string]
       --logDir       Directory to store server log files in             [string]
       --binDir       Directory containing mongod/mongos binaries        [string]
+      --downloadDir  Directory to store downloaded MongoDB versions in  [string]
       --tmpDir       Directory for temporary files    [string] [default: "/tmp"]
       --runnerDir    Directory for storing cluster metadata
                            [string] [default: "/home/addaleax/.mongodb/runner2"]
