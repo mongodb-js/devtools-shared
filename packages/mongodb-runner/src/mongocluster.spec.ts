@@ -42,7 +42,6 @@ describe('MongoCluster', function () {
 
   it('can use custom downloadDir option for binary downloads', async function () {
     const customDownloadDir = path.join(tmpDir, 'custom-downloads');
-    await fs.mkdir(customDownloadDir, { recursive: true });
 
     sinon
       .stub(MongoCluster, 'downloadMongoDb' as any)
