@@ -93,7 +93,7 @@ export class MongoCluster {
     const cluster = new MongoCluster();
     cluster.topology = options.topology;
     if (!options.binDir) {
-      options.binDir = await MongoCluster.downloadMongoDb(
+      options.binDir = await this.downloadMongoDb(
         options.downloadDir ?? options.tmpDir,
         options.version,
         options.downloadOptions,
