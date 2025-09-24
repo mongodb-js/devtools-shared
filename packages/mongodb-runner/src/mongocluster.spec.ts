@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
+import sinon from 'sinon';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
@@ -36,6 +37,39 @@ describe('MongoCluster', function () {
 
   afterEach(async function () {
     await cluster?.close();
+    sinon.restore();
+  });
+
+  it('can use custom downloadDir option for binary downloads', async function () {
+    const customDownloadDir = path.join(tmpDir, 'custom-downloads');
+
+    sinon
+      .stub(MongoCluster, 'downloadMongoDb' as any)
+      .resolves(customDownloadDir);
+
+    try {
+      cluster = await MongoCluster.start({
+        version: '6.x',
+        topology: 'standalone',
+        tmpDir,
+        downloadDir: customDownloadDir,
+        downloadOptions: {
+          platform: 'linux',
+          arch: 'x64',
+        },
+      });
+    } catch (err) {
+      // This will error because no actual binary gets downloaded
+    }
+
+    expect(MongoCluster['downloadMongoDb']).to.have.been.calledWith(
+      customDownloadDir,
+      '6.x',
+      {
+        platform: 'linux',
+        arch: 'x64',
+      },
+    );
   });
 
   it('can spawn a 6.x standalone mongod', async function () {
