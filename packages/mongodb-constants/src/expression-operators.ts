@@ -584,6 +584,27 @@ const EXPRESSION_OPERATORS = [
     version: '2.6.0',
   },
   {
+    name: '$similarityCosine',
+    value: '$similarityCosine',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.2.0',
+  },
+  {
+    name: '$similarityDotProduct',
+    value: '$similarityDotProduct',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.2.0',
+  },
+  {
+    name: '$similarityEuclidean',
+    value: '$similarityEuclidean',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.2.0',
+  },
+  {
     name: '$size',
     value: '$size',
     score: 1,
