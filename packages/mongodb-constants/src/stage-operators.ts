@@ -886,6 +886,54 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$scoreFusion',
+    value: '$scoreFusion',
+    label: '$scoreFusion',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS],
+    meta: 'stage',
+    version: '8.2.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Combines multiple pipelines using relative score fusion to create hybrid search results.',
+    comment: `/**
+ * input.pipelines: Required. Map from name to input pipeline. Each pipeline must be operating on the same collection. Minimum of one pipeline.
+ * input.normalization: Required. Normalizes the score to the range 0 to 1 before combining the results. Value can be none, sigmoid or minMaxScaler.
+ * combination.weights: Optional. Map from pipeline name to numbers (non-negative). If unspecified, default weight is 1 for each pipeline.
+ * combination.method: Optional. Specifies method for combining scores. Value can be avg or expression. Default is avg.
+ * combination.expression: Optional. This is the custom expression that is used when combination.method is set to expression.
+ * scoreDetails: Optional. Default false. Set to true to include detailed scoring information.
+ */
+`,
+    snippet: `{
+  input: {
+    pipelines: {
+      \${1:searchPipeline}: [
+        {$search: {\${2:searchStage}}},
+        {$limit: \${3:limit}}
+      ],
+      \${4:vectorPipeline}: [
+        {$vectorSearch: {\${5:vectorSearchStage}}}
+      ]
+    },
+    normalization: '\${6:none|sigmoid|minMaxScaler}'
+  },
+  combination: {
+    weights: {
+      \${7:searchPipeline}: \${8:number},
+      \${9:vectorPipeline}: \${10:number}
+    },
+    method: '\${11:avg|expression}',
+    expression: '\${12:expression}'
+  },
+  scoreDetails: \${13:false}
+}`,
+  },
+  {
     name: '$search',
     value: '$search',
     label: '$search',
