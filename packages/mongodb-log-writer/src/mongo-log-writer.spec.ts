@@ -177,4 +177,25 @@ describe('MongoLogWriter', function () {
       new Set(['TypeError'])
     );
   });
+
+  it('flushes pending writes on the MongoLogWriter itself', async function() {
+    const chunks: string[] = [];
+    const target = new stream.Writable({
+      write(chunk, encoding, callback) {
+        chunks.push(chunk.toString());
+        // Simulate a 'slow' consumer (i.e. one that does actual I/O,
+        // as opposed to one that does not do asynchronous work outside
+        // of microtask queues (promises, nextTick)
+        setImmediate(callback);
+      }
+    });
+    const w = new MongoLogWriter('id', null, target);
+    for (let i = 0; i < 5; i++) {
+      w.info('component', mongoLogId(0), 'ctx', 'msg', { i });
+    }
+    await w.flush();
+    expect(chunks.map(c => c ? JSON.parse(c).attr.i : c)).to.deep.equal([
+      0, 1, 2, 3, 4, ''
+    ]);
+  });
 });
