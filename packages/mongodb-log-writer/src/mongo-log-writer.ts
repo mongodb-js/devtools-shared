@@ -2,6 +2,8 @@ import { EJSON } from 'bson';
 import { Writable } from 'stream';
 import { inspect } from 'util';
 
+const kFlushDummy = Symbol('kFlushDummy');
+
 type PlainWritable = Pick<Writable, 'write' | 'end'>;
 
 /**
@@ -112,10 +114,14 @@ export class MongoLogWriter extends Writable {
   }
 
   _write(
-    info: MongoLogEntry,
+    info: MongoLogEntry | typeof kFlushDummy,
     encoding: unknown,
     callback: (err?: Error | null | undefined) => void
   ): void {
+    if (info === kFlushDummy) {
+      this._target.write('', callback);
+      return;
+    }
     const validationError = validateLogEntry(info);
     if (validationError) {
       callback(validationError);
@@ -183,7 +189,7 @@ export class MongoLogWriter extends Writable {
 
   /** Wait until all pending data has been written to the underlying stream. */
   async flush(): Promise<void> {
-    await new Promise((resolve) => this._target.write('', resolve));
+    await new Promise((resolve) => this.write(kFlushDummy, resolve));
   }
 
   /**
