@@ -7,3 +7,4 @@ export * from './utils/update-package-json';
 export * from './utils/with-progress';
 export * from './utils/workspace-dependencies';
 export * from './utils/get-packages-in-topological-order';
+export * from './utils/get-npm-token-list';

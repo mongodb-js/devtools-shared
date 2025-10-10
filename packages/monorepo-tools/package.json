@@ -26,7 +26,8 @@
     "precommit": "./bin/precommit.js",
     "depalign": "./bin/depalign.js",
     "monorepo-where": "./bin/where.js",
-    "bump-monorepo-packages": "./bin/bump-packages.js"
+    "bump-monorepo-packages": "./bin/bump-packages.js",
+    "request-npm-token": "./bin/request-npm-token.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",
