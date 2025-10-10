@@ -14,7 +14,7 @@ import { getNpmTokenList } from './utils/get-npm-token-list';
 
 async function main() {
   try {
-    const requirements = await getNpmTokenList();
+    const { scopes, packages } = await getNpmTokenList();
 
     console.log(
       'Open an IAMSEC ticket with https://jira.mongodb.org/plugins/servlet/desk/portal/81/create/1380',
@@ -28,8 +28,8 @@ async function main() {
     );
 
     console.log('Following Scopes:');
-    if (requirements.scopes.length > 0) {
-      requirements.scopes.forEach((scope) => {
+    if (scopes.length > 0) {
+      scopes.forEach((scope) => {
         console.log(scope);
       });
     } else {
@@ -37,8 +37,8 @@ async function main() {
     }
 
     console.log('\nFollowing Packages:');
-    if (requirements.packages.length > 0) {
-      requirements.packages.forEach((pkg) => {
+    if (packages.length > 0) {
+      packages.forEach((pkg) => {
         console.log(pkg);
       });
     } else {
