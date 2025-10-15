@@ -6,7 +6,6 @@ npm-debug.log
 coverage/
 
 package-lock.json
-.esm-wrapper.mjs
-lib/
+dist/
 .nyc_output
 tmp-*/

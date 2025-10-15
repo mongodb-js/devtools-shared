@@ -5,7 +5,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./.esm-wrapper.mjs && prettier --write .esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
@@ -20,16 +20,16 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     "require": {
-      "default": "./lib/index.js",
-      "types": "./lib/index.d.ts"
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "import": {
-      "default": "./.esm-wrapper.mjs",
-      "types": "./lib/index.d.ts"
+      "default": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "bin": {
