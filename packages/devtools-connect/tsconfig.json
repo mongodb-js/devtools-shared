@@ -5,7 +5,6 @@
     "lib": ["es2020", "DOM"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "allowJs": true,
-    "jsx": "react"
+    "allowJs": true
   }
 }

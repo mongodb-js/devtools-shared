@@ -1,7 +1,6 @@
 {
-  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
+  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.react.json",
   "compilerOptions": {
-    "allowJs": true,
-    "jsx": "react"
+    "allowJs": true
   }
 }
