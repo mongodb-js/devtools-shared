@@ -2,6 +2,27 @@
   "name": "mongodb-build-info",
   "version": "1.7.2",
   "description": "Extract information from mongodb's buildInfo",
+  "author": "Irina Shestak <shestak.irina@gmail.com>",
+  "keywords": [
+    "buildInfo",
+    "mongodb",
+    "compass-tools",
+    "mongodb.js"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://jira.mongodb.org/projects/COMPASS/issues",
+    "email": "compass@mongodb.com"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git",
+    "directory": "packages/mongodb-build-info"
+  },
+  "license": "Apache-2.0",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
@@ -13,22 +34,6 @@
     "test-ci": "npm run test-cov",
     "release": "release-it"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mongodb-js/mongodb-build-info.git"
-  },
-  "keywords": [
-    "buildInfo",
-    "mongodb",
-    "compass-tools",
-    "mongodb.js"
-  ],
-  "author": "Irina Shestak <shestak.irina@gmail.com>",
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/mongodb-js/mongodb-build-info/issues"
-  },
-  "homepage": "https://github.com/mongodb-js/mongodb-build-info#readme",
   "devDependencies": {
     "@types/mocha": "^9.1.1",
     "chai": "^4.5.0",
