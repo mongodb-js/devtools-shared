@@ -5,6 +5,6 @@
     "allowJs": true,
     "strict": true
   },
-  "include": ["src/**/*", "test/**/*"],
-  "exclude": ["./src/**/*.spec.*", "./test/**/*.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["./src/**/*.spec.*"]
 }
