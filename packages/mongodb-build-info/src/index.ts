@@ -1,4 +1,4 @@
-import ConnectionString from "mongodb-connection-string-url";
+import ConnectionString from 'mongodb-connection-string-url';
 
 const ATLAS_REGEX = /\.mongodb(-dev|-qa|-stage)?\.net$/i;
 const ATLAS_STREAM_REGEX = /^atlas-stream-.+/i;
@@ -9,7 +9,7 @@ const COSMOS_DB_REGEX = /\.cosmos\.azure\.com$/i;
 const DOCUMENT_DB_REGEX = /docdb(-elastic)?\.amazonaws\.com$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return typeof value === 'object' && value !== null;
 }
 
 export function getDataLake(buildInfo: unknown): {
@@ -19,7 +19,7 @@ export function getDataLake(buildInfo: unknown): {
   if (
     isRecord(buildInfo) &&
     isRecord(buildInfo.dataLake) &&
-    typeof buildInfo.dataLake.version === "string"
+    typeof buildInfo.dataLake.version === 'string'
   ) {
     return {
       isDataLake: true,
@@ -39,7 +39,7 @@ export function isEnterprise(buildInfo: unknown): boolean {
   }
 
   if (
-    typeof buildInfo.gitVersion === "string" &&
+    typeof buildInfo.gitVersion === 'string' &&
     buildInfo.gitVersion.match(/enterprise/)
   ) {
     return true;
@@ -47,7 +47,7 @@ export function isEnterprise(buildInfo: unknown): boolean {
 
   if (
     Array.isArray(buildInfo.modules) &&
-    buildInfo.modules.indexOf("enterprise") !== -1
+    buildInfo.modules.indexOf('enterprise') !== -1
   ) {
     return true;
   }
@@ -56,16 +56,16 @@ export function isEnterprise(buildInfo: unknown): boolean {
 }
 
 function getHostnameFromHost(host: string): string {
-  if (host.startsWith("[")) {
+  if (host.startsWith('[')) {
     // If it's ipv6 return what's in the brackets.
-    return host.substring(1).split("]")[0];
+    return host.substring(1).split(']')[0];
   }
-  return host.split(":")[0];
+  return host.split(':')[0];
 }
 
 function getHostnameFromUrl(url: unknown): string {
-  if (typeof url !== "string") {
-    return "";
+  if (typeof url !== 'string') {
+    return '';
   }
 
   try {
@@ -84,14 +84,14 @@ export function isAtlas(uri: string): boolean {
 type IsLocalAtlasCountFn = (
   db: string,
   ns: string,
-  query: Record<string, unknown>
+  query: Record<string, unknown>,
 ) => Promise<number>;
 export async function isLocalAtlas(
-  countFn: IsLocalAtlasCountFn
+  countFn: IsLocalAtlasCountFn,
 ): Promise<boolean> {
   try {
-    const count = await countFn("admin", "atlascli", {
-      managedClusterType: "atlasCliLocalDevCluster",
+    const count = await countFn('admin', 'atlascli', {
+      managedClusterType: 'atlasCliLocalDevCluster',
     });
     return count > 0;
   } catch {
@@ -117,20 +117,20 @@ export function getGenuineMongoDB(uri: string): {
   if (hostname.match(COSMOS_DB_REGEX)) {
     return {
       isGenuine: false,
-      serverName: "cosmosdb",
+      serverName: 'cosmosdb',
     };
   }
 
   if (hostname.match(DOCUMENT_DB_REGEX)) {
     return {
       isGenuine: false,
-      serverName: "documentdb",
+      serverName: 'documentdb',
     };
   }
 
   return {
     isGenuine: true,
-    serverName: "mongodb",
+    serverName: 'mongodb',
   };
 }
 
@@ -146,11 +146,11 @@ export function getBuildEnv(buildInfo: unknown): {
 
   return {
     serverOs:
-      typeof buildEnvironment.target_os === "string"
+      typeof buildEnvironment.target_os === 'string'
         ? buildEnvironment.target_os
         : null,
     serverArch:
-      typeof buildEnvironment.target_arch === "string"
+      typeof buildEnvironment.target_arch === 'string'
         ? buildEnvironment.target_arch
         : null,
   };
