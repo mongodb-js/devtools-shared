@@ -5,11 +5,8 @@
     "lib": ["es2020", "DOM"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "./dist",
     "allowJs": true,
     "strict": true,
     "jsx": "react"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["./src/**/*.spec.*"]
+  }
 }

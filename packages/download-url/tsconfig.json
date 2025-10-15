@@ -1,11 +1,8 @@
 {
   "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
   "compilerOptions": {
-    "outDir": "./dist",
     "target": "es2019",
     "lib": ["es2019"],
     "moduleResolution": "node"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["./src/**/*.spec.*"]
+  }
 }
