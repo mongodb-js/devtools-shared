@@ -2,7 +2,6 @@
   "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
   "compilerOptions": {
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "allowJs": true
+    "moduleResolution": "NodeNext"
   }
 }

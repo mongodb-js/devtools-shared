@@ -1,6 +1,4 @@
 {
   "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
-  "compilerOptions": {
-    "allowJs": true
-  }
+  "compilerOptions": {}
 }
