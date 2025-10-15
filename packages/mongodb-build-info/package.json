@@ -33,15 +33,23 @@
     "directory": "packages/mongodb-build-info"
   },
   "license": "Apache-2.0",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "scripts": {
-    "lint": "eslint .",
+    "bootstrap": "npm run compile",
+    "prepublishOnly": "npm run compile",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "typecheck": "tsc --noEmit",
+    "eslint": "eslint .",
+    "prettier": "prettier",
+    "lint": "npm run eslint . && npm run prettier -- --check .",
     "depcheck": "depcheck",
-    "check": "npm run depcheck && npm run lint",
+    "check": "npm run typecheck && npm run lint && npm run depcheck",
+    "check-ci": "npm run check",
     "test": "mocha **/*.spec.ts",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
+    "reformat": "npm run prettier -- --write .",
     "release": "release-it"
   },
   "devDependencies": {
