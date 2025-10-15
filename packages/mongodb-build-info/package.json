@@ -38,7 +38,7 @@
     "lint": "eslint .",
     "depcheck": "depcheck",
     "check": "npm run depcheck && npm run lint",
-    "test": "mocha test/index.spec.js",
+    "test": "mocha **/*.spec.ts",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
     "test-ci": "npm run test-cov",
@@ -48,13 +48,15 @@
     "@mongodb-js/eslint-config-devtools": "0.9.12",
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
+    "@mongodb-js/tsconfig-devtools": "^1.0.3",
     "@types/mocha": "^9.1.1",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0",
     "eslint-config-mongodb-js": "^5.0.3",
     "mocha": "^8.4.0",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "mongodb-connection-string-url": "^3.0.0"

@@ -1,0 +1,10 @@
+{
+  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "allowJs": true,
+    "strict": true
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["./src/**/*.spec.*", "./test/**/*.ts"]
+}
