@@ -6,7 +6,6 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "allowJs": true,
-    "strict": true,
     "jsx": "react"
   }
 }

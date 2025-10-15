@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "allowJs": true,
-    "strict": true
+    "allowJs": true
   }
 }

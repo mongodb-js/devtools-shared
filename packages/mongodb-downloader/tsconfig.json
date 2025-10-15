@@ -2,7 +2,6 @@
   "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
   "compilerOptions": {
     "allowJs": true,
-    "strict": true,
     "target": "es2020",
     "lib": ["es2020"]
   }
