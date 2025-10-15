@@ -3,6 +3,16 @@
   "version": "1.7.2",
   "description": "Extract information from mongodb's buildInfo",
   "author": "Irina Shestak <shestak.irina@gmail.com>",
+  "contributors": [
+    {
+      "name": "Irina Shestak",
+      "email": "shestak.irina@gmail.com"
+    },
+    {
+      "name": "Kræn Hansen",
+      "email": "kraen.hansen@mongodb.com"
+    }
+  ],
   "keywords": [
     "buildInfo",
     "mongodb",
