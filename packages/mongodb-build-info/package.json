@@ -45,6 +45,9 @@
     "release": "release-it"
   },
   "devDependencies": {
+    "@mongodb-js/eslint-config-devtools": "0.9.12",
+    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "@types/mocha": "^9.1.1",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",

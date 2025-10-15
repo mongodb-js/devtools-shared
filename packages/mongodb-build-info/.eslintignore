@@ -1,1 +1,4 @@
+.nyc-output
+dist
+
 test/fixtures.js
