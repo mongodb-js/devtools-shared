@@ -41,6 +41,14 @@ describe("mongodb-build-info", function () {
     it("detects enterprise module for >= 3.2", function () {
       expect(isEnterprise(fixtures.BUILD_INFO_3_2)).to.be.true;
     });
+
+    it("returns false when passed invalid argument", function () {
+      expect(isEnterprise("")).to.be.false;
+      expect(isEnterprise(123)).to.be.false;
+      expect(isEnterprise({})).to.be.false;
+      expect(isEnterprise(undefined)).to.be.false;
+      expect(isEnterprise(null)).to.be.false;
+    });
   });
 
   context("getBuildEnv", function () {
@@ -48,6 +56,25 @@ describe("mongodb-build-info", function () {
       const buildEnv = getBuildEnv(fixtures.BUILD_INFO_3_2);
       expect(buildEnv.serverOs).to.equal("osx");
       expect(buildEnv.serverArch).to.equal("x86_64");
+    });
+
+    it("returns null when passed an invalid argument", function () {
+      expect(getBuildEnv(null)).to.deep.equal({
+        serverOs: null,
+        serverArch: null,
+      });
+      expect(getBuildEnv("")).to.deep.equal({
+        serverOs: null,
+        serverArch: null,
+      });
+      expect(getBuildEnv(undefined)).to.deep.equal({
+        serverOs: null,
+        serverArch: null,
+      });
+      expect(getBuildEnv({ buildEnvironment: {} })).to.deep.equal({
+        serverOs: null,
+        serverArch: null,
+      });
     });
   });
 
