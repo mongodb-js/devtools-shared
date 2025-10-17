@@ -6,13 +6,13 @@
     "declaration": true,
     "declarationMap": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["dom", "ES2021"],
+    "lib": ["dom", "ES2023"],
     "module": "commonjs",
     "removeComments": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "ES2021"
+    "target": "ES2023"
   }
 }

@@ -299,7 +299,6 @@ export async function fetchCodeQLResults(
             `Failed to get SARIF for repository ${JSON.stringify(
               repo,
             )}: ${String(err)}`,
-            // @ts-expect-error 'cause' unsupported
             { cause: err },
           );
         }
