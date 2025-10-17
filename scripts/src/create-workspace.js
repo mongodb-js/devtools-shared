@@ -258,13 +258,6 @@ async function main(argv) {
   const tsconfigContent = JSON.stringify(
     {
       extends: '@mongodb-js/tsconfig-devtools/tsconfig.common.json',
-      compilerOptions: {
-        outDir: 'dist',
-        allowJs: true,
-        strict: true,
-      },
-      include: ['src/**/*'],
-      exclude: ['./src/**/*.spec.*'],
     },
     null,
     2,

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "${configDir}/dist",
     "allowJs": false,
     "esModuleInterop": true,
     "downlevelIteration": true,
@@ -14,5 +15,7 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES2021"
-  }
+  },
+  "include": ["${configDir}/src/**/*"],
+  "exclude": ["${configDir}/src/**/*.spec.*"]
 }
