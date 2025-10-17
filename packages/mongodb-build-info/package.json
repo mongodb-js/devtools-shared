@@ -1,6 +1,6 @@
 {
   "name": "mongodb-build-info",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "Extract information from mongodb's buildInfo",
   "author": "Irina Shestak <shestak.irina@gmail.com>",
   "contributors": [
@@ -67,7 +67,7 @@
     "@mongodb-js/eslint-config-devtools": "0.9.12",
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.0.3",
+    "@mongodb-js/tsconfig-devtools": "^1.0.4",
     "@types/mocha": "^9.1.1",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
