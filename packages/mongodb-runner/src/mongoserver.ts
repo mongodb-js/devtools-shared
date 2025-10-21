@@ -13,7 +13,7 @@ import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { once } from 'events';
-import { uuid, debug, pick } from './util';
+import { uuid, debug, pick, debugVerbose } from './util';
 
 export interface MongoServerOptions {
   binDir?: string;
@@ -197,10 +197,10 @@ export class MongoServer {
       await once(outStream, 'open');
       stdout.pipe(outStream, { end: false });
       stderr.pipe(outStream, { end: false });
-      Promise.all([once(stdout, 'end'), once(stderr, 'end')]).then(
+      Promise.allSettled([once(stdout, 'end'), once(stderr, 'end')]).then(
         () => outStream.end(),
         () => {
-          /* ignore error */
+          /* cannot throw */
         },
       );
     } else {
@@ -211,13 +211,13 @@ export class MongoServer {
 
     const errorLogEntries: LogEntry[] = [];
     try {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
       logEntryStream.on('data', (entry) => {
         if (!srv.closing && ['E', 'F'].includes(entry.severity)) {
           errorLogEntries.push(entry);
           debug('mongodb server output', entry);
         }
+        debugVerbose('mongodb server log entry', entry);
       });
       filterLogStreamForBuildInfo(logEntryStream).then(
         (buildInfo) => {
