@@ -19,7 +19,7 @@ downloadMongoDbWithVersionInfo('/tmp/directory', '4.4.6', {
 
 // After (v0.5.x)
 downloadMongoDb({
-  downloadDir: '/tmp/directory',
+  directory: '/tmp/directory',
   version: '4.4.6',
   useLockfile: true, // New, required field.
   downloadOptions: {
@@ -29,7 +29,7 @@ downloadMongoDb({
 });
 
 downloadMongoDbWithVersionInfo({
-  downloadDir: '/tmp/directory',
+  directory: '/tmp/directory',
   version: '4.4.6',
   useLockfile: true, // New, required field.
   downloadOptions: {
