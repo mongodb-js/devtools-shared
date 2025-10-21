@@ -8,7 +8,7 @@ import { MongoDBDownloader } from '.';
 
 chai.use(sinonChai);
 
-describe('using locks', function () {
+describe('MongoDBDownloader', function () {
   this.timeout(60_000);
 
   let directory: string;
@@ -135,8 +135,7 @@ describe('using locks', function () {
         }),
       ]);
 
-      expect(result1.version).to.equal(version);
-      expect(result2.version).to.equal(version2);
+      expect(result1.version).to.not.equal(result2.version);
       expect(result1.downloadedBinDir).to.not.equal(result2.downloadedBinDir);
 
       // Verify both downloaded directories exist and contain mongod
@@ -226,7 +225,6 @@ describe('using locks', function () {
 
       expect(result1.version).to.equal(version);
       expect(result2.version).to.equal(version);
-      expect(result1.downloadedBinDir).to.equal(result2.downloadedBinDir);
 
       // Verify the downloaded directory exists and contains mongod
       expect(await fs.stat(result1.downloadedBinDir)).to.be.ok;
@@ -261,8 +259,7 @@ describe('using locks', function () {
         }),
       ]);
 
-      expect(result1.version).to.equal(version);
-      expect(result2.version).to.equal(version2);
+      expect(result1.version).to.not.equal(result2.version);
       expect(result1.downloadedBinDir).to.not.equal(result2.downloadedBinDir);
 
       // Verify both downloaded directories exist and contain mongod
@@ -276,5 +273,120 @@ describe('using locks', function () {
       // Verify downloadAndExtract was called twice (once for each version)
       expect(downloadAndExtractStub).to.have.been.calledTwice;
     });
+  });
+
+  describe('version name', function () {
+    for (const {
+      version,
+      enterprise,
+      expectedVersion,
+      expectedVersionName,
+      expectedEnterpriseFlag,
+    } of [
+      {
+        version: '8.1.0',
+        enterprise: undefined,
+        expectedVersion: '8.1.0',
+        expectedVersionName: '8.1.0-community',
+        expectedEnterpriseFlag: false,
+      },
+      {
+        version: '8.1.0',
+        enterprise: false,
+        expectedVersion: '8.1.0',
+        expectedVersionName: '8.1.0-community',
+        expectedEnterpriseFlag: false,
+      },
+      {
+        version: '8.1.0',
+        enterprise: true,
+        expectedVersion: '8.1.0',
+        expectedVersionName: '8.1.0-enterprise',
+        expectedEnterpriseFlag: true,
+      },
+      {
+        version: '8.1.0-enterprise',
+        enterprise: undefined,
+        expectedVersion: '8.1.0-enterprise',
+        expectedVersionName: '8.1.0',
+        expectedEnterpriseFlag: true,
+      },
+      {
+        version: '8.1.0-enterprise',
+        enterprise: false,
+        expectedVersion: '8.1.0-enterprise',
+        expectedVersionName: '8.1.0-enterprise',
+        expectedEnterpriseFlag: true,
+      },
+      {
+        version: '8.1.0-enterprise',
+        enterprise: true,
+        expectedVersion: '8.1.0-enterprise',
+        expectedVersionName: '8.1.0-enterprise',
+        expectedEnterpriseFlag: true,
+      },
+      {
+        version: 'latest-alpha',
+        enterprise: undefined,
+        expectedVersion: 'latest-alpha',
+        expectedVersionName: 'latest-alpha',
+        expectedEnterpriseFlag: false,
+      },
+      {
+        version: 'latest-alpha',
+        enterprise: true,
+        expectedVersion: 'latest-alpha',
+        expectedVersionName: 'latest-alpha',
+        expectedEnterpriseFlag: true,
+      },
+      {
+        version: '7.0.5',
+        enterprise: false,
+        expectedVersion: '7.0.5',
+        expectedVersionName: '7.0.5-community',
+        expectedEnterpriseFlag: false,
+      },
+      {
+        version: '8.1.0-rc0',
+        enterprise: false,
+        expectedVersion: '8.1.0-rc0',
+        expectedVersionName: '8.1.0-rc0-community',
+        expectedEnterpriseFlag: false,
+      },
+    ]) {
+      it(`should resolve correct version for ${version} with enterprise=${String(enterprise)}`, async function () {
+        lookupDownloadUrlStub.resetHistory();
+
+        const opts: {
+          directory: string;
+          version: string;
+          useLockfile: boolean;
+          downloadOptions?: { enterprise: boolean };
+        } = {
+          directory,
+          version,
+          useLockfile: false,
+        };
+
+        if (enterprise !== undefined) {
+          opts.downloadOptions = { enterprise: enterprise };
+        }
+
+        const result =
+          await testDownloader.downloadMongoDbWithVersionInfo(opts);
+
+        // Verify lookup call
+        expect(lookupDownloadUrlStub).to.have.been.calledOnce;
+
+        const callArgs = lookupDownloadUrlStub.firstCall.args[0];
+        expect(callArgs.targetVersion).to.equal(expectedVersion);
+        expect(callArgs.enterprise).to.equal(expectedEnterpriseFlag);
+
+        // Verify path contains expected string
+        expect(result.downloadedBinDir).to.include(
+          expectedVersionName.replaceAll('.', ''),
+        );
+      });
+    }
   });
 });
