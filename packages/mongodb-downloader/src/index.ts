@@ -33,8 +33,7 @@ export type MongoDBDownloaderOptions = {
   downloadOptions?: DownloadOptions;
 };
 
-class MongoDBDownloader {
-  // Download mongod + mongos and return the path to a directory containing them.
+export class MongoDBDownloader {
   async downloadMongoDbWithVersionInfo({
     downloadOptions = {},
     version,
@@ -236,6 +235,7 @@ async function withoutLock<T>(
 
 const downloader = new MongoDBDownloader();
 
+/** Download mongod + mongos with version info and return version info and the path to a directory containing them. */
 export async function downloadMongoDbWithVersionInfo({
   downloadOptions = {},
   version,
@@ -249,7 +249,7 @@ export async function downloadMongoDbWithVersionInfo({
     useLockfile,
   });
 }
-
+/** Download mongod + mongos and return the path to a directory containing them. */
 export async function downloadMongoDb(
   ...args: Parameters<typeof downloadMongoDbWithVersionInfo>
 ): Promise<string> {
