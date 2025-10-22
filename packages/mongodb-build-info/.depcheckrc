@@ -1,0 +1,4 @@
+ignores:
+ - '@mongodb-js/prettier-config-devtools'
+ignore-patterns:
+ - 'dist'

@@ -131,6 +131,7 @@ function listDistroIds({
       }
     case 'centos':
       return [{ value: 'rhel' + version + '0', priority: 100 }];
+    case 'rhel':
     case 'redhatenterprise':
     case 'redhatenterpriseserver': {
       // Since releases made in Aug 2024, the server uses 'rhel8' instead of 'rhel8x'

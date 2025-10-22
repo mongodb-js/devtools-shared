@@ -55,7 +55,7 @@
     "debug": "^4.4.0",
     "tar": "^6.1.15",
     "decompress": "^4.2.1",
-    "mongodb-download-url": "^1.6.3",
+    "mongodb-download-url": "^1.7.0",
     "node-fetch": "^2.7.0",
     "proper-lockfile": "^4.1.2"
   },
@@ -63,8 +63,8 @@
     "@mongodb-js/eslint-config-devtools": "0.9.12",
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.0.3",
     "@types/chai": "^4.2.21",
+    "@mongodb-js/tsconfig-devtools": "^1.0.4",
     "@types/debug": "^4.1.8",
     "@types/decompress": "^4.2.4",
     "@types/mocha": "^9.1.1",

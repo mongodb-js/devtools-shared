@@ -1,11 +1,11 @@
 {
   "name": "mongodb-download-url",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "Lookup download URLs for MongoDB versions.",
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./.esm-wrapper.mjs && prettier --write .esm-wrapper.mjs",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
@@ -20,16 +20,16 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     "require": {
-      "default": "./lib/index.js",
-      "types": "./lib/index.d.ts"
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "import": {
-      "default": "./.esm-wrapper.mjs",
-      "types": "./lib/index.d.ts"
+      "default": "./dist/.esm-wrapper.mjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "bin": {
@@ -54,7 +54,7 @@
     "@mongodb-js/eslint-config-devtools": "0.9.12",
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.0.3",
+    "@mongodb-js/tsconfig-devtools": "^1.0.4",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",

@@ -5,4 +5,4 @@ ignores:
  - '@types/sinon-chai'
  - 'sinon'
 ignore-patterns:
- - 'lib'
+ - 'dist'
