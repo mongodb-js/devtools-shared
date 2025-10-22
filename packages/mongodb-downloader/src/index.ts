@@ -26,7 +26,7 @@ export type MongoDBDownloaderOptions = {
   /** The directory to download the artifacts to. */
   directory: string;
   /** The semantic version specifier for the target version. */
-  version: string;
+  version?: string;
   /** Whether to use a lockfile for preventing concurrent downloads of the same version. */
   useLockfile: boolean;
   /** The options to pass to the download URL lookup. */
@@ -36,7 +36,7 @@ export type MongoDBDownloaderOptions = {
 export class MongoDBDownloader {
   async downloadMongoDbWithVersionInfo({
     downloadOptions = {},
-    version,
+    version = '*',
     directory,
     useLockfile,
   }: MongoDBDownloaderOptions): Promise<DownloadResult> {
@@ -199,13 +199,6 @@ export class MongoDBDownloader {
     });
   }
 
-  public async downloadMongoDb(
-    ...args: Parameters<typeof this.downloadMongoDbWithVersionInfo>
-  ): Promise<string> {
-    return (await this.downloadMongoDbWithVersionInfo(...args))
-      .downloadedBinDir;
-  }
-
   private async getCurrentDownloadedFile({
     bindir,
     artifactInfoFile,
@@ -238,7 +231,7 @@ const downloader = new MongoDBDownloader();
 /** Download mongod + mongos with version info and return version info and the path to a directory containing them. */
 export async function downloadMongoDbWithVersionInfo({
   downloadOptions = {},
-  version,
+  version = '*',
   directory,
   useLockfile,
 }: MongoDBDownloaderOptions): Promise<DownloadResult> {
@@ -250,8 +243,18 @@ export async function downloadMongoDbWithVersionInfo({
   });
 }
 /** Download mongod + mongos and return the path to a directory containing them. */
-export async function downloadMongoDb(
-  ...args: Parameters<typeof downloadMongoDbWithVersionInfo>
-): Promise<string> {
-  return await downloader.downloadMongoDb(...args);
+export async function downloadMongoDb({
+  downloadOptions = {},
+  version = '*',
+  directory,
+  useLockfile,
+}: MongoDBDownloaderOptions): Promise<string> {
+  return (
+    await downloader.downloadMongoDbWithVersionInfo({
+      downloadOptions,
+      version,
+      directory,
+      useLockfile,
+    })
+  ).downloadedBinDir;
 }
