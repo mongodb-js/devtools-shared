@@ -9,6 +9,7 @@ const LOCALHOST_REGEX =
 const DIGITAL_OCEAN_REGEX = /\.mongo\.ondigitalocean\.com$/i;
 const COSMOS_DB_REGEX = /\.cosmos\.azure\.com$/i;
 const DOCUMENT_DB_REGEX = /docdb(-elastic)?\.amazonaws\.com$/i;
+const FIRESTORE_REGEX = /\.firestore.goog$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -147,6 +148,10 @@ export async function identifyServerName(
 
   if (hostname.match(DOCUMENT_DB_REGEX)) {
     return 'documentdb';
+  }
+
+  if (hostname.match(FIRESTORE_REGEX)) {
+    return 'firestore';
   }
 
   const buildInfo = await runCommand({ buildInfo: 1 });
