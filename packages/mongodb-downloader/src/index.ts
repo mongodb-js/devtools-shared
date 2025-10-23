@@ -50,6 +50,7 @@ export class MongoDBDownloader {
 
     if (/-enterprise$/.test(version)) {
       isEnterprise = true;
+      version = version.replace(/-enterprise$/, '');
       versionName = versionName.replace(/-enterprise$/, '');
     }
 
