@@ -1,5 +1,7 @@
 import ConnectionString from 'mongodb-connection-string-url';
 
+type Document = Record<string, unknown>;
+
 const ATLAS_REGEX = /\.mongodb(-dev|-qa|-stage)?\.net$/i;
 const ATLAS_STREAM_REGEX = /^atlas-stream-.+/i;
 const LOCALHOST_REGEX =
@@ -132,6 +134,28 @@ export function getGenuineMongoDB(uri: string): {
     isGenuine: true,
     serverName: 'mongodb',
   };
+}
+
+export async function identifyServerName(
+  uri: string,
+  runCommand: (command: Document) => Promise<Document>,
+): Promise<string> {
+  const hostname = getHostnameFromUrl(uri);
+  if (hostname.match(COSMOS_DB_REGEX)) {
+    return 'cosmosdb';
+  }
+
+  if (hostname.match(DOCUMENT_DB_REGEX)) {
+    return 'documentdb';
+  }
+
+  const buildInfo = await runCommand({ buildInfo: 1 });
+
+  if ('ferretdb' in buildInfo) {
+    return 'ferretdb';
+  }
+
+  return 'mongodb';
 }
 
 export function getBuildEnv(buildInfo: unknown): {
