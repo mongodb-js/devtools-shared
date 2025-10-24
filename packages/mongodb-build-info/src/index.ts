@@ -1,4 +1,7 @@
 import ConnectionString from 'mongodb-connection-string-url';
+import { debug as createDebug } from 'debug';
+
+const debug = createDebug('mongodb-build-info');
 
 type Document = Record<string, unknown>;
 
@@ -167,6 +170,7 @@ export async function identifyServerName(
   try {
     await adminCommand({ getParameter: 'foo' });
   } catch (error) {
+    debug('getParameter command failed %O', error);
     if (error instanceof Error && /documentdb_api/.test(error.message)) {
       return 'pg_documentdb';
     }
