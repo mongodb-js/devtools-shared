@@ -80,6 +80,10 @@ export const DOCUMENT_DB_URIS = [
   'mongodb://x:y@elastic-docdb-123456789.eu-central-1.docdb-elastic.amazonaws.com:27017',
 ];
 
+export const FIRESTORE_URIS = [
+  'mongodb://x:y@bbccdaf5-527a-4be5-9881-b7073e92002b.europe-north2.firestore.goog:443/test-db?loadBalanced=true&tls=true&authMechanism=SCRAM-SHA-256&retryWrites=false',
+];
+
 export const COSMOSDB_BUILD_INFO = {
   _t: 'BuildInfoResponse',
   ok: 1,
