@@ -161,10 +161,15 @@ export async function identifyServerName(
     return 'firestore';
   }
 
-  const buildInfo = await runCommand({ buildInfo: 1 });
+  try {
+    const buildInfo = await adminCommand({ buildInfo: 1 });
 
-  if ('ferretdb' in buildInfo) {
-    return 'ferretdb';
+    if ('ferretdb' in buildInfo) {
+      return 'ferretdb';
+    }
+  } catch (error) {
+    debug('buildInfo command failed %O', error);
+    return 'unknown';
   }
 
   try {
