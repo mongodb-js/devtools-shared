@@ -2,12 +2,12 @@
 
 A simple library to download MongoDB binaries for different platforms and versions.
 
-### Migrating from v0.4 to v0.5
+### Migrating from v0.5 to v0.6+
 
-In v0.5.x, the library introduced lockfiles to prevent parallel downloads of the same MongoDB binary. It also changed the arguments for the `downloadMongoDb` and `downloadMongoDbWithVersionInfo` functions, introducing a new `useLockfile` field and using a single options object instead of separate parameters for different options. It is recommended to enable lockfiles to prevent redundant downloads unless you have a specific reason not to.
+In v0.6.x, the library introduced lockfiles to prevent parallel downloads of the same MongoDB binary. It also changed the arguments for the `downloadMongoDb` and `downloadMongoDbWithVersionInfo` functions, introducing a new `useLockfile` field and using a single options object instead of separate parameters for different options. It is recommended to enable lockfiles to prevent redundant downloads unless you have a specific reason not to.
 
 ```ts
-// Before (v0.4.x)
+// Before (v0.5.x)
 downloadMongoDb('/tmp/directory', '4.4.6', {
   platform: 'linux',
   arch: 'x64',
@@ -17,7 +17,7 @@ downloadMongoDbWithVersionInfo('/tmp/directory', '4.4.6', {
   arch: 'x64',
 });
 
-// After (v0.5.x)
+// After (v0.6.x)
 downloadMongoDb({
   directory: '/tmp/directory',
   version: '4.4.6',
