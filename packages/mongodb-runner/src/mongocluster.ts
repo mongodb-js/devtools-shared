@@ -36,7 +36,12 @@ export class MongoCluster {
     targetVersionSemverSpecifier?: string | undefined,
     options?: DownloadOptions | undefined,
   ): Promise<string> {
-    return downloadMongoDb(tmpdir, targetVersionSemverSpecifier, options);
+    return downloadMongoDb({
+      directory: tmpdir,
+      version: targetVersionSemverSpecifier,
+      downloadOptions: options,
+      useLockfile: true,
+    });
   }
 
   serialize(): unknown /* JSON-serializable */ {
