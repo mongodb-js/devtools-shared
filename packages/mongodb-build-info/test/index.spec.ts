@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import * as fixtures from './fixtures';
 import {
   isAtlas,
@@ -10,6 +11,7 @@ import {
   getBuildEnv,
   isEnterprise,
   getGenuineMongoDB,
+  identifyServerName,
 } from '../src/index';
 
 describe('mongodb-build-info', function () {
@@ -426,6 +428,69 @@ describe('mongodb-build-info', function () {
       );
       expect(isGenuine.isGenuine).to.be.true;
       expect(isGenuine.serverName).to.equal('mongodb');
+    });
+  });
+
+  context('identifyServerName', function () {
+    function fail() {
+      return Promise.reject(new Error('Should not be called'));
+    }
+
+    it('reports CosmosDB', async function () {
+      for (const uri of fixtures.COSMOS_DB_URI) {
+        const result = await identifyServerName(uri, fail, fail);
+        expect(result).to.equal('cosmosdb');
+      }
+    });
+
+    it('reports DocumentDB', async function () {
+      for (const uri of fixtures.DOCUMENT_DB_URIS) {
+        const result = await identifyServerName(uri, fail, fail);
+        expect(result).to.equal('documentdb');
+      }
+    });
+
+    it('reports Firestore', async function () {
+      for (const uri of fixtures.FIRESTORE_URIS) {
+        const result = await identifyServerName(uri, fail, fail);
+        expect(result).to.equal('firestore');
+      }
+    });
+
+    it('reports FerretDB', async function () {
+      const result = await identifyServerName(
+        '',
+        (req) => {
+          if ('buildInfo' in req) {
+            return Promise.resolve({
+              ferretdb: {},
+            });
+          } else {
+            return Promise.resolve({});
+          }
+        },
+        fail,
+      );
+      expect(result).to.equal('ferretdb');
+    });
+
+    it('reports PG DocumentDB', async function () {
+      const result = await identifyServerName(
+        '',
+        () => Promise.resolve({}),
+        (req) => {
+          if ('getParameter' in req) {
+            return Promise.reject(
+              new Error(
+                'function documentdb_api.get_parameter(boolean, boolean, text[]) does not exist',
+              ),
+            );
+          } else {
+            return Promise.resolve({});
+          }
+        },
+      );
+      expect(result).to.equal('pg_documentdb');
     });
   });
 });
