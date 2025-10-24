@@ -143,12 +143,20 @@ export function getGenuineMongoDB(uri: string): {
   };
 }
 
-export async function identifyServerName(
-  uri: string,
-  runCommand: (command: Document) => Promise<Document>,
-  adminCommand: (command: Document) => Promise<Document>,
-): Promise<string> {
-  const hostname = getHostnameFromUrl(uri);
+type IdentifyServerNameOptions = {
+  connectionString: string;
+  adminCommand: (command: Document) => Promise<Document>;
+};
+
+/**
+ * Identify the server name based on connection string and server responses.
+ * @returns A name of the server, "unknown" if we fail to identify it.
+ */
+export async function identifyServerName({
+  connectionString,
+  adminCommand,
+}: IdentifyServerNameOptions): Promise<string> {
+  const hostname = getHostnameFromUrl(connectionString);
   if (hostname.match(COSMOS_DB_REGEX)) {
     return 'cosmosdb';
   }

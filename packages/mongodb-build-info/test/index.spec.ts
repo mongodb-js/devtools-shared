@@ -437,30 +437,39 @@ describe('mongodb-build-info', function () {
     }
 
     it('reports CosmosDB', async function () {
-      for (const uri of fixtures.COSMOS_DB_URI) {
-        const result = await identifyServerName(uri, fail, fail);
+      for (const connectionString of fixtures.COSMOS_DB_URI) {
+        const result = await identifyServerName({
+          connectionString,
+          adminCommand: fail,
+        });
         expect(result).to.equal('cosmosdb');
       }
     });
 
     it('reports DocumentDB', async function () {
-      for (const uri of fixtures.DOCUMENT_DB_URIS) {
-        const result = await identifyServerName(uri, fail, fail);
+      for (const connectionString of fixtures.DOCUMENT_DB_URIS) {
+        const result = await identifyServerName({
+          connectionString,
+          adminCommand: fail,
+        });
         expect(result).to.equal('documentdb');
       }
     });
 
     it('reports Firestore', async function () {
-      for (const uri of fixtures.FIRESTORE_URIS) {
-        const result = await identifyServerName(uri, fail, fail);
+      for (const connectionString of fixtures.FIRESTORE_URIS) {
+        const result = await identifyServerName({
+          connectionString,
+          adminCommand: fail,
+        });
         expect(result).to.equal('firestore');
       }
     });
 
     it('reports FerretDB', async function () {
-      const result = await identifyServerName(
-        '',
-        (req) => {
+      const result = await identifyServerName({
+        connectionString: '',
+        adminCommand(req) {
           if ('buildInfo' in req) {
             return Promise.resolve({
               ferretdb: {},
@@ -469,16 +478,14 @@ describe('mongodb-build-info', function () {
             return Promise.resolve({});
           }
         },
-        fail,
-      );
+      });
       expect(result).to.equal('ferretdb');
     });
 
     it('reports PG DocumentDB', async function () {
-      const result = await identifyServerName(
-        '',
-        () => Promise.resolve({}),
-        (req) => {
+      const result = await identifyServerName({
+        connectionString: '',
+        adminCommand(req) {
           if ('getParameter' in req) {
             return Promise.reject(
               new Error(
@@ -489,7 +496,7 @@ describe('mongodb-build-info', function () {
             return Promise.resolve({});
           }
         },
-      );
+      });
       expect(result).to.equal('pg_documentdb');
     });
   });
