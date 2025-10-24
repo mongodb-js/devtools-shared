@@ -140,6 +140,7 @@ export function getGenuineMongoDB(uri: string): {
 export async function identifyServerName(
   uri: string,
   runCommand: (command: Document) => Promise<Document>,
+  adminCommand: (command: Document) => Promise<Document>,
 ): Promise<string> {
   const hostname = getHostnameFromUrl(uri);
   if (hostname.match(COSMOS_DB_REGEX)) {
@@ -158,6 +159,14 @@ export async function identifyServerName(
 
   if ('ferretdb' in buildInfo) {
     return 'ferretdb';
+  }
+
+  try {
+    await adminCommand({ getParameter: 'foo' });
+  } catch (error) {
+    if (error instanceof Error && /documentdb_api/.test(error.message)) {
+      return 'pg_documentdb';
+    }
   }
 
   return 'mongodb';
