@@ -112,6 +112,9 @@ export function isDigitalOcean(uri: string): boolean {
   return !!getHostnameFromUrl(uri).match(DIGITAL_OCEAN_REGEX);
 }
 
+/**
+ * @deprecated Use `identifyServerName` instead.
+ */
 export function getGenuineMongoDB(uri: string): {
   isGenuine: boolean;
   serverName: string;
