@@ -1,4 +1,9 @@
 import ConnectionString from 'mongodb-connection-string-url';
+import { debug as createDebug } from 'debug';
+
+const debug = createDebug('mongodb-build-info');
+
+type Document = Record<string, unknown>;
 
 const ATLAS_REGEX = /\.mongodb(-dev|-qa|-stage)?\.net$/i;
 const ATLAS_STREAM_REGEX = /^atlas-stream-.+/i;
@@ -7,6 +12,7 @@ const LOCALHOST_REGEX =
 const DIGITAL_OCEAN_REGEX = /\.mongo\.ondigitalocean\.com$/i;
 const COSMOS_DB_REGEX = /\.cosmos\.azure\.com$/i;
 const DOCUMENT_DB_REGEX = /docdb(-elastic)?\.amazonaws\.com$/i;
+const FIRESTORE_REGEX = /\.firestore.goog$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -109,6 +115,9 @@ export function isDigitalOcean(uri: string): boolean {
   return !!getHostnameFromUrl(uri).match(DIGITAL_OCEAN_REGEX);
 }
 
+/**
+ * @deprecated Use `identifyServerName` instead.
+ */
 export function getGenuineMongoDB(uri: string): {
   isGenuine: boolean;
   serverName: string;
@@ -132,6 +141,55 @@ export function getGenuineMongoDB(uri: string): {
     isGenuine: true,
     serverName: 'mongodb',
   };
+}
+
+type IdentifyServerNameOptions = {
+  connectionString: string;
+  adminCommand: (command: Document) => Promise<Document>;
+};
+
+/**
+ * Identify the server name based on connection string and server responses.
+ * @returns A name of the server, "unknown" if we fail to identify it.
+ */
+export async function identifyServerName({
+  connectionString,
+  adminCommand,
+}: IdentifyServerNameOptions): Promise<string> {
+  const hostname = getHostnameFromUrl(connectionString);
+  if (hostname.match(COSMOS_DB_REGEX)) {
+    return 'cosmosdb';
+  }
+
+  if (hostname.match(DOCUMENT_DB_REGEX)) {
+    return 'documentdb';
+  }
+
+  if (hostname.match(FIRESTORE_REGEX)) {
+    return 'firestore';
+  }
+
+  try {
+    const buildInfo = await adminCommand({ buildInfo: 1 });
+
+    if ('ferretdb' in buildInfo) {
+      return 'ferretdb';
+    }
+  } catch (error) {
+    debug('buildInfo command failed %O', error);
+    return 'unknown';
+  }
+
+  try {
+    await adminCommand({ getParameter: 'foo' });
+  } catch (error) {
+    debug('getParameter command failed %O', error);
+    if (error instanceof Error && /documentdb_api/.test(error.message)) {
+      return 'pg_documentdb';
+    }
+  }
+
+  return 'mongodb';
 }
 
 export function getBuildEnv(buildInfo: unknown): {
