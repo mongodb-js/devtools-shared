@@ -69,6 +69,13 @@ export const CMD_LINE_OPTS = {
   ok: 1,
 };
 
+export const ATLAS_URIS = [
+  'mongodb+srv://x:y@cluster0.nxezgv0.mongodb.net/',
+  'mongodb+srv://x:y@cluster0.nxezgv0.mongodb-qa.net/',
+  'mongodb+srv://x:y@cluster0.nxezgv0.mongodb-dev.net/',
+  'mongodb://x:y@atlas-stream-64ba1372b2a9f1545031f34d-gkumd.virginia-usa.a.query.mongodb.net/',
+];
+
 export const COSMOS_DB_URI = [
   'mongodb://x:y@compass-serverless.mongo.cosmos.azure.com:19555/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@compass-serverless@',
   'mongodb://x:y@compass.mongo.cosmos.azure.com:19555/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@compass@',
