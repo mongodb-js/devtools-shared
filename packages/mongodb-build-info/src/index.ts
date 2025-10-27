@@ -158,6 +158,10 @@ export async function identifyServerName({
 }: IdentifyServerNameOptions): Promise<string> {
   try {
     const hostname = getHostnameFromUrl(connectionString);
+    if (hostname.match(ATLAS_REGEX)) {
+      return 'mongodb';
+    }
+
     if (hostname.match(COSMOS_DB_REGEX)) {
       return 'cosmosdb';
     }

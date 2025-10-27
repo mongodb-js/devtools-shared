@@ -436,6 +436,16 @@ describe('mongodb-build-info', function () {
       return Promise.reject(new Error('Should not be called'));
     }
 
+    it('reports MongoDB (when Atlas)', async function () {
+      for (const connectionString of fixtures.ATLAS_URIS) {
+        const result = await identifyServerName({
+          connectionString,
+          adminCommand: fail,
+        });
+        expect(result).to.equal('mongodb');
+      }
+    });
+
     it('reports CosmosDB', async function () {
       for (const connectionString of fixtures.COSMOS_DB_URI) {
         const result = await identifyServerName({
