@@ -156,40 +156,58 @@ export async function identifyServerName({
   connectionString,
   adminCommand,
 }: IdentifyServerNameOptions): Promise<string> {
-  const hostname = getHostnameFromUrl(connectionString);
-  if (hostname.match(COSMOS_DB_REGEX)) {
-    return 'cosmosdb';
-  }
-
-  if (hostname.match(DOCUMENT_DB_REGEX)) {
-    return 'documentdb';
-  }
-
-  if (hostname.match(FIRESTORE_REGEX)) {
-    return 'firestore';
-  }
-
   try {
-    const buildInfo = await adminCommand({ buildInfo: 1 });
+    const hostname = getHostnameFromUrl(connectionString);
+    if (hostname.match(COSMOS_DB_REGEX)) {
+      return 'cosmosdb';
+    }
 
-    if ('ferretdb' in buildInfo) {
-      return 'ferretdb';
+    if (hostname.match(DOCUMENT_DB_REGEX)) {
+      return 'documentdb';
+    }
+
+    if (hostname.match(FIRESTORE_REGEX)) {
+      return 'firestore';
+    }
+
+    const candidates = await Promise.all([
+      adminCommand({ buildInfo: 1 }).then(
+        (response) => {
+          if ('ferretdb' in response) {
+            return ['ferretdb'];
+          } else {
+            return [];
+          }
+        },
+        (error: unknown) => {
+          debug('buildInfo command failed %O', error);
+          return [];
+        },
+      ),
+      adminCommand({ getParameter: 'foo' }).then(
+        // A successful response doesn't represent a signal
+        () => [],
+        (error: unknown) => {
+          if (error instanceof Error && /documentdb_api/.test(error.message)) {
+            return ['pg_documentdb'];
+          } else {
+            return [];
+          }
+        },
+      ),
+    ]).then((results) => results.flat());
+
+    if (candidates.length === 0) {
+      return 'mongodb';
+    } else if (candidates.length === 1) {
+      return candidates[0];
+    } else {
+      return 'unknown';
     }
   } catch (error) {
-    debug('buildInfo command failed %O', error);
+    debug('Failed to identify server name', error);
     return 'unknown';
   }
-
-  try {
-    await adminCommand({ getParameter: 'foo' });
-  } catch (error) {
-    debug('getParameter command failed %O', error);
-    if (error instanceof Error && /documentdb_api/.test(error.message)) {
-      return 'pg_documentdb';
-    }
-  }
-
-  return 'mongodb';
 }
 
 export function getBuildEnv(buildInfo: unknown): {
