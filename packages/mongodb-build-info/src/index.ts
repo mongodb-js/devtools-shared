@@ -146,6 +146,8 @@ export function getGenuineMongoDB(uri: string): {
 type IdentifyServerNameOptions = {
   connectionString: string;
   adminCommand: (command: Document) => Promise<Document>;
+  /** Pass this to prevent multiple requests for the same data */
+  buildInfo?: Promise<Document>;
 };
 
 /**
@@ -155,6 +157,7 @@ type IdentifyServerNameOptions = {
 export async function identifyServerName({
   connectionString,
   adminCommand,
+  buildInfo,
 }: IdentifyServerNameOptions): Promise<string> {
   try {
     const hostname = getHostnameFromUrl(connectionString);
@@ -175,7 +178,7 @@ export async function identifyServerName({
     }
 
     const candidates = await Promise.all([
-      adminCommand({ buildInfo: 1 }).then(
+      (buildInfo ?? adminCommand({ buildInfo: 1 })).then(
         (response) => {
           if ('ferretdb' in response) {
             return ['ferretdb'];
