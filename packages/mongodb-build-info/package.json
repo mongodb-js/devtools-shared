@@ -1,6 +1,6 @@
 {
   "name": "mongodb-build-info",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Extract information from mongodb's buildInfo",
   "author": "Irina Shestak <shestak.irina@gmail.com>",
   "contributors": [
