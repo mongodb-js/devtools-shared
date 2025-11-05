@@ -235,3 +235,16 @@ export function getBuildEnv(buildInfo: unknown): {
         : null,
   };
 }
+
+/** @deprecated */
+export default {
+  getDataLake,
+  isEnterprise,
+  isAtlas,
+  isAtlasStream,
+  isLocalhost,
+  isDigitalOcean,
+  getGenuineMongoDB,
+  identifyServerName,
+  getBuildEnv,
+};
