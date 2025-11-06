@@ -2,6 +2,11 @@
 
 Helper for spinning up MongoDB servers and clusters for testing.
 
+## Requirements
+
+Node.js >= 20.19.5, npm >= 11.6.0. Running as `npx mongodb-runner ...`
+is typically the easiest way to install/run this tool.
+
 ## Example usage
 
 > Note: Version 5 of mongodb-runner is a full re-write. Many things work

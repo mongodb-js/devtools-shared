@@ -6,6 +6,12 @@ production-ready or used in deployed applications.
 This OIDC provider does not provide any form of genuine authentication
 or authorization functionality.
 
+## Requirements
+
+Node.js >= 20.19.5, npm >= 11.6.0. Running as
+`npx @mongodb-js/oidc-mock-provider ...` is typically the easiest way
+to install/run this tool.
+
 ## CLI Options
 
 The OIDC Mock Provider can be configured using the following command-line options:
