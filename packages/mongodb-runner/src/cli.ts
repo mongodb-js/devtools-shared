@@ -5,7 +5,7 @@ import path from 'path';
 import createDebug from 'debug';
 import * as utilities from './index';
 import { ConnectionString } from 'mongodb-connection-string-url';
-import { MongoClientOptions } from 'mongodb';
+import type { MongoClientOptions } from 'mongodb';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
