@@ -4,6 +4,8 @@ import os from 'os';
 import path from 'path';
 import createDebug from 'debug';
 import * as utilities from './index';
+import { ConnectionString } from 'mongodb-connection-string-url';
+import { MongoClientOptions } from 'mongodb';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
@@ -101,9 +103,15 @@ import * as utilities from './index';
 
   async function start() {
     const { cluster, id } = await utilities.start(argv, args);
-    console.log(`Server started and running at ${cluster.connectionString}`);
+    const cs = new ConnectionString(cluster.connectionString);
+    console.log(`Server started and running at ${cs.toString()}`);
     if (cluster.oidcIssuer) {
+      cs.typedSearchParams<MongoClientOptions>().set(
+        'authMechanism',
+        'MONGODB-OIDC',
+      );
       console.log(`OIDC provider started and running at ${cluster.oidcIssuer}`);
+      console.log(`Server connection string with OIDC auth: ${cs.toString()}`);
     }
     console.log('Run the following command to stop the instance:');
     console.log(

@@ -82,9 +82,13 @@ export class MongoCluster {
   }
 
   get connectionString(): string {
-    return `mongodb://${this.hostport}/${
-      this.replSetName ? `?replicaSet=${this.replSetName}` : ''
-    }`;
+    const cs = new ConnectionString(`mongodb://${this.hostport}/`);
+    if (this.replSetName)
+      cs.typedSearchParams<MongoClientOptions>().set(
+        'replicaSet',
+        this.replSetName,
+      );
+    return cs.toString();
   }
 
   get oidcIssuer(): string | undefined {
