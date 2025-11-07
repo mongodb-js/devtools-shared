@@ -52,7 +52,7 @@ export function parseCLIArgs(
     })
     .option('skip-refresh-token', {
       type: 'boolean',
-      desc: 'Skip issuing ID tokens.',
+      desc: 'Skip issuing refresh tokens.',
     })
     .option('log-requests', {
       alias: 'l',

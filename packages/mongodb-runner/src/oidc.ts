@@ -23,7 +23,9 @@ if (process.env.RUN_OIDC_MOCK_PROVIDER !== undefined) {
           });
           res.writeHead(200);
           res.end();
+          return;
         }
+        return config.overrideRequestHandler?.(url, req, res);
       },
     });
     debug('started OIDC mock provider with UUID', {
