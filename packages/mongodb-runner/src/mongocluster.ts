@@ -6,6 +6,7 @@ import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
 import type { MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import { sleep, range, uuid, debug } from './util';
+import { OIDCMockProviderProcess } from './oidc';
 
 export interface MongoClusterOptions
   extends Pick<
@@ -19,6 +20,7 @@ export interface MongoClusterOptions
   version?: string;
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
+  oidc?: string;
 }
 
 export class MongoCluster {
@@ -26,6 +28,7 @@ export class MongoCluster {
   private replSetName?: string;
   private servers: MongoServer[] = []; // mongod/mongos
   private shards: MongoCluster[] = []; // replsets
+  private oidcMockProviderProcess?: OIDCMockProviderProcess;
 
   private constructor() {
     /* see .start() */
@@ -50,6 +53,7 @@ export class MongoCluster {
       replSetName: this.replSetName,
       servers: this.servers.map((srv) => srv.serialize()),
       shards: this.shards.map((shard) => shard.serialize()),
+      oidcMockProviderProcess: this.oidcMockProviderProcess?.serialize(),
     };
   }
 
@@ -67,6 +71,9 @@ export class MongoCluster {
     cluster.shards = await Promise.all(
       serialized.shards.map((shard: any) => MongoCluster.deserialize(shard)),
     );
+    cluster.oidcMockProviderProcess = serialized.oidcMockProviderProcess
+      ? OIDCMockProviderProcess.deserialize(serialized.oidcMockProviderProcess)
+      : undefined;
     return cluster;
   }
 
@@ -75,9 +82,17 @@ export class MongoCluster {
   }
 
   get connectionString(): string {
-    return `mongodb://${this.hostport}/${
-      this.replSetName ? `?replicaSet=${this.replSetName}` : ''
-    }`;
+    const cs = new ConnectionString(`mongodb://${this.hostport}/`);
+    if (this.replSetName)
+      cs.typedSearchParams<MongoClientOptions>().set(
+        'replicaSet',
+        this.replSetName,
+      );
+    return cs.toString();
+  }
+
+  get oidcIssuer(): string | undefined {
+    return this.oidcMockProviderProcess?.issuer;
   }
 
   get connectionStringUrl(): ConnectionString {
@@ -103,6 +118,31 @@ export class MongoCluster {
         options.version,
         options.downloadOptions,
       );
+    }
+
+    if (options.oidc !== undefined) {
+      cluster.oidcMockProviderProcess = await OIDCMockProviderProcess.start(
+        options.oidc || '--port=0',
+      );
+      const oidcServerConfig = [
+        {
+          issuer: cluster.oidcMockProviderProcess.issuer,
+          audience: cluster.oidcMockProviderProcess.audience,
+          authNamePrefix: 'dev',
+          clientId: 'cid',
+          authorizationClaim: 'groups',
+        },
+      ];
+      delete options.oidc;
+      options.args = [
+        ...(options.args ?? []),
+        '--setParameter',
+        `oidcIdentityProviders=${JSON.stringify(oidcServerConfig)}`,
+        '--setParameter',
+        'authenticationMechanisms=SCRAM-SHA-256,MONGODB-OIDC',
+        '--setParameter',
+        'enableTestCommands=true',
+      ];
     }
 
     if (options.topology === 'standalone') {
@@ -233,7 +273,9 @@ export class MongoCluster {
 
   async close(): Promise<void> {
     await Promise.all(
-      [...this.servers, ...this.shards].map((closable) => closable.close()),
+      [...this.servers, ...this.shards, this.oidcMockProviderProcess].map(
+        (closable) => closable?.close(),
+      ),
     );
     this.servers = [];
     this.shards = [];

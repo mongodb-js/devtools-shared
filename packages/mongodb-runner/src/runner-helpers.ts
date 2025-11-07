@@ -4,6 +4,8 @@ import type { MongoClusterOptions } from './mongocluster';
 import { MongoCluster } from './mongocluster';
 import { parallelForEach } from './util';
 import * as fs from 'fs/promises';
+import { spawn } from 'child_process';
+import { once } from 'events';
 
 interface StoredInstance {
   id: string;
@@ -89,4 +91,44 @@ export async function stop(argv: {
     await (await MongoCluster.deserialize(instance.serialized)).close();
     await fs.rm(instance.filepath);
   });
+}
+
+export async function exec(
+  argv: {
+    id?: string;
+    runnerDir: string;
+  } & MongoClusterOptions,
+  args: string[],
+) {
+  let mongodArgs: string[];
+  let execArgs: string[];
+
+  const doubleDashIndex = args.indexOf('--');
+  if (doubleDashIndex !== -1) {
+    mongodArgs = args.slice(0, doubleDashIndex);
+    execArgs = args.slice(doubleDashIndex + 1);
+  } else {
+    mongodArgs = [];
+    execArgs = args;
+  }
+  const cluster = await MongoCluster.start({
+    ...argv,
+    args: mongodArgs,
+  });
+  try {
+    const [prog, ...progArgs] = execArgs;
+    const child = spawn(prog, progArgs, {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        // both spellings since otherwise I'd end up misspelling these half of the time
+        MONGODB_URI: cluster.connectionString,
+        MONGODB_URL: cluster.connectionString,
+        MONGODB_HOSTPORT: cluster.hostport,
+      },
+    });
+    [process.exitCode] = await once(child, 'exit');
+  } finally {
+    await cluster.close();
+  }
 }

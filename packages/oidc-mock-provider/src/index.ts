@@ -12,6 +12,8 @@ import type { KeyPairKeyObjectResult } from 'crypto';
 import { promisify } from 'util';
 import { URLSearchParams } from 'url';
 
+export { parseCLIArgs } from './cli-parser';
+
 async function randomString(n: number, enc: BufferEncoding) {
   return (await promisify(crypto.randomBytes)(n)).toString(enc);
 }
@@ -43,6 +45,7 @@ export interface OIDCMockProviderConfig {
     payload: Record<string, unknown>;
     customIdTokenPayload?: Record<string, unknown>;
     skipIdToken?: boolean;
+    skipRefreshToken?: boolean;
   }>;
 
   /**
@@ -270,20 +273,23 @@ export class OIDCMockProvider {
             }
           }
 
-          const { access_token, id_token, expires_in } = await this.issueToken({
-            client_id,
-            scope,
-            nonce,
-          });
+          const { access_token, id_token, expires_in, skipRefreshToken } =
+            await this.issueToken({
+              client_id,
+              scope,
+              nonce,
+            });
 
           // Issue a token response:
           result = {
             access_token: access_token,
             id_token: id_token,
-            refresh_token: await this.storeForSingleRetrieval({
-              id_token,
-              access_token,
-            }),
+            refresh_token: skipRefreshToken
+              ? undefined
+              : await this.storeForSingleRetrieval({
+                  id_token,
+                  access_token,
+                }),
             token_type: 'Bearer',
             expires_in,
           };
@@ -334,9 +340,15 @@ export class OIDCMockProvider {
     expires_in: number;
     access_token: string;
     id_token: string | undefined;
+    skipRefreshToken: boolean;
   }> {
-    const { expires_in, payload, skipIdToken, customIdTokenPayload } =
-      await this.config.getTokenPayload(metadata);
+    const {
+      expires_in,
+      payload,
+      skipIdToken,
+      skipRefreshToken,
+      customIdTokenPayload,
+    } = await this.config.getTokenPayload(metadata);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     const header = {
       alg: 'RS256',
@@ -376,6 +388,7 @@ export class OIDCMockProvider {
             aud: metadata.client_id,
             ...customIdTokenPayload,
           }),
+      skipRefreshToken: !!skipRefreshToken,
     };
   }
 

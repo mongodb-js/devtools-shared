@@ -2,6 +2,11 @@
 
 Helper for spinning up MongoDB servers and clusters for testing.
 
+## Requirements
+
+Node.js >= 20.19.5, npm >= 11.6.0. Running as `npx mongodb-runner ...`
+is typically the easiest way to install/run this tool.
+
 ## Example usage
 
 > Note: Version 5 of mongodb-runner is a full re-write. Many things work
@@ -11,6 +16,7 @@ Helper for spinning up MongoDB servers and clusters for testing.
 $ npx mongodb-runner start -t sharded
 $ npx mongodb-runner start -t replset -- --port 27017
 $ npx mongodb-runner start -t replset -- --setParameter allowDiskUseByDefault=true
+$ npx mongodb-runner start -t replset --version 8.2.x-enterprise --oidc='--payload={"groups":["x"],"sub":"y","aud":"aud"} --expiry=60 --skip-refresh-token'
 $ npx mongodb-runner stop --all
 $ npx mongodb-runner exec -t standalone -- sh -c 'mongosh $MONGODB_URI'
 $ npx mongodb-runner exec -t standalone -- --setParameter allowDiskUseByDefault=true -- sh -c 'mongosh $MONGODB_URI'

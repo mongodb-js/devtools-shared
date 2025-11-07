@@ -1,12 +1,11 @@
 /* eslint-disable no-console */
 import yargs from 'yargs';
-import { MongoCluster } from './mongocluster';
 import os from 'os';
 import path from 'path';
-import { spawn } from 'child_process';
 import createDebug from 'debug';
-import { once } from 'events';
 import * as utilities from './index';
+import { ConnectionString } from 'mongodb-connection-string-url';
+import type { MongoClientOptions } from 'mongodb';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
@@ -71,6 +70,10 @@ import * as utilities from './index';
       type: 'boolean',
       describe: 'for `stop`: stop all clusters',
     })
+    .option('oidc', {
+      type: 'string',
+      describe: 'Configure OIDC authentication on the server',
+    })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
@@ -87,9 +90,29 @@ import * as utilities from './index';
     createDebug.enable('mongodb-runner');
   }
 
+  if (argv.oidc && process.platform !== 'linux') {
+    console.warn(
+      'OIDC authentication is currently only supported on Linux platforms.',
+    );
+  }
+  if (argv.oidc && !argv.version?.includes('enterprise')) {
+    console.warn(
+      'OIDC authentication is currently only supported on Enterprise server versions.',
+    );
+  }
+
   async function start() {
     const { cluster, id } = await utilities.start(argv, args);
-    console.log(`Server started and running at ${cluster.connectionString}`);
+    const cs = new ConnectionString(cluster.connectionString);
+    console.log(`Server started and running at ${cs.toString()}`);
+    if (cluster.oidcIssuer) {
+      cs.typedSearchParams<MongoClientOptions>().set(
+        'authMechanism',
+        'MONGODB-OIDC',
+      );
+      console.log(`OIDC provider started and running at ${cluster.oidcIssuer}`);
+      console.log(`Server connection string with OIDC auth: ${cs.toString()}`);
+    }
     console.log('Run the following command to stop the instance:');
     console.log(
       `${argv.$0} stop --id=${id}` +
@@ -118,37 +141,7 @@ import * as utilities from './index';
   }
 
   async function exec() {
-    let mongodArgs: string[];
-    let execArgs: string[];
-
-    const doubleDashIndex = args.indexOf('--');
-    if (doubleDashIndex !== -1) {
-      mongodArgs = args.slice(0, doubleDashIndex);
-      execArgs = args.slice(doubleDashIndex + 1);
-    } else {
-      mongodArgs = [];
-      execArgs = args;
-    }
-    const cluster = await MongoCluster.start({
-      ...argv,
-      args: mongodArgs,
-    });
-    try {
-      const [prog, ...progArgs] = execArgs;
-      const child = spawn(prog, progArgs, {
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          // both spellings since otherwise I'd end up misspelling these half of the time
-          MONGODB_URI: cluster.connectionString,
-          MONGODB_URL: cluster.connectionString,
-          MONGODB_HOSTPORT: cluster.hostport,
-        },
-      });
-      [process.exitCode] = await once(child, 'exit');
-    } finally {
-      await cluster.close();
-    }
+    await utilities.exec(argv, args);
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
