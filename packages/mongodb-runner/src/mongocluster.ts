@@ -12,7 +12,7 @@ import { EventEmitter } from 'events';
 export interface MongoClusterOptions
   extends Pick<
     MongoServerOptions,
-    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
+    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker' | 'login' | 'password'
   > {
   topology: 'standalone' | 'replset' | 'sharded';
   arbiters?: number;
@@ -22,10 +22,11 @@ export interface MongoClusterOptions
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
   oidc?: string;
-  rsTags?: Map<string,string>[];
+  rsTags?: Map<string, string>[];
   rsArgs?: string[][];
   shardArgs?: string[][];
   mongosArgs?: string[][];
+  roles?: Map<string, string>[];
 }
 
 export type MongoClusterEvents = {
@@ -177,6 +178,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           binary: 'mongod',
         }),
       );
+      if (options.login) {
+        await cluster.servers[0].addAdminUser(options.roles);
+        await cluster.servers[0].reinitialize();
+      }
     } else if (options.topology === 'replset') {
       const { secondaries = 2, arbiters = 0 } = options;
 
@@ -190,8 +195,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       }
 
       const primaryArgs = [...args];
-      if (options.rsArgs?.length > 0) {
-        primaryArgs.push(...options.rsArgs[0])
+      const rsArgs = options.rsArgs || [[]];
+      if (rsArgs.length > 0) {
+        primaryArgs.push(...rsArgs[0]);
       }
       debug('Starting primary', primaryArgs);
       const primary = await MongoServer.start({
@@ -208,38 +214,39 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       debug('Starting secondaries and arbiters', {
         secondaries,
         arbiters,
-        args
+        args,
       });
       cluster.servers.push(
         ...(await Promise.all(
           range(secondaries + arbiters).map((i) => {
             const secondaryArgs = [...args];
-            if (i < options.rsArgs?.length) {
-              secondaryArgs.push(...options.rsArgs[i]);
-              debug('Adding secondary args', options.rsArgs[i])
+            if (i + 1 < rsArgs.length) {
+              secondaryArgs.push(...rsArgs[i + 1]);
+              debug('Adding secondary args', rsArgs[i + 1]);
             }
             return MongoServer.start({
               ...options,
               args: secondaryArgs,
               binary: 'mongod',
             });
-          })
+          }),
         )),
       );
 
       await primary.withClient(async (client) => {
         debug('Running rs.initiate');
+        const rsTags = options.rsTags || [{}];
         const rsConf = {
           _id: replSetName,
           configsvr: args.includes('--configsvr'),
           members: cluster.servers.map((srv, i) => {
-            const tags = (i < options.rsTags.length) ? options.rsTags[i] : {};  
+            const tags = i < rsTags.length || 0 ? rsTags[i] : {};
             return {
               _id: i,
               host: srv.hostport,
               arbiterOnly: i > 1 + secondaries,
               priority: i === 0 ? 1 : 0,
-              tags
+              tags,
             };
           }),
         };
@@ -261,6 +268,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           debug('rs.status did not include primary, waiting...');
           await sleep(1000);
         }
+
+        // Add auth if needed
+        if (options.login) {
+          await cluster.servers[0].addAdminUser(options.roles);
+          for (const server of cluster.servers) {
+            await server.reinitialize();
+          }
+        }
       });
     } else if (options.topology === 'sharded') {
       const { shards = 3 } = options;
@@ -268,18 +283,19 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       if (shardArgs.includes('--port')) {
         shardArgs.splice(shardArgs.indexOf('--port') + 1, 1, '0');
       }
+      const perShardArgs = options.shardArgs || [[]];
 
       debug('starting config server and shard servers', shardArgs);
       const [configsvr, ...shardsvrs] = await Promise.all(
         range(shards + 1).map((i) => {
           const args: string[] = [...shardArgs];
-          if (i == 0) {
+          if (i === 0) {
             args.push('--configsvr');
           } else {
             args.push('--shardsvr');
-            if (i - 1 < options.shardArgs?.length) {
-              args.push(...options.shardArgs[i - 1]);
-              debug('Adding shard args', options.shardArgs[i - 1]);
+            if (i - 1 < perShardArgs.length) {
+              args.push(...perShardArgs[i - 1]);
+              debug('Adding shard args', perShardArgs[i - 1]);
             }
           }
           return MongoCluster.start({
@@ -304,6 +320,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             `${configsvr.replSetName!}/${configsvr.hostport}`,
           ],
         });
+        if (options.login) {
+          mongos.addAdminUser(options.roles);
+          mongos.reinitialize();
+        }
         cluster.servers.push(mongos);
         await mongos.withClient(async (client) => {
           for (const shard of shardsvrs) {

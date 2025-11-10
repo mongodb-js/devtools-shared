@@ -22,6 +22,8 @@ export interface MongoServerOptions {
   logDir?: string; // If set, pipe log file output through here.
   args?: string[]; // May or may not contain --port
   docker?: string | string[]; // Image or docker options
+  login?: string; // Simple user login.
+  password?: string; // Simple user password.
 }
 
 interface SerializedServerProperties {
@@ -31,6 +33,7 @@ interface SerializedServerProperties {
   dbPath?: string;
   startTime: string;
   hasInsertedMetadataCollEntry: boolean;
+  hasAuth: boolean;
 }
 
 export interface MongoServerEvents {
@@ -47,6 +50,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private closing = false;
   private startTime = new Date().toISOString();
   private hasInsertedMetadataCollEntry = false;
+  private login?: string;
+  private password?: string;
+  private addAuth?: boolean;
 
   get id(): string {
     return this.uuid;
@@ -65,6 +71,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       dbPath: this.dbPath,
       startTime: this.startTime,
       hasInsertedMetadataCollEntry: this.hasInsertedMetadataCollEntry,
+      hasAuth: this.login ? this.login.length > 0 : false,
     };
   }
 
@@ -74,7 +81,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.uuid = serialized._id;
     srv.port = serialized.port;
-    srv.closing = !!(await srv._populateBuildInfo('restore-check'));
+    srv.closing =
+      serialized.hasAuth || !!(await srv._populateBuildInfo('restore-check'));
     if (!srv.closing) {
       srv.pid = serialized.pid;
       srv.dbPath = serialized.dbPath;
@@ -264,9 +272,14 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       logEntryStream.resume();
 
       srv.port = port;
-      const buildInfoError = await srv._populateBuildInfo('insert-new');
-      if (buildInfoError) {
-        debug('failed to get buildInfo', buildInfoError);
+      if (options.login === undefined) {
+        const buildInfoError = await srv._populateBuildInfo('insert-new');
+        if (buildInfoError) {
+          debug('failed to get buildInfo', buildInfoError);
+        }
+      } else {
+        srv.login = options.login;
+        srv.password = options.password;
       }
     } catch (err) {
       await srv.close();
@@ -274,6 +287,30 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     }
 
     return srv;
+  }
+
+  async addAdminUser(roles?: Map<string, string>[]) {
+    debug('Adding admin user', this.hostport);
+    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
+      directConnection: true,
+    });
+    try {
+      await client
+        .db('admin')
+        .command({ createUser: this.login, pwd: this.password, roles });
+    } finally {
+      await client.close();
+    }
+  }
+
+  async reinitialize() {
+    if (this.login) {
+      this.addAuth = true;
+    }
+    const buildInfoError = await this._populateBuildInfo('insert-new');
+    if (buildInfoError) {
+      debug('failed to get buildInfo', buildInfoError);
+    }
   }
 
   async close(): Promise<void> {
@@ -315,6 +352,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       'port',
       'dbPath',
       'startTime',
+      'hasAuth',
     ]);
     const runnerColl = client
       .db(isMongoS ? 'config' : 'local')
@@ -376,7 +414,14 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     fn: Fn,
     clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
+    let url: string;
+    if (this.addAuth) {
+      debug('ADDING LOGIN');
+      url = `mongodb://${this.login}:${this.password}@${this.hostport}/`;
+    } else {
+      url = `mongodb://${this.hostport}/`;
+    }
+    const client = await MongoClient.connect(url, {
       directConnection: true,
       ...clientOptions,
     });
