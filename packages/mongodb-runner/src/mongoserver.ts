@@ -24,6 +24,7 @@ export interface MongoServerOptions {
   docker?: string | string[]; // Image or docker options
   login?: string; // Simple user login.
   password?: string; // Simple user password.
+  clientOptions?: { [key: string]: string }; // Extra options to pass to clients.
 }
 
 interface SerializedServerProperties {
@@ -53,6 +54,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private login?: string;
   private password?: string;
   private addAuth?: boolean;
+  private clientOptions?: { [key: string]: string };
 
   get id(): string {
     return this.uuid;
@@ -81,8 +83,11 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.uuid = serialized._id;
     srv.port = serialized.port;
-    srv.closing =
-      serialized.hasAuth || !!(await srv._populateBuildInfo('restore-check'));
+    if (!serialized.hasAuth) {
+      srv.closing = !!(await srv._populateBuildInfo('restore-check'));
+    } else {
+      srv.closing = false;
+    }
     if (!srv.closing) {
       srv.pid = serialized.pid;
       srv.dbPath = serialized.dbPath;
@@ -151,6 +156,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     ...options
   }: MongoServerOptions): Promise<MongoServer> {
     const srv = new MongoServer();
+    srv.clientOptions = options.clientOptions || {};
 
     if (!options.docker) {
       const dbPath = path.join(options.tmpDir, `db-${srv.uuid}`);
@@ -289,21 +295,17 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     return srv;
   }
 
-  async addAdminUser(roles?: Map<string, string>[]) {
-    debug('Adding admin user', this.hostport);
-    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
-      directConnection: true,
-    });
-    try {
+  async addAdminUser(roles?: { [key: string]: string }[]) {
+    debug('adding admin user', this.hostport);
+    await this.withClient(async (client) => {
       await client
         .db('admin')
         .command({ createUser: this.login, pwd: this.password, roles });
-    } finally {
-      await client.close();
-    }
+    });
   }
 
   async reinitialize() {
+    debug('reinitializing', this.hostport);
     if (this.login) {
       this.addAuth = true;
     }
@@ -315,6 +317,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
 
   async close(): Promise<void> {
     this.closing = true;
+    debug('in close', 'pid', this.pid);
     if (this.childProcess) {
       debug('closing running process', this.childProcess.pid);
       if (
@@ -416,13 +419,13 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   ): Promise<ReturnType<Fn>> {
     let url: string;
     if (this.addAuth) {
-      debug('ADDING LOGIN');
       url = `mongodb://${this.login}:${this.password}@${this.hostport}/`;
     } else {
       url = `mongodb://${this.hostport}/`;
     }
     const client = await MongoClient.connect(url, {
       directConnection: true,
+      ...this.clientOptions,
       ...clientOptions,
     });
     try {

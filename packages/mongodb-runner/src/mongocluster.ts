@@ -12,7 +12,14 @@ import { EventEmitter } from 'events';
 export interface MongoClusterOptions
   extends Pick<
     MongoServerOptions,
-    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker' | 'login' | 'password'
+    | 'logDir'
+    | 'tmpDir'
+    | 'args'
+    | 'binDir'
+    | 'docker'
+    | 'login'
+    | 'password'
+    | 'clientOptions'
   > {
   topology: 'standalone' | 'replset' | 'sharded';
   arbiters?: number;
@@ -22,11 +29,11 @@ export interface MongoClusterOptions
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
   oidc?: string;
-  rsTags?: Map<string, string>[];
+  rsTags?: { [key: string]: string }[];
   rsArgs?: string[][];
   shardArgs?: string[][];
   mongosArgs?: string[][];
-  roles?: Map<string, string>[];
+  roles?: { [key: string]: string }[];
 }
 
 export type MongoClusterEvents = {
@@ -261,7 +268,11 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           if (
             status.members.some((member: any) => member.stateStr === 'PRIMARY')
           ) {
-            debug('rs.status indicated primary for replset', status.set);
+            debug(
+              'rs.status indicated primary for replset',
+              status.set,
+              status.members,
+            );
             cluster.replSetName = status.set;
             break;
           }
@@ -271,6 +282,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
         // Add auth if needed
         if (options.login) {
+          // Sleep to give time for the election to settle.
+          await sleep(1000);
           await cluster.servers[0].addAdminUser(options.roles);
           for (const server of cluster.servers) {
             await server.reinitialize();
