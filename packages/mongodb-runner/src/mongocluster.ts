@@ -305,10 +305,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           if (i === 0) {
             args.push('--configsvr');
           } else {
-            args.push('--shardsvr');
             if (i - 1 < perShardArgs.length) {
               args.push(...perShardArgs[i - 1]);
               debug('Adding shard args', perShardArgs[i - 1]);
+            }
+            if (!args.includes('--shardsvr')) {
+              args.push('--shardsvr');
             }
           }
           return MongoCluster.start({
@@ -333,11 +335,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             `${configsvr.replSetName!}/${configsvr.hostport}`,
           ],
         });
-        if (options.login) {
-          mongos.addAdminUser(options.roles);
-          mongos.reinitialize();
-        }
         cluster.servers.push(mongos);
+        await mongos.reinitialize();
         await mongos.withClient(async (client) => {
           for (const shard of shardsvrs) {
             const shardSpec = `${shard.replSetName!}/${shard.hostport}`;
