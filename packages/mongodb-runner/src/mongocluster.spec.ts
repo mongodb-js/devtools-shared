@@ -5,7 +5,7 @@ import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
 import sinon from 'sinon';
-import { LogEntry } from './mongologreader';
+import type { LogEntry } from './mongologreader';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
