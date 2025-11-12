@@ -1,4 +1,4 @@
-import type { MongoServerOptions } from './mongoserver';
+import type { MongoServerEvents, MongoServerOptions } from './mongoserver';
 import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
@@ -7,6 +7,7 @@ import type { MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import { sleep, range, uuid, debug } from './util';
 import { OIDCMockProviderProcess } from './oidc';
+import { EventEmitter } from 'events';
 
 export interface MongoClusterOptions
   extends Pick<
@@ -23,7 +24,14 @@ export interface MongoClusterOptions
   oidc?: string;
 }
 
-export class MongoCluster {
+export type MongoClusterEvents = {
+  [k in keyof MongoServerEvents]: [serverUUID: string, ...MongoServerEvents[k]];
+} & {
+  newListener: [keyof MongoClusterEvents];
+  removeListener: [keyof MongoClusterEvents];
+};
+
+export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private topology: MongoClusterOptions['topology'] = 'standalone';
   private replSetName?: string;
   private servers: MongoServer[] = []; // mongod/mongos
@@ -31,6 +39,19 @@ export class MongoCluster {
   private oidcMockProviderProcess?: OIDCMockProviderProcess;
 
   private constructor() {
+    super();
+    // NB: This will not retroactively add listeners to new server instances.
+    // This should be fine, as we only pass "fully initialized" clusters to
+    // callers, with all child clusters and individual servers already in place.
+    this.on('newListener', (name) => {
+      if (name === 'newListener' || name === 'removeListener') return;
+      if (this.listenerCount(name) === 0) {
+        for (const child of this.servers)
+          child.on(name, (...args) => this.emit(name, child.id, ...args));
+        for (const child of this.shards)
+          child.on(name, (...args) => this.emit(name, ...args));
+      }
+    });
     /* see .start() */
   }
 

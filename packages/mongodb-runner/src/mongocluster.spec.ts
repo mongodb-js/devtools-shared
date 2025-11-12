@@ -5,6 +5,7 @@ import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
 import sinon from 'sinon';
+import type { LogEntry } from './mongologreader';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
@@ -297,5 +298,49 @@ describe('MongoCluster', function () {
     });
     expect(doc?._id).to.be.a('string');
     await cluster.close();
+  });
+
+  it('can let callers listen for server log events', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'replset',
+      tmpDir,
+      secondaries: 1,
+    });
+    const logs: LogEntry[] = [];
+    cluster.on('mongoLog', (uuid, entry) => logs.push(entry));
+    await cluster.withClient(async (client) => {
+      const coll = await client.db('test').createCollection<any>('test', {
+        validationAction: 'warn',
+        validationLevel: 'strict',
+        validator: {
+          $jsonSchema: {
+            bsonType: 'object',
+            required: ['phone'],
+            properties: {
+              phone: {
+                bsonType: 'string',
+              },
+            },
+          },
+        },
+      });
+      await coll.insertOne({ _id: 42, baddoc: 1 });
+    });
+    expect(
+      logs.find(
+        (entry) =>
+          entry.id === 20320 /* create collection */ &&
+          entry.attr.namespace === 'test.test',
+      ),
+    ).to.exist;
+    const validatorLogEntry = logs.find(
+      (entry) => entry.id === 20294 /* fail validation */,
+    );
+    expect(validatorLogEntry?.attr.namespace).to.equal('test.test');
+    expect(validatorLogEntry?.attr.document).to.deep.equal({
+      _id: 42,
+      baddoc: 1,
+    });
   });
 });
