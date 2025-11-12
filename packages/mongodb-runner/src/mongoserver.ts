@@ -12,7 +12,7 @@ import { Readable } from 'stream';
 import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
-import { once } from 'events';
+import { EventEmitter, once } from 'events';
 import { uuid, debug, pick, debugVerbose } from './util';
 
 export interface MongoServerOptions {
@@ -33,8 +33,12 @@ interface SerializedServerProperties {
   hasInsertedMetadataCollEntry: boolean;
 }
 
-export class MongoServer {
-  private uuid: string = uuid();
+export interface MongoServerEvents {
+  mongoLog: [LogEntry];
+}
+
+export class MongoServer extends EventEmitter<MongoServerEvents> {
+  public uuid: string = uuid();
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
   private pid?: number;
@@ -44,7 +48,12 @@ export class MongoServer {
   private startTime = new Date().toISOString();
   private hasInsertedMetadataCollEntry = false;
 
+  get id(): string {
+    return this.uuid;
+  }
+
   private constructor() {
+    super();
     /* see .start() */
   }
 
@@ -212,7 +221,8 @@ export class MongoServer {
     const errorLogEntries: LogEntry[] = [];
     try {
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
-      logEntryStream.on('data', (entry) => {
+      logEntryStream.on('data', (entry: LogEntry) => {
+        srv.emit('mongoLog', entry);
         if (!srv.closing && ['E', 'F'].includes(entry.severity)) {
           errorLogEntries.push(entry);
           debug('mongodb server output', entry);
