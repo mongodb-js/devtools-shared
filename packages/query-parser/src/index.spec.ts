@@ -120,6 +120,38 @@ describe('mongodb-query-parser', function () {
         );
       });
 
+      // TODO: prototype replace test with val for new val.
+
+      it('should support LegacyJavaUUID', function () {
+        assert.deepEqual(
+          convert('LegacyJavaUUID("00112233-4455-6677-8899-aabbccddeeff")'),
+          {
+            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
+          },
+        );
+      });
+
+      it('should support LegacyCSharpUUID', function () {
+        assert.deepEqual(
+          convert('LegacyCSharpUUID("00112233-4455-6677-8899-aabbccddeeff")'),
+          {
+            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
+          },
+        );
+      });
+
+      it('should support LegacyPythonUUID', function () {
+        assert.deepEqual(
+          convert('LegacyPythonUUID("00112233-4455-6677-8899-aabbccddeeff")'),
+          {
+            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
+          },
+        );
+      });
+
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
       it('should support Binary.createFromHexString', function () {
         assert.deepEqual(
@@ -642,6 +674,8 @@ e  s`,
           "{name: UUID('3b241101-e2bb-4255-8caf-4136c566a962')}",
         );
       });
+
+      // TODO: New tests for the legacy UUID formats.
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
       it('should support Binary.createFromHexString', function () {
