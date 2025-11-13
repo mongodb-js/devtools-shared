@@ -120,13 +120,11 @@ describe('mongodb-query-parser', function () {
         );
       });
 
-      // TODO: prototype replace test with val for new val.
-
       it('should support LegacyJavaUUID', function () {
         assert.deepEqual(
           convert('LegacyJavaUUID("00112233-4455-6677-8899-aabbccddeeff")'),
           {
-            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $binary: 'd2ZVRDMiEQD/7t3Mu6qZiA==',
             $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
           },
         );
@@ -136,7 +134,7 @@ describe('mongodb-query-parser', function () {
         assert.deepEqual(
           convert('LegacyCSharpUUID("00112233-4455-6677-8899-aabbccddeeff")'),
           {
-            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $binary: 'MyIRAFVEd2aImaq7zN3u/w==',
             $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
           },
         );
@@ -146,7 +144,7 @@ describe('mongodb-query-parser', function () {
         assert.deepEqual(
           convert('LegacyPythonUUID("00112233-4455-6677-8899-aabbccddeeff")'),
           {
-            $binary: 'OyQRAeK7QlWMr0E2xWapYg==',
+            $binary: 'ABEiM0RVZneImaq7zN3u/w==',
             $type: `0${bson.Binary.SUBTYPE_UUID_OLD}`,
           },
         );
@@ -675,7 +673,38 @@ e  s`,
         );
       });
 
-      // TODO: New tests for the legacy UUID formats.
+      it('does not stringify LegacyJavaUUID', function () {
+        const res = parseFilter(
+          '{name: LegacyJavaUUID("00112233-4455-6677-8899-aabbccddeeff")}',
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          "{name: BinData(3, 'd2ZVRDMiEQD/7t3Mu6qZiA==')}",
+        );
+      });
+
+      it('does not stringify LegacyCSharpUUID', function () {
+        const res = parseFilter(
+          '{name: LegacyCSharpUUID("00112233-4455-6677-8899-aabbccddeeff")}',
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          "{name: BinData(3, 'MyIRAFVEd2aImaq7zN3u/w==')}",
+        );
+      });
+
+      it('does not stringify LegacyPythonUUID', function () {
+        const res = parseFilter(
+          '{name: LegacyPythonUUID("00112233-4455-6677-8899-aabbccddeeff")}',
+        );
+        const stringified = stringify(res);
+        assert.equal(
+          stringified,
+          "{name: BinData(3, 'ABEiM0RVZneImaq7zN3u/w==')}",
+        );
+      });
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
       it('should support Binary.createFromHexString', function () {
