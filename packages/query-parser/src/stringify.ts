@@ -60,9 +60,6 @@ const BSON_TO_JS_STRING = {
     return `ObjectId('${v.toString('hex')}')`;
   },
   Binary: function (v: Binary) {
-    // TODO: handle UUID subtypes Compass side or with an
-    // option for subType 3 handling here.
-
     const subType = v.sub_type;
     if (subType === 4 && v.buffer.length === 16) {
       let uuidHex = '';
