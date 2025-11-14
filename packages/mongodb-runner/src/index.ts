@@ -7,6 +7,7 @@ export {
   MongoCluster,
   type MongoClusterEvents,
   MongoClusterOptions,
+  MongoDBUserDoc,
 } from './mongocluster';
 export type { LogEntry } from './mongologreader';
 export type { ConnectionString } from 'mongodb-connection-string-url';

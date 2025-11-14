@@ -3,23 +3,23 @@ import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
-import type { MongoClientOptions } from 'mongodb';
+import type { Document, MongoClientOptions, TagSet } from 'mongodb';
 import { MongoClient } from 'mongodb';
-import { sleep, range, uuid, debug } from './util';
+import { sleep, range, uuid, debug, jsonClone } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
+
+export interface MongoDBUserDoc {
+  username: string;
+  password: string;
+  customData?: Document;
+  roles: ({ role: string; db?: string } | string)[];
+}
 
 export interface MongoClusterOptions
   extends Pick<
     MongoServerOptions,
-    | 'logDir'
-    | 'tmpDir'
-    | 'args'
-    | 'binDir'
-    | 'docker'
-    | 'login'
-    | 'password'
-    | 'clientOptions'
+    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
   > {
   topology: 'standalone' | 'replset' | 'sharded';
   arbiters?: number;
@@ -29,11 +29,11 @@ export interface MongoClusterOptions
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
   oidc?: string;
-  rsTags?: { [key: string]: string }[];
+  rsTags?: TagSet[];
   rsArgs?: string[][];
   shardArgs?: string[][];
   mongosArgs?: string[][];
-  roles?: { [key: string]: string }[];
+  users?: MongoDBUserDoc[];
 }
 
 export type MongoClusterEvents = {
@@ -49,6 +49,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private servers: MongoServer[] = []; // mongod/mongos
   private shards: MongoCluster[] = []; // replsets
   private oidcMockProviderProcess?: OIDCMockProviderProcess;
+  private defaultConnectionOptions: Partial<MongoClientOptions> = {};
+  private users: MongoDBUserDoc[] = [];
 
   private constructor() {
     super();
@@ -87,17 +89,23 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       servers: this.servers.map((srv) => srv.serialize()),
       shards: this.shards.map((shard) => shard.serialize()),
       oidcMockProviderProcess: this.oidcMockProviderProcess?.serialize(),
+      defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
+      users: jsonClone(this.users),
     };
   }
 
   isClosed(): boolean {
-    return this.servers.length === 0 && this.shards.length === 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _ of this.children()) return true;
+    return true;
   }
 
   static async deserialize(serialized: any): Promise<MongoCluster> {
     const cluster = new MongoCluster();
     cluster.topology = serialized.topology;
     cluster.replSetName = serialized.replSetName;
+    cluster.defaultConnectionOptions = serialized.defaultConnectionOptions;
+    cluster.users = serialized.users;
     cluster.servers = await Promise.all(
       serialized.servers.map((srv: any) => MongoServer.deserialize(srv)),
     );
@@ -145,6 +153,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   }: MongoClusterOptions): Promise<MongoCluster> {
     const cluster = new MongoCluster();
     cluster.topology = options.topology;
+    cluster.users = options.users ?? [];
     if (!options.binDir) {
       options.binDir = await this.downloadMongoDb(
         options.downloadDir ?? options.tmpDir,
@@ -185,10 +194,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           binary: 'mongod',
         }),
       );
-      if (options.login) {
-        await cluster.servers[0].addAdminUser(options.roles);
-        await cluster.servers[0].reinitialize();
-      }
     } else if (options.topology === 'replset') {
       const { secondaries = 2, arbiters = 0 } = options;
 
@@ -279,16 +284,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           debug('rs.status did not include primary, waiting...');
           await sleep(1000);
         }
-
-        // Add auth if needed
-        if (options.login) {
-          // Sleep to give time for the election to settle.
-          await sleep(1000);
-          await cluster.servers[0].addAdminUser(options.roles);
-          for (const server of cluster.servers) {
-            await server.reinitialize();
-          }
-        }
       });
     } else if (options.topology === 'sharded') {
       const { shards = 3 } = options;
@@ -336,7 +331,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           ],
         });
         cluster.servers.push(mongos);
-        await mongos.reinitialize();
         await mongos.withClient(async (client) => {
           for (const shard of shardsvrs) {
             const shardSpec = `${shard.replSetName!}/${shard.hostport}`;
@@ -349,13 +343,50 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         });
       }
     }
+
+    await cluster.addAuthIfNeeded();
     return cluster;
+  }
+
+  *children(): Iterable<MongoServer | MongoCluster> {
+    yield* this.servers;
+    yield* this.shards;
+  }
+
+  async addAuthIfNeeded(): Promise<void> {
+    if (!this.users?.length) return;
+    // Sleep to give time for a possible replset election to settle.
+    await sleep(1000);
+    await this.withClient(async (client) => {
+      const admin = client.db('admin');
+      for (const user of this.users) {
+        const { username, password, ...rest } = user;
+        await admin.command({ createUser: username, pwd: password, ...rest });
+      }
+    });
+    await this.updateDefaultConnectionOptions({
+      auth: this.users[0],
+    });
+  }
+
+  async updateDefaultConnectionOptions(
+    options: Partial<MongoClientOptions>,
+  ): Promise<void> {
+    await Promise.all(
+      [...this.children()].map(async (child) =>
+        child.updateDefaultConnectionOptions(options),
+      ),
+    );
+    this.defaultConnectionOptions = {
+      ...this.defaultConnectionOptions,
+      ...options,
+    };
   }
 
   async close(): Promise<void> {
     await Promise.all(
-      [...this.servers, ...this.shards, this.oidcMockProviderProcess].map(
-        (closable) => closable?.close(),
+      [...this.children(), this.oidcMockProviderProcess].map((closable) =>
+        closable?.close(),
       ),
     );
     this.servers = [];
@@ -366,10 +397,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     fn: Fn,
     clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(
-      this.connectionString,
-      clientOptions,
-    );
+    const client = await MongoClient.connect(this.connectionString, {
+      ...this.defaultConnectionOptions,
+      ...clientOptions,
+    });
     try {
       return await fn(client);
     } finally {
@@ -378,10 +409,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   }
 
   ref(): void {
-    for (const child of [...this.servers, ...this.shards]) child.ref();
+    for (const child of this.children()) child.ref();
   }
 
   unref(): void {
-    for (const child of [...this.servers, ...this.shards]) child.unref();
+    for (const child of this.children()) child.unref();
   }
 }

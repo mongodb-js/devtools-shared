@@ -42,3 +42,7 @@ export function pick<T extends object, K extends keyof T>(
   }
   return ret as Pick<T, K>;
 }
+
+export function jsonClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
