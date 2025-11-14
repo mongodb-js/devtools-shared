@@ -6,6 +6,7 @@ import _debug from 'debug';
 import {
   isCollationValid,
   isFilterValid,
+  isHintValid,
   isLimitValid,
   isMaxTimeMSValid,
   isProjectValid,
@@ -716,6 +717,53 @@ e  s`,
       assert.equal(isCollationValid('{invalid: "simple"}'), false);
       assert.equal(isCollationValid('{locale: ""}'), false);
       assert.equal(isCollationValid('{locale: "invalid"}'), false);
+    });
+  });
+
+  describe('hint', function () {
+    it('should default to null', function () {
+      assert.equal(isHintValid(''), null);
+      assert.equal(isHintValid('      '), null);
+      assert.equal(isHintValid('{}'), null);
+    });
+
+    it('should parse hint objects', function () {
+      assert.deepEqual(isHintValid('{_id: 1}'), { _id: 1 });
+      assert.deepEqual(isHintValid('{_id: -1}'), { _id: -1 });
+      assert.deepEqual(isHintValid('{pineapple: 1, age: -1}'), {
+        pineapple: 1,
+        age: -1,
+      });
+    });
+
+    it('should accept string index names', function () {
+      assert.deepEqual(isHintValid('"pineapple"'), 'pineapple');
+      assert.deepEqual(isHintValid("'pineapple'"), 'pineapple');
+    });
+
+    it('should not accept arrays', function () {
+      assert.deepEqual(isHintValid('["pineappleOne", "pineappleTwo"]'), false);
+    });
+
+    it('should accept docs with numeric values', function () {
+      assert.deepEqual(isHintValid('{pineapple: 0}'), { pineapple: 0 });
+      assert.deepEqual(isHintValid('{pineapple: -1}'), { pineapple: -1 });
+      assert.deepEqual(isHintValid('{pineapple: NaN}'), { pineapple: NaN });
+      assert.deepEqual(isHintValid('{pineapple: 2}'), { pineapple: 2 });
+    });
+
+    it('should reject broken objects', function () {
+      assert.equal(isHintValid('{not_pineapple'), false);
+      assert.equal(isHintValid('invalid pineapple: }'), false);
+      assert.equal(isHintValid('{invalid pineapple}'), false);
+      assert.equal(isHintValid('{invalid pineapple: }'), false);
+    });
+
+    it('should reject non-string/non-object hint values', function () {
+      assert.equal(isHintValid('true'), false);
+      assert.equal(isHintValid('pineapple'), false);
+      assert.equal(isHintValid('123'), false);
+      assert.equal(isHintValid('null'), false);
     });
   });
 
