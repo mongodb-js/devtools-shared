@@ -256,7 +256,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             return {
               _id: i,
               host: srv.hostport,
-              arbiterOnly: i > 1 + secondaries,
+              arbiterOnly: i > secondaries,
               priority: i === 0 ? 1 : 0,
               tags,
             };
