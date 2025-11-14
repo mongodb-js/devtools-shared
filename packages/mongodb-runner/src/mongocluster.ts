@@ -16,6 +16,11 @@ export interface MongoDBUserDoc {
   roles: ({ role: string; db?: string } | string)[];
 }
 
+export interface RSMemberOptions {
+  tags?: { [key: string]: string };
+  priority?: number;
+  args?: string[];
+}
 export interface MongoClusterOptions
   extends Pick<
     MongoServerOptions,
@@ -29,8 +34,7 @@ export interface MongoClusterOptions
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
   oidc?: string;
-  rsTags?: TagSet[];
-  rsArgs?: string[][];
+  rsMemberOptions?: RSMemberOptions[];
   shardArgs?: string[][];
   mongosArgs?: string[][];
   users?: MongoDBUserDoc[];
@@ -207,9 +211,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       }
 
       const primaryArgs = [...args];
-      const rsArgs = options.rsArgs || [[]];
-      if (rsArgs.length > 0) {
-        primaryArgs.push(...rsArgs[0]);
+      const rsMemberOptions = options.rsMemberOptions || [{}];
+      if (rsMemberOptions.length > 0) {
+        primaryArgs.push(...(rsMemberOptions[0].args || []));
       }
       debug('Starting primary', primaryArgs);
       const primary = await MongoServer.start({
@@ -232,9 +236,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         ...(await Promise.all(
           range(secondaries + arbiters).map((i) => {
             const secondaryArgs = [...args];
-            if (i + 1 < rsArgs.length) {
-              secondaryArgs.push(...rsArgs[i + 1]);
-              debug('Adding secondary args', rsArgs[i + 1]);
+            if (i + 1 < rsMemberOptions.length) {
+              secondaryArgs.push(...(rsMemberOptions[i + 1].args || []));
+              debug('Adding secondary args', rsMemberOptions[i + 1].args || []);
             }
             return MongoServer.start({
               ...options,
@@ -247,18 +251,24 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
       await primary.withClient(async (client) => {
         debug('Running rs.initiate');
-        const rsTags = options.rsTags || [{}];
         const rsConf = {
           _id: replSetName,
           configsvr: args.includes('--configsvr'),
           members: cluster.servers.map((srv, i) => {
-            const tags = i < rsTags.length || 0 ? rsTags[i] : {};
+            let options: RSMemberOptions = {};
+            if (i < rsMemberOptions.length) {
+              options = rsMemberOptions[i];
+            }
+            let priority = i === 0 ? 1 : 0;
+            if (options.priority !== undefined) {
+              priority = options.priority;
+            }
             return {
               _id: i,
               host: srv.hostport,
               arbiterOnly: i > secondaries,
-              priority: i === 0 ? 1 : 0,
-              tags,
+              priority,
+              tags: options.tags || {},
             };
           }),
         };
