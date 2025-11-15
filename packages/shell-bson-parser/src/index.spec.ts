@@ -51,12 +51,78 @@ describe('@mongodb-js/shell-bson-parser', function () {
     });
   });
 
+  it('should create new UUIDs', function () {
+    expect(parse('{name: UUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyCSharpUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyJavaUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyPythonUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+  });
+
+  describe('with a set UUID generation', function () {
+    let sandbox: SinonSandbox;
+
+    beforeEach(function () {
+      sandbox = createSandbox();
+
+      sandbox.replace((bson as any).UUID.prototype, 'toHexString', function () {
+        return '00112233-4455-6677-8899-aabbccddeeff';
+      });
+      sandbox.replace((bson as any).UUID.prototype, 'toBinary', function () {
+        return new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          4,
+        );
+      });
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should create new UUIDs in the correct formats for legacy', function () {
+      expect(parse('{name: UUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          4,
+        ),
+      });
+      expect(parse('{name: LegacyCSharpUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('33221100554477668899aabbccddeeff', 'hex'),
+          3,
+        ),
+      });
+      expect(parse('{name: LegacyJavaUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('7766554433221100ffeeddccbbaa9988', 'hex'),
+          3,
+        ),
+      });
+      expect(parse('{name: LegacyPythonUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          3,
+        ),
+      });
+    });
+  });
+
   it('should accept a complex query', function () {
     expect(
       parse(`{
     RegExp: /test/ig,
     Binary: new Binary(),
     BinData: BinData(3, 'dGVzdAo='),
+    LegacyCSharpUUID: LegacyCSharpUUID('00112233-4455-6677-8899-aabbccddeeff'),
+    LegacyJavaUUID: LegacyJavaUUID('00112233-4455-6677-8899-aabbccddeeff'),
+    LegacyPythonUUID: LegacyPythonUUID('00112233-4455-6677-8899-aabbccddeeff'),
     UUID: UUID('3d37923d-ab8e-4931-9e46-93df5fd3599e'),
     Code: Code('function() {}'),
     DBRef: new DBRef('tests', new ObjectId("5e159ba7eac34211f2252aaa"), 'test'),
@@ -84,6 +150,18 @@ describe('@mongodb-js/shell-bson-parser', function () {
       RegExp: /test/gi,
       Binary: new bson.Binary(),
       BinData: new bson.Binary(Buffer.from('dGVzdAo=', 'base64'), 3),
+      LegacyCSharpUUID: new bson.Binary(
+        Buffer.from('33221100554477668899aabbccddeeff', 'hex'),
+        3,
+      ),
+      LegacyJavaUUID: new bson.Binary(
+        Buffer.from('7766554433221100ffeeddccbbaa9988', 'hex'),
+        3,
+      ),
+      LegacyPythonUUID: new bson.Binary(
+        Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+        3,
+      ),
       UUID: new bson.Binary(
         Buffer.from('3d37923dab8e49319e4693df5fd3599e', 'hex'),
         4,
