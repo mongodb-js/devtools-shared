@@ -70,7 +70,7 @@ const BSON_TYPES = [
     meta: 'bson',
     version: '0.0.0',
     description: 'BSON 64 but Integer type',
-    snippet: 'NumberLong(${1:value})',
+    snippet: "NumberLong('${1:value}')",
   },
   {
     name: 'NumberDecimal',
