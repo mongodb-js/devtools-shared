@@ -74,6 +74,7 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
+    .config()
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
