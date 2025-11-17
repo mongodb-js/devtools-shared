@@ -25,7 +25,7 @@ const DEFAULT_COLLATION = null;
 /** @public */
 const DEFAULT_MAX_TIME_MS = 60000; // 1 minute in ms
 /** @public */
-const QUERY_PROPERTIES = ['filter', 'project', 'sort', 'skip', 'limit'];
+const DEFAULT_HINT = null;
 
 function isEmpty(input: string | number | null | undefined): boolean {
   if (input === null || input === undefined) {
@@ -59,6 +59,18 @@ export function parseSort(input: string) {
   if (isEmpty(input)) {
     return DEFAULT_SORT;
   }
+  return parseShellStringToEJSON(input, { mode: ParseMode.Loose });
+}
+
+function isValueOkForHint() {
+  /**
+   * Prior to MongoDB 7.0, hint would accept invalid values, like NaN.
+   * So we're on the looser side of validation here.
+   */
+  return true;
+}
+
+function _parseHint(input: string) {
   return parseShellStringToEJSON(input, { mode: ParseMode.Loose });
 }
 
@@ -252,6 +264,45 @@ export function isSortValid(input: string) {
 }
 
 /**
+ * Validation function for a query `hint`.
+ * Must be a string, array, or a document with only -1 or 1 as values.
+ * @public
+ *
+ * @return false if not valid, otherwise the cleaned-up hint.
+ */
+export function isHintValid(input: string) {
+  if (isEmpty(input)) {
+    return DEFAULT_HINT;
+  }
+
+  try {
+    const parsed = _parseHint(input);
+
+    if (_.isString(parsed)) {
+      return parsed;
+    }
+
+    if (_.isArray(parsed) || !_.isObject(parsed)) {
+      debug(
+        'Hint "%s" is invalid. Only strings or documents are allowed',
+        input,
+      );
+      return false;
+    }
+
+    if (!_.every(parsed, isValueOkForHint)) {
+      debug('Hint "%s" is invalid bc of its values', input);
+      return false;
+    }
+
+    return parsed;
+  } catch (e) {
+    debug('Hint "%s" is invalid', input, e);
+    return false;
+  }
+}
+
+/**
  * Validation function for a query `maxTimeMS`. Must be digits only.
  * @public
  *
@@ -299,6 +350,7 @@ const validatorFunctions = {
   isSkipValid,
   isCollationValid,
   isNumberValid,
+  isHintValid,
 };
 
 /** @public */
@@ -333,7 +385,6 @@ export default function queryParser(
 export {
   stringify,
   toJSString,
-  QUERY_PROPERTIES,
   DEFAULT_FILTER,
   DEFAULT_SORT,
   DEFAULT_LIMIT,
@@ -341,4 +392,5 @@ export {
   DEFAULT_PROJECT,
   DEFAULT_COLLATION,
   DEFAULT_MAX_TIME_MS,
+  DEFAULT_HINT,
 };
