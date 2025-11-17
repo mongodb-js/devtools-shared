@@ -17,7 +17,7 @@ export interface MongoDBUserDoc {
 }
 
 export interface RSMemberOptions {
-  tags?: { [key: string]: string };
+  tags?: TagSet;
   priority?: number;
   args?: string[];
 }
