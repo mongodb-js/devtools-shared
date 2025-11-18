@@ -238,6 +238,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   }
 
   isClosed(): boolean {
+    // Return true if and only if there are no running sub-clusters/servers
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _ of this.children()) return true;
     return true;

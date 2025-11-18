@@ -50,7 +50,7 @@ describe('MongoCluster', function () {
 
     try {
       cluster = await MongoCluster.start({
-        version: '6.x',
+        version: '8.x',
         topology: 'standalone',
         tmpDir,
         downloadDir: customDownloadDir,
@@ -65,7 +65,7 @@ describe('MongoCluster', function () {
 
     expect(MongoCluster['downloadMongoDb']).to.have.been.calledWith(
       customDownloadDir,
-      '6.x',
+      '8.x',
       {
         platform: 'linux',
         arch: 'x64',
@@ -88,9 +88,24 @@ describe('MongoCluster', function () {
     expect(ok).to.equal(1);
   });
 
-  it('can spawn a 6.x standalone mongod on a pre-specified port', async function () {
+  it('can spawn a 8.x standalone mongod', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
+      topology: 'standalone',
+      tmpDir,
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVariant).to.equal('community');
+    const { ok } = await cluster.withClient(async (client) => {
+      return await client.db('admin').command({ ping: 1 });
+    });
+    expect(ok).to.equal(1);
+  });
+
+  it('can spawn a 8.x standalone mongod on a pre-specified port', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
       topology: 'standalone',
       tmpDir,
       args: ['--port', '50079'],
@@ -98,9 +113,9 @@ describe('MongoCluster', function () {
     expect(cluster.connectionString).to.include(`:50079`);
   });
 
-  it('can spawn a 6.x replset', async function () {
+  it('can spawn a 8.x replset', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
     });
@@ -112,9 +127,9 @@ describe('MongoCluster', function () {
     expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
   });
 
-  it('can spawn a 6.x replset with specific number of arbiters and secondaries', async function () {
+  it('can spawn a 8.x replset with specific number of arbiters and secondaries', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
       secondaries: 3,
@@ -130,10 +145,10 @@ describe('MongoCluster', function () {
     expect(hello.arbiters).to.have.lengthOf(1);
   });
 
-  it('can spawn a 6.x sharded cluster', async function () {
+  it('can spawn a 8.x sharded cluster', async function () {
     const logDir = path.join(tmpDir, `sharded-logs`);
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       shards: 2,
@@ -156,9 +171,9 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
-  it('can spawn a 6.x standalone mongod with TLS enabled and get build info', async function () {
+  it('can spawn a 8.x standalone mongod with TLS enabled and get build info', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'standalone',
       tmpDir,
       args: [
@@ -289,7 +304,7 @@ describe('MongoCluster', function () {
 
   it('can serialize and deserialize sharded cluster info', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
@@ -304,7 +319,7 @@ describe('MongoCluster', function () {
 
   it('can let callers listen for server log events', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
       secondaries: 1,
@@ -348,7 +363,7 @@ describe('MongoCluster', function () {
 
   it('can pass custom arguments for replica set members', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
       rsMembers: [
@@ -390,7 +405,7 @@ describe('MongoCluster', function () {
 
   it('can pass custom arguments for shards', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
@@ -431,7 +446,7 @@ describe('MongoCluster', function () {
 
   it('can pass custom arguments for mongoses', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
@@ -447,13 +462,15 @@ describe('MongoCluster', function () {
     const mongoses = cluster['servers'];
     expect(mongoses).to.have.lengthOf(2);
     const values = await Promise.all(
-      mongoses.map((srv) =>
+      mongoses.map((srv, i) =>
         srv.withClient(async (client) => {
           return await Promise.all([
             client
               .db('admin')
               .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
             client.db('admin').command({ hello: 1 }),
+            // Ensure that the mongos announces itself to the cluster
+            client.db('test').collection(`test${i}`).insertOne({ dummy: 1 }),
           ]);
         }),
       ),
@@ -481,7 +498,7 @@ describe('MongoCluster', function () {
 
   it('can add authentication options and verify them after serialization', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       secondaries: 1,
