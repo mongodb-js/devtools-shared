@@ -46,6 +46,7 @@ export function redact<T>(
   return message;
 }
 
+export { shouldRedactCommand } from './should-redact-command';
 export { redactUriCredentials } from './redact-uri-credentials';
 
 export default redact;
