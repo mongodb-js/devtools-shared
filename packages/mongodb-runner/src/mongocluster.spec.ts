@@ -95,7 +95,7 @@ describe('MongoCluster', function () {
       tmpDir,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     expect(cluster.serverVariant).to.equal('community');
     const { ok } = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ ping: 1 });
@@ -120,7 +120,7 @@ describe('MongoCluster', function () {
       tmpDir,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -136,7 +136,7 @@ describe('MongoCluster', function () {
       arbiters: 1,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -156,7 +156,7 @@ describe('MongoCluster', function () {
       logDir,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -186,7 +186,7 @@ describe('MongoCluster', function () {
       ],
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     expect(cluster.serverVariant).to.equal('community');
   });
 
@@ -373,7 +373,7 @@ describe('MongoCluster', function () {
     });
 
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -416,7 +416,7 @@ describe('MongoCluster', function () {
     });
 
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
 
     const shards = cluster['shards'];
     expect(shards).to.have.lengthOf(2);
@@ -457,7 +457,7 @@ describe('MongoCluster', function () {
     });
 
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
 
     const mongoses = cluster['servers'];
     expect(mongoses).to.have.lengthOf(2);
@@ -513,7 +513,7 @@ describe('MongoCluster', function () {
       mongosArgs: [[], []],
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     expect(cluster.connectionString).to.include('testuser:testpass@');
     await cluster.withClient(async (client) => {
       const result = await client
