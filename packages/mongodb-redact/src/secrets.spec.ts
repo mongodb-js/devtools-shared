@@ -93,4 +93,55 @@ describe('dictionary-based secret redaction', function () {
       usr: '<user>',
     });
   });
+
+  describe('special characters in passwords', function () {
+    it('redacts passwords at start, end, or entire string', function () {
+      expect(
+        redact('!start is pwd', [{ value: '!start', kind: 'password' }]),
+      ).to.equal('<password> is pwd');
+
+      expect(
+        redact('pwd is end!', [{ value: 'end!', kind: 'password' }]),
+      ).to.equal('pwd is <password>');
+
+      expect(
+        redact('The password is !@#$%', [{ value: '!@#$%', kind: 'password' }]),
+      ).to.equal('The password is <password>');
+    });
+
+    it('redacts a special-character only connection string', function () {
+      const secret = '!#!!';
+      const content = 'Connection string: mongodb://!!!#:!#!!@localhost:27017/';
+
+      const redacted = redact(content, [{ value: secret, kind: 'password' }]);
+
+      expect(redacted).to.equal('Connection string: <mongodb uri>');
+    });
+
+    for (const { char, password } of [
+      { char: '.', password: 'test.pass' },
+      { char: '*', password: 'test*pass' },
+      { char: '+', password: 'test+pass' },
+      { char: '?', password: 'test?pass' },
+      { char: '[', password: 'test[123]' },
+      { char: '(', password: 'test(abc)' },
+      { char: '|', password: 'test|pass' },
+      { char: '\\', password: 'test\\pass' },
+      { char: '^', password: '^test123' },
+      { char: '$', password: 'test$123' },
+      { char: '@', password: 'user@123' },
+      { char: '#', password: 'pass#word' },
+      { char: '%', password: 'test%20' },
+      { char: '&', password: 'rock&roll' },
+      { char: 'լավ', password: 'լավ' },
+    ]) {
+      it(`redacts passwords with ${char}`, function () {
+        const content = `pwd: ${password} end`;
+        const redacted = redact(content, [
+          { value: password, kind: 'password' },
+        ]);
+        expect(redacted).to.equal('pwd: <password> end');
+      });
+    }
+  });
 });

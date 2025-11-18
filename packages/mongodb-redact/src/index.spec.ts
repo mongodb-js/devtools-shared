@@ -161,13 +161,82 @@ describe('mongodb-redact', function () {
       expect(res).to.equal('<url>');
     });
 
-    it('should redact MongoDB connection URIs', function () {
-      let res = redact(
-        'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000',
-      );
-      expect(res).to.equal('<mongodb uri>');
-      res = redact('mongodb://localhost,localhost:27018,localhost:27019');
-      expect(res).to.equal('<mongodb uri>');
+    describe('MongoDB connection strings', function () {
+      it('should redact MongoDB connection URIs', function () {
+        let res = redact(
+          'mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000',
+        );
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://localhost,localhost:27018,localhost:27019');
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB URIs with credentials', function () {
+        let res = redact('mongodb://user:password@localhost:27017/admin');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://admin:secret123@db.example.com/mydb');
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB URIs with special characters in usernames and passwords', function () {
+        let res = redact('mongodb://user:p%40ss!word@localhost:27017/');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://ad!min:te%st#123$@db.example.com:27017/');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://!user:my%20pass@localhost/mydb');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact(
+          'mongodb://user:p&ssw!rd#123@host.com:27017/db?authSource=admin',
+        );
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB SRV URIs', function () {
+        let res = redact(
+          'mongodb+srv://user:password@cluster0.example.com/test',
+        );
+        expect(res).to.equal('<mongodb uri>');
+        res = redact(
+          'mongodb+srv://admin:secret@mycluster.mongodb.net/mydb?retryWrites=true',
+        );
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB URIs with query parameters', function () {
+        let res = redact(
+          'mongodb://localhost:27017/mydb?ssl=true&replicaSet=rs0',
+        );
+        expect(res).to.equal('<mongodb uri>');
+        res = redact(
+          'mongodb://user:pass@host.com/db?authSource=admin&readPreference=primary',
+        );
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB URIs with replica sets', function () {
+        let res = redact(
+          'mongodb://host1:27017,host2:27017,host3:27017/?replicaSet=myReplSet',
+        );
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://user:pass@host1,host2,host3/db?replicaSet=rs0');
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact MongoDB URIs with IP addresses', function () {
+        let res = redact('mongodb://192.168.1.100:27017/mydb');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://user:password@10.0.0.5:27017/admin');
+        expect(res).to.equal('<mongodb uri>');
+      });
+
+      it('should redact simple MongoDB URIs', function () {
+        let res = redact('mongodb://localhost');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://localhost:27017');
+        expect(res).to.equal('<mongodb uri>');
+        res = redact('mongodb://localhost/mydb');
+        expect(res).to.equal('<mongodb uri>');
+      });
     });
 
     it('should redact general linux/unix user paths', function () {
