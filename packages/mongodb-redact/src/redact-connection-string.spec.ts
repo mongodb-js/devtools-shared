@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { redactUriCredentials } from './redact-uri-credentials';
+import { redactConnectionString } from './redact-connection-string';
 import redact from '.';
 
-describe('redactUriCredentials', function () {
+describe('redactConnectionString', function () {
   const testCases: Array<{
     description: string;
     input: string;
@@ -164,7 +164,7 @@ describe('redactUriCredentials', function () {
 
   testCases.forEach(({ description, input, expected }) => {
     it(description, function () {
-      const result = redactUriCredentials(input);
+      const result = redactConnectionString(input);
       expect(result).to.equal(expected);
 
       expect(redact(input)).to.equal('<mongodb uri>');

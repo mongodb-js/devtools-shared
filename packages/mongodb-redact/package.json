@@ -72,6 +72,6 @@
   },
   "dependencies": {
     "regexp.escape": "^2.0.1",
-    "mongodb-connection-string-url": "^3.0.1"
+    "mongodb-connection-string-url": "^3.0.1 || ^7.0.0"
   }
 }
