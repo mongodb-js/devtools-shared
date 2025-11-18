@@ -8,6 +8,7 @@ import { MongoClient } from 'mongodb';
 import { sleep, range, uuid, debug, jsonClone } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
+import assert from 'assert';
 
 export interface MongoDBUserDoc {
   username: string;
@@ -20,25 +21,53 @@ export interface RSMemberOptions {
   tags?: TagSet;
   priority?: number;
   args?: string[];
+  arbiterOnly?: boolean;
 }
-export interface MongoClusterOptions
-  extends Pick<
-    MongoServerOptions,
-    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
-  > {
-  topology: 'standalone' | 'replset' | 'sharded';
-  arbiters?: number;
-  secondaries?: number;
-  shards?: number;
-  version?: string;
+
+export interface CommonOptions {
   downloadDir?: string;
   downloadOptions?: DownloadOptions;
+
   oidc?: string;
-  rsMemberOptions?: RSMemberOptions[];
-  shardArgs?: string[][];
-  mongosArgs?: string[][];
+
+  version?: string;
   users?: MongoDBUserDoc[];
+
+  topology: 'standalone' | 'replset' | 'sharded';
 }
+
+export type RSOptions =
+  | {
+      arbiters?: number;
+      secondaries?: number;
+      rsMembers?: never;
+    }
+  | {
+      arbiters?: never;
+      secondaries?: never;
+      rsMembers: RSMemberOptions[];
+    };
+
+export type ShardedOptions = {
+  mongosArgs?: string[][];
+} & (
+  | {
+      shards?: number;
+      shardArgs?: never;
+    }
+  | {
+      shards?: never;
+      shardArgs?: string[][];
+    }
+);
+
+export type MongoClusterOptions = Pick<
+  MongoServerOptions,
+  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
+> &
+  CommonOptions &
+  RSOptions &
+  ShardedOptions;
 
 export type MongoClusterEvents = {
   [k in keyof MongoServerEvents]: [serverUUID: string, ...MongoServerEvents[k]];
@@ -46,6 +75,108 @@ export type MongoClusterEvents = {
   newListener: [keyof MongoClusterEvents];
   removeListener: [keyof MongoClusterEvents];
 };
+
+function removePortArg([...args]: string[]): string[] {
+  let portArgIndex = -1;
+  if ((portArgIndex = args.indexOf('--port')) !== -1) {
+    args.splice(portArgIndex + 1, 1);
+  } else if (
+    (portArgIndex = args.findIndex((arg) => arg.startsWith('--port='))) !== -1
+  ) {
+    args.splice(portArgIndex, 1);
+  }
+  return args;
+}
+
+function hasPortArg(args: string[] | undefined): boolean {
+  if (!args) return false;
+  return (
+    args.includes('--port') || args.some((arg) => arg.startsWith('--port='))
+  );
+}
+
+function processRSMembers(options: MongoClusterOptions): {
+  rsMembers: RSMemberOptions[];
+  replSetName: string;
+} {
+  const {
+    secondaries = 2,
+    arbiters = 0,
+    args: [...args] = [],
+    rsMembers,
+  } = options;
+
+  let replSetName: string;
+  if (!args.includes('--replSet')) {
+    replSetName = `replSet-${uuid()}`;
+    args.push('--replSet', replSetName);
+  } else {
+    replSetName = args[args.indexOf('--replSet') + 1];
+  }
+
+  const primaryArgs: string[] = [...args];
+  const secondaryArgs = [...removePortArg(args), '--port', '0'];
+
+  if (rsMembers) {
+    const primary = rsMembers.find((m) =>
+      rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
+    );
+    return {
+      rsMembers: rsMembers.map((m) => ({
+        ...m,
+        args: [
+          ...(m.args ?? []),
+          ...(hasPortArg(m.args)
+            ? args
+            : m === primary
+              ? primaryArgs
+              : secondaryArgs),
+        ],
+      })),
+      replSetName,
+    };
+  }
+
+  return {
+    rsMembers: [
+      { priority: 1, args: primaryArgs },
+      ...range(secondaries).map(() => ({ priority: 0, args: secondaryArgs })),
+      ...range(arbiters).map(() => ({
+        priority: 0,
+        arbiterOnly: true,
+        args: secondaryArgs,
+      })),
+    ],
+    replSetName,
+  };
+}
+
+function processShardOptions(options: MongoClusterOptions): {
+  shardArgs: string[][];
+  mongosArgs: string[][];
+} {
+  const {
+    shardArgs = range(options.shards ?? 1).map(() => []),
+    mongosArgs = [[]],
+    args = [],
+  } = options;
+  return {
+    shardArgs: shardArgs.map((perShardArgs, i) => [
+      ...removePortArg(args),
+      ...perShardArgs,
+      ...(perShardArgs.includes('--configsvr') ||
+      perShardArgs.includes('--shardsvr')
+        ? []
+        : i === 0
+          ? ['--configsvr']
+          : ['--shardsvr']),
+    ]),
+    mongosArgs: mongosArgs.map((perMongosArgs, i) => [
+      ...(i === 0 && !hasPortArg(perMongosArgs) ? args : removePortArg(args)),
+      ...perMongosArgs,
+    ]),
+  };
+}
 
 export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private topology: MongoClusterOptions['topology'] = 'standalone';
@@ -199,76 +330,45 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }),
       );
     } else if (options.topology === 'replset') {
-      const { secondaries = 2, arbiters = 0 } = options;
+      const { rsMembers, replSetName } = processRSMembers(options);
 
-      const args = [...(options.args ?? [])];
-      let replSetName: string;
-      if (!args.includes('--replSet')) {
-        replSetName = `replSet-${uuid()}`;
-        args.push('--replSet', replSetName);
-      } else {
-        replSetName = args[args.indexOf('--replSet') + 1];
-      }
-
-      const primaryArgs = [...args];
-      const rsMemberOptions = options.rsMemberOptions || [{}];
-      if (rsMemberOptions.length > 0) {
-        primaryArgs.push(...(rsMemberOptions[0].args || []));
-      }
-      debug('Starting primary', primaryArgs);
-      const primary = await MongoServer.start({
-        ...options,
-        args: primaryArgs,
-        binary: 'mongod',
+      debug('Starting replica set nodes', {
+        replSetName,
+        secondaries: rsMembers.filter((m) => !m.arbiterOnly).length - 1,
+        arbiters: rsMembers.filter((m) => m.arbiterOnly).length,
       });
-      cluster.servers.push(primary);
-
-      if (args.includes('--port')) {
-        args.splice(args.indexOf('--port') + 1, 1, '0');
-      }
-
-      debug('Starting secondaries and arbiters', {
-        secondaries,
-        arbiters,
-        args,
-      });
-      cluster.servers.push(
-        ...(await Promise.all(
-          range(secondaries + arbiters).map((i) => {
-            const secondaryArgs = [...args];
-            if (i + 1 < rsMemberOptions.length) {
-              secondaryArgs.push(...(rsMemberOptions[i + 1].args || []));
-              debug('Adding secondary args', rsMemberOptions[i + 1].args || []);
-            }
-            return MongoServer.start({
-              ...options,
-              args: secondaryArgs,
-              binary: 'mongod',
-            });
-          }),
-        )),
+      const primaryIndex = rsMembers.findIndex((m) =>
+        rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
       );
+      assert.notStrictEqual(primaryIndex, -1);
+
+      const nodes = await Promise.all(
+        rsMembers.map(async (member) => {
+          return [
+            await MongoServer.start({
+              ...options,
+              args: member.args,
+              binary: 'mongod',
+            }),
+            member,
+          ] as const;
+        }),
+      );
+      cluster.servers.push(...nodes.map(([srv]) => srv));
+      const primary = cluster.servers[primaryIndex];
 
       await primary.withClient(async (client) => {
         debug('Running rs.initiate');
         const rsConf = {
           _id: replSetName,
-          configsvr: args.includes('--configsvr'),
-          members: cluster.servers.map((srv, i) => {
-            let options: RSMemberOptions = {};
-            if (i < rsMemberOptions.length) {
-              options = rsMemberOptions[i];
-            }
-            let priority = i === 0 ? 1 : 0;
-            if (options.priority !== undefined) {
-              priority = options.priority;
-            }
+          configsvr: rsMembers.some((m) => m.args?.includes('--configsvr')),
+          members: nodes.map(([srv, member], i) => {
             return {
               _id: i,
               host: srv.hostport,
-              arbiterOnly: i > secondaries,
-              priority,
-              tags: options.tags || {},
+              arbiterOnly: member.arbiterOnly ?? false,
+              priority: member.priority ?? 1,
+              tags: member.tags || {},
             };
           }),
         };
@@ -296,28 +396,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }
       });
     } else if (options.topology === 'sharded') {
-      const { shards = 3 } = options;
-      const shardArgs = [...(options.args ?? [])];
-      if (shardArgs.includes('--port')) {
-        shardArgs.splice(shardArgs.indexOf('--port') + 1, 1, '0');
-      }
-      const perShardArgs = options.shardArgs || [[]];
-
+      const { shardArgs, mongosArgs } = processShardOptions(options);
       debug('starting config server and shard servers', shardArgs);
       const [configsvr, ...shardsvrs] = await Promise.all(
-        range(shards + 1).map((i) => {
-          const args: string[] = [...shardArgs];
-          if (i === 0) {
-            args.push('--configsvr');
-          } else {
-            if (i - 1 < perShardArgs.length) {
-              args.push(...perShardArgs[i - 1]);
-              debug('Adding shard args', perShardArgs[i - 1]);
-            }
-            if (!args.includes('--shardsvr')) {
-              args.push('--shardsvr');
-            }
-          }
+        shardArgs.map((args) => {
           return MongoCluster.start({
             ...options,
             args,
@@ -327,7 +409,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       );
       cluster.shards.push(configsvr, ...shardsvrs);
 
-      const mongosArgs = options.mongosArgs ?? [[]];
       for (let i = 0; i < mongosArgs.length; i++) {
         debug('starting mongos');
         const mongos = await MongoServer.start({
