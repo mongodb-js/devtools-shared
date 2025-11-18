@@ -28,7 +28,7 @@ export function hookLogger(
   emitter: ConnectLogEmitter,
   log: MongoLogWriter,
   contextPrefix: string,
-  redactURICredentials: (uri: string) => string,
+  redactConnectionString: (uri: string) => string,
 ): void {
   oidcHookLogger(emitter, log, contextPrefix);
   proxyHookLogger(emitter, log, contextPrefix);
@@ -44,7 +44,7 @@ export function hookLogger(
         'Initiating connection attempt',
         {
           ...ev,
-          uri: redactURICredentials(ev.uri),
+          uri: redactConnectionString(ev.uri),
         },
       );
     },
@@ -119,7 +119,7 @@ export function hookLogger(
         `${contextPrefix}-connect`,
         'Resolving SRV record failed',
         {
-          from: redactURICredentials(ev.from),
+          from: redactConnectionString(ev.from),
           error: ev.error?.message,
           duringLoad: ev.duringLoad,
           resolutionDetails: ev.resolutionDetails,
@@ -138,8 +138,8 @@ export function hookLogger(
         `${contextPrefix}-connect`,
         'Resolving SRV record succeeded',
         {
-          from: redactURICredentials(ev.from),
-          to: redactURICredentials(ev.to),
+          from: redactConnectionString(ev.from),
+          to: redactConnectionString(ev.to),
           resolutionDetails: ev.resolutionDetails,
           durationMs: ev.durationMs,
         },
