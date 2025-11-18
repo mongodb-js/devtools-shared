@@ -46,5 +46,7 @@ export function redact<T>(
   return message;
 }
 
+export { redactUriCredentials } from './redact-uri-credentials';
+
 export default redact;
 export type { Secret } from './secrets';
