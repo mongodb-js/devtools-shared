@@ -125,7 +125,9 @@ describe('MongoCluster', function () {
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
-    expect(+hello.passives.length + +hello.hosts.length).to.equal(5);
+    expect(hello.hosts).to.have.lengthOf(1);
+    expect(hello.passives).to.have.lengthOf(3);
+    expect(hello.arbiters).to.have.lengthOf(1);
   });
 
   it('can spawn a 6.x sharded cluster', async function () {
