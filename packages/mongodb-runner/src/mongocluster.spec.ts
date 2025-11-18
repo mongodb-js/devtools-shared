@@ -471,6 +471,12 @@ describe('MongoCluster', function () {
       [60000, 'isdbgrid', true],
       [50000, 'isdbgrid', false],
     ]);
+
+    const mongosList = await cluster.withClient(
+      async (client) =>
+        await client.db('config').collection('mongos').find().toArray(),
+    );
+    expect(mongosList).to.have.lengthOf(2);
   });
 
   it('can add authentication options and verify them after serialization', async function () {
