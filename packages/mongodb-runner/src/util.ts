@@ -1,5 +1,7 @@
+import type { MongoClientOptions } from 'mongodb';
 import { BSON } from 'mongodb';
 import createDebug from 'debug';
+import { ConnectionString } from 'mongodb-connection-string-url';
 
 export const debug = createDebug('mongodb-runner');
 export const debugVerbose = debug.extend('verbose');
@@ -45,4 +47,22 @@ export function pick<T extends object, K extends keyof T>(
 
 export function jsonClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
+}
+
+export function makeConnectionString(
+  hostport: string,
+  replSetName?: string,
+  defaultConnectionOptions: Partial<MongoClientOptions> = {},
+): string {
+  const cs = new ConnectionString(`mongodb://${hostport}/`);
+  if (replSetName) {
+    cs.typedSearchParams<MongoClientOptions>().set('replicaSet', replSetName);
+  }
+  if (defaultConnectionOptions.auth?.username) {
+    cs.username = defaultConnectionOptions.auth.username;
+  }
+  if (defaultConnectionOptions.auth?.password) {
+    cs.password = defaultConnectionOptions.auth.password;
+  }
+  return cs.toString();
 }

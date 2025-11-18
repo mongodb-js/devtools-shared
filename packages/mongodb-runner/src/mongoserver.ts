@@ -13,7 +13,14 @@ import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { EventEmitter, once } from 'events';
-import { uuid, debug, pick, debugVerbose, jsonClone } from './util';
+import {
+  uuid,
+  debug,
+  pick,
+  debugVerbose,
+  jsonClone,
+  makeConnectionString,
+} from './util';
 
 export interface MongoServerOptions {
   binDir?: string;
@@ -345,8 +352,17 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       .collection<
         Omit<SerializedServerProperties, 'hasInsertedMetadataCollEntry'>
       >('mongodbrunner');
+    // mongos hosts require a bit of special treatment because they do not have
+    // local storage of their own, so we store the metadata in the config database,
+    // which may be accessed by multiple mongos instances.
     debug('ensuring metadata collection entry', insertedInfo, { isMongoS });
     if (mode === 'insert-new') {
+      const existingEntry = await runnerColl.findOne();
+      if (!isMongoS && existingEntry) {
+        throw new Error(
+          `Unexpected mongodbrunner entry when creating new server: ${JSON.stringify(existingEntry)}`,
+        );
+      }
       await runnerColl.insertOne(insertedInfo);
       debug('inserted metadata collection entry', insertedInfo);
       this.hasInsertedMetadataCollEntry = true;
@@ -357,7 +373,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
         );
         return;
       }
-      const match = await runnerColl.findOne();
+      const match = await runnerColl.findOne(
+        isMongoS ? { _id: this.uuid } : {},
+      );
       debug('read metadata collection entry', insertedInfo, match);
       if (!match) {
         throw new Error(
@@ -397,11 +415,19 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     return null;
   }
 
+  get connectionString(): string {
+    return makeConnectionString(
+      this.hostport,
+      undefined,
+      this.defaultConnectionOptions,
+    );
+  }
+
   async withClient<Fn extends (client: MongoClient) => any>(
     fn: Fn,
     clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
+    const client = await MongoClient.connect(this.connectionString, {
       directConnection: true,
       ...this.defaultConnectionOptions,
       ...clientOptions,

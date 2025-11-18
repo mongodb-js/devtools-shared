@@ -5,7 +5,15 @@ import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
 import type { Document, MongoClientOptions, TagSet } from 'mongodb';
 import { MongoClient } from 'mongodb';
-import { sleep, range, uuid, debug, jsonClone } from './util';
+import {
+  sleep,
+  range,
+  uuid,
+  debug,
+  jsonClone,
+  debugVerbose,
+  makeConnectionString,
+} from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
 import assert from 'assert';
@@ -156,7 +164,7 @@ function processShardOptions(options: MongoClusterOptions): {
   mongosArgs: string[][];
 } {
   const {
-    shardArgs = range(options.shards ?? 1).map(() => []),
+    shardArgs = range((options.shards ?? 3) + 1).map(() => []),
     mongosArgs = [[]],
     args = [],
   } = options;
@@ -258,13 +266,11 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   }
 
   get connectionString(): string {
-    const cs = new ConnectionString(`mongodb://${this.hostport}/`);
-    if (this.replSetName)
-      cs.typedSearchParams<MongoClientOptions>().set(
-        'replicaSet',
-        this.replSetName,
-      );
-    return cs.toString();
+    return makeConnectionString(
+      this.hostport,
+      this.replSetName,
+      this.defaultConnectionOptions,
+    );
   }
 
   get oidcIssuer(): string | undefined {
@@ -367,11 +373,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               _id: i,
               host: srv.hostport,
               arbiterOnly: member.arbiterOnly ?? false,
-              priority: member.priority ?? 1,
+              priority: member.priority ?? (i === primaryIndex ? 1 : 0),
               tags: member.tags || {},
             };
           }),
         };
+        debugVerbose('replSetInitiate:', rsConf);
         await client.db('admin').command({
           replSetInitiate: rsConf,
         });
@@ -398,48 +405,58 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     } else if (options.topology === 'sharded') {
       const { shardArgs, mongosArgs } = processShardOptions(options);
       debug('starting config server and shard servers', shardArgs);
-      const [configsvr, ...shardsvrs] = await Promise.all(
-        shardArgs.map((args) => {
-          return MongoCluster.start({
+      const allShards = await Promise.all(
+        shardArgs.map(async (args) => {
+          const isConfig = args.includes('--configsvr');
+          const cluster = await MongoCluster.start({
             ...options,
             args,
             topology: 'replset',
+            users: isConfig ? undefined : options.users, // users go on the mongos/config server only for the config set
+          });
+          return [cluster, isConfig] as const;
+        }),
+      );
+      const configsvr = allShards.find(([, isConfig]) => isConfig)![0];
+      const shardsvrs = allShards
+        .filter(([, isConfig]) => !isConfig)
+        .map(([shard]) => shard);
+      cluster.shards.push(configsvr, ...shardsvrs);
+
+      const mongosServers: MongoServer[] = await Promise.all(
+        mongosArgs.map(async (args) => {
+          debug('starting mongos');
+          return await MongoServer.start({
+            ...options,
+            binary: 'mongos',
+            args: [
+              ...(options.args ?? []),
+              ...args,
+              '--configdb',
+              `${configsvr.replSetName!}/${configsvr.hostport}`,
+            ],
           });
         }),
       );
-      cluster.shards.push(configsvr, ...shardsvrs);
-
-      for (let i = 0; i < mongosArgs.length; i++) {
-        debug('starting mongos');
-        const mongos = await MongoServer.start({
-          ...options,
-          binary: 'mongos',
-          args: [
-            ...(options.args ?? []),
-            ...mongosArgs[i],
-            '--configdb',
-            `${configsvr.replSetName!}/${configsvr.hostport}`,
-          ],
-        });
-        cluster.servers.push(mongos);
-        await mongos.withClient(async (client) => {
-          for (const shard of shardsvrs) {
-            const shardSpec = `${shard.replSetName!}/${shard.hostport}`;
-            debug('adding shard', shardSpec);
-            await client.db('admin').command({
-              addShard: shardSpec,
-            });
-          }
-          debug('added shards');
-        });
-      }
+      cluster.servers.push(...mongosServers);
+      const mongos = mongosServers[0];
+      await mongos.withClient(async (client) => {
+        for (const shard of shardsvrs) {
+          const shardSpec = `${shard.replSetName!}/${shard.hostport}`;
+          debug('adding shard', shardSpec);
+          await client.db('admin').command({
+            addShard: shardSpec,
+          });
+        }
+        debug('added shards');
+      });
     }
 
     await cluster.addAuthIfNeeded();
     return cluster;
   }
 
-  *children(): Iterable<MongoServer | MongoCluster> {
+  private *children(): Iterable<MongoServer | MongoCluster> {
     yield* this.servers;
     yield* this.shards;
   }

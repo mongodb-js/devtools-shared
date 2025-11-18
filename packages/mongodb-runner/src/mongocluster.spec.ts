@@ -345,4 +345,172 @@ describe('MongoCluster', function () {
       baddoc: 1,
     });
   });
+
+  it('can pass custom arguments for replica set members', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'replset',
+      tmpDir,
+      rsMembers: [
+        { args: ['--setParameter', 'cursorTimeoutMillis=60000'] },
+        { args: ['--setParameter', 'cursorTimeoutMillis=50000'] },
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+    const hello = await cluster.withClient(async (client) => {
+      return await client.db('admin').command({ hello: 1 });
+    });
+    expect(hello.hosts).to.have.lengthOf(1);
+    expect(hello.passives).to.have.lengthOf(1);
+
+    const servers = cluster['servers'];
+    expect(servers).to.have.lengthOf(2);
+    const values = await Promise.all(
+      servers.map((srv) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    expect(
+      values.map((v) => [v[0].cursorTimeoutMillis, v[1].isWritablePrimary]),
+    ).to.deep.equal([
+      [60000, true],
+      [50000, false],
+    ]);
+  });
+
+  it('can pass custom arguments for shards', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      shardArgs: [
+        ['--setParameter', 'cursorTimeoutMillis=60000'],
+        ['--setParameter', 'cursorTimeoutMillis=50000'],
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+
+    const shards = cluster['shards'];
+    expect(shards).to.have.lengthOf(2);
+    const values = await Promise.all(
+      shards.map((srv) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    expect(
+      values.map((v) => [
+        v[0].cursorTimeoutMillis,
+        v[1].setName === values[0][1].setName,
+      ]),
+    ).to.deep.equal([
+      [60000, true],
+      [50000, false],
+    ]);
+  });
+
+  it('can pass custom arguments for mongoses', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      mongosArgs: [
+        ['--setParameter', 'cursorTimeoutMillis=60000'],
+        ['--setParameter', 'cursorTimeoutMillis=50000'],
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+
+    const mongoses = cluster['servers'];
+    expect(mongoses).to.have.lengthOf(2);
+    const values = await Promise.all(
+      mongoses.map((srv) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    const processIdForMongos = (v: any) =>
+      v[1].topologyVersion.processId.toHexString();
+    expect(
+      values.map((v) => [
+        v[0].cursorTimeoutMillis,
+        v[1].msg,
+        processIdForMongos(v) === processIdForMongos(values[0]),
+      ]),
+    ).to.deep.equal([
+      [60000, 'isdbgrid', true],
+      [50000, 'isdbgrid', false],
+    ]);
+  });
+
+  it('can add authentication options and verify them after serialization', async function () {
+    cluster = await MongoCluster.start({
+      version: '6.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 1,
+      shards: 1,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: [{ role: 'readWriteAnyDatabase', db: 'admin' }],
+        },
+      ],
+      mongosArgs: [[], []],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    await cluster.withClient(async (client) => {
+      const result = await client
+        .db('test')
+        .collection('test')
+        .insertOne({ foo: 42 });
+      expect(result.insertedId).to.exist;
+    });
+
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    const [doc, status] = await cluster.withClient(async (client) => {
+      return Promise.all([
+        client.db('test').collection('test').findOne({ foo: 42 }),
+        client.db('admin').command({ connectionStatus: 1 }),
+      ] as const);
+    });
+    expect(doc?.foo).to.equal(42);
+    expect(status.authInfo.authenticatedUsers).to.deep.equal([
+      { user: 'testuser', db: 'admin' },
+    ]);
+  });
 });
