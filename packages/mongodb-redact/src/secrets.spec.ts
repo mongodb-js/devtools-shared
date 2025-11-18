@@ -111,13 +111,11 @@ describe('dictionary-based secret redaction', function () {
 
     it('redacts a special-character only connection string', function () {
       const secret = '!#!!';
-      const content = 'Connection string: mongodb://user:!#!!@localhost:27017/';
+      const content = 'Connection string: mongodb://!!!#:!#!!@localhost:27017/';
 
       const redacted = redact(content, [{ value: secret, kind: 'password' }]);
 
-      expect(redacted).to.equal(
-        'Connection string: <mongodb uri><password>@localhost:27017/',
-      );
+      expect(redacted).to.equal('Connection string: <mongodb uri>');
     });
 
     for (const { char, password } of [

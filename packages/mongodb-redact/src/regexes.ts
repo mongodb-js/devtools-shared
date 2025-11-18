@@ -27,6 +27,12 @@ export const regexes = [
     '$1<email>$6',
   ],
 
+  // MongoDB connection strings (before IP addresses to handle mongodb://IP:port URIs)
+  [
+    /(mongodb(?:\+srv)?:\/\/)(www\.)?(?:[^:/@\s]+:[^@\s]*@)?[-a-zA-Z0-9@:%._+~#=,]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
+    '<mongodb uri>',
+  ],
+
   // IP addresses
   [
     /((1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\.){3}(1?[0-9][0-9]?|2[0-4][0-9]|25[0-5])/gm,
@@ -37,12 +43,6 @@ export const regexes = [
   [
     /(http(s)?:\/\/)(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
     '<url>',
-  ],
-
-  // MongoDB connection strings
-  [
-    /(mongodb:\/\/)(www\.)?[-a-zA-Z0-9@:%._+~#=,]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
-    '<mongodb uri>',
   ],
 
   // Compass Schema URL fragments
