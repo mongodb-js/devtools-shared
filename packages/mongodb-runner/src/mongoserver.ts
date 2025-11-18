@@ -289,17 +289,20 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   async updateDefaultConnectionOptions(
     options: Partial<MongoClientOptions>,
   ): Promise<void> {
-    const buildInfoError = await this._populateBuildInfo('restore-check', {
-      ...options,
-    });
-    if (buildInfoError) {
+    let buildInfoError: Error | null = null;
+    for (let attempts = 0; attempts < 10; attempts++) {
+      buildInfoError = await this._populateBuildInfo('restore-check', {
+        ...options,
+      });
+      if (!buildInfoError) break;
       debug(
         'failed to get buildInfo when setting new options',
         buildInfoError,
         options,
+        this.connectionString,
       );
-      throw buildInfoError;
     }
+    if (buildInfoError) throw buildInfoError;
     this.defaultConnectionOptions = {
       ...this.defaultConnectionOptions,
       ...options,

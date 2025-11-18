@@ -8,6 +8,10 @@ export {
   type MongoClusterEvents,
   MongoClusterOptions,
   MongoDBUserDoc,
+  RSMemberOptions as MongoClusterRSMemberOptions,
+  RSOptions as MongoClusterRSOptions,
+  CommonOptions as MongoClusterCommonOptions,
+  ShardedOptions as MongoClusterShardedOptions,
 } from './mongocluster';
 export type { LogEntry } from './mongologreader';
 export type { ConnectionString } from 'mongodb-connection-string-url';

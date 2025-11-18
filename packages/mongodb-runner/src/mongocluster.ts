@@ -3,7 +3,12 @@ import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
-import type { Document, MongoClientOptions, TagSet } from 'mongodb';
+import type {
+  Document,
+  MongoClientOptions,
+  TagSet,
+  WriteConcernSettings,
+} from 'mongodb';
 import { MongoClient } from 'mongodb';
 import {
   sleep,
@@ -470,6 +475,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const admin = client.db('admin');
       for (const user of this.users) {
         const { username, password, ...rest } = user;
+        debug('adding new user', { username, ...rest }, this.connectionString);
         await admin.command({ createUser: username, pwd: password, ...rest });
       }
     });
@@ -507,6 +513,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
     const client = await MongoClient.connect(this.connectionString, {
+      ...this.getFullWriteConcernOptions(),
       ...this.defaultConnectionOptions,
       ...clientOptions,
     });
@@ -523,5 +530,30 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
   unref(): void {
     for (const child of this.children()) child.unref();
+  }
+
+  // Return maximal write concern options based on topology
+  getFullWriteConcernOptions(): { writeConcern?: WriteConcernSettings } {
+    switch (this.topology) {
+      case 'standalone':
+        return {};
+      case 'replset':
+        return { writeConcern: { w: this.servers.length, j: true } };
+      case 'sharded':
+        return {
+          writeConcern: {
+            w: Math.min(
+              ...this.shards
+                .map((s) => s.getFullWriteConcernOptions().writeConcern?.w)
+                .filter((w) => typeof w === 'number'),
+            ),
+            j: true,
+          },
+        };
+      default:
+        throw new Error(
+          `Not implemented for topology ${this.topology as string}`,
+        );
+    }
   }
 }
