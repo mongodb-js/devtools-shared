@@ -27,11 +27,8 @@ export const regexes = [
     '$1<email>$6',
   ],
 
-  // MongoDB connection strings (before IP addresses to handle mongodb://IP:port URIs)
-  [
-    /(mongodb(?:\+srv)?:\/\/)(www\.)?(?:[^:/@\s]+:[^@\s]*@)?[-a-zA-Z0-9@:%._+~#=,]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/gim,
-    '<mongodb uri>',
-  ],
+  // MongoDB connection strings
+  [/mongodb(?:\+srv)?:\/\/\S+/gim, '<mongodb uri>'],
 
   // IP addresses
   [
