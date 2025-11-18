@@ -75,7 +75,9 @@ import type { MongoClientOptions } from 'mongodb';
       describe: 'Configure OIDC authentication on the server',
     })
     .config()
+    .env('MONGODB_RUNNER')
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
+    .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
     .command('prune', 'Clean up metadata for any dead MongoDB instances')
@@ -87,8 +89,11 @@ import type { MongoClientOptions } from 'mongodb';
     .demandCommand(1, 'A command needs to be provided')
     .help().argv;
   const [command, ...args] = argv._.map(String);
-  if (argv.debug) {
+  if (argv.debug || argv.verbose) {
     createDebug.enable('mongodb-runner');
+  }
+  if (argv.verbose) {
+    createDebug.enable('mongodb-runner:*');
   }
 
   if (argv.oidc && process.platform !== 'linux') {
