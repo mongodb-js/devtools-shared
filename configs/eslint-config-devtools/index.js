@@ -10,6 +10,7 @@ module.exports = {
     'react',
     'react-hooks',
     'filename-rules',
+    '@mongodb-js/devtools',
   ],
   rules: {
     'filename-rules/match': ['error', common.kebabcase],
