@@ -1,6 +1,7 @@
 'use strict';
 
 const PROPERTY_TERMINATORS = [
+  // Default chai terminators.
   'ok',
   'true',
   'false',
@@ -9,6 +10,28 @@ const PROPERTY_TERMINATORS = [
   'exist',
   'empty',
   'arguments',
+  'NaN',
+  'extensible',
+  'sealed',
+  'frozen',
+  'finite',
+
+  // Terminators from chai-as-promised.
+  'fulfilled',
+  'rejected',
+
+  // Terminators from sinon-chai.
+  'called',
+  'calledOnce',
+  'calledTwice',
+  'calledThrice',
+  'calledWithNew',
+
+  // Terminators from chai-dom.
+  'displayed',
+  'visible',
+  'focus',
+  'checked',
 ];
 
 function followNodeChainToExpectCall(node) {
@@ -41,18 +64,21 @@ module.exports = {
       description:
         'Require invocation of expect method assertions (e.g., to.throw())',
     },
-    messages: {
-      methodNotInvoked:
-        'expect().to.[METHOD] must be invoked with parentheses, e.g., expect(() => someFn()).to.throw()',
-    },
   },
 
   create(context) {
+    const options = context.options[0] ?? {};
+    const additionalTerminators = options.properties ?? [];
+    const validTerminators = [
+      ...PROPERTY_TERMINATORS,
+      ...additionalTerminators,
+    ];
+
     return {
       MemberExpression(node) {
         if (
           node.type !== 'MemberExpression' ||
-          PROPERTY_TERMINATORS.includes(node.property.name) ||
+          validTerminators.includes(node.property.name) ||
           node.property.name === 'expect'
         ) {
           return null;
@@ -77,9 +103,15 @@ module.exports = {
           return null;
         }
 
+        const source = context.getSourceCode();
+        const calleeText = source.getText(node);
+        const expectText = source.getText(expectCall);
+        const assertionText = calleeText.substring(expectText.length + 1);
+
         context.report({
           node,
-          messageId: 'methodNotInvoked',
+          // message: `"${assertionText}" used as function`
+          message: `expect().${assertionText} must be invoked with parentheses, e.g., expect().${assertionText}()`,
         });
       },
     };

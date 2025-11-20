@@ -82,14 +82,24 @@ it('should test something', () => {
       code: 'expect(promise).to.be.rejectedWith(Error)',
       parserOptions: { ecmaVersion: 2021 },
     },
+    {
+      options: [{ properties: ['throw'] }],
+      code: `
+      it("does not fail passed property", function() {
+        expect(result).to.throw;
+      });
+    `,
+    },
   ],
+
   invalid: [
     {
       code: 'expect(() => someFn()).to.throw',
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
@@ -98,16 +108,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
-        },
-      ],
-    },
-    {
-      code: 'expect("pineapple").to.include',
-      parserOptions: { ecmaVersion: 2021 },
-      errors: [
-        {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.be.a must be invoked with parentheses, e.g., expect().to.be.a()',
         },
       ],
     },
@@ -116,7 +118,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.not.include must be invoked with parentheses, e.g., expect().to.not.include()',
         },
       ],
     },
@@ -125,7 +128,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
@@ -134,7 +138,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.not.throw must be invoked with parentheses, e.g., expect().to.not.throw()',
         },
       ],
     },
@@ -143,7 +148,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.not.throws must be invoked with parentheses, e.g., expect().to.not.throws()',
         },
       ],
     },
@@ -152,7 +158,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.not.Throw must be invoked with parentheses, e.g., expect().to.not.Throw()',
         },
       ],
     },
@@ -161,7 +168,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().not.to.throw must be invoked with parentheses, e.g., expect().not.to.throw()',
         },
       ],
     },
@@ -170,7 +178,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
@@ -182,7 +191,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
@@ -191,7 +201,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
@@ -200,7 +211,8 @@ it('should test something', () => {
       parserOptions: { ecmaVersion: 2021 },
       errors: [
         {
-          messageId: 'methodNotInvoked',
+          message:
+            'expect().to.throw must be invoked with parentheses, e.g., expect().to.throw()',
         },
       ],
     },
