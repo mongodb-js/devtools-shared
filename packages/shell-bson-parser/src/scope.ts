@@ -41,6 +41,78 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
   Binary: function (buffer: any, subType: any) {
     return new bson.Binary(buffer, subType);
   },
+
+  // Legacy UUID functions from
+  // https://github.com/mongodb/mongo-csharp-driver/blob/ac2b2a61c6b7a193cf0266dfb8c65f86c2bf7572/uuidhelpers.js
+  LegacyJavaUUID: function (u: any) {
+    if (u === undefined) {
+      // Generate a new UUID and format it.
+      u = new bson.UUID().toHexString();
+    }
+
+    let hex: string = String.prototype.replace.call(u, /[{}-]/g, () => '');
+    let msb = String.prototype.substring.call(hex, 0, 16);
+    let lsb = String.prototype.substring.call(hex, 16, 32);
+    msb =
+      String.prototype.substring.call(msb, 14, 16) +
+      String.prototype.substring.call(msb, 12, 14) +
+      String.prototype.substring.call(msb, 10, 12) +
+      String.prototype.substring.call(msb, 8, 10) +
+      String.prototype.substring.call(msb, 6, 8) +
+      String.prototype.substring.call(msb, 4, 6) +
+      String.prototype.substring.call(msb, 2, 4) +
+      String.prototype.substring.call(msb, 0, 2);
+    lsb =
+      String.prototype.substring.call(lsb, 14, 16) +
+      String.prototype.substring.call(lsb, 12, 14) +
+      String.prototype.substring.call(lsb, 10, 12) +
+      String.prototype.substring.call(lsb, 8, 10) +
+      String.prototype.substring.call(lsb, 6, 8) +
+      String.prototype.substring.call(lsb, 4, 6) +
+      String.prototype.substring.call(lsb, 2, 4) +
+      String.prototype.substring.call(lsb, 0, 2);
+    hex = msb + lsb;
+
+    const hexBuffer = Buffer.from(hex, 'hex');
+    return new bson.Binary(hexBuffer, 3);
+  },
+  LegacyCSharpUUID: function (u: any) {
+    if (u === undefined) {
+      // Generate a new UUID and format it.
+      u = new bson.UUID().toHexString();
+    }
+
+    let hex: string = String.prototype.replace.call(u, /[{}-]/g, () => '');
+    const a =
+      String.prototype.substring.call(hex, 6, 8) +
+      String.prototype.substring.call(hex, 4, 6) +
+      String.prototype.substring.call(hex, 2, 4) +
+      String.prototype.substring.call(hex, 0, 2);
+    const b =
+      String.prototype.substring.call(hex, 10, 12) +
+      String.prototype.substring.call(hex, 8, 10);
+    const c =
+      String.prototype.substring.call(hex, 14, 16) +
+      String.prototype.substring.call(hex, 12, 14);
+    const d = String.prototype.substring.call(hex, 16, 32);
+    hex = a + b + c + d;
+
+    const hexBuffer = Buffer.from(hex, 'hex');
+    return new bson.Binary(hexBuffer, 3);
+  },
+  LegacyPythonUUID: function (u: any) {
+    if (u === undefined) {
+      return new bson.Binary(new bson.UUID().toBinary().buffer, 3);
+    }
+
+    return new bson.Binary(
+      Buffer.from(
+        String.prototype.replace.call(u, /[{}-]/g, () => ''),
+        'hex',
+      ),
+      3,
+    );
+  },
   BinData: function (t: any, d: any) {
     return new bson.Binary(Buffer.from(d, 'base64'), t);
   },
