@@ -50,7 +50,7 @@ describe('MongoCluster', function () {
 
     try {
       cluster = await MongoCluster.start({
-        version: '6.x',
+        version: '8.x',
         topology: 'standalone',
         tmpDir,
         downloadDir: customDownloadDir,
@@ -65,7 +65,7 @@ describe('MongoCluster', function () {
 
     expect(MongoCluster['downloadMongoDb']).to.have.been.calledWith(
       customDownloadDir,
-      '6.x',
+      '8.x',
       {
         platform: 'linux',
         arch: 'x64',
@@ -88,9 +88,24 @@ describe('MongoCluster', function () {
     expect(ok).to.equal(1);
   });
 
-  it('can spawn a 6.x standalone mongod on a pre-specified port', async function () {
+  it('can spawn a 8.x standalone mongod', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
+      topology: 'standalone',
+      tmpDir,
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+    expect(cluster.serverVariant).to.equal('community');
+    const { ok } = await cluster.withClient(async (client) => {
+      return await client.db('admin').command({ ping: 1 });
+    });
+    expect(ok).to.equal(1);
+  });
+
+  it('can spawn a 8.x standalone mongod on a pre-specified port', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
       topology: 'standalone',
       tmpDir,
       args: ['--port', '50079'],
@@ -98,40 +113,42 @@ describe('MongoCluster', function () {
     expect(cluster.connectionString).to.include(`:50079`);
   });
 
-  it('can spawn a 6.x replset', async function () {
+  it('can spawn a 8.x replset', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
     expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
   });
 
-  it('can spawn a 6.x replset with specific number of arbiters and secondaries', async function () {
+  it('can spawn a 8.x replset with specific number of arbiters and secondaries', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
       secondaries: 3,
       arbiters: 1,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
-    expect(+hello.passives.length + +hello.hosts.length).to.equal(5);
+    expect(hello.hosts).to.have.lengthOf(1);
+    expect(hello.passives).to.have.lengthOf(3);
+    expect(hello.arbiters).to.have.lengthOf(1);
   });
 
-  it('can spawn a 6.x sharded cluster', async function () {
+  it('can spawn a 8.x sharded cluster', async function () {
     const logDir = path.join(tmpDir, `sharded-logs`);
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       shards: 2,
@@ -139,7 +156,7 @@ describe('MongoCluster', function () {
       logDir,
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -154,9 +171,9 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
-  it('can spawn a 6.x standalone mongod with TLS enabled and get build info', async function () {
+  it('can spawn a 8.x standalone mongod with TLS enabled and get build info', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'standalone',
       tmpDir,
       args: [
@@ -169,7 +186,7 @@ describe('MongoCluster', function () {
       ],
     });
     expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^6\./);
+    expect(cluster.serverVersion).to.match(/^8\./);
     expect(cluster.serverVariant).to.equal('community');
   });
 
@@ -287,7 +304,7 @@ describe('MongoCluster', function () {
 
   it('can serialize and deserialize sharded cluster info', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
@@ -302,7 +319,7 @@ describe('MongoCluster', function () {
 
   it('can let callers listen for server log events', async function () {
     cluster = await MongoCluster.start({
-      version: '6.x',
+      version: '8.x',
       topology: 'replset',
       tmpDir,
       secondaries: 1,
@@ -342,5 +359,181 @@ describe('MongoCluster', function () {
       _id: 42,
       baddoc: 1,
     });
+  });
+
+  it('can pass custom arguments for replica set members', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'replset',
+      tmpDir,
+      rsMembers: [
+        { args: ['--setParameter', 'cursorTimeoutMillis=60000'] },
+        { args: ['--setParameter', 'cursorTimeoutMillis=50000'] },
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+    const hello = await cluster.withClient(async (client) => {
+      return await client.db('admin').command({ hello: 1 });
+    });
+    expect(hello.hosts).to.have.lengthOf(1);
+    expect(hello.passives).to.have.lengthOf(1);
+
+    const servers = cluster['servers'];
+    expect(servers).to.have.lengthOf(2);
+    const values = await Promise.all(
+      servers.map((srv) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    expect(
+      values.map((v) => [v[0].cursorTimeoutMillis, v[1].isWritablePrimary]),
+    ).to.deep.equal([
+      [60000, true],
+      [50000, false],
+    ]);
+  });
+
+  it('can pass custom arguments for shards', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      shardArgs: [
+        ['--setParameter', 'cursorTimeoutMillis=60000'],
+        ['--setParameter', 'cursorTimeoutMillis=50000'],
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+
+    const shards = cluster['shards'];
+    expect(shards).to.have.lengthOf(2);
+    const values = await Promise.all(
+      shards.map((srv) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    expect(
+      values.map((v) => [
+        v[0].cursorTimeoutMillis,
+        v[1].setName === values[0][1].setName,
+      ]),
+    ).to.deep.equal([
+      [60000, true],
+      [50000, false],
+    ]);
+  });
+
+  it('can pass custom arguments for mongoses', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      mongosArgs: [
+        ['--setParameter', 'cursorTimeoutMillis=60000'],
+        ['--setParameter', 'cursorTimeoutMillis=50000'],
+      ],
+    });
+
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+
+    const mongoses = cluster['servers'];
+    expect(mongoses).to.have.lengthOf(2);
+    const values = await Promise.all(
+      mongoses.map((srv, i) =>
+        srv.withClient(async (client) => {
+          return await Promise.all([
+            client
+              .db('admin')
+              .command({ getParameter: 1, cursorTimeoutMillis: 1 }),
+            client.db('admin').command({ hello: 1 }),
+            // Ensure that the mongos announces itself to the cluster
+            client.db('test').collection(`test${i}`).insertOne({ dummy: 1 }),
+          ]);
+        }),
+      ),
+    );
+
+    const processIdForMongos = (v: any) =>
+      v[1].topologyVersion.processId.toHexString();
+    expect(
+      values.map((v) => [
+        v[0].cursorTimeoutMillis,
+        v[1].msg,
+        processIdForMongos(v) === processIdForMongos(values[0]),
+      ]),
+    ).to.deep.equal([
+      [60000, 'isdbgrid', true],
+      [50000, 'isdbgrid', false],
+    ]);
+
+    const mongosList = await cluster.withClient(
+      async (client) =>
+        await client.db('config').collection('mongos').find().toArray(),
+    );
+    expect(mongosList).to.have.lengthOf(2);
+  });
+
+  it('can add authentication options and verify them after serialization', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 1,
+      shards: 1,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: [{ role: 'readWriteAnyDatabase', db: 'admin' }],
+        },
+      ],
+      mongosArgs: [[], []],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    await cluster.withClient(async (client) => {
+      const result = await client
+        .db('test')
+        .collection('test')
+        .insertOne({ foo: 42 });
+      expect(result.insertedId).to.exist;
+    });
+
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    const [doc, status] = await cluster.withClient(async (client) => {
+      return Promise.all([
+        client.db('test').collection('test').findOne({ foo: 42 }),
+        client.db('admin').command({ connectionStatus: 1 }),
+      ] as const);
+    });
+    expect(doc?.foo).to.equal(42);
+    expect(status.authInfo.authenticatedUsers).to.deep.equal([
+      { user: 'testuser', db: 'admin' },
+    ]);
   });
 });
