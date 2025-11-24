@@ -2,7 +2,7 @@
   "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
   "compilerOptions": {
     "target": "es2020",
-    "lib": ["es2020", "DOM"],
+    "lib": ["es2021", "DOM"],
     "module": "commonjs",
     "moduleResolution": "node"
   }
