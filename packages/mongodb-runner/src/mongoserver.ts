@@ -29,6 +29,7 @@ export interface MongoServerOptions {
   logDir?: string; // If set, pipe log file output through here.
   args?: string[]; // May or may not contain --port
   docker?: string | string[]; // Image or docker options
+  internalClientOptions?: Partial<MongoClientOptions>;
 }
 
 interface SerializedServerProperties {
@@ -154,6 +155,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     ...options
   }: MongoServerOptions): Promise<MongoServer> {
     const srv = new MongoServer();
+    srv.defaultConnectionOptions = { ...options.internalClientOptions };
     if (!options.docker) {
       const dbPath = path.join(options.tmpDir, `db-${srv.uuid}`);
       await fs.mkdir(dbPath, { recursive: true });

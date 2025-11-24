@@ -58,6 +58,33 @@ export function makeConnectionString(
   if (replSetName) {
     cs.typedSearchParams<MongoClientOptions>().set('replicaSet', replSetName);
   }
+  if (defaultConnectionOptions.tls) {
+    cs.typedSearchParams<MongoClientOptions>().set('tls', 'true');
+  }
+  if (defaultConnectionOptions.tlsCAFile) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCAFile',
+      defaultConnectionOptions.tlsCAFile,
+    );
+  }
+  if (defaultConnectionOptions.tlsCertificateKeyFile) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCertificateKeyFile',
+      defaultConnectionOptions.tlsCertificateKeyFile,
+    );
+  }
+  if (defaultConnectionOptions.tlsCertificateKeyFilePassword) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCertificateKeyFilePassword',
+      defaultConnectionOptions.tlsCertificateKeyFilePassword,
+    );
+  }
+  if (defaultConnectionOptions.tlsAllowInvalidCertificates) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsAllowInvalidCertificates',
+      'true',
+    );
+  }
   if (defaultConnectionOptions.auth?.username) {
     cs.username = defaultConnectionOptions.auth.username;
   }

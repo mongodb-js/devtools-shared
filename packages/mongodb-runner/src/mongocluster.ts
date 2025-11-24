@@ -22,6 +22,7 @@ import {
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
 import assert from 'assert';
+import { handleTLSClientKeyOptions } from './tls-helpers';
 
 export interface MongoDBUserDoc {
   username: string;
@@ -45,6 +46,7 @@ export interface CommonOptions {
 
   version?: string;
   users?: MongoDBUserDoc[];
+  tlsAddClientKey?: boolean;
 
   topology: 'standalone' | 'replset' | 'sharded';
 }
@@ -76,7 +78,7 @@ export type ShardedOptions = {
 
 export type MongoClusterOptions = Pick<
   MongoServerOptions,
-  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
+  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker' | 'internalClientOptions'
 > &
   CommonOptions &
   RSOptions &
@@ -298,9 +300,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   static async start({
     ...options
   }: MongoClusterOptions): Promise<MongoCluster> {
+    options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
+
     const cluster = new MongoCluster();
     cluster.topology = options.topology;
     cluster.users = options.users ?? [];
+    cluster.defaultConnectionOptions = { ...options.internalClientOptions };
     if (!options.binDir) {
       options.binDir = await this.downloadMongoDb(
         options.downloadDir ?? options.tmpDir,

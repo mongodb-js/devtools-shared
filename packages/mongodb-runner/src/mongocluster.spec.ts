@@ -6,6 +6,7 @@ import os from 'os';
 import createDebug from 'debug';
 import sinon from 'sinon';
 import type { LogEntry } from './mongologreader';
+import type { MongoClientOptions } from 'mongodb';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
@@ -17,6 +18,12 @@ const twoIfNotWindowsCI =
 // These are from the testing/certificates directory of mongosh
 const SERVER_KEY = 'server.bundle.pem';
 const CA_CERT = 'ca.crt';
+const SHORT_TIMEOUTS: Partial<MongoClientOptions> = {
+  serverSelectionTimeoutMS: 500,
+  connectTimeoutMS: 500,
+  socketTimeoutMS: 500,
+  timeoutMS: 500,
+};
 
 describe('MongoCluster', function () {
   this.timeout(1_000_000); // Downloading Windows binaries can take a very long time...
@@ -171,23 +178,107 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
-  it('can spawn a 8.x standalone mongod with TLS enabled and get build info', async function () {
-    cluster = await MongoCluster.start({
-      version: '8.x',
-      topology: 'standalone',
-      tmpDir,
-      args: [
-        '--tlsMode',
-        'requireTLS',
-        '--tlsCertificateKeyFile',
-        path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
-        '--tlsCAFile',
-        path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
-      ],
+  context('TLS', function () {
+    it('can spawn a 8.x standalone mongod with TLS enabled and get build info (automatically added client key)', async function () {
+      cluster = await MongoCluster.start({
+        version: '8.x',
+        topology: 'standalone',
+        tmpDir,
+        args: [
+          '--tlsMode',
+          'requireTLS',
+          '--tlsCertificateKeyFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
+          '--tlsCAFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+        ],
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.connectionString).to.include(
+        'tls=true&tlsCertificateKeyFile=',
+      );
+      expect(cluster.serverVersion).to.match(/^8\./);
+      expect(cluster.serverVariant).to.equal('community');
+
+      await cluster.withClient(async (client) => {
+        expect(
+          path.basename(client.options.tlsCertificateKeyFile ?? ''),
+        ).to.include('mongodb-runner-client-');
+        const buildInfo = await client.db('admin').command({ buildInfo: 1 });
+        expect(buildInfo.version).to.be.a('string');
+      });
     });
-    expect(cluster.connectionString).to.be.a('string');
-    expect(cluster.serverVersion).to.match(/^8\./);
-    expect(cluster.serverVariant).to.equal('community');
+
+    it('can spawn a 8.x standalone mongod with TLS enabled and get build info (no extra client key)', async function () {
+      cluster = await MongoCluster.start({
+        version: '8.x',
+        topology: 'standalone',
+        tmpDir,
+        tlsAddClientKey: false,
+        internalClientOptions: { ...SHORT_TIMEOUTS },
+        args: [
+          '--tlsMode',
+          'requireTLS',
+          '--tlsCertificateKeyFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
+          '--tlsCAFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+        ],
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.connectionString).not.to.include('tls=');
+      expect(cluster.connectionString).not.to.include('tlsCertificateKeyFile=');
+      expect(cluster.serverVersion).to.match(/^8\./);
+      expect(cluster.serverVariant).to.equal('community');
+
+      try {
+        await cluster.withClient(() => {}, { ...SHORT_TIMEOUTS });
+        expect.fail('missed exception');
+      } catch (err: any) {
+        expect(err.name).to.equal('MongoServerSelectionError');
+      }
+    });
+
+    it('can spawn a 8.x standalone mongod with TLS enabled and get build info (explicit client cert)', async function () {
+      cluster = await MongoCluster.start({
+        version: '8.x',
+        topology: 'standalone',
+        tmpDir,
+        internalClientOptions: {
+          tls: true,
+          tlsCAFile: path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+          tlsCertificateKeyFile: path.resolve(
+            __dirname,
+            '..',
+            'test',
+            'fixtures',
+            SERVER_KEY,
+          ),
+          tlsAllowInvalidCertificates: true,
+        },
+        args: [
+          '--tlsMode',
+          'requireTLS',
+          '--tlsCertificateKeyFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', SERVER_KEY),
+          '--tlsCAFile',
+          path.resolve(__dirname, '..', 'test', 'fixtures', CA_CERT),
+        ],
+      });
+      expect(cluster.connectionString).to.be.a('string');
+      expect(cluster.connectionString).to.include('tls=true&tlsCAFile=');
+      expect(cluster.connectionString).to.include('tlsCertificateKeyFile=');
+      expect(cluster.serverVersion).to.match(/^8\./);
+      expect(cluster.serverVariant).to.equal('community');
+
+      await cluster.withClient(async (client) => {
+        expect(
+          path.basename(client.options.tlsCertificateKeyFile ?? ''),
+        ).to.equal(SERVER_KEY);
+        const buildInfo = await client.db('admin').command({ buildInfo: 1 });
+        expect(buildInfo.version).to.be.a('string');
+      });
+    });
   });
 
   context('on Linux', function () {
