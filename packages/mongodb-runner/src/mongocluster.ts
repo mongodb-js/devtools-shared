@@ -24,41 +24,114 @@ import { EventEmitter } from 'events';
 import assert from 'assert';
 import { handleTLSClientKeyOptions } from './tls-helpers';
 
+/**
+ * Description of a MongoDB user account that will be created in a test cluster.
+ */
 export interface MongoDBUserDoc {
+  /**
+   * SCRAM-SHA-256 username.
+   */
   username: string;
+  /**
+   * SCRAM-SHA-256 password.
+   */
   password: string;
+  /**
+   * Additional metadata for a given user.
+   */
   customData?: Document;
+  /**
+   * Roles to assign to the user.
+   */
   roles: ({ role: string; db?: string } | string)[];
+  /**
+   * Additional fields may be included as per the `createUser` command.
+   */
+  [key: string]: unknown;
 }
 
+/** Describe the individual members of a replica set */
 export interface RSMemberOptions {
+  /**
+   * Tags to assign to the member, in the format expected by the Node.js driver.
+   */
   tags?: TagSet;
+  /**
+   * Priority of the member. If none is specified, one member will be given priority 1
+   * and all others priority 0. The mongodb-runner package assumes that the highest priority
+   * member will become primary.
+   */
   priority?: number;
+  /**
+   * Additional arguments for the member.
+   */
   args?: string[];
+  /**
+   * Whether the member is an arbiter.
+   */
   arbiterOnly?: boolean;
 }
 
+/**
+ * Shared options for all cluster topologies.
+ */
 export interface CommonOptions {
+  /**
+   * Directory where server binaries will be downloaded and stored.
+   */
   downloadDir?: string;
+  /**
+   * Various options to control the download of MongoDB binaries.
+   */
   downloadOptions?: DownloadOptions;
 
+  /**
+   * OIDC mock provider command line (e.g. '--port=0' or full path to binary).
+   * If provided, an OIDC mock provider will be started alongside the cluster,
+   * and the necessary parameters to connect to it will be added to the
+   * cluster's mongod/mongos processes.
+   */
   oidc?: string;
 
+  /**
+   * MongoDB server version to download and use (e.g. '6.0.3', '8.x-enterprise', 'latest-alpha', etc.)
+   */
   version?: string;
+  /**
+   * User accounts to create after starting the cluster.
+   */
   users?: MongoDBUserDoc[];
+
+  /**
+   * Whether to automatically add an additional TLS client certificate key file
+   * to the cluster nodes based on whether TLS configuration was detected.
+   *
+   * Adding this is required in order for authentication to work when TLS is enabled.
+   */
   tlsAddClientKey?: boolean;
 
+  /**
+   * Topology of the cluster.
+   */
   topology: 'standalone' | 'replset' | 'sharded';
 }
 
+/**
+ * Options specific to replica set clusters.
+ */
 export type RSOptions = {
+  /** Number of arbiters to create (default: 0) */
   arbiters?: number;
+  /** Number of secondary nodes to create (default: 2) */
   secondaries?: number;
+  /** Explicitly specify replica set members. If set, `arbiters` and `secondaries` will be ignored. */
   rsMembers?: RSMemberOptions[];
 };
 
 export type ShardedOptions = {
+  /** Arguments to pass to each mongos instance. */
   mongosArgs?: string[][];
+  /** Number of shards to create or explicit shard configurations. */
   shards?: number | Partial<MongoClusterOptions>[];
 };
 

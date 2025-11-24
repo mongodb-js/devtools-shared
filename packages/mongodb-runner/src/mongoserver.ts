@@ -22,13 +22,23 @@ import {
   makeConnectionString,
 } from './util';
 
+/**
+ * Options for starting a MongoDB server process.
+ */
 export interface MongoServerOptions {
+  /** Directory where server binaries are located. */
   binDir?: string;
-  binary: string; // 'mongod', 'mongos', etc.
-  tmpDir: string; // Stores e.g. database contents
-  logDir?: string; // If set, pipe log file output through here.
-  args?: string[]; // May or may not contain --port
-  docker?: string | string[]; // Image or docker options
+  /** The MongoDB binary to run, e.g., 'mongod', 'mongos', etc. */
+  binary: string;
+  /** Directory for temporary files, e.g., database contents */
+  tmpDir: string;
+  /** If set, log file output will be piped through here. */
+  logDir?: string;
+  /** Arguments to pass to the MongoDB binary. May or may not contain --port */
+  args?: string[];
+  /** Docker image or options to run the MongoDB binary in a container. */
+  docker?: string | string[];
+  /** Internal options for the MongoDB client used by this server instance. */
   internalClientOptions?: Partial<MongoClientOptions>;
 }
 
