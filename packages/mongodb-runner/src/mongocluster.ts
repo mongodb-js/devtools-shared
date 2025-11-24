@@ -51,30 +51,16 @@ export interface CommonOptions {
   topology: 'standalone' | 'replset' | 'sharded';
 }
 
-export type RSOptions =
-  | {
-      arbiters?: number;
-      secondaries?: number;
-      rsMembers?: never;
-    }
-  | {
-      arbiters?: never;
-      secondaries?: never;
-      rsMembers: RSMemberOptions[];
-    };
+export type RSOptions = {
+  arbiters?: number;
+  secondaries?: number;
+  rsMembers?: RSMemberOptions[];
+};
 
 export type ShardedOptions = {
   mongosArgs?: string[][];
-} & (
-  | {
-      shards?: number;
-      shardArgs?: never;
-    }
-  | {
-      shards?: never;
-      shardArgs?: string[][];
-    }
-);
+  shards?: number | Partial<MongoClusterOptions>[];
+};
 
 export type MongoClusterOptions = Pick<
   MongoServerOptions,
@@ -167,25 +153,29 @@ function processRSMembers(options: MongoClusterOptions): {
 }
 
 function processShardOptions(options: MongoClusterOptions): {
-  shardArgs: string[][];
+  shards: Partial<MongoClusterOptions>[];
   mongosArgs: string[][];
 } {
-  const {
-    shardArgs = range((options.shards ?? 3) + 1).map(() => []),
-    mongosArgs = [[]],
-    args = [],
-  } = options;
+  const shards: Partial<MongoClusterOptions>[] =
+    typeof options.shards === 'number' || !options.shards
+      ? range((options.shards ?? 3) + 1).map(
+          () => ({}) as Partial<MongoClusterOptions>,
+        )
+      : options.shards;
+  const { mongosArgs = [[]], args = [] } = options;
   return {
-    shardArgs: shardArgs.map((perShardArgs, i) => [
-      ...removePortArg(args),
-      ...perShardArgs,
-      ...(perShardArgs.includes('--configsvr') ||
-      perShardArgs.includes('--shardsvr')
-        ? []
-        : i === 0
-          ? ['--configsvr']
-          : ['--shardsvr']),
-    ]),
+    shards: shards.map(({ args = [], ...perShardOpts }, i) => ({
+      ...perShardOpts,
+      args: [
+        ...removePortArg(args),
+        ...args,
+        ...(args.includes('--configsvr') || args.includes('--shardsvr')
+          ? []
+          : i === 0
+            ? ['--configsvr']
+            : ['--shardsvr']),
+      ],
+    })),
     mongosArgs: mongosArgs.map((perMongosArgs, i) => [
       ...(i === 0 && !hasPortArg(perMongosArgs) ? args : removePortArg(args)),
       ...perMongosArgs,
@@ -414,14 +404,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }
       });
     } else if (options.topology === 'sharded') {
-      const { shardArgs, mongosArgs } = processShardOptions(options);
-      debug('starting config server and shard servers', shardArgs);
+      const { shards, mongosArgs } = processShardOptions(options);
+      debug('starting config server and shard servers', shards);
       const allShards = await Promise.all(
-        shardArgs.map(async (args) => {
-          const isConfig = args.includes('--configsvr');
+        shards.map(async (s) => {
+          const isConfig = s.args?.includes('--configsvr');
           const cluster = await MongoCluster.start({
             ...options,
-            args,
+            ...s,
             topology: 'replset',
             users: isConfig ? undefined : options.users, // users go on the mongos/config server only for the config set
           });

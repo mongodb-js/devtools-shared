@@ -500,9 +500,9 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
-      shardArgs: [
-        ['--setParameter', 'cursorTimeoutMillis=60000'],
-        ['--setParameter', 'cursorTimeoutMillis=50000'],
+      shards: [
+        { args: ['--setParameter', 'cursorTimeoutMillis=60000'] },
+        { args: ['--setParameter', 'cursorTimeoutMillis=50000'] },
       ],
     });
 
