@@ -289,12 +289,12 @@ describe('MongoCluster', function () {
     // This is the easiest way to ensure that MongoServer can handle the
     // pre-4.4 log format (because in the devtools-shared CI, we only
     // test ubuntu-latest).
-    it('can spawn a 4.0.x replset using docker', async function () {
+    it('can spawn a 4.2.x replset using docker', async function () {
       cluster = await MongoCluster.start({
-        version: '4.0.x',
+        version: '4.2.x',
         topology: 'replset',
         tmpDir,
-        docker: 'mongo:4.0',
+        docker: 'mongo:4.2',
         downloadOptions: {
           distro: 'ubuntu1604',
         },
@@ -307,12 +307,12 @@ describe('MongoCluster', function () {
       expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
     });
 
-    it('can spawn a 4.0.x sharded env using docker', async function () {
+    it('can spawn a 4.2.x sharded env using docker', async function () {
       cluster = await MongoCluster.start({
-        version: '4.0.x',
+        version: '4.2.x',
         topology: 'sharded',
         tmpDir,
-        docker: 'mongo:4.0',
+        docker: 'mongo:4.2',
         shards: 1,
         secondaries: 0,
         downloadOptions: {
@@ -327,9 +327,9 @@ describe('MongoCluster', function () {
       expect(hello.msg).to.equal('isdbgrid');
     });
 
-    it('can spawn a 4.0.x standalone mongod with TLS enabled and get build info', async function () {
+    it('can spawn a 4.2.x standalone mongod with TLS enabled and get build info', async function () {
       cluster = await MongoCluster.start({
-        version: '4.0.x',
+        version: '4.2.x',
         topology: 'standalone',
         tmpDir,
         args: [
@@ -342,7 +342,7 @@ describe('MongoCluster', function () {
         ],
         docker: [
           `--volume=${path.resolve(__dirname, '..')}:/projectroot:ro`,
-          'mongo:4.0',
+          'mongo:4.2',
         ],
         downloadOptions: {
           distro: 'ubuntu1604',
@@ -580,11 +580,13 @@ describe('MongoCluster', function () {
       [50000, 'isdbgrid', false],
     ]);
 
-    const mongosList = await cluster.withClient(
-      async (client) =>
-        await client.db('config').collection('mongos').find().toArray(),
-    );
-    expect(mongosList).to.have.lengthOf(2);
+    await eventually(async () => {
+      const mongosList = await cluster.withClient(
+        async (client) =>
+          await client.db('config').collection('mongos').find().toArray(),
+      );
+      expect(mongosList).to.have.lengthOf(2);
+    });
   });
 
   it('can add authentication options and verify them after serialization', async function () {

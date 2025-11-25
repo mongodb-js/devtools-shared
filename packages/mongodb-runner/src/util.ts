@@ -93,3 +93,25 @@ export function makeConnectionString(
   }
   return cs.toString();
 }
+
+export async function eventually(
+  fn: () => Promise<void> | void,
+  {
+    intervalMs = 100,
+    timeoutMs = 5000,
+  }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<void> {
+  const startTime = Date.now();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      await fn();
+    } catch (err) {
+      if (Date.now() - startTime > timeoutMs) {
+        throw err;
+      } else {
+        await sleep(intervalMs);
+      }
+    }
+  }
+}
