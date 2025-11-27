@@ -66,7 +66,13 @@ async function connectWithFailFast(
   let failEarlyClosePromise: Promise<void> | null = null;
   logger.emit('devtools-connect:connect-attempt-initialized', {
     uri,
-    driver: client.options.metadata.driver,
+    driver: {
+      // metadata is hidden and driverInfo is deprecated and nullable
+      // because this is just informational, do our best effort to get that info
+      name: client.options.driverInfo?.name ?? 'mongodb-js',
+      version: client.options.driverInfo?.version ?? '<unk>',
+    },
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     devtoolsConnectVersion: require('../package.json').version,
     host: client.options.srvHost ?? client.options.hosts.join(','),
