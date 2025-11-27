@@ -65,11 +65,11 @@
     "chai": "^4.5.0",
     "cross-spawn": "^7.0.6",
     "depcheck": "^1.4.7",
-    "eslint": "^7.25.0",
+    "eslint": "^7.25.0 || ^8.0.0",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
     "prettier": "^3.5.3",
     "sinon": "^9.2.3",
-    "typescript": "^5.0.4"
+    "typescript": "^5.8.2"
   }
 }
