@@ -13,6 +13,7 @@ import type { MongoClientOptions } from 'mongodb';
     .version(false)
     .scriptName('mongodb-runner')
     .env('MONGODB_RUNNER')
+    .config()
     .option('topology', {
       alias: 't',
       choices: ['standalone', 'replset', 'sharded'] as const,
@@ -74,8 +75,6 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
-    .config()
-    .env('MONGODB_RUNNER')
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
     .command('start', 'Start a MongoDB instance')
