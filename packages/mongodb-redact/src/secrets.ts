@@ -32,7 +32,10 @@ export function redactSecretsOnString<T extends string>(
       );
     }
 
-    const regex = new RegExp(`\\b${escape(value)}\\b`, 'g');
+    // Escape the value for use in regex and use negative lookahead/lookbehind
+    // to match secrets not surrounded by word characters
+    const escapedValue = escape(value);
+    const regex = new RegExp(`(?<!\\w)${escapedValue}(?!\\w)`, 'g');
     result = result.replace(regex, `<${kind}>`) as T;
   }
 

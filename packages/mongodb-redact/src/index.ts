@@ -46,5 +46,8 @@ export function redact<T>(
   return message;
 }
 
+export { shouldRedactCommand } from './should-redact-command';
+export { redactConnectionString } from './redact-connection-string';
+
 export default redact;
 export type { Secret } from './secrets';
