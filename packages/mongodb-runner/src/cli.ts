@@ -29,7 +29,9 @@ import type { MongoClientOptions } from 'mongodb';
       describe: 'number of secondaries for each replica set',
     })
     .option('shards', {
-      type: 'number',
+      coerce(arg) {
+        return arg;
+      }, // Can also be an array when coming from the config file
       describe: 'number of shards for sharded clusters',
     })
     .option('version', {

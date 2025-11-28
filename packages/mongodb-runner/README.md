@@ -70,6 +70,35 @@ try {
 }
 ```
 
+## Config file
+
+You can specify a config file for the CLI using `--config`:
+
+```js
+{
+  "topology": "sharded",
+  "shards": [
+    {
+      "rsMembers": [
+        { "tags": { "region": "us-east" } },
+        { "tags": { "region": "us-west" } }
+      ]
+    },
+    {
+      "rsMembers": [
+        { "tags": { "region": "us-east" } },
+        { "tags": { "region": "us-west" } },
+        { "tags": { "region": "us-west" } }
+      ]
+    }
+  ]
+}
+```
+
+```sh
+$ npx mongodb-runner start --config <path/to/config.json>
+```
+
 ## License
 
 Apache 2.0
