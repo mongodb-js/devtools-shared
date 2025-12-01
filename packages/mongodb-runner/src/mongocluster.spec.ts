@@ -7,6 +7,7 @@ import createDebug from 'debug';
 import sinon from 'sinon';
 import type { LogEntry } from './mongologreader';
 import type { MongoClientOptions } from 'mongodb';
+import { eventually } from './util';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
@@ -296,7 +297,7 @@ describe('MongoCluster', function () {
         tmpDir,
         docker: 'mongo:4.2',
         downloadOptions: {
-          distro: 'ubuntu1604',
+          distro: 'ubuntu1804',
         },
       });
       expect(cluster.connectionString).to.be.a('string');

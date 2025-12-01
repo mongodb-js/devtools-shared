@@ -106,6 +106,7 @@ export async function eventually(
   while (true) {
     try {
       await fn();
+      return;
     } catch (err) {
       if (Date.now() - startTime > timeoutMs) {
         throw err;
