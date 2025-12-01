@@ -424,7 +424,7 @@ export type ConnectMongoClientResult = {
  */
 export async function connectMongoClient(
   uri: string,
-  clientOptions: DevtoolsConnectOptions,
+  { useSystemCA = true, ...clientOptions }: DevtoolsConnectOptions,
   logger: ConnectLogEmitter,
   MongoClientClass: typeof MongoClient,
 ): Promise<ConnectMongoClientResult> {
@@ -435,9 +435,8 @@ export async function connectMongoClient(
     clientOptions,
     logger,
     MongoClientClass,
-    useSystemCA: clientOptions.useSystemCA ?? true,
+    useSystemCA,
   };
-  delete clientOptions.useSystemCA;
 
   // Connect once with the system certificate store added, and if that fails with
   // a TLS error, try again. In theory adding certificates into the certificate store
