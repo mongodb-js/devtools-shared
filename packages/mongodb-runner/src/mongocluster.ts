@@ -235,12 +235,12 @@ function processShardOptions(options: MongoClusterOptions): {
           () => ({}) as Partial<MongoClusterOptions>,
         )
       : options.shards;
-  const { mongosArgs = [[]], args = [] } = options;
+  const { mongosArgs = [[]], args: mainArgs = [] } = options;
   return {
     shards: shards.map(({ args = [], ...perShardOpts }, i) => ({
       ...perShardOpts,
       args: [
-        ...removePortArg(args),
+        ...removePortArg(mainArgs),
         ...args,
         ...(args.includes('--configsvr') || args.includes('--shardsvr')
           ? []
@@ -250,7 +250,9 @@ function processShardOptions(options: MongoClusterOptions): {
       ],
     })),
     mongosArgs: mongosArgs.map((perMongosArgs, i) => [
-      ...(i === 0 && !hasPortArg(perMongosArgs) ? args : removePortArg(args)),
+      ...(i === 0 && !hasPortArg(perMongosArgs)
+        ? mainArgs
+        : removePortArg(mainArgs)),
       ...perMongosArgs,
     ]),
   };
@@ -504,7 +506,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             ...options,
             binary: 'mongos',
             args: [
-              ...(options.args ?? []),
               ...args,
               '--configdb',
               `${configsvr.replSetName!}/${configsvr.hostport}`,
