@@ -406,6 +406,10 @@ export interface DevtoolsConnectOptions extends MongoClientOptions {
    * provided in `proxy` for OIDC traffic.
    */
   applyProxyToOIDC?: boolean | DevtoolsProxyOptions | AgentWithInitialize;
+  /**
+   * Whether to use the system certificate store. Defaults to `true`.
+   */
+  useSystemCA?: boolean;
 }
 
 export type ConnectMongoClientResult = {
@@ -420,13 +424,20 @@ export type ConnectMongoClientResult = {
  */
 export async function connectMongoClient(
   uri: string,
-  clientOptions: DevtoolsConnectOptions,
+  { useSystemCA = true, ...clientOptions }: DevtoolsConnectOptions,
   logger: ConnectLogEmitter,
   MongoClientClass: typeof MongoClient,
 ): Promise<ConnectMongoClientResult> {
   detectAndLogMissingOptionalDependencies(logger);
 
-  const options = { uri, clientOptions, logger, MongoClientClass };
+  const options = {
+    uri,
+    clientOptions,
+    logger,
+    MongoClientClass,
+    useSystemCA,
+  };
+
   // Connect once with the system certificate store added, and if that fails with
   // a TLS error, try again. In theory adding certificates into the certificate store
   // should not cause failures, but in practice we have observed some, hence this
@@ -435,7 +446,7 @@ export async function connectMongoClient(
   // failure situations) we do not spend an unreasonable amount of time in the first
   // connection attempt.
   try {
-    return await connectMongoClientImpl({ ...options, useSystemCA: true });
+    return await connectMongoClientImpl({ ...options });
   } catch (error: unknown) {
     if (isPotentialTLSCertificateError(error)) {
       logger.emit('devtools-connect:retry-after-tls-error', {

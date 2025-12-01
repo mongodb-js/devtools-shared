@@ -1,21 +1,49 @@
 // It probably makes sense to put this into its own package/repository once
 // other tools start using it.
 
+const NODE_SOCKET_NON_RETRY_CODES = [
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'ENETUNREACH',
+  'EINVAL',
+];
+
+export const COMPASS_SOCKET_SERVICE_NON_RETRY_CODES = [
+  3000, // UNAUTHORIZED
+  3003, // FORBIDDEN
+  4004, // NOT_FOUND
+  1008, // VIOLATED_POLICY
+  4101, // DO_NOT_TRY_AGAIN
+];
+
+const isCompassSocketServiceError = handleNestedErrors(
+  (error: Error & { code?: string | number }): boolean => {
+    if (error.name === 'CompassSocketServiceError') {
+      return (
+        typeof error.code === 'number' &&
+        COMPASS_SOCKET_SERVICE_NON_RETRY_CODES.includes(error.code)
+      );
+    }
+    return false;
+  },
+);
+
 function isFastFailureConnectionSingleError(
-  error: Error & { code?: string },
+  error: Error & { code?: string | number },
 ): boolean {
   switch (error.name) {
     case 'MongoNetworkError':
-      return /\b(ECONNREFUSED|ENOTFOUND|ENETUNREACH|EINVAL)\b/.test(
-        error.message,
-      );
+      return new RegExp(
+        String.raw`\b(${NODE_SOCKET_NON_RETRY_CODES.join('|')})\b`,
+      ).test(error.message);
     case 'MongoError':
       return /The apiVersion parameter is required/.test(error.message);
     default:
       return (
-        ['ECONNREFUSED', 'ENOTFOUND', 'ENETUNREACH', 'EINVAL'].includes(
-          error.code ?? '',
-        ) || isPotentialTLSCertificateError(error)
+        (typeof error.code === 'string' &&
+          NODE_SOCKET_NON_RETRY_CODES.includes(error.code)) ||
+        isPotentialTLSCertificateError(error) ||
+        isCompassSocketServiceError(error)
       );
   }
 }
