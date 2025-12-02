@@ -72,7 +72,7 @@ function getVirtualLanguageService(
         // some reason we ever get here.
         const code =
           typeof codeHolder[relativeFileName] === 'string'
-            ? (codeHolder[relativeFileName] as string)
+            ? codeHolder[relativeFileName]
             : '';
         return ts.ScriptSnapshot.fromString(code);
       }
@@ -105,7 +105,7 @@ function getVirtualLanguageService(
         // some reason we ever get here.
         const code =
           typeof codeHolder[relativeFileName] === 'string'
-            ? (codeHolder[relativeFileName] as string)
+            ? codeHolder[relativeFileName]
             : undefined;
         return code;
       }

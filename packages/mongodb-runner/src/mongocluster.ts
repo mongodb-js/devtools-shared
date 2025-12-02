@@ -9,11 +9,10 @@ import { sleep, range, uuid, debug } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
 
-export interface MongoClusterOptions
-  extends Pick<
-    MongoServerOptions,
-    'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
-  > {
+export interface MongoClusterOptions extends Pick<
+  MongoServerOptions,
+  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker'
+> {
   topology: 'standalone' | 'replset' | 'sharded';
   arbiters?: number;
   secondaries?: number;
