@@ -87,8 +87,8 @@
     "prettier": "^3.5.3"
   },
   "optionalDependencies": {
-    "kerberos": "^7.0.0",
-    "mongodb-client-encryption": "^7.0.0",
+    "kerberos": "^2.1.0 || ^7.0.0",
+    "mongodb-client-encryption": "^6.1.0 || ^7.0.0",
     "os-dns-native": "^1.2.0",
     "resolve-mongodb-srv": "^1.1.1"
   }
