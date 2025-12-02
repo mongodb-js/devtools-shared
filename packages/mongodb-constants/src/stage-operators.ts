@@ -1279,17 +1279,13 @@ const STAGE_OPERATORS = [
  */
 const STAGE_OPERATOR_NAMES = STAGE_OPERATORS.map((op) => op.name);
 
-const OUT_STAGES = STAGE_OPERATORS.filter(
-  (stage) => stage.outputStage,
-) as Extract<(typeof STAGE_OPERATORS)[number], { outputStage: true }>[];
+const OUT_STAGES = STAGE_OPERATORS.filter((stage) => stage.outputStage);
 
-const FULL_SCAN_STAGES = STAGE_OPERATORS.filter(
-  (stage) => stage.fullScan,
-) as Extract<(typeof STAGE_OPERATORS)[number], { fullScan: true }>[];
+const FULL_SCAN_STAGES = STAGE_OPERATORS.filter((stage) => stage.fullScan);
 
 const REQUIRED_AS_FIRST_STAGE = STAGE_OPERATORS.filter(
   (stage) => stage.firstStage,
-) as Extract<(typeof STAGE_OPERATORS)[number], { firstStage: true }>[];
+);
 
 export {
   STAGE_OPERATORS,
