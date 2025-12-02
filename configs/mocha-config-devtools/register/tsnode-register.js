@@ -5,6 +5,8 @@ require('ts-node').register({
   compilerOptions: {
     allowJs: true,
     jsx: 'react',
+    module: 'NodeNext',
+    moduleResolution: 'NodeNext',
   },
 });
 
