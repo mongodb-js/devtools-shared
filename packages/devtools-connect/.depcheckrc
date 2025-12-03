@@ -8,5 +8,6 @@ ignores:
  # this is explicitly called as a dependency to make sure that is bootstrapped
  # before mongodb-runner, since it is required via mongodb
  - '@mongodb-js/saslprep'
+ - 'ts-node' # used by mocha
 ignore-patterns:
  - 'dist'

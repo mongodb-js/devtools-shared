@@ -36,7 +36,7 @@
     "depcheck": "depcheck",
     "check": "npm run typecheck && npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "testonly": "nyc mocha --colors -r ts-node/register src/**/*.spec.ts",
+    "testonly": "nyc mocha --colors --register ts-node/register src/**/*.spec.ts",
     "test": "npm run lint && npm run compile && npm run testonly",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",
