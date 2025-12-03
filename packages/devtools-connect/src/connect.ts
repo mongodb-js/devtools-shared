@@ -588,10 +588,15 @@ async function connectMongoClientImpl({
       ca ? { ca } : {},
     );
 
+    const customLookup = mongoClientOptions.lookup;
     // Adopt dns result order changes with Node v18 that affected the VSCode extension VSCODE-458.
     // Refs https://github.com/microsoft/vscode/issues/189805
     mongoClientOptions.lookup = (hostname, options, callback) => {
-      return dns.lookup(hostname, { verbatim: false, ...options }, callback);
+      return (customLookup ?? dns.lookup)(
+        hostname,
+        { verbatim: false, ...options },
+        callback,
+      );
     };
 
     delete (mongoClientOptions as any).useSystemCA; // can be removed once no product uses this anymore
