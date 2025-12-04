@@ -18,6 +18,7 @@
     "@babel/eslint-parser": "^7.22.7",
     "@babel/preset-env": "^7.22.7",
     "@babel/preset-react": "^7.22.5",
+    "@mongodb-js/eslint-plugin-devtools": "^0.1.0",
     "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "^5.59.0",
     "eslint-config-prettier": "^8.3.0",
