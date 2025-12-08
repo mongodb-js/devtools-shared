@@ -111,6 +111,11 @@ export interface CommonOptions {
   tlsAddClientKey?: boolean;
 
   /**
+   * Whether to require an API version for commands.
+   */
+  requireApiVersion?: number;
+
+  /**
    * Topology of the cluster.
    */
   topology: 'standalone' | 'replset' | 'sharded';
@@ -528,6 +533,17 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     }
 
     await cluster.addAuthIfNeeded();
+
+    // Set up requireApiVersion if requested.
+    if (options.requireApiVersion !== undefined) {
+      await cluster.withClient(async (client) => {
+        const admin = client.db('admin');
+        await admin.command({ setParameter: 1, requireApiVersion: true });
+      });
+      await cluster.updateDefaultConnectionOptions({
+        serverApi: String(options.requireApiVersion) as '1',
+      });
+    }
     return cluster;
   }
 
