@@ -536,10 +536,20 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
     // Set up requireApiVersion if requested.
     if (options.requireApiVersion !== undefined) {
-      await cluster.withClient(async (client) => {
-        const admin = client.db('admin');
-        await admin.command({ setParameter: 1, requireApiVersion: true });
-      });
+      if (options.topology === 'replset') {
+        throw new Error(
+          'requireApiVersion is not supported for replica sets, see SERVER-97010',
+        );
+      }
+      await Promise.all(
+        [...cluster.servers].map(
+          async (child) =>
+            await child.withClient(async (client) => {
+              const admin = client.db('admin');
+              await admin.command({ setParameter: 1, requireApiVersion: true });
+            }),
+        ),
+      );
       await cluster.updateDefaultConnectionOptions({
         serverApi: String(options.requireApiVersion) as '1',
       });
