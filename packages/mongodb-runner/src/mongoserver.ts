@@ -20,6 +20,7 @@ import {
   debugVerbose,
   jsonClone,
   makeConnectionString,
+  sleep,
 } from './util';
 
 /**
@@ -286,9 +287,11 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       logEntryStream.resume();
 
       srv.port = port;
-      const buildInfoError = await srv._populateBuildInfo('insert-new');
-      if (buildInfoError) {
-        debug('failed to get buildInfo', buildInfoError);
+      if (!options.args?.includes('--keyFile')) {
+        const buildInfoError = await srv._populateBuildInfo('insert-new');
+        if (buildInfoError) {
+          debug('failed to get buildInfo', buildInfoError);
+        }
       }
     } catch (err) {
       await srv.close();
@@ -301,24 +304,77 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   async updateDefaultConnectionOptions(
     options: Partial<MongoClientOptions>,
   ): Promise<void> {
-    let buildInfoError: Error | null = null;
-    for (let attempts = 0; attempts < 10; attempts++) {
-      buildInfoError = await this._populateBuildInfo('restore-check', {
-        ...options,
-      });
-      if (!buildInfoError) break;
-      debug(
-        'failed to get buildInfo when setting new options',
-        buildInfoError,
-        options,
-        this.connectionString,
-      );
-    }
-    if (buildInfoError) throw buildInfoError;
+    // Assume we need these new options to connect.
     this.defaultConnectionOptions = {
       ...this.defaultConnectionOptions,
       ...options,
     };
+
+    // If there is no auth in the connection options, do an immediate metadata refresh and return.
+    let buildInfoError: Error | null = null;
+    if (!options.auth) {
+      buildInfoError = await this._populateBuildInfo('restore-check');
+      if (buildInfoError) {
+        debug(
+          'failed to refresh buildInfo when updating connection options',
+          buildInfoError,
+          options,
+        );
+        throw buildInfoError;
+      }
+      return;
+    }
+
+    debug('Waiting for authorization on', this.port);
+
+    // Wait until we can get connectionStatus.
+    let supportsAuth = false;
+    let error: unknown = null;
+    for (let attempts = 0; attempts < 10; attempts++) {
+      error = null;
+      try {
+        supportsAuth = await this.withClient(async (client) => {
+          const status = await client
+            .db('admin')
+            .command({ connectionStatus: 1 });
+          if (status.authInfo.authenticatedUsers.length > 0) {
+            return true;
+          }
+          // If the server does not support auth, just get the build info without
+          // setting the metadata.
+          debug('Server does not support authorization', this.port);
+          this.buildInfo = await client.db('admin').command({ buildInfo: 1 });
+          return false;
+        });
+      } catch (e) {
+        error = e;
+        await sleep(2 ** attempts * 10);
+      }
+      if (error === null) {
+        break;
+      }
+    }
+
+    if (error !== null) {
+      throw error;
+    }
+
+    if (!supportsAuth) {
+      return;
+    }
+
+    const mode = this.hasInsertedMetadataCollEntry
+      ? 'restore-check'
+      : 'insert-new';
+    buildInfoError = await this._populateBuildInfo(mode);
+    if (buildInfoError) {
+      debug(
+        'failed to refresh buildInfo when updating connection options',
+        buildInfoError,
+        options,
+      );
+      throw buildInfoError;
+    }
   }
 
   async close(): Promise<void> {

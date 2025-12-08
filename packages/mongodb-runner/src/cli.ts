@@ -90,6 +90,10 @@ import type { MongoClientOptions } from 'mongodb';
     .demandCommand(1, 'A command needs to be provided')
     .help().argv;
   const [command, ...args] = argv._.map(String);
+  // Allow args to be provided by the config file.
+  if (Array.isArray(argv.args)) {
+    args.push(...argv.args.map(String));
+  }
   if (argv.debug || argv.verbose) {
     createDebug.enable('mongodb-runner');
   }
