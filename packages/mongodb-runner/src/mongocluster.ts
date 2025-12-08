@@ -493,6 +493,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             ...options,
             ...s,
             topology: 'replset',
+            requireApiVersion: undefined,
             users: isConfig ? undefined : options.users, // users go on the mongos/config server only for the config set
           });
           return [cluster, isConfig] as const;
