@@ -66,7 +66,8 @@ export interface ConnectRetryAfterTLSErrorEvent {
 }
 
 export interface ConnectEventMap
-  extends MongoDBOIDCLogEventsMap, ProxyEventMap {
+  extends MongoDBOIDCLogEventsMap,
+    ProxyEventMap {
   /** Signals that a connection attempt is about to be performed. */
   'devtools-connect:connect-attempt-initialized': (
     ev: ConnectAttemptInitializedEvent,
