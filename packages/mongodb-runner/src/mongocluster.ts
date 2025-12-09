@@ -547,7 +547,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     ...options
   }: MongoClusterOptions): Promise<void> {
     // Set up requireApiVersion if requested.
-    if (options.requireApiVersion !== undefined) {
+    if (options.requireApiVersion === undefined) {
       return;
     }
     if (options.topology === 'replset') {
