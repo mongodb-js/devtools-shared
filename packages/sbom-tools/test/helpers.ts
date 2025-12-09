@@ -4,7 +4,7 @@ import os from 'os';
 import { rimraf } from 'rimraf';
 
 export const importFixture = async (file: string) =>
-  (await import(`./fixtures/${file}`)).default;
+  (await import(`./fixtures/${file}`, { with: { type: 'json' } })).default;
 
 export async function withTempDir<T>(
   structure: Record<string, string>,
