@@ -287,6 +287,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       logEntryStream.resume();
 
       srv.port = port;
+      // If a keyFile is present, we cannot read or write on the server until
+      // a user is added to the primary.
       if (!options.args?.includes('--keyFile')) {
         const buildInfoError = await srv._populateBuildInfo('insert-new');
         if (buildInfoError) {
@@ -340,8 +342,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
           if (status.authInfo.authenticatedUsers.length > 0) {
             return true;
           }
-          // If the server does not support auth, just get the build info without
-          // setting the metadata.
+          // The server is most likely an arbiter, which does not support
+          // authenticated users but does support getting the buildInfo.
           debug('Server does not support authorization', this.port);
           this.buildInfo = await client.db('admin').command({ buildInfo: 1 });
           return false;
