@@ -23,8 +23,10 @@ export type HttpServerPageProps = {
 };
 
 export type PageTemplates<
-  TPageProps extends Record<string, Record<string, string>> =
-    HttpServerPageProps,
+  TPageProps extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
 > = {
   [Key in keyof TPageProps]: ITemplate<TPageProps[Key]>[];
 };

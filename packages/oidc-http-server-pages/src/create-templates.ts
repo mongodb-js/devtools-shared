@@ -67,8 +67,10 @@ function getPageTemplates<TParameters extends Record<string, string>>({
 }
 
 export function generateTemplates<
-  TPageParameters extends Record<string, Record<string, string>> =
-    HttpServerPageProps,
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
   TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   pages: Record<
@@ -122,8 +124,10 @@ function generateJS(data: string): void {
 }
 
 export function generateCompressedTemplates<
-  TPageParameters extends Record<string, Record<string, string>> =
-    HttpServerPageProps,
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
   TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   pages: Record<

@@ -35,8 +35,10 @@ function escapeHTML(str: string): string {
 }
 
 export function getStaticPage<
-  TPageParameters extends Record<string, Record<string, string>> =
-    HttpServerPageProps,
+  TPageParameters extends Record<
+    string,
+    Record<string, string>
+  > = HttpServerPageProps,
   TPage extends string & keyof TPageParameters = string & keyof TPageParameters,
 >(
   page: TPage,
