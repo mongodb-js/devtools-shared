@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "3.10.0",
+  "version": "3.12.0",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
@@ -36,7 +36,7 @@
     "depcheck": "depcheck",
     "check": "npm run typecheck && npm run lint && npm run depcheck",
     "check-ci": "npm run check",
-    "testonly": "nyc mocha --colors -r ts-node/register src/**/*.spec.ts",
+    "testonly": "nyc mocha --colors --register ts-node/register src/**/*.spec.ts",
     "test": "npm run lint && npm run compile && npm run testonly",
     "test-cov": "nyc -x \"**/*.spec.*\" --reporter=lcov --reporter=text --reporter=html npm run test",
     "test-watch": "npm run test -- --watch",

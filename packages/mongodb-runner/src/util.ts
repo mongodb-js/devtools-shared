@@ -1,5 +1,7 @@
+import type { MongoClientOptions } from 'mongodb';
 import { BSON } from 'mongodb';
 import createDebug from 'debug';
+import { ConnectionString } from 'mongodb-connection-string-url';
 
 export const debug = createDebug('mongodb-runner');
 export const debugVerbose = debug.extend('verbose');
@@ -41,4 +43,76 @@ export function pick<T extends object, K extends keyof T>(
     }
   }
   return ret as Pick<T, K>;
+}
+
+export function jsonClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export function makeConnectionString(
+  hostport: string,
+  replSetName?: string,
+  defaultConnectionOptions: Partial<MongoClientOptions> = {},
+): string {
+  const cs = new ConnectionString(`mongodb://${hostport}/`);
+  if (replSetName) {
+    cs.typedSearchParams<MongoClientOptions>().set('replicaSet', replSetName);
+  }
+  if (defaultConnectionOptions.tls) {
+    cs.typedSearchParams<MongoClientOptions>().set('tls', 'true');
+  }
+  if (defaultConnectionOptions.tlsCAFile) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCAFile',
+      defaultConnectionOptions.tlsCAFile,
+    );
+  }
+  if (defaultConnectionOptions.tlsCertificateKeyFile) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCertificateKeyFile',
+      defaultConnectionOptions.tlsCertificateKeyFile,
+    );
+  }
+  if (defaultConnectionOptions.tlsCertificateKeyFilePassword) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsCertificateKeyFilePassword',
+      defaultConnectionOptions.tlsCertificateKeyFilePassword,
+    );
+  }
+  if (defaultConnectionOptions.tlsAllowInvalidCertificates) {
+    cs.typedSearchParams<MongoClientOptions>().set(
+      'tlsAllowInvalidCertificates',
+      'true',
+    );
+  }
+  if (defaultConnectionOptions.auth?.username) {
+    cs.username = defaultConnectionOptions.auth.username;
+  }
+  if (defaultConnectionOptions.auth?.password) {
+    cs.password = defaultConnectionOptions.auth.password;
+  }
+  return cs.toString();
+}
+
+export async function eventually(
+  fn: () => Promise<void> | void,
+  {
+    intervalMs = 100,
+    timeoutMs = 5000,
+  }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<void> {
+  const startTime = Date.now();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      await fn();
+      return;
+    } catch (err) {
+      if (Date.now() - startTime > timeoutMs) {
+        throw err;
+      } else {
+        await sleep(intervalMs);
+      }
+    }
+  }
 }

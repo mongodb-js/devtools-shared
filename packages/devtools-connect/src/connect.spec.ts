@@ -375,6 +375,67 @@ describe('devtools connect', function () {
       expect(result.client).to.equal(mClient);
     });
 
+    it('allows useSystemCA to be configured to false', async function () {
+      const uri = 'localhost:27017';
+      const mClient = stubConstructor(FakeMongoClient);
+      const mClientType = sinon.stub().returns(mClient);
+      mClient.connect.onFirstCall().resolves(mClient);
+      const result = await connectMongoClient(
+        uri,
+        { ...defaultOpts, useSystemCA: false },
+        bus,
+        mClientType as any,
+      );
+      expect(mClientType.getCalls()).to.have.lengthOf(1);
+      expect(mClientType.getCalls()[0].args[1].ca).to.equal(undefined);
+      expect(mClient.connect.getCalls()).to.have.lengthOf(1);
+      expect(result.client).to.equal(mClient);
+    });
+
+    it('allows useSystemCA to be configured to true', async function () {
+      const uri = 'localhost:27017';
+      const mClient = stubConstructor(FakeMongoClient);
+      const mClientType = sinon.stub().returns(mClient);
+      mClient.connect.onFirstCall().resolves(mClient);
+      const result = await connectMongoClient(
+        uri,
+        { ...defaultOpts, useSystemCA: true },
+        bus,
+        mClientType as any,
+      );
+      expect(mClientType.getCalls()).to.have.lengthOf(1);
+      expect(mClientType.getCalls()[0].args[1].ca).to.be.a('string');
+      expect(mClientType.getCalls()[0].args[1].ca).to.include(
+        '-----BEGIN CERTIFICATE-----',
+      );
+      expect(mClient.connect.getCalls()).to.have.lengthOf(1);
+      expect(result.client).to.equal(mClient);
+    });
+
+    it('allows lookup to be configured', async function () {
+      const uri = 'localhost:27017';
+      const mClient = stubConstructor(FakeMongoClient);
+      const mClientType = sinon.stub().returns(mClient);
+      mClient.connect.onFirstCall().resolves(mClient);
+      const lookupSpy = sinon.spy();
+      await connectMongoClient(
+        uri,
+        { ...defaultOpts, useSystemCA: false, lookup: lookupSpy },
+        bus,
+        mClientType as any,
+      );
+
+      // get options passed to mongo client
+      const finalClientOptions = mClientType.getCalls()[0].args[1];
+      expect(finalClientOptions.lookup).to.not.equal(lookupSpy); // lookup is always wrapped
+      finalClientOptions.lookup('localhost', 27017, () => {}); // invoke it the way it would be by net/tls
+      expect(lookupSpy.getCalls()).to.have.lengthOf(1); // verify our input lookup was called instead of the dns package
+      expect(lookupSpy.getCalls()[0].args[1]).to.have.property(
+        'verbatim',
+        false,
+      ); // but we still always set verbatim to false
+    });
+
     describe('retryable TLS errors', function () {
       it('retries TLS errors without system CA integration enabled -- MongoClient error', async function () {
         const uri = 'localhost:27017';

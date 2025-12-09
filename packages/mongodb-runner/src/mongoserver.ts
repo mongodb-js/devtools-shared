@@ -13,15 +13,33 @@ import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient } from 'mongodb';
 import path from 'path';
 import { EventEmitter, once } from 'events';
-import { uuid, debug, pick, debugVerbose } from './util';
+import {
+  uuid,
+  debug,
+  pick,
+  debugVerbose,
+  jsonClone,
+  makeConnectionString,
+} from './util';
 
+/**
+ * Options for starting a MongoDB server process.
+ */
 export interface MongoServerOptions {
+  /** Directory where server binaries are located. */
   binDir?: string;
-  binary: string; // 'mongod', 'mongos', etc.
-  tmpDir: string; // Stores e.g. database contents
-  logDir?: string; // If set, pipe log file output through here.
-  args?: string[]; // May or may not contain --port
-  docker?: string | string[]; // Image or docker options
+  /** The MongoDB binary to run, e.g., 'mongod', 'mongos', etc. */
+  binary: string;
+  /** Directory for temporary files, e.g., database contents */
+  tmpDir: string;
+  /** If set, log file output will be piped through here. */
+  logDir?: string;
+  /** Arguments to pass to the MongoDB binary. May or may not contain --port */
+  args?: string[];
+  /** Docker image or options to run the MongoDB binary in a container. */
+  docker?: string | string[];
+  /** Internal options for the MongoDB client used by this server instance. */
+  internalClientOptions?: Partial<MongoClientOptions>;
 }
 
 interface SerializedServerProperties {
@@ -29,6 +47,7 @@ interface SerializedServerProperties {
   pid?: number;
   port?: number;
   dbPath?: string;
+  defaultConnectionOptions?: Partial<MongoClientOptions>;
   startTime: string;
   hasInsertedMetadataCollEntry: boolean;
 }
@@ -47,6 +66,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private closing = false;
   private startTime = new Date().toISOString();
   private hasInsertedMetadataCollEntry = false;
+  private defaultConnectionOptions?: Partial<MongoClientOptions>;
 
   get id(): string {
     return this.uuid;
@@ -65,6 +85,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       dbPath: this.dbPath,
       startTime: this.startTime,
       hasInsertedMetadataCollEntry: this.hasInsertedMetadataCollEntry,
+      defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
     };
   }
 
@@ -74,6 +95,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.uuid = serialized._id;
     srv.port = serialized.port;
+    srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
     srv.closing = !!(await srv._populateBuildInfo('restore-check'));
     if (!srv.closing) {
       srv.pid = serialized.pid;
@@ -143,7 +165,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     ...options
   }: MongoServerOptions): Promise<MongoServer> {
     const srv = new MongoServer();
-
+    srv.defaultConnectionOptions = { ...options.internalClientOptions };
     if (!options.docker) {
       const dbPath = path.join(options.tmpDir, `db-${srv.uuid}`);
       await fs.mkdir(dbPath, { recursive: true });
@@ -231,12 +253,12 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       });
       filterLogStreamForBuildInfo(logEntryStream).then(
         (buildInfo) => {
-          ((srv.buildInfo = buildInfo),
+          (srv.buildInfo = buildInfo),
             debug(
               'got server build info from log',
               srv.serverVersion,
               srv.serverVariant,
-            ));
+            );
         },
         () => {
           /* ignore error */
@@ -276,8 +298,32 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     return srv;
   }
 
+  async updateDefaultConnectionOptions(
+    options: Partial<MongoClientOptions>,
+  ): Promise<void> {
+    let buildInfoError: Error | null = null;
+    for (let attempts = 0; attempts < 10; attempts++) {
+      buildInfoError = await this._populateBuildInfo('restore-check', {
+        ...options,
+      });
+      if (!buildInfoError) break;
+      debug(
+        'failed to get buildInfo when setting new options',
+        buildInfoError,
+        options,
+        this.connectionString,
+      );
+    }
+    if (buildInfoError) throw buildInfoError;
+    this.defaultConnectionOptions = {
+      ...this.defaultConnectionOptions,
+      ...options,
+    };
+  }
+
   async close(): Promise<void> {
     this.closing = true;
+    debug('in close', 'pid', this.pid);
     if (this.childProcess) {
       debug('closing running process', this.childProcess.pid);
       if (
@@ -321,8 +367,17 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       .collection<
         Omit<SerializedServerProperties, 'hasInsertedMetadataCollEntry'>
       >('mongodbrunner');
+    // mongos hosts require a bit of special treatment because they do not have
+    // local storage of their own, so we store the metadata in the config database,
+    // which may be accessed by multiple mongos instances.
     debug('ensuring metadata collection entry', insertedInfo, { isMongoS });
     if (mode === 'insert-new') {
+      const existingEntry = await runnerColl.findOne();
+      if (!isMongoS && existingEntry) {
+        throw new Error(
+          `Unexpected mongodbrunner entry when creating new server: ${JSON.stringify(existingEntry)}`,
+        );
+      }
       await runnerColl.insertOne(insertedInfo);
       debug('inserted metadata collection entry', insertedInfo);
       this.hasInsertedMetadataCollEntry = true;
@@ -333,7 +388,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
         );
         return;
       }
-      const match = await runnerColl.findOne();
+      const match = await runnerColl.findOne(
+        isMongoS ? { _id: this.uuid } : {},
+      );
       debug('read metadata collection entry', insertedInfo, match);
       if (!match) {
         throw new Error(
@@ -350,10 +407,11 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
 
   private async _populateBuildInfo(
     mode: 'insert-new' | 'restore-check',
+    clientOpts?: Partial<MongoClientOptions>,
   ): Promise<Error | null> {
     try {
       // directConnection + retryWrites let us write to `local` db on secondaries
-      const clientOpts = { retryWrites: false };
+      clientOpts = { retryWrites: false, ...clientOpts };
       this.buildInfo = await this.withClient(async (client) => {
         // Insert the metadata entry, except if we're a freshly started mongos
         // (which does not have its own storage to persist)
@@ -372,12 +430,21 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     return null;
   }
 
+  get connectionString(): string {
+    return makeConnectionString(
+      this.hostport,
+      undefined,
+      this.defaultConnectionOptions,
+    );
+  }
+
   async withClient<Fn extends (client: MongoClient) => any>(
     fn: Fn,
     clientOptions: MongoClientOptions = {},
   ): Promise<ReturnType<Fn>> {
-    const client = await MongoClient.connect(`mongodb://${this.hostport}/`, {
+    const client = await MongoClient.connect(this.connectionString, {
       directConnection: true,
+      ...this.defaultConnectionOptions,
       ...clientOptions,
     });
     try {
