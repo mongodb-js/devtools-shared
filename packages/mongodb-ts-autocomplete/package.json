@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.4.10",
+  "version": "0.5.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -53,7 +53,7 @@
     "extract-types": "ts-node scripts/extract-types.ts"
   },
   "dependencies": {
-    "@mongodb-js/ts-autocomplete": "^0.4.8",
+    "@mongodb-js/ts-autocomplete": "^0.5.0",
     "@mongosh/shell-api": "^3.16.2",
     "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
@@ -63,10 +63,10 @@
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "0.9.12",
-    "@mongodb-js/mocha-config-devtools": "^1.0.5",
+    "@mongodb-js/mocha-config-devtools": "^1.1.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.0.4",
-    "@mongodb-js/mql-typescript": "^0.2.6",
+    "@mongodb-js/tsconfig-devtools": "^1.1.0",
+    "@mongodb-js/mql-typescript": "^0.3.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
