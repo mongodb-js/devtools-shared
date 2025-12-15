@@ -28,8 +28,9 @@
   "devDependencies": {
     "@mongodb-js/mocha-config-devtools": "^1.0.5",
     "@mongodb-js/prettier-config-devtools": "^1.0.1",
+    "@typescript-eslint/rule-tester": "^8.49.0",
     "depcheck": "^1.4.7",
-    "eslint": "^7.25.0",
+    "eslint": "^8.0.0",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0"
   }
