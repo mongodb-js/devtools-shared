@@ -27,7 +27,7 @@ const licenseRegexp = /^(license|copyright|copying)/i;
 
 // Is quite likely to encounter the same file multiple times, so we cache a promise
 // for file reads (the module files are processed in parallel).
-const fileCache: Record<string, Promise<string>> = {};
+const fileCache: Record<string, Promise<string>> = Object.create(null);
 function readFileWithCache(filePath: string): Promise<string> {
   fileCache[filePath] ??= fs.readFile(filePath, 'utf-8');
   return fileCache[filePath];
