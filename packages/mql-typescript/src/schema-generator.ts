@@ -378,7 +378,7 @@ export class SchemaGenerator extends GeneratorBase {
       // which should produce the following, when merged with the required arguments:
       // [b] | [a, b] | [b, c] | [a, b, c]
       for (let i = 0; i < totalCombinations; i++) {
-        const combination: Record<string, boolean> = {};
+        const combination: Record<string, boolean> = Object.create(null);
 
         // For each optional parameter, check if it's included in this combination
         for (let j = 0; j < optionalArgs.length; j++) {
