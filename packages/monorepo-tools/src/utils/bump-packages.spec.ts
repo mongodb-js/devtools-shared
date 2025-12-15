@@ -88,6 +88,9 @@ describe('bump-packages', function () {
   };
 
   const readAllManifests = () => {
+    // This could be Object.create(null), but assert.deepStrictEqual
+    // checks prototypes as well.
+    // eslint-disable-next-line @mongodb-js/devtools/no-plain-object-records
     const manifests: Record<string, any> = {};
     for (let i = 1; i <= 6; i++) {
       const packageJsonPath = path.join(
