@@ -11,7 +11,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -27,9 +27,9 @@
     "reformat": "npm run prettier -- --write ."
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.0",
+    "@mongodb-js/eslint-config-devtools": "^0.11.1",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/monorepo-tools": "^1.4.0",
+    "@mongodb-js/monorepo-tools": "^1.4.1",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "prettier": "^3.5.3"
