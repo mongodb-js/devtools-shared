@@ -121,7 +121,7 @@ export function validateConfigSchema(config: DownloadCenterConfig): void {
 export async function validateDownloadLinks(
   config: DownloadCenterConfig,
 ): Promise<void> {
-  const errors: Record<string, number> = {};
+  const errors: Record<string, number> = Object.create(null);
   const links: Link[] = [];
 
   for (const version of config.versions) {

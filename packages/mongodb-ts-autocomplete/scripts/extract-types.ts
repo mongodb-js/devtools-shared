@@ -5,7 +5,7 @@ import path from 'path';
 import { replaceImports } from '../src/utils';
 
 async function loadSources(sources: Record<string, string>) {
-  const result: Record<string, string | boolean> = {};
+  const result: Record<string, string | boolean> = Object.create(null);
 
   for (const [key, filePath] of Object.entries(sources)) {
     // for .js filepaths we're never going to read them, so just make the
@@ -66,7 +66,7 @@ function resolveModulePath(moduleName: string): string {
   return resolvedModule.resolvedFileName;
 }
 
-const deps: Record<string, string[]> = {
+const deps: Readonly<Record<string, string[]>> = {
   '@mongodb-js/mongodb-ts-autocomplete': [
     // the module resolution won't be addressing this module by name, but we'll
     // feed it this package.json as a fallback when it tries to find itself
@@ -225,7 +225,8 @@ async function run() {
     'schema.d.ts',
   );
 
-  const input: Record<string, string> = {
+  const input: Record<string, string> = Object.create(null);
+  Object.assign(input, {
     // mql imports bson but right now so does shell-api. We could bake the types
     // those use into the files we generate using api-extractor, but maybe
     // including it just once is not so bad.
@@ -237,7 +238,7 @@ async function run() {
     // but since we're using it straight here for now to bypass the complicated
     // generics on the shell-api side it is included here for now.
     '/mql.ts': mqlPath,
-  };
+  });
   for (const [moduleName, filePaths] of Object.entries(deps)) {
     const { resolvedModule } = resolve(moduleName);
     if (!resolvedModule || !resolvedModule.packageId) {

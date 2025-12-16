@@ -21,6 +21,7 @@ const tsRules = {
     'error',
     { prefer: 'type-imports' },
   ],
+  '@mongodb-js/devtools/no-plain-object-records': 'error',
 };
 
 const tsxRules = {
