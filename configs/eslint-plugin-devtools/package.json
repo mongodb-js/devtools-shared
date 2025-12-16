@@ -11,6 +11,9 @@
     "dist"
   ],
   "license": "SSPL",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "index.js",
   "scripts": {
     "eslint": "eslint",
