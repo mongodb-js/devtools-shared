@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -70,9 +70,9 @@
     "format-generated-files": "npm run postgenerate-schema && npm run postgenerate-tests && npm run postgenerate-driver-schema"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "0.10.0",
+    "@mongodb-js/eslint-config-devtools": "^0.11.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/shell-bson-parser": "^1.5.1",
+    "@mongodb-js/shell-bson-parser": "^1.5.2",
     "@mongodb-js/tsconfig-devtools": "^1.1.0",
     "@types/js-yaml": "^4.0.9",
     "@types/jsdom": "^21.1.7",
