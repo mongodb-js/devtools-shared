@@ -340,6 +340,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
             .db('admin')
             .command({ connectionStatus: 1 });
           if (status.authInfo.authenticatedUsers.length > 0) {
+            debug('Server supports authorization', this.port);
             return true;
           }
           // The server is most likely an arbiter, which does not support

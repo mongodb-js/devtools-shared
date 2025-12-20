@@ -630,4 +630,51 @@ describe('MongoCluster', function () {
       { user: 'testuser', db: 'admin' },
     ]);
   });
+  it.only('can use a keyFile', async function () {
+    const keyFile = path.join(tmpDir, 'keyFile');
+    await fs.writeFile(keyFile, 'secret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'replset',
+      tmpDir,
+      secondaries: 1,
+      arbiters: 1,
+      args: ['--keyFile', keyFile],
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: [
+            { role: 'userAdminAnyDatabase', db: 'admin' },
+            { role: 'clusterAdmin', db: 'admin' },
+          ],
+        },
+      ],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+  });
+  it('can support requireApiVersion', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 1,
+      shards: 1,
+      requireApiVersion: 1,
+      args: ['--setParameter', 'enableTestCommands=1'],
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.serverVersion).to.match(/^8\./);
+    await cluster.withClient((client) => {
+      expect(client.serverApi?.version).to.eq('1');
+    });
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    await cluster.withClient((client) => {
+      expect(client.serverApi?.version).to.eq('1');
+    });
+  });
 });
