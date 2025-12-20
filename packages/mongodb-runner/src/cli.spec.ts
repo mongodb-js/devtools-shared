@@ -6,9 +6,7 @@ import { promisify } from 'util';
 import { execFile } from 'child_process';
 import createDebug from 'debug';
 import sinon from 'sinon';
-import type { LogEntry } from './mongologreader';
 import { MongoClient } from 'mongodb';
-import { eventually } from './util';
 
 if (process.env.CI) {
   createDebug.enable('mongodb-runner,mongodb-downloader');
@@ -105,7 +103,7 @@ describe('cli', function () {
     // Call `stop` on the CLI
     await runCli(['stop', '--all']);
   });
-  it.only('can manage a cluster with a config file', async function () {
+  it('can manage a cluster with a config file', async function () {
     const configFile = path.resolve(
       __dirname,
       '..',

@@ -630,7 +630,7 @@ describe('MongoCluster', function () {
       { user: 'testuser', db: 'admin' },
     ]);
   });
-  it.only('can use a keyFile', async function () {
+  it('can use a keyFile', async function () {
     const keyFile = path.join(tmpDir, 'keyFile');
     await fs.writeFile(keyFile, 'secret', { mode: 0o400 });
     cluster = await MongoCluster.start({
