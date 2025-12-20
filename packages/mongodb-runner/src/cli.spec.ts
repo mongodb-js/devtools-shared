@@ -16,7 +16,9 @@ const execFileAsync = promisify(execFile);
 const tmpDir = path.join(os.tmpdir(), `runner-cli-tests-${Date.now()}`);
 
 async function runCli(args: string[]): Promise<string> {
-  const { stdout } = await execFileAsync('mongodb-runner', args);
+  const isWin = process.platform === 'win32';
+  const runner = isWin ? 'mongodb-runner.cmd' : 'mongodb-runner';
+  const { stdout } = await execFileAsync(runner, args);
   return stdout;
 }
 
