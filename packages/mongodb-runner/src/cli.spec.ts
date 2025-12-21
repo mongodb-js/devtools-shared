@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
+import type { ExecOptions } from 'child_process';
 import createDebug from 'debug';
 import sinon from 'sinon';
 import { MongoClient } from 'mongodb';
@@ -15,10 +16,12 @@ if (process.env.CI) {
 const execFileAsync = promisify(execFile);
 const tmpDir = path.join(os.tmpdir(), `runner-cli-tests-${Date.now()}`);
 
-async function runCli(args: string[]): Promise<string> {
-  const isWin = process.platform === 'win32';
-  const runner = isWin ? 'mongodb-runner.cmd' : 'mongodb-runner';
-  const { stdout } = await execFileAsync(runner, args);
+async function runCli(
+  args: string[],
+  options: ExecOptions = {},
+): Promise<string> {
+  const fullArgs = ['mongodb-runner', ...args];
+  const { stdout } = await execFileAsync('npx', fullArgs, options);
   return stdout;
 }
 
@@ -53,6 +56,9 @@ describe('cli', function () {
     const result = await client.db('admin').command({ ping: 1 });
     await client.close();
     expect(result.ok).to.eq(1);
+
+    const lsStdout = await runCli(['ls']);
+    expect(lsStdout.includes(connectionString)).to.be.true;
 
     // Call `stop` on the CLI
     await runCli(['stop', '--all']);
@@ -122,6 +128,44 @@ describe('cli', function () {
     const result = await client.db('admin').command({ ping: 1 });
     await client.close();
     expect(result.ok).to.eq(1);
+
+    // Call `stop` on the CLI
+    await runCli(['stop', '--all']);
+  });
+  it('can use mock oidc provider on linux', async function () {
+    if (process.platform !== 'linux') return this.skip();
+
+    // Start the CLI with arguments and capture stdout.
+    const stdout = await runCli(
+      [
+        'start',
+        '--topology',
+        'standalone',
+        '--version',
+        '8.0.x-enterprise',
+        '--oidc',
+        '--port=0',
+      ],
+      {
+        env: {
+          ...process.env,
+          RUN_OIDC_MOCK_PROVIDER: '1',
+        },
+      },
+    );
+
+    // stdout is JUST the connection string.
+    const connectionString = stdout.trim();
+    expect(connectionString).to.match(/^mongodb(\+srv)?:\/\//);
+
+    // Connect to the cluster.
+    const client = new MongoClient(connectionString);
+    const result = await client.db('admin').command({ ping: 1 });
+    await client.close();
+    expect(result.ok).to.eq(1);
+
+    const lsStdout = await runCli(['ls']);
+    expect(lsStdout.includes(connectionString)).to.be.true;
 
     // Call `stop` on the CLI
     await runCli(['stop', '--all']);
