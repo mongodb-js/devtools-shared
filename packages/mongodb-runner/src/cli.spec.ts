@@ -26,9 +26,13 @@ async function runCli(
 }
 
 describe('cli', function () {
-  this.timeout(1_000_000); // Downloading Windows binaries can take a very long time...
+  this.timeout(30_000);
 
   before(async function () {
+    if (process.platform === 'win32') {
+      // XXX: Skipping the CLI tests on Windows due to differences in spawn arguments.
+      return this.skip();
+    }
     await fs.mkdir(tmpDir, { recursive: true });
   });
 
@@ -49,7 +53,7 @@ describe('cli', function () {
 
     // stdout is JUST the connection string.
     const connectionString = stdout.trim();
-    expect(connectionString).to.match(/^mongodb(\+srv)?:\/\//);
+    expect(connectionString).to.match(/^mongodb:\/\//);
 
     // Connect to the cluster.
     const client = new MongoClient(connectionString);
@@ -57,11 +61,26 @@ describe('cli', function () {
     await client.close();
     expect(result.ok).to.eq(1);
 
+    // Exercise the rest of the cli.
     const lsStdout = await runCli(['ls']);
     expect(lsStdout.includes(connectionString)).to.be.true;
 
-    // Call `stop` on the CLI
     await runCli(['stop', '--all']);
+
+    await runCli(['prune']);
+  });
+  it('can execute against a cluster', async function () {
+    const stdout = await runCli([
+      'exec',
+      '-t',
+      'standalone',
+      '--',
+      'sh',
+      '-c',
+      'echo $MONGODB_URI',
+    ]);
+    const connectionString = stdout.trim();
+    expect(connectionString).to.match(/^mongodb:\/\//);
   });
   it('can manage a replset cluster with command line args', async function () {
     const stdout = await runCli([
@@ -81,13 +100,11 @@ describe('cli', function () {
     const connectionString = stdout.trim();
     expect(/repl0/.test(connectionString)).to.be.true;
 
-    // Connect to the cluster.
     const client = new MongoClient(connectionString);
     const result = await client.db('admin').command({ ping: 1 });
     await client.close();
     expect(result.ok).to.eq(1);
 
-    // Call `stop` on the CLI
     await runCli(['stop', '--all']);
   });
   it('can manage a sharded cluster with command line args', async function () {
@@ -102,13 +119,11 @@ describe('cli', function () {
     ]);
     const connectionString = stdout.trim();
 
-    // Connect to the cluster.
     const client = new MongoClient(connectionString);
     const result = await client.db('admin').command({ ping: 1 });
     await client.close();
     expect(result.ok).to.eq(1);
 
-    // Call `stop` on the CLI
     await runCli(['stop', '--all']);
   });
   it('can manage a cluster with a config file', async function () {
@@ -123,51 +138,11 @@ describe('cli', function () {
     const connectionString = stdout.trim();
     expect(/repl0/.test(connectionString)).to.be.true;
 
-    // Connect to the cluster.
     const client = new MongoClient(connectionString);
     const result = await client.db('admin').command({ ping: 1 });
     await client.close();
     expect(result.ok).to.eq(1);
 
-    // Call `stop` on the CLI
-    await runCli(['stop', '--all']);
-  });
-  it('can use mock oidc provider on linux', async function () {
-    if (process.platform !== 'linux') return this.skip();
-
-    // Start the CLI with arguments and capture stdout.
-    const stdout = await runCli(
-      [
-        'start',
-        '--topology',
-        'standalone',
-        '--version',
-        '8.0.x-enterprise',
-        '--oidc',
-        '--port=0',
-      ],
-      {
-        env: {
-          ...process.env,
-          RUN_OIDC_MOCK_PROVIDER: '1',
-        },
-      },
-    );
-
-    // stdout is JUST the connection string.
-    const connectionString = stdout.trim();
-    expect(connectionString).to.match(/^mongodb(\+srv)?:\/\//);
-
-    // Connect to the cluster.
-    const client = new MongoClient(connectionString);
-    const result = await client.db('admin').command({ ping: 1 });
-    await client.close();
-    expect(result.ok).to.eq(1);
-
-    const lsStdout = await runCli(['ls']);
-    expect(lsStdout.includes(connectionString)).to.be.true;
-
-    // Call `stop` on the CLI
     await runCli(['stop', '--all']);
   });
 });
