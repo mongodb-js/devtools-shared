@@ -14,7 +14,6 @@ if (process.env.CI) {
 }
 
 const execFileAsync = promisify(execFile);
-const tmpDir = path.join(os.tmpdir(), `runner-cli-tests-${Date.now()}`);
 
 async function runCli(
   args: string[],
@@ -27,12 +26,14 @@ async function runCli(
 
 describe('cli', function () {
   this.timeout(30_000);
+  let tmpDir = '';
 
   before(async function () {
     if (process.platform === 'win32') {
       // XXX: Skipping the CLI tests on Windows due to differences in spawn arguments.
       return this.skip();
     }
+    tmpDir = path.join(os.tmpdir(), `runner-cli-tests-${Date.now()}`);
     await fs.mkdir(tmpDir, { recursive: true });
   });
 
