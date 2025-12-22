@@ -40,7 +40,7 @@ describe('cli', function () {
   after(async function () {
     if (process.platform === 'win32') {
       // XXX: Skipping the CLI tests on Windows due to differences in spawn arguments.
-      return this.skip();
+      return;
     }
     await fs.rm(tmpDir, {
       recursive: true,
