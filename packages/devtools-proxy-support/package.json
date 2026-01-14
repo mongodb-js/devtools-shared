@@ -74,7 +74,7 @@
     "https-proxy-agent": "^7.0.5",
     "socks-proxy-agent": "^8.0.4",
     "ssh2": "^1.17.0",
-    "system-ca": "^2.0.1"
+    "system-ca": "^3.0.0"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.2",
