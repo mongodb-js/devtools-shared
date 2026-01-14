@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "3.14.2",
+  "version": "3.14.3",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
@@ -89,7 +89,7 @@
   "optionalDependencies": {
     "kerberos": "^2.1.0 || ^7.0.0",
     "mongodb-client-encryption": "^6.5.0 || ^7.0.0",
-    "os-dns-native": "^1.2.0",
+    "os-dns-native": "^2.0.1",
     "resolve-mongodb-srv": "^1.1.1"
   }
 }
