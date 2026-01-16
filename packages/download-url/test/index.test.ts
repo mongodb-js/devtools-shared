@@ -497,6 +497,39 @@ describe('mongodb-download-url', function () {
       });
     });
 
+    describe('RHEL 10', function () {
+      withFakeDistro('rhel10.0');
+
+      it('should resolve arm64 with RHEL9.3-specific url', async function () {
+        const query = {
+          platform: 'linux',
+          arch: 'arm64',
+          enterprise: true,
+          version: '8.2.3',
+        } as const;
+
+        // We don't have zseries release tagged as rhel8, so this should fallback to rhel83 as the latest one
+        await verify(
+          query,
+          'https://downloads.mongodb.com/linux/mongodb-linux-aarch64-enterprise-rhel93-8.2.3.tgz',
+        );
+      });
+
+      it('should resolve x64 with RHEL9.3-specific url', async function () {
+        const query = {
+          platform: 'linux',
+          enterprise: true,
+          version: '8.2.3',
+          bits: 64,
+        } as const;
+
+        await verify(
+          query,
+          'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-rhel93-8.2.3.tgz',
+        );
+      });
+    });
+
     describe('debian 9.2', function () {
       withFakeDistro('debian92');
 
