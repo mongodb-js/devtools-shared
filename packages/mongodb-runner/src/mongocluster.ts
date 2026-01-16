@@ -111,6 +111,11 @@ export interface CommonOptions {
   tlsAddClientKey?: boolean;
 
   /**
+   * Whether to require an API version for commands.
+   */
+  requireApiVersion?: number;
+
+  /**
    * Topology of the cluster.
    */
   topology: 'standalone' | 'replset' | 'sharded';
@@ -488,6 +493,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             ...options,
             ...s,
             topology: 'replset',
+            requireApiVersion: undefined,
             users: isConfig ? undefined : options.users, // users go on the mongos/config server only for the config set
           });
           return [cluster, isConfig] as const;
@@ -528,12 +534,39 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     }
 
     await cluster.addAuthIfNeeded();
+    await cluster.addRequireApiVersionIfNeeded(options);
     return cluster;
   }
 
   private *children(): Iterable<MongoServer | MongoCluster> {
     yield* this.servers;
     yield* this.shards;
+  }
+
+  async addRequireApiVersionIfNeeded({
+    ...options
+  }: MongoClusterOptions): Promise<void> {
+    // Set up requireApiVersion if requested.
+    if (options.requireApiVersion === undefined) {
+      return;
+    }
+    if (options.topology === 'replset') {
+      throw new Error(
+        'requireApiVersion is not supported for replica sets, see SERVER-97010',
+      );
+    }
+    await Promise.all(
+      [...this.servers].map(
+        async (child) =>
+          await child.withClient(async (client) => {
+            const admin = client.db('admin');
+            await admin.command({ setParameter: 1, requireApiVersion: true });
+          }),
+      ),
+    );
+    await this.updateDefaultConnectionOptions({
+      serverApi: String(options.requireApiVersion) as '1',
+    });
   }
 
   async addAuthIfNeeded(): Promise<void> {
