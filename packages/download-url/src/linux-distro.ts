@@ -23,7 +23,7 @@ export async function getCurrentLinuxDistro(): Promise<
       return listDistroIds({ id: 'debian', version: match[1] });
     } else if ((match = distroId.match(/^suse(\d+)-?(sp\d+)?$/))) {
       return listDistroIds({ id: 'suse', version: match[1] });
-    } else if ((match = distroId.match(/^rhel(\d+)$/))) {
+    } else if ((match = distroId.match(/^rhel(\d+)(\.\d+)?$/))) {
       return listDistroIds({ id: 'redhatenterprise', version: match[1] });
     } else if (['amazon', 'amzn64', 'amazon1'].includes(distroId)) {
       return listDistroIds({ id: 'amazon', version: '2018.03' });
@@ -143,6 +143,8 @@ function listDistroIds({
       // the latest release in that series - e.g. rhel7 should return rhel72
       if (want < 10) {
         want = want * 10 + 9;
+      } else if (want === 10) {
+        want = 93; // RHEL 9.3 binaries work on RHEL 10
       }
       const known = [55, 57, 62, 67, 70, 71, 72, 80, 81, 82, 83, 8, 90, 93, 9];
       const allowedVersions = known.filter((v) =>
