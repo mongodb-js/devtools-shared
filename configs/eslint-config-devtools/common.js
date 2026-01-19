@@ -11,7 +11,13 @@ const jsxRules = {
 
 const tsRules = {
   ...jsRules,
-  '@typescript-eslint/no-unused-vars': 'error',
+  '@typescript-eslint/no-unused-vars': [
+    'error', {
+      destructuredArrayIgnorePattern: '^_',
+      argsIgnorePattern: '^_',
+      ignoreRestSiblings: true
+    }
+  ],
   '@typescript-eslint/no-unsafe-assignment': 'off',
   '@typescript-eslint/no-unsafe-call': 'off',
   '@typescript-eslint/no-unsafe-member-access': 'off',
