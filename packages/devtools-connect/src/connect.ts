@@ -34,6 +34,7 @@ import {
   createFetch,
   isExistingAgentInstance,
 } from '@mongodb-js/devtools-proxy-support';
+import { transformAWSAuthMechanismOptions } from './aws-auth-compat';
 export type { DevtoolsProxyOptions, AgentWithInitialize };
 
 function isAtlas(str: string): boolean {
@@ -479,6 +480,11 @@ async function connectMongoClientImpl({
   MongoClientClass: typeof MongoClient;
   useSystemCA: boolean;
 }): Promise<ConnectMongoClientResult> {
+  ({ uri, clientOptions } = transformAWSAuthMechanismOptions({
+    uri,
+    clientOptions,
+  }));
+
   const cleanupOnClientClose: (() => void | Promise<void>)[] = [];
   const runClose = async () => {
     let item: (() => void | Promise<void>) | undefined;
