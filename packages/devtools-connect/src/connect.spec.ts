@@ -1,12 +1,15 @@
 import { connectMongoClient } from './';
 import type { DevtoolsConnectOptions } from './';
 import { isHumanOidcFlow } from './connect';
-import { EventEmitter } from 'events';
+import { EventEmitter, once } from 'events';
 import { MongoClient } from 'mongodb';
+import { MongoClient as MongoClient6 } from 'mongodb6';
 import sinon, { stubConstructor } from 'ts-sinon';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
 import { Agent as HTTPSAgent } from 'https';
+import { MongoCluster } from 'mongodb-runner';
+import { tmpdir } from 'os';
 
 chai.use(sinonChai);
 
@@ -556,27 +559,46 @@ describe('devtools connect', function () {
   });
 
   describe('integration', function () {
-    before(function () {
-      if (!process.env.MONGODB_URI) {
-        this.skip();
-      }
+    let cluster: MongoCluster;
+
+    before(async function () {
+      cluster = await MongoCluster.start({
+        tmpDir: tmpdir(),
+        topology: 'standalone',
+      });
     });
 
-    it('successfully connects to mongod service', async function () {
-      const bus = new EventEmitter();
-      const { client } = await connectMongoClient(
-        process.env.MONGODB_URI ?? '',
-        defaultOpts,
-        bus,
-        MongoClient,
-      );
-      expect((await client.db('admin').command({ ping: 1 })).ok).to.equal(1);
-
-      const onCloseStub = sinon.stub();
-      client.on('close', onCloseStub);
-      await client.close();
-      expect(onCloseStub.getCalls()).to.have.lengthOf(1);
+    after(async function () {
+      await cluster?.close();
     });
+
+    for (const [name, versionRe, Client] of [
+      ['6.x driver', /^6\.\d+\.\d+$/, MongoClient6],
+      ['7.x driver', /^7\.\d+\.\d+$/, MongoClient],
+    ] as const) {
+      it(`successfully connects to mongod service (${name})`, async function () {
+        const bus = new EventEmitter();
+        const initEvent = once(
+          bus,
+          'devtools-connect:connect-attempt-initialized',
+        );
+        const { client } = await connectMongoClient(
+          cluster.connectionString,
+          defaultOpts,
+          bus,
+          Client as typeof MongoClient,
+        );
+        expect((await client.db('admin').command({ ping: 1 })).ok).to.equal(1);
+        const [connectionAttemptMetadata] = await initEvent;
+        expect(connectionAttemptMetadata.driver.name).to.equal('nodejs');
+        expect(connectionAttemptMetadata.driver.version).to.match(versionRe);
+
+        const onCloseStub = sinon.stub();
+        client.on('close', onCloseStub);
+        await client.close();
+        expect(onCloseStub.getCalls()).to.have.lengthOf(1);
+      });
+    }
   });
 
   describe('atlas', function () {
