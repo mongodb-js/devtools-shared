@@ -562,6 +562,8 @@ describe('devtools connect', function () {
     let cluster: MongoCluster;
 
     before(async function () {
+      this.timeout(90_000);
+
       cluster = await MongoCluster.start({
         tmpDir: tmpdir(),
         topology: 'standalone',
