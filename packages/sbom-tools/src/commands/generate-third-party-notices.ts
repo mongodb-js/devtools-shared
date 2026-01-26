@@ -28,6 +28,7 @@ const ALLOWED_LICENSES = [
   'WTFPL',
   'OFL-1.1',
   'Unlicense',
+  'BlueOak-1.0.0',
 ];
 
 function checkOverrides(packagesToCheck: string[], dependencies: Package[]) {
