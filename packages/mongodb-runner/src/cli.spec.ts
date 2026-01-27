@@ -22,7 +22,7 @@ async function runCli(
 }
 
 describe('cli', function () {
-  this.timeout(100_000);
+  this.timeout(process.platform === 'win32' ? 400_000 : 100_000);
   let tmpDir = '';
 
   before(async function () {
