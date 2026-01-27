@@ -941,7 +941,7 @@ const STAGE_OPERATORS = [
     fullScan: false,
     firstStage: false,
     score: 1,
-    env: [ATLAS],
+    env: [ATLAS, ON_PREM],
     meta: 'stage',
     version: '4.1.11',
     apiVersions: [],
@@ -974,7 +974,7 @@ const STAGE_OPERATORS = [
     fullScan: false,
     firstStage: false,
     score: 1,
-    env: [ATLAS],
+    env: [ATLAS, ON_PREM],
     meta: 'stage',
     version: '4.4.9',
     apiVersions: [],
@@ -1238,7 +1238,7 @@ const STAGE_OPERATORS = [
     fullScan: false,
     firstStage: true,
     score: 1,
-    env: [ATLAS],
+    env: [ATLAS, ON_PREM],
     meta: 'stage',
     version: '>=6.0.10 <7.0.0 || >=7.0.2',
     apiVersions: [],
@@ -1279,17 +1279,13 @@ const STAGE_OPERATORS = [
  */
 const STAGE_OPERATOR_NAMES = STAGE_OPERATORS.map((op) => op.name);
 
-const OUT_STAGES = STAGE_OPERATORS.filter(
-  (stage) => stage.outputStage,
-) as Extract<(typeof STAGE_OPERATORS)[number], { outputStage: true }>[];
+const OUT_STAGES = STAGE_OPERATORS.filter((stage) => stage.outputStage);
 
-const FULL_SCAN_STAGES = STAGE_OPERATORS.filter(
-  (stage) => stage.fullScan,
-) as Extract<(typeof STAGE_OPERATORS)[number], { fullScan: true }>[];
+const FULL_SCAN_STAGES = STAGE_OPERATORS.filter((stage) => stage.fullScan);
 
 const REQUIRED_AS_FIRST_STAGE = STAGE_OPERATORS.filter(
   (stage) => stage.firstStage,
-) as Extract<(typeof STAGE_OPERATORS)[number], { firstStage: true }>[];
+);
 
 export {
   STAGE_OPERATORS,

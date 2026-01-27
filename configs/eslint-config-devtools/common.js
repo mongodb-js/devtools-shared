@@ -11,7 +11,14 @@ const jsxRules = {
 
 const tsRules = {
   ...jsRules,
-  '@typescript-eslint/no-unused-vars': 'error',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    {
+      destructuredArrayIgnorePattern: '^_',
+      argsIgnorePattern: '^_',
+      ignoreRestSiblings: true,
+    },
+  ],
   '@typescript-eslint/no-unsafe-assignment': 'off',
   '@typescript-eslint/no-unsafe-call': 'off',
   '@typescript-eslint/no-unsafe-member-access': 'off',
@@ -21,6 +28,7 @@ const tsRules = {
     'error',
     { prefer: 'type-imports' },
   ],
+  '@mongodb-js/devtools/no-plain-object-records': 'error',
 };
 
 const tsxRules = {
@@ -36,6 +44,7 @@ const testRules = {
   'mocha/no-setup-in-describe': 'off',
   '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-empty-function': 'off',
+  '@mongodb-js/devtools/no-expect-method-without-call': 'error',
 };
 
 const jsConfigurations = ['eslint:recommended'];
@@ -124,7 +133,9 @@ const testOverrides = {
   ],
   env: { mocha: true },
   extends: [...testConfigurations],
-  rules: { ...testRules },
+  rules: {
+    ...testRules,
+  },
 };
 
 module.exports = {

@@ -55,10 +55,9 @@ function createFakeHttpClientRequest(
   dstPort: number,
   overrideProtocol: string | undefined,
 ) {
-  const headers: Record<string, string> = {
-    host: `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`,
-    upgrade: 'websocket', // hack to make proxy-agent prefer CONNECT over HTTP proxying
-  };
+  const headers: Record<string, string> = Object.create(null);
+  headers.host = `${isIPv6(dstAddr) ? `[${dstAddr}]` : dstAddr}:${dstPort}`;
+  headers.upgrade = 'websocket'; // hack to make proxy-agent prefer CONNECT over HTTP proxying
   return Object.assign(
     new EventEmitter().setMaxListeners(Infinity) as ClientRequest,
     {

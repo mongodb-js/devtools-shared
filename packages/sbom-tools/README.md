@@ -129,6 +129,7 @@ The following licenses are allowed:
 - `WTFPL`
 - `OFL-1.1`
 - `Unlicense`
+- `BlueOak-1.0.0`
 
 The validation can be tweaked with a configuration file (by default `${cwd}/licenses.json`). The configuration allows ignoring certain orgs and packages, and overriding licenses for specific dependencies.
 

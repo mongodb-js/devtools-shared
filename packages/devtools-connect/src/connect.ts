@@ -34,6 +34,7 @@ import {
   createFetch,
   isExistingAgentInstance,
 } from '@mongodb-js/devtools-proxy-support';
+import { transformAWSAuthMechanismOptions } from './aws-auth-compat';
 export type { DevtoolsProxyOptions, AgentWithInitialize };
 
 function isAtlas(str: string): boolean {
@@ -66,7 +67,10 @@ async function connectWithFailFast(
   let failEarlyClosePromise: Promise<void> | null = null;
   logger.emit('devtools-connect:connect-attempt-initialized', {
     uri,
-    driver: client.options.metadata.driver,
+    // TODO: Use a public API once NODE-7406 is done.
+    // `metadata` became internal + async in v7.x, previously it
+    // was synchronously available.
+    driver: (await (client.options as any).metadata).driver,
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     devtoolsConnectVersion: require('../package.json').version,
     host: client.options.srvHost ?? client.options.hosts.join(','),
@@ -473,6 +477,11 @@ async function connectMongoClientImpl({
   MongoClientClass: typeof MongoClient;
   useSystemCA: boolean;
 }): Promise<ConnectMongoClientResult> {
+  ({ uri, clientOptions } = transformAWSAuthMechanismOptions({
+    uri,
+    clientOptions,
+  }));
+
   const cleanupOnClientClose: (() => void | Promise<void>)[] = [];
   const runClose = async () => {
     let item: (() => void | Promise<void>) | undefined;
