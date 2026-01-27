@@ -1,6 +1,6 @@
 import * as x509 from '@peculiar/x509';
 import { webcrypto } from 'crypto';
-import { uuid } from './util';
+import { safePromiseAll, uuid } from './util';
 import path from 'path';
 import { writeFile, readFile } from 'fs/promises';
 import type { MongoClientOptions } from 'mongodb';
@@ -62,7 +62,7 @@ export async function handleTLSClientKeyOptions({
   const clientPEM = path.join(tmpDir, `mongodb-runner-client-${id}.pem`);
   const caPEM = path.join(tmpDir, `mongodb-runner-ca-${id}.pem`);
 
-  await Promise.all([
+  await safePromiseAll([
     (async () => {
       await writeFile(
         clientPEM,

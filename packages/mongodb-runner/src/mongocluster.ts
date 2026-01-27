@@ -18,6 +18,7 @@ import {
   jsonClone,
   debugVerbose,
   makeConnectionString,
+  safePromiseAll,
 } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
@@ -327,10 +328,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster.replSetName = serialized.replSetName;
     cluster.defaultConnectionOptions = serialized.defaultConnectionOptions;
     cluster.users = serialized.users;
-    cluster.servers = await Promise.all(
+    cluster.servers = await safePromiseAll(
       serialized.servers.map((srv: any) => MongoServer.deserialize(srv)),
     );
-    cluster.shards = await Promise.all(
+    cluster.shards = await safePromiseAll(
       serialized.shards.map((shard: any) => MongoCluster.deserialize(shard)),
     );
     cluster.oidcMockProviderProcess = serialized.oidcMockProviderProcess
@@ -429,12 +430,13 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       );
       assert.notStrictEqual(primaryIndex, -1);
 
-      const nodes = await Promise.all(
+      const nodes = await safePromiseAll(
         rsMembers.map(async (member) => {
           return [
             await MongoServer.start({
               ...options,
               args: member.args,
+              isArbiter: member.arbiterOnly ?? false,
               binary: 'mongod',
             }),
             member,
@@ -486,7 +488,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     } else if (options.topology === 'sharded') {
       const { shards, mongosArgs } = processShardOptions(options);
       debug('starting config server and shard servers', shards);
-      const allShards = await Promise.all(
+      const allShards = await safePromiseAll(
         shards.map(async (s) => {
           const isConfig = s.args?.includes('--configsvr');
           const cluster = await MongoCluster.start({
@@ -505,7 +507,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         .map(([shard]) => shard);
       cluster.shards.push(configsvr, ...shardsvrs);
 
-      const mongosServers: MongoServer[] = await Promise.all(
+      const mongosServers: MongoServer[] = await safePromiseAll(
         mongosArgs.map(async (args) => {
           debug('starting mongos');
           return await MongoServer.start({
@@ -535,12 +537,33 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
     await cluster.addAuthIfNeeded();
     await cluster.addRequireApiVersionIfNeeded(options);
+    try {
+      await cluster.assertAllServersHaveInsertedLocalMetadata();
+    } catch (err) {
+      // Allow connection errors if automatic tls client key addition is disabled
+      // since that option implies to users that they are taking responsibility for
+      // ensuring that the correct runner instance is used for managing processes.
+      if (options.tlsAddClientKey !== false) throw err;
+    }
     return cluster;
   }
 
   private *children(): Iterable<MongoServer | MongoCluster> {
     yield* this.servers;
     yield* this.shards;
+  }
+
+  private *allServers(): Iterable<MongoServer> {
+    for (const child of this.servers) yield child;
+    for (const shard of this.shards) yield* shard.allServers();
+  }
+
+  async assertAllServersHaveInsertedLocalMetadata(): Promise<void> {
+    await safePromiseAll(
+      [...this.allServers()].map(
+        async (server) => await server.assertHasInsertedLocalMetadata(),
+      ),
+    );
   }
 
   async addRequireApiVersionIfNeeded({
@@ -555,7 +578,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         'requireApiVersion is not supported for replica sets, see SERVER-97010',
       );
     }
-    await Promise.all(
+    await safePromiseAll(
       [...this.servers].map(
         async (child) =>
           await child.withClient(async (client) => {
@@ -578,7 +601,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       for (const user of this.users) {
         const { username, password, ...rest } = user;
         debug('adding new user', { username, ...rest }, this.connectionString);
-        await admin.command({ createUser: username, pwd: password, ...rest });
+        await admin.command({
+          createUser: username,
+          pwd: password,
+          // User management commands can only use w:1 or w:majority
+          // https://github.com/mongodb/mongo/blob/4b65e1c663042d6c2e879ab20ba4b3c22439997a/src/mongo/db/global_catalog/sharding_catalog_client_impl.cpp#L1112-L1113
+          writeConcern: { w: 'majority', j: true, wtimeout: 0 },
+          ...rest,
+        });
       }
     });
     await this.updateDefaultConnectionOptions({
@@ -589,7 +619,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   async updateDefaultConnectionOptions(
     options: Partial<MongoClientOptions>,
   ): Promise<void> {
-    await Promise.all(
+    await safePromiseAll(
       [...this.children()].map(async (child) =>
         child.updateDefaultConnectionOptions(options),
       ),
@@ -601,7 +631,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   }
 
   async close(): Promise<void> {
-    await Promise.all(
+    await safePromiseAll(
       [...this.children(), this.oidcMockProviderProcess].map((closable) =>
         closable?.close(),
       ),
@@ -640,7 +670,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       case 'standalone':
         return {};
       case 'replset':
-        return { writeConcern: { w: this.servers.length, j: true } };
+        return {
+          writeConcern: {
+            w: this.servers.filter((s) => !s.isArbiter).length,
+            j: true,
+          },
+        };
       case 'sharded':
         return {
           writeConcern: {
