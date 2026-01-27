@@ -5,13 +5,7 @@ import os from 'os';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
 import type { ExecOptions } from 'child_process';
-import createDebug from 'debug';
-import sinon from 'sinon';
 import { MongoClient } from 'mongodb';
-
-if (process.env.CI) {
-  createDebug.enable('mongodb-runner,mongodb-downloader');
-}
 
 const execFileAsync = promisify(execFile);
 
@@ -19,8 +13,11 @@ async function runCli(
   args: string[],
   options: ExecOptions = {},
 ): Promise<string> {
-  const fullArgs = ['mongodb-runner', ...args];
-  const { stdout } = await execFileAsync('npx', fullArgs, options);
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [path.resolve(__dirname, '..', 'bin', 'runner.js'), ...args],
+    options,
+  );
   return stdout;
 }
 
@@ -29,27 +26,16 @@ describe('cli', function () {
   let tmpDir = '';
 
   before(async function () {
-    if (process.platform === 'win32') {
-      // XXX: Skipping the CLI tests on Windows due to differences in spawn arguments.
-      return this.skip();
-    }
     tmpDir = path.join(os.tmpdir(), `runner-cli-tests-${Date.now()}`);
     await fs.mkdir(tmpDir, { recursive: true });
   });
 
   after(async function () {
-    if (process.platform === 'win32') {
-      // XXX: Skipping the CLI tests on Windows due to differences in spawn arguments.
-      return;
-    }
     await fs.rm(tmpDir, {
+      force: true,
       recursive: true,
       maxRetries: 100,
     });
-  });
-
-  afterEach(function () {
-    sinon.restore();
   });
 
   it('can manage a standalone cluster with command line args', async function () {
@@ -74,6 +60,7 @@ describe('cli', function () {
 
     await runCli(['prune']);
   });
+
   it('can execute against a cluster', async function () {
     const stdout = await runCli([
       'exec',
@@ -87,6 +74,7 @@ describe('cli', function () {
     const connectionString = stdout.trim();
     expect(connectionString).to.match(/^mongodb:\/\//);
   });
+
   it('can manage a replset cluster with command line args', async function () {
     const stdout = await runCli([
       'start',
@@ -112,6 +100,7 @@ describe('cli', function () {
 
     await runCli(['stop', '--all']);
   });
+
   it('can manage a sharded cluster with command line args', async function () {
     const stdout = await runCli([
       'start',
@@ -131,6 +120,7 @@ describe('cli', function () {
 
     await runCli(['stop', '--all']);
   });
+
   it('can manage a cluster with a config file', async function () {
     const configFile = path.resolve(
       __dirname,

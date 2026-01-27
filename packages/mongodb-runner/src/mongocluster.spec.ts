@@ -630,6 +630,7 @@ describe('MongoCluster', function () {
       { user: 'testuser', db: 'admin' },
     ]);
   });
+
   it('can use a keyFile', async function () {
     const keyFile = path.join(tmpDir, 'keyFile');
     await fs.writeFile(keyFile, 'secret', { mode: 0o400 });
@@ -657,6 +658,7 @@ describe('MongoCluster', function () {
     cluster = await MongoCluster.deserialize(cluster.serialize());
     expect(cluster.connectionString).to.include('testuser:testpass@');
   });
+
   it('can support requireApiVersion', async function () {
     cluster = await MongoCluster.start({
       version: '8.x',
