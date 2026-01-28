@@ -1,0 +1,38 @@
+{
+  "topology": "replset",
+  "args": ["--replSet", "repl0"],
+  "rsMembers": [
+    {
+      "args": [
+        "--oplogSize",
+        "500",
+        "--setParameter",
+        "enableTestCommands=true"
+      ],
+      "tags": {
+        "ordinal": "one",
+        "dc": "ny"
+      },
+      "priority": 1
+    },
+    {
+      "args": [
+        "--oplogSize",
+        "500",
+        "--setParameter",
+        "enableTestCommands=true"
+      ],
+      "tags": {
+        "ordinal": "two",
+        "dc": "pa"
+      },
+      "priority": 1
+    },
+    {
+      "args": ["--setParameter", "enableTestCommands=true"],
+      "tags": {},
+      "priority": 0,
+      "arbiterOnly": true
+    }
+  ]
+}

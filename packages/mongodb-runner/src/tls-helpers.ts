@@ -1,6 +1,6 @@
 import * as x509 from '@peculiar/x509';
 import { webcrypto } from 'crypto';
-import { uuid } from './util';
+import { safePromiseAll, uuid } from './util';
 import path from 'path';
 import { writeFile, readFile } from 'fs/promises';
 import type { MongoClientOptions } from 'mongodb';
@@ -11,6 +11,7 @@ export interface TLSClientOptions {
   args?: string[];
   tmpDir: string;
   internalClientOptions?: Partial<MongoClientOptions>;
+  docker?: unknown;
 }
 
 export async function handleTLSClientKeyOptions({
@@ -18,12 +19,13 @@ export async function handleTLSClientKeyOptions({
   args: [...args] = [],
   tmpDir,
   internalClientOptions = {},
+  docker,
 }: TLSClientOptions): Promise<Partial<TLSClientOptions>> {
   const existingTLSCAOptionIndex = args.findIndex((arg) =>
-    arg.match(/^--tls(Cluster)?CAFile(=|$)/),
+    arg.match(/^--(tls|ssl)(Cluster)?CAFile(=|$)/),
   );
 
-  if (tlsAddClientKey === false) return {};
+  if (tlsAddClientKey === false || docker) return {};
   if (tlsAddClientKey !== true && existingTLSCAOptionIndex === -1) return {};
   if (tlsAddClientKey !== true && internalClientOptions.tlsCertificateKeyFile)
     return {};
@@ -62,7 +64,7 @@ export async function handleTLSClientKeyOptions({
   const clientPEM = path.join(tmpDir, `mongodb-runner-client-${id}.pem`);
   const caPEM = path.join(tmpDir, `mongodb-runner-ca-${id}.pem`);
 
-  await Promise.all([
+  await safePromiseAll([
     (async () => {
       await writeFile(
         clientPEM,
