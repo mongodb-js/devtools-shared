@@ -543,7 +543,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       // Allow connection errors if automatic tls client key addition is disabled
       // since that option implies to users that they are taking responsibility for
       // ensuring that the correct runner instance is used for managing processes.
-      if (options.tlsAddClientKey !== false) throw err;
+      // Similarly, adding TLS client keys automatically in Docker may not be
+      // reliably possible due to filesystem path differences.
+      if (options.tlsAddClientKey !== false && !options.docker) throw err;
     }
     return cluster;
   }
