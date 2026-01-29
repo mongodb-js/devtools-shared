@@ -11,7 +11,6 @@ export interface TLSClientOptions {
   args?: string[];
   tmpDir: string;
   internalClientOptions?: Partial<MongoClientOptions>;
-  docker?: unknown;
 }
 
 export async function handleTLSClientKeyOptions({
@@ -20,7 +19,9 @@ export async function handleTLSClientKeyOptions({
   tmpDir,
   internalClientOptions = {},
   docker,
-}: TLSClientOptions): Promise<Partial<TLSClientOptions>> {
+}: TLSClientOptions & { docker?: unknown }): Promise<
+  Partial<TLSClientOptions>
+> {
   const existingTLSCAOptionIndex = args.findIndex((arg) =>
     arg.match(/^--(tls|ssl)(Cluster)?CAFile(=|$)/),
   );

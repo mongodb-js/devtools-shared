@@ -409,6 +409,65 @@ describe('MongoCluster', function () {
     await cluster.close();
   });
 
+  it('can serialize and deserialize sharded cluster with keyfile and auth (no enableTestCommands)', async function () {
+    const keyFile = path.join(tmpDir, 'keyFile2');
+    await fs.writeFile(keyFile, 'secret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: [{ role: 'readWriteAnyDatabase', db: 'admin' }],
+        },
+      ],
+      args: ['--keyFile', keyFile],
+    });
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    await cluster.withClient(async (client) => {
+      expect(
+        (await client.db('admin').command({ connectionStatus: 1 })).authInfo
+          .authenticatedUsers,
+      ).to.deep.equal([{ user: 'testuser', db: 'admin' }]);
+    });
+    await cluster.close();
+  });
+
+  it('can serialize and deserialize sharded cluster with keyfile and auth (enableTestCommands=true)', async function () {
+    const keyFile = path.join(tmpDir, 'keyFile3');
+    await fs.writeFile(keyFile, 'secret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      secondaries: 0,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: [{ role: 'readWriteAnyDatabase', db: 'admin' }],
+        },
+      ],
+      args: ['--keyFile', keyFile, '--setParameter', 'enableTestCommands=true'],
+    });
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    const doc = await cluster.withClient(
+      async (client) => {
+        expect(
+          (await client.db('admin').command({ connectionStatus: 1 })).authInfo
+            .authenticatedUsers,
+        ).to.deep.equal([{ user: '__system', db: 'local' }]);
+        return await client.db('config').collection('mongodbrunner').findOne();
+      },
+      { auth: { username: '__system', password: 'secret' } },
+    );
+    expect(doc?._id).to.be.a('string');
+    await cluster.close();
+  });
+
   it('can let callers listen for server log events', async function () {
     cluster = await MongoCluster.start({
       version: '8.x',

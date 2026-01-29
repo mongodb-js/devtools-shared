@@ -43,6 +43,10 @@ export interface MongoServerOptions {
   internalClientOptions?: Partial<MongoClientOptions>;
   /** Internal option -- if this is an arbiter, it does not understand user auth */
   isArbiter?: boolean;
+  /** Internal option -- if this is a mongos instance */
+  isMongos?: boolean;
+  /** Internal option -- if this is a configsvr instance */
+  isConfigSvr?: boolean;
   /** Internal option -- if keyfile auth is used, this will be its contents */
   keyFileContents?: string;
 }
@@ -56,6 +60,8 @@ interface SerializedServerProperties {
   startTime: string;
   hasInsertedMetadataCollEntry: boolean;
   isArbiter?: boolean;
+  isMongos?: boolean;
+  isConfigSvr?: boolean;
   keyFileContents?: string;
 }
 
@@ -84,6 +90,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private startTime = new Date().toISOString();
   private hasInsertedMetadataCollEntry = false;
   public isArbiter = false;
+  public isMongos = false;
+  private isConfigSvr = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
 
@@ -106,6 +114,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       hasInsertedMetadataCollEntry: this.hasInsertedMetadataCollEntry,
       defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
       isArbiter: this.isArbiter,
+      isMongos: this.isMongos,
+      isConfigSvr: this.isConfigSvr,
       keyFileContents: this.keyFileContents,
     };
   }
@@ -119,6 +129,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
     srv.closing = !!(await srv._populateBuildInfo('restore-check'));
     srv.isArbiter = !!serialized.isArbiter;
+    srv.isMongos = !!serialized.isMongos;
+    srv.isConfigSvr = !!serialized.isConfigSvr;
     srv.keyFileContents = serialized.keyFileContents;
     if (!srv.closing) {
       srv.pid = serialized.pid;
@@ -190,6 +202,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.defaultConnectionOptions = { ...options.internalClientOptions };
     srv.isArbiter = !!options.isArbiter;
+    srv.isMongos = options.binary === 'mongos';
+    srv.isConfigSvr = !!options.args?.includes('--configsvr');
     const keyFilePath = getKeyFileOption(options.args);
     if (keyFilePath) {
       srv.keyFileContents = await fs.readFile(keyFilePath, 'utf8');
@@ -340,21 +354,25 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   async updateDefaultConnectionOptions(
     options: Partial<MongoClientOptions>,
   ): Promise<void> {
-    let buildInfoError: Error | null = null;
-    for (let attempts = 0; attempts < 10; attempts++) {
-      buildInfoError = await this._populateBuildInfo('restore-check', {
-        ...options,
-      });
-      if (!buildInfoError) break;
-      debug(
-        'failed to get buildInfo when setting new options',
-        buildInfoError,
-        options,
-        this.connectionString,
-      );
-      await sleep(2 ** attempts * 10);
+    const start = Date.now();
+    let error: unknown;
+    for (let attempts = 0; attempts < 20; attempts++) {
+      try {
+        this.buildInfo = await this.withClient(async (client) => {
+          return await client.db('admin').command({ buildInfo: 1 });
+        }, options);
+        error = undefined;
+        break;
+      } catch (err) {
+        error = err;
+      }
+      await sleep(Math.min(1000, 2 ** attempts * 10));
     }
-    if (buildInfoError) throw buildInfoError;
+    debug('updated default connection options', {
+      error,
+      Δt: Date.now() - start,
+    });
+    if (error) throw error;
     this.defaultConnectionOptions = {
       ...this.defaultConnectionOptions,
       ...options,
@@ -421,7 +439,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     // mongos hosts require a bit of special treatment because they do not have
     // local storage of their own, so we store the metadata in the config database,
     // which may be accessed by multiple mongos instances.
-    debug('ensuring metadata collection entry', insertedInfo, { isMongoS });
+    debug('ensuring metadata collection entry', insertedInfo, {
+      isMongoS,
+    });
     if (mode === 'insert-new') {
       const existingEntry = await runnerColl.findOne();
       if (!isMongoS && existingEntry) {
@@ -472,7 +492,10 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
           password: this.keyFileContents,
         };
         clientOpts.authMechanism = 'SCRAM-SHA-256';
-        clientOpts.authSource = 'local';
+        // If enableTestCommands=true is set, we can use `admin` as the auth db on mongos
+        // instances, otherwise we won't be able to insert at all
+        // https://github.com/mongodb/mongo/blob/3faba053373cff4ff90ffce64114a595b9a70226/src/mongo/db/auth/sasl_mechanism_registry.cpp#L102-L108
+        clientOpts.authSource = this.isMongos ? 'admin' : 'local';
       }
       this.buildInfo = await this.withClient(async (client) => {
         // Insert the metadata entry, except if we're a freshly started mongos
@@ -548,14 +571,19 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (!this.hasInsertedMetadataCollEntry) {
       debug('populating metadata collection entry after initial setup');
       const err = await this._populateBuildInfo('insert-new');
-      if (err) throw err;
+      if (err && !this.isMongos && !this.isConfigSvr) throw err;
     }
     if (!this.buildInfo) {
       throw new Error(
         `Server buildInfo is not populated ${JSON.stringify(this.serialize())}`,
       );
     }
-    if (!this.hasInsertedMetadataCollEntry && !this.isArbiter) {
+    if (
+      !this.hasInsertedMetadataCollEntry &&
+      !this.isArbiter &&
+      !this.isMongos &&
+      !this.isConfigSvr
+    ) {
       throw new Error(
         `Server has not inserted metadata collection entry ${JSON.stringify(this.serialize())}`,
       );
