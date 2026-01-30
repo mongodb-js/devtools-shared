@@ -32,6 +32,31 @@ export async function parallelForEach<T>(
   return await Promise.allSettled(result);
 }
 
+/**
+ * A version of `Promise.all` that waits for all Promises to settle,
+ * and if any are rejected, throws an `AggregateError` with all errors.
+ *
+ * This has the benefit of allowing all Promises to complete, rather than
+ * failing fast on the first rejection (and potentially leaving more Promises
+ * in an unhandled rejection state).
+ */
+export async function safePromiseAll<T>(
+  promises: (Promise<T> | T)[],
+): Promise<T[]> {
+  const results = await Promise.allSettled(promises);
+  const rejected = results.filter(
+    (r): r is PromiseRejectedResult => r.status === 'rejected',
+  );
+  if (rejected.length) {
+    if (rejected.length === 1) throw rejected[0].reason;
+    throw new AggregateError(
+      [rejected.map((r) => r.reason)],
+      `${rejected.length} errors: ${rejected.map((r) => r.reason).join(', ')}`,
+    );
+  }
+  return results.map((r) => (r as PromiseFulfilledResult<T>).value);
+}
+
 export function pick<T extends object, K extends keyof T>(
   obj: T,
   keys: K[],
