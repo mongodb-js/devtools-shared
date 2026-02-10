@@ -185,6 +185,8 @@ describe('MongoCluster', function () {
       topology: 'standalone',
       tmpDir,
     });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.connectionString).to.include('localhost');
   });
 
   context('TLS', function () {
