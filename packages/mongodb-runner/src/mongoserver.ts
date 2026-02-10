@@ -87,7 +87,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
   private pid?: number;
-  private host: string = '127.0.0.1';
+  private host = '127.0.0.1';
   private port?: number;
   private dbPath?: string;
   private closing = false;
