@@ -87,7 +87,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
   private pid?: number;
-  private host?: string;
+  private host: string = '127.0.0.1';
   private port?: number;
   private dbPath?: string;
   private closing = false;
@@ -210,7 +210,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!options.isArbiter;
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
-    srv.host = options.host || '127.0.0.1';
+    if (options.host) {
+      srv.host = options.host;
+    }
     const keyFilePath = getKeyFileOption(options.args);
     if (keyFilePath) {
       srv.keyFileContents = await fs.readFile(keyFilePath, 'utf8');

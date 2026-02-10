@@ -416,6 +416,7 @@ describe('MongoCluster', function () {
       return await client.db('config').collection('mongodbrunner').findOne();
     });
     expect(doc?._id).to.be.a('string');
+    expect(doc?.host).to.equal('127.0.0.1');
     await cluster.close();
   });
 
