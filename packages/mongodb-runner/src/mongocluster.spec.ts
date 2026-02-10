@@ -179,6 +179,14 @@ describe('MongoCluster', function () {
     ).to.equal(1);
   });
 
+  it('can use localhost as the host', async function () {
+    cluster = await MongoCluster.start({
+      host: 'localhost',
+      topology: 'standalone',
+      tmpDir,
+    });
+  });
+
   context('TLS', function () {
     it('can spawn a 8.x standalone mongod with TLS enabled and get build info (automatically added client key)', async function () {
       cluster = await MongoCluster.start({

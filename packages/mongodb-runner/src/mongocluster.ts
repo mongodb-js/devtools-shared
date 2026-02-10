@@ -143,7 +143,7 @@ export type ShardedOptions = {
 
 export type MongoClusterOptions = Pick<
   MongoServerOptions,
-  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker' | 'internalClientOptions'
+  'logDir' | 'tmpDir' | 'args' | 'binDir' | 'docker' | 'internalClientOptions' | 'host'
 > &
   CommonOptions &
   RSOptions &
