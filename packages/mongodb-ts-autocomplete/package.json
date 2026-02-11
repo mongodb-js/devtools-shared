@@ -57,7 +57,7 @@
     "@mongosh/shell-api": "^3.16.2",
     "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.3",
     "debug": "^4.4.0",
     "lodash": "^4.17.21"
   },

@@ -54,7 +54,7 @@
   "dependencies": {
     "debug": "^4.4.0",
     "lodash": "^4.17.21",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.3",

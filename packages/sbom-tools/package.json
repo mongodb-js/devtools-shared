@@ -76,7 +76,7 @@
     "prettier": "^3.5.3",
     "rimraf": "^5.0.1",
     "sinon": "^9.2.3",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.3",
     "webpack": "^5.82.0"
   },
   "dependencies": {
