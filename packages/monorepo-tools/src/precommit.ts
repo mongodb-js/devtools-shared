@@ -6,24 +6,35 @@ import pkgUp from 'pkg-up';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
 import * as fs from 'fs/promises';
+import findUp from 'find-up';
 const execFileAsync = promisify(execFile);
 
-const monorepoRoot = path.resolve(__dirname, '..', '..');
-const repoRoot = path.resolve(monorepoRoot, '..');
-
 async function main(fileList: string[]) {
+  const monorepoGit = await findUp('.git', {
+    cwd: __dirname,
+    type: 'directory',
+  });
+  if (!monorepoGit) {
+    throw new Error(
+      `Could not find .git directory for monorepo starting from ${__dirname}`,
+    );
+  }
+  const monorepoRoot = path.dirname(monorepoGit);
+
   const filesToPrettify: string[] = [];
 
   const submodules = [
     ...(
-      await fs.readFile(path.resolve(repoRoot, '.gitmodules'), {
-        encoding: 'utf8',
-      })
+      await fs
+        .readFile(path.resolve(monorepoRoot, '.gitmodules'), {
+          encoding: 'utf8',
+        })
+        .catch(() => '')
     ).matchAll(/^\s+path = (?<submodulePath>.*)$/gm),
   ]
     .map((r) => r.groups?.submodulePath)
-    .filter((p) => p)
-    .map((p) => path.resolve(repoRoot, p!));
+    .filter((p): p is string => !!p)
+    .map((p) => path.resolve(monorepoRoot, p));
 
   await Promise.all(
     fileList.map(async (filePath) => {
