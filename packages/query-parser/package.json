@@ -35,7 +35,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && rollup -c",
+    "compile": "rollup -c",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
