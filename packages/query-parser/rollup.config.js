@@ -1,8 +1,15 @@
 const typescript = require('@rollup/plugin-typescript');
+const pkg = require('./package.json');
+
+const external = [
+  ...Object.keys(pkg.dependencies),
+  ...Object.keys(pkg.peerDependencies),
+];
 
 module.exports = [
   {
     input: 'src/index.ts',
+    external,
     output: [
       {
         dir: 'dist',
@@ -16,6 +23,7 @@ module.exports = [
   },
   {
     input: 'src/index.ts',
+    external,
     output: [
       {
         dir: 'dist',
