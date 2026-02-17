@@ -131,7 +131,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.uuid = serialized._id;
     srv.port = serialized.port;
-    if (serialized.host) {
+    if (options.host && !srv.isConfigSvr) {
       srv.host = serialized.host;
     }
     srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
