@@ -54,7 +54,7 @@
     "@mongodb-js/tsconfig-devtools": "^1.1.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
-    "@types/pacote": "^11.1.5",
+    "@types/pacote": "^11.1.8",
     "@types/toposort": "^2.0.3",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
@@ -72,7 +72,7 @@
     "glob": "^10.2.7",
     "minimist": "^1.2.8",
     "ora": "^5.4.0",
-    "pacote": "^11.3.5",
+    "pacote": "^21.3.1",
     "pkg-up": "^3.1.0",
     "semver": "^7.7.1",
     "toposort": "^2.0.2"
