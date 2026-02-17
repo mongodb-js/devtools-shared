@@ -88,6 +88,7 @@ describe('MongoCluster', function () {
       tmpDir,
     });
     expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.connectionString).to.include('127.0.0.1');
     expect(cluster.serverVersion).to.match(/^6\./);
     expect(cluster.serverVariant).to.equal('community');
     const { ok } = await cluster.withClient(async (client) => {
@@ -177,6 +178,18 @@ describe('MongoCluster', function () {
     expect(
       logFiles.filter((file) => file.startsWith('mongos-')).length,
     ).to.equal(1);
+  });
+
+  it('can use localhost as the host', async function () {
+    cluster = await MongoCluster.start({
+      host: 'localhost',
+      topology: 'standalone',
+      tmpDir,
+    });
+    expect(cluster.connectionString).to.be.a('string');
+    expect(cluster.connectionString).to.include('localhost');
+    cluster = await MongoCluster.deserialize(cluster.serialize());
+    expect(cluster.connectionString).to.include('localhost');
   });
 
   context('TLS', function () {

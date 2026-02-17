@@ -39,6 +39,8 @@ export interface MongoServerOptions {
   args?: string[];
   /** Docker image or options to run the MongoDB binary in a container. */
   docker?: string | string[];
+  /** The host address of the servers (default: '127.0.0.1') */
+  host?: string;
   /** Internal options for the MongoDB client used by this server instance. */
   internalClientOptions?: Partial<MongoClientOptions>;
   /** Internal option -- if this is an arbiter, it does not understand user auth */
@@ -55,6 +57,7 @@ interface SerializedServerProperties {
   _id: string;
   pid?: number;
   port?: number;
+  host?: string;
   dbPath?: string;
   defaultConnectionOptions?: Partial<MongoClientOptions>;
   startTime: string;
@@ -84,6 +87,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
   private pid?: number;
+  private host = '127.0.0.1';
   private port?: number;
   private dbPath?: string;
   private closing = false;
@@ -109,6 +113,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       _id: this.uuid,
       pid: this.pid,
       port: this.port,
+      host: this.host,
       dbPath: this.dbPath,
       startTime: this.startTime,
       hasInsertedMetadataCollEntry: this.hasInsertedMetadataCollEntry,
@@ -126,6 +131,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const srv = new MongoServer();
     srv.uuid = serialized._id;
     srv.port = serialized.port;
+    if (serialized.host) {
+      srv.host = serialized.host;
+    }
     srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
     srv.closing = !!(await srv._populateBuildInfo('restore-check'));
     srv.isArbiter = !!serialized.isArbiter;
@@ -144,7 +152,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (this.port === undefined) {
       throw new Error('Cannot get host/port for closed server');
     }
-    return `127.0.0.1:${this.port}`;
+    return `${this.host}:${this.port}`;
   }
 
   // Returns the version reported in the server log output
@@ -204,6 +212,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!options.isArbiter;
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
+    if (options.host) {
+      srv.host = options.host;
+    }
     const keyFilePath = getKeyFileOption(options.args);
     if (keyFilePath) {
       srv.keyFileContents = await fs.readFile(keyFilePath, 'utf8');
