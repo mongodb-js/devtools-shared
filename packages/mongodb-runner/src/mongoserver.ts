@@ -212,7 +212,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!options.isArbiter;
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
-    if (options.host) {
+    if (options.host && !srv.isConfigSvr) {
       srv.host = options.host;
     }
     const keyFilePath = getKeyFileOption(options.args);
