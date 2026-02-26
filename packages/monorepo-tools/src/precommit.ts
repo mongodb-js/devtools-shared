@@ -3,10 +3,11 @@
 
 import path from 'path';
 import pkgUp from 'pkg-up';
-import { promisify } from 'util';
-import { execFile } from 'child_process';
 import * as fs from 'fs/promises';
 import findUp from 'find-up';
+import { executePackage } from './utils/package-manager';
+import { promisify } from 'util';
+import { execFile } from 'child_process';
 const execFileAsync = promisify(execFile);
 
 async function main(fileList: string[]) {
@@ -78,15 +79,17 @@ async function main(fileList: string[]) {
     console.log(`  - ${path.relative(process.cwd(), filePath)}`);
   });
 
-  await execFileAsync('npx', [
-    'prettier',
-    '--config',
-    require.resolve('@mongodb-js/prettier-config-devtools/.prettierrc.json'),
-    // Silently ignore files that are of format that is not supported by prettier
-    '--ignore-unknown',
-    '--write',
-    ...filesToPrettify,
-  ]);
+  await executePackage({
+    packageName: 'prettier',
+    args: [
+      '--config',
+      require.resolve('@mongodb-js/prettier-config-devtools/.prettierrc.json'),
+      // Silently ignore files that are of format that is not supported by prettier
+      '--ignore-unknown',
+      '--write',
+      ...filesToPrettify,
+    ],
+  });
 
   // Re-add potentially reformatted files
   await execFileAsync('git', ['add', ...filesToPrettify]);

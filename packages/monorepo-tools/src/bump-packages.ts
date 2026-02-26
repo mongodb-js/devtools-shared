@@ -13,6 +13,7 @@ import type { GitCommit } from './utils/get-conventional-bump';
 import { getConventionalBump } from './utils/get-conventional-bump';
 import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
 import { maxIncrement } from './utils/max-increment';
+import { installDependencies } from './utils/package-manager';
 
 const execFile = promisify(childProcess.execFile);
 
@@ -58,7 +59,7 @@ async function main() {
     );
   }
 
-  await execFile('npm', ['install', '--package-lock-only']);
+  await installDependencies({ packageLockOnly: true });
 }
 
 main().catch((err) =>

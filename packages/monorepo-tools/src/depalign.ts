@@ -5,7 +5,6 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import chalk from 'chalk';
 import pacote from 'pacote';
-import { runInDir } from './utils/run-in-dir';
 import { listAllPackages } from './utils/list-all-packages';
 import { updatePackageJson } from './utils/update-package-json';
 import { withProgress } from './utils/with-progress';
@@ -18,6 +17,7 @@ import { calculateReplacements, intersects } from './utils/semver-helpers';
 import type { ParsedArgs } from 'minimist';
 import minimist from 'minimist';
 import type ora from 'ora';
+import { installDependencies } from './utils/package-manager';
 
 const DEPENDENCY_GROUPS = [
   'peerDependencies',
@@ -228,7 +228,7 @@ async function alignPackageToRange(packageName: string, range: string) {
     });
   }
 
-  await runInDir('npm install');
+  await installDependencies();
 }
 
 function hasDep(
@@ -424,7 +424,7 @@ async function applyFixes(
 
   spinner.text = `${spinnerText} for ${totalToUpdate} dependencies (updating package-lock.json)`;
 
-  await runInDir('npm install --package-lock-only');
+  await installDependencies({ packageLockOnly: true });
 
   spinner.text = `${spinnerText} for ${totalToUpdate} dependencies`;
 

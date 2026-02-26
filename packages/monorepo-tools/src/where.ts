@@ -23,6 +23,11 @@ import { runInContext, createContext } from 'vm';
 import { execFileSync } from 'child_process';
 import { listAllPackages } from './utils/list-all-packages';
 import { findMonorepoRoot } from './utils/find-monorepo-root';
+import {
+  getPackageManager,
+  getPackageManagerVersion,
+  runForWorkspaces,
+} from './utils/package-manager';
 
 const [expr, ...execCommandArgs] = process.argv.slice(2);
 let useLernaExec = false;
@@ -67,34 +72,40 @@ async function lernaExec(packages: string[]) {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/require-await
 async function npmWorkspaces(packages: string[]) {
-  const npmVersion = execFileSync('npm', ['-v']).toString();
+  const packageManager = getPackageManager();
+  const packageManagerVersion = await getPackageManagerVersion();
 
-  if (Number(npmVersion.substr(0, 2)) < 7) {
+  if (packageManager != 'npm') {
     throw Error(
-      `"npm run where" relies on npm@7 features, using npm@${npmVersion}. Update npm to 7 or use the command with --lerna-exec instead`,
+      `"npm run where" only supports npm, using ${packageManager}. Use the command with pnpm --filter or --lerna-exec instead`,
     );
   }
 
-  const workspaces = packages.map((name) => `--workspace=${name}`);
+  if (Number(packageManagerVersion.substr(0, 2)) < 7) {
+    throw Error(
+      `"npm run where" relies on npm@7 features, using npm@${packageManagerVersion}. Update npm to 7 or use the command with --lerna-exec instead`,
+    );
+  }
 
-  if (workspaces.length === 0) {
+  if (packages.length === 0) {
     console.info(`No packages matched filter "${expr}"`);
     return;
   }
 
   console.log();
   console.log(
-    'Running "npm %s" for the following packages:',
+    'Running "%s %s" for the following packages:',
+    packageManager,
     execCommandArgs.join(' '),
   );
   console.log();
   console.log(util.inspect(packages));
   console.log();
 
-  execFileSync('npm', [...workspaces, ...execCommandArgs], {
-    stdio: 'inherit',
+  runForWorkspaces({
+    workspaces: packages,
+    args: execCommandArgs,
   });
 }
 
