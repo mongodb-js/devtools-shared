@@ -76,7 +76,7 @@ async function npmWorkspaces(packages: string[]) {
   const packageManager = getPackageManager();
   const packageManagerVersion = await getPackageManagerVersion();
 
-  if (packageManager != 'npm') {
+  if (packageManager !== 'npm') {
     throw Error(
       `"npm run where" only supports npm, using ${packageManager}. Use the command with pnpm --filter or --lerna-exec instead`,
     );

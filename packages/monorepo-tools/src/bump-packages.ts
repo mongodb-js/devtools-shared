@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import childProcess from 'child_process';
 import { promises as fs } from 'fs';
 // @ts-expect-error No definitions available
 import gitLogParser from 'git-log-parser';
@@ -14,8 +13,6 @@ import { getConventionalBump } from './utils/get-conventional-bump';
 import { getPackagesInTopologicalOrder } from './utils/get-packages-in-topological-order';
 import { maxIncrement } from './utils/max-increment';
 import { installDependencies } from './utils/package-manager';
-
-const execFile = promisify(childProcess.execFile);
 
 const LAST_BUMP_COMMIT_MESSAGE =
   process.env.LAST_BUMP_COMMIT_MESSAGE || 'chore(ci): bump packages';
