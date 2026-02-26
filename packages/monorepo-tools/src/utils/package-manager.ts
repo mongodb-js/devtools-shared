@@ -5,9 +5,9 @@ const execFile = promisify(execFileCallback);
 
 /**
  * Get the package manager to use based on environment variable.
- * Defaults to 'npm' if USE_PNPM is not set or set to anything other than 'true'.
+ * Defaults to 'npm' if MONOREPO_TOOLS_USE_PNPM is not set or set to anything other than 'true'.
  *
- * Set USE_PNPM=true to use pnpm instead of npm.
+ * Set MONOREPO_TOOLS_USE_PNPM=true to use pnpm instead of npm.
  */
 export function getPackageManager(): 'npm' | 'pnpm' {
   return process.env.MONOREPO_TOOLS_USE_PNPM === 'true' ? 'pnpm' : 'npm';
