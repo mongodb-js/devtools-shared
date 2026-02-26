@@ -6,7 +6,7 @@ import path from 'path';
 import type { ReleaseType } from 'semver';
 import semver from 'semver';
 import { PassThrough } from 'stream';
-import { isDeepStrictEqual, promisify } from 'util';
+import { isDeepStrictEqual } from 'util';
 
 import type { GitCommit } from './utils/get-conventional-bump';
 import { getConventionalBump } from './utils/get-conventional-bump';
