@@ -136,12 +136,12 @@ export class TestGenerator extends GeneratorBase {
     }
   }
 
-  private emitTestBody(
+  private emitTestBodyForPipeline(
     category: string,
     operator: string,
     test: TestType,
   ): void {
-    if (!test.pipeline) {
+    if (!('pipeline' in test) || !test.pipeline) {
       this.emit(`// TODO: No pipeline found for ${operator}.${test.name}\n`);
       return;
     }
@@ -189,6 +189,39 @@ export class TestGenerator extends GeneratorBase {
     this.emit('];\n');
   }
 
+  private emitTestBodyForUpdate(
+    category: string,
+    operator: string,
+    test: TestType,
+  ): void {
+    if (!('update' in test) || !test.update || !test.filter) {
+      this.emit(
+        `// TODO: No update/filter found for ${operator}.${test.name}\n`,
+      );
+      return;
+    }
+
+    if (!test.schema || typeof test.schema === 'string') {
+      this.emit(
+        `// TODO: no schema found for ${operator}.${test.name}${test.schema ? `: ${test.schema}` : ''}\n`,
+      );
+      return;
+    }
+
+    const collectionName = Object.keys(test.schema)[0];
+    const schema = test.schema[collectionName] as SimplifiedSchema;
+
+    this.emit(
+      `type ${collectionName} = ${this.simplifiedSchemaToTS(schema)}\n`,
+    );
+
+    this.emit(`const update: schema.Update<${collectionName}> = \n`);
+    this.emit(this.stageToTS(test.update));
+    this.emit(`;\nconst filter: schema.Query<${collectionName}> = `);
+    this.emit(this.stageToTS(test.filter));
+    this.emit(';\n');
+  }
+
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
       const namespace = `${capitalize(file.category)}Operators`;
@@ -227,7 +260,11 @@ export class TestGenerator extends GeneratorBase {
 
           this.emit(`function test${i++}() {\n`);
 
-          this.emitTestBody(file.category, operatorName, test);
+          if ('pipeline' in test) {
+            this.emitTestBodyForPipeline(file.category, operatorName, test);
+          } else {
+            this.emitTestBodyForUpdate(file.category, operatorName, test);
+          }
 
           this.emit('}\n\n');
         }

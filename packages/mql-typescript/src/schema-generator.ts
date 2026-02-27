@@ -4,9 +4,18 @@ import { GeneratorBase } from './generator';
 import { Operator } from './metaschema';
 import { capitalize } from './utils';
 
-type ArgType = NonNullable<
-  typeof Operator._type.arguments
->[number]['type'][number];
+type ArgType =
+  | (NonNullable<typeof Operator._type.arguments>[number]['type'][number] &
+      string)
+  | (NonNullable<typeof Operator._type.type>[number] & string);
+
+function liftArgType(type: ArgType | { name: ArgType; generic?: string }): {
+  name: ArgType;
+  generic?: string;
+} {
+  if (typeof type === 'string') return { name: type };
+  return type;
+}
 
 type SyntheticVariables = NonNullable<
   typeof Operator._type.arguments
@@ -114,17 +123,19 @@ export class SchemaGenerator extends GeneratorBase {
     whenNotMatched: ['string'],
 
     expression_S: [
-      this.toTypeName('ExpressionOperator<S>'),
-      this.toTypeName('fieldPath<S>'),
+      this.toTypeName('ExpressionOperator<S, T>'),
+      this.toTypeName('fieldPath<S, T>'),
       this.toTypeName('bsonPrimitive'),
-      'FieldExpression<S>',
+      'FieldExpression<S, T>',
       'FieldPath<S>[]',
     ],
     expressionMap_S: [
-      `{ [k: string]: ${this.toTypeName('Expression<S>')} | ${this.toTypeName('ExpressionMap<S>')} }`,
+      `{ [k: string]: ${this.toTypeName('Expression<S, T>')} | ${this.toTypeName('ExpressionMap<S, T>')} }`,
     ],
-    stage_S: [this.toTypeName('StageOperator<S>')],
+    stage_S: [this.toTypeName('StageOperator<S, T>')],
+    updateStage_S: [],
     pipeline_S: [this.toTypeName('stage<S>[]')],
+    updatePipeline_S: [this.toTypeName('UpdatePipeline<S>[]')],
     untypedPipeline: [this.toTypeName('Pipeline<any>')],
     query_S: [
       this.toTypeName('QueryOperator<S>'),
@@ -147,8 +158,8 @@ export class SchemaGenerator extends GeneratorBase {
     ],
 
     // Need to be adjusted to match the real schema
-    fieldPath_S: ['`$${AFieldPath<S, any>}`'],
-    unprefixedFieldPath_S: ['AFieldPath<S, any>'],
+    fieldPath_S: ['`$${AFieldPath<S, T>}`'],
+    unprefixedFieldPath_S: ['AFieldPath<S, T>'],
     numberFieldPath_S: [this.toTypeFieldTypeName('number')],
     doubleFieldPath_S: [this.toTypeFieldTypeName('double')],
     stringFieldPath_S: [this.toTypeFieldTypeName('string')],
@@ -167,7 +178,7 @@ export class SchemaGenerator extends GeneratorBase {
     decimalFieldPath_S: [this.toTypeFieldTypeName('decimal')],
 
     resolvesToNumber_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Number>'),
       this.toTypeName('numberFieldPath<S>'),
       this.toTypeName('number'),
       this.toTypeName('resolvesToInt<S>'),
@@ -176,80 +187,80 @@ export class SchemaGenerator extends GeneratorBase {
       this.toTypeName('resolvesToDecimal<S>'),
     ],
     resolvesToDouble_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Double>'),
       this.toTypeName('doubleFieldPath<S>'),
       this.toTypeName('double'),
     ],
     resolvesToString_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, string>'),
       this.toTypeName('stringFieldPath<S>'),
       this.toTypeName('string'),
     ],
     resolvesToObject_S: [
       "'$$ROOT'",
-      this.toTypeName('resolvesToAny<S>'),
-      this.toTypeName('objectFieldPath<S>'),
+      this.toTypeName('resolvesToAny<S, Record<string, unknown>>'),
+      this.toTypeName('objectFieldPath<S, T>'),
       this.toTypeName('object'),
     ],
     resolvesToArray_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, ArrayOnly<T>>'),
       this.toTypeName('arrayFieldPath<S>'),
-      this.toTypeName('array'),
+      this.toTypeName('ArrayOnly<T>'),
     ],
     resolvesToBinData_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, bson.Binary>'),
       this.toTypeName('binDataFieldPath<S>'),
       this.toTypeName('binData'),
     ],
     resolvesToObjectId_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, bson.ObjectId>'),
       this.toTypeName('objectIdFieldPath<S>'),
       this.toTypeName('objectId'),
     ],
     resolvesToBool_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, boolean>'),
       this.toTypeName('boolFieldPath<S>'),
       this.toTypeName('bool'),
     ],
     resolvesToDate_S: [
       "'$$NOW'",
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Date>'),
       this.toTypeName('dateFieldPath<S>'),
       this.toTypeName('date'),
     ],
     resolvesToNull_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, null>'),
       this.toTypeName('nullFieldPath<S>'),
       this.toTypeName('null'),
     ],
     resolvesToRegex_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, RegExp>'),
       this.toTypeName('regexFieldPath<S>'),
       this.toTypeName('regex'),
     ],
     resolvesToJavascript_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Javascript>'),
       this.toTypeName('javascriptFieldPath<S>'),
       this.toTypeName('javascript'),
     ],
     resolvesToInt_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Int>'),
       this.toTypeName('intFieldPath<S>'),
       this.toTypeName('int'),
     ],
     resolvesToTimestamp_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, bson.Timestamp>'),
       this.toTypeName('timestampFieldPath<S>'),
       this.toTypeName('timestamp'),
       "'$clusterTime'",
     ],
     resolvesToLong_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Long>'),
       this.toTypeName('longFieldPath<S>'),
       this.toTypeName('long'),
     ],
     resolvesToDecimal_S: [
-      this.toTypeName('resolvesToAny<S>'),
+      this.toTypeName('resolvesToAny<S, Decimal>'),
       this.toTypeName('decimalFieldPath<S>'),
       this.toTypeName('decimal'),
     ],
@@ -278,24 +289,30 @@ export class SchemaGenerator extends GeneratorBase {
 
       // TBD: Nested fields
       type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
-      type FieldExpression<T> = { [k: string]: FieldPath<T> };
+      type FieldExpression<S, T> = { [k: string]: FieldPath<S, T> };
 
-      type MultiAnalyzerSpec<T> = {
-        value: KeysOfAType<T, string>;
+      type MultiAnalyzerSpec<S> = {
+        value: KeysOfAType<S, string>;
         multi: string;
       };
+
+      type ArrayOnly<T> = T extends ReadonlyArray<infer U> ? U[] : never;
       `);
   }
 
   private getArgumentTypeName(
-    type: ArgType,
-    syntheticVariables?: SyntheticVariables,
+    type: { name: ArgType; generic?: string },
+    syntheticVariables: SyntheticVariables | undefined,
   ): string | undefined {
-    if (this.typeMappings[type]) {
-      return this.toTypeName(type);
+    if (this.typeMappings[type.name]) {
+      return this.toTypeName(type.name);
     }
 
-    if (this.typeMappings[`${type}_S`]) {
+    if (type.generic && this.typeMappings[`${type.name}_S`]) {
+      return this.toTypeName(`${type.name}<S, ${type.generic}>`);
+    }
+
+    if (this.typeMappings[`${type.name}_S`]) {
       let genericArg = 'S';
 
       if (syntheticVariables) {
@@ -306,11 +323,11 @@ export class SchemaGenerator extends GeneratorBase {
 
         genericArg = `S & { ${syntheticFields}; }`;
       }
-      return this.toTypeName(`${type}<${genericArg}>`);
+      return this.toTypeName(`${type.name}<${genericArg}>`);
     }
 
-    if (this.trivialTypeMappings[type]) {
-      return this.trivialTypeMappings[type];
+    if (this.trivialTypeMappings[type.name]) {
+      return this.trivialTypeMappings[type.name];
     }
 
     return undefined;
@@ -324,13 +341,14 @@ export class SchemaGenerator extends GeneratorBase {
       this.emit(`${arg.name}${arg.optional ? '?' : ''}: `);
     }
 
-    const allowsArrays = arg.type.includes('array');
+    const allowsArrays = arg.type.some((t) => liftArgType(t).name === 'array');
     const argTypes = arg.type
-      .filter((t) => t !== 'array')
+      .filter((t) => liftArgType(t).name !== 'array')
       .map((type) => {
-        const name = this.getArgumentTypeName(type, arg.syntheticVariables);
+        const lifted = liftArgType(type);
+        const name = this.getArgumentTypeName(lifted, arg.syntheticVariables);
         if (!name) {
-          throw new Error(`Unknown type ${type}`);
+          throw new Error(`Unknown type ${lifted.name}`);
         }
         return name;
       })
@@ -433,19 +451,52 @@ export class SchemaGenerator extends GeneratorBase {
           `A type describing the \`${parsed.name}\` operator.`,
           parsed.link,
         );
-        this.emit(`export interface ${ifaceName}<S> {`);
+        let emittedTypeStart = false;
+        let typeFinalizingTag = '';
+        if (parsed.generic) {
+          if (parsed.generic.length !== 1 || parsed.generic[0] !== 'T') {
+            throw new Error(
+              `Not currently supporting generics other than '[T]', received ${JSON.stringify(parsed.generic)}`,
+            );
+          }
+          const genericSignatures = new Set(
+            parsed.type.map((t) => liftArgType(t).generic),
+          );
+          if (genericSignatures.size !== 1) {
+            throw new Error(
+              `Not supporting matching on multiple different return types right now`,
+            );
+          }
+          const [signature] = genericSignatures;
+          if (signature && signature !== 'T') {
+            this.emit(
+              `export type ${ifaceName}<S, U> = U extends ${signature.replace(/\bT\b/g, '(infer T)')} ? {\n`,
+            );
+            emittedTypeStart = true;
+            typeFinalizingTag = ' : never';
+          }
+        }
+        if (!emittedTypeStart)
+          this.emit(`export interface ${ifaceName}<S, T = any> {`);
         if (parsed.description) {
           this.emitComment(parsed.description, parsed.link);
         }
         this.emit(`${parsed.name}:`);
-        for (const type of parsed.type) {
-          (this.typeMappings[`${type}_S`] ??= []).push(
-            `${namespace}.${ifaceName}<S>`,
-          );
+        for (const _type of parsed.type) {
+          const type = liftArgType(_type);
+          if (type.generic) {
+            (this.typeMappings[`${type.name}_S`] ??= []).push(
+              `${namespace}.${ifaceName}<S, T>`,
+            );
+          } else {
+            (this.typeMappings[`${type.name}_S`] ??= []).push(
+              `${namespace}.${ifaceName}<S>`,
+            );
+          }
         }
 
         (this.typeMappings[`${file.category}Operator_S`] ??= []).push(
-          `${namespace}.${ifaceName}<S>`,
+          `${namespace}.${ifaceName}<S, T>`,
         );
 
         if (!parsed.arguments) {
@@ -524,7 +575,12 @@ export class SchemaGenerator extends GeneratorBase {
                             `RecordWithStaticFields<${objectType}, ${this.toComment(
                               arg.description,
                             )} ${arg.type
-                              .map((t) => this.getArgumentTypeName(t))
+                              .map((t) => {
+                                return this.getArgumentTypeName(
+                                  liftArgType(t),
+                                  undefined,
+                                );
+                              })
                               .join(' | ')}>`,
                           );
                         }
@@ -565,20 +621,23 @@ export class SchemaGenerator extends GeneratorBase {
               throw new Error(`unknown encode mode ${parsed.encode}`);
           }
         }
-        this.emit('};\n');
+        this.emit(`} ${typeFinalizingTag};\n`);
       }
 
       this.emit('};\n');
     }
 
     for (const [type, interfaces] of Object.entries(this.typeMappings)) {
-      const isTemplated = type.endsWith('_S');
-      const name = isTemplated ? type.replace(/_S$/, '') : type;
-      this.emit(
-        `\nexport type ${this.toTypeName(name)}${
-          isTemplated ? '<S>' : ''
-        } = ${[...new Set(interfaces)].join('|')};`,
-      );
+      if (type.endsWith('_S')) {
+        const name = type.replace(/_S$/, '');
+        this.emit(
+          `\nexport type ${this.toTypeName(name)}<S, T = any> = ${[...new Set(interfaces)].join('|')};`,
+        );
+      } else {
+        this.emit(
+          `\nexport type ${this.toTypeName(type)} = ${[...new Set(interfaces)].join('|')};`,
+        );
+      }
     }
   }
 }

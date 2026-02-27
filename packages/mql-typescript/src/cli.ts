@@ -57,6 +57,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.dir(err, { depth: Infinity });
   process.exit(1);
 });
