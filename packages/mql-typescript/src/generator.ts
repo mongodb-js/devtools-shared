@@ -196,9 +196,8 @@ export abstract class GeneratorBase {
   protected configDir = path.join(
     __dirname,
     '..',
-    'mongo-php-library',
-    'generator',
-    'config',
+    'mql-specifications',
+    'definitions',
   );
 
   private async *listCategories(
