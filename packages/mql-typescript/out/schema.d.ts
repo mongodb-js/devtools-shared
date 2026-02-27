@@ -19,18 +19,20 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
-type FieldExpression<T> = { [k: string]: FieldPath<T> };
+type FieldExpression<S, T> = { [k: string]: FieldPath<S, T> };
 
-type MultiAnalyzerSpec<T> = {
-  value: KeysOfAType<T, string>;
+type MultiAnalyzerSpec<S> = {
+  value: KeysOfAType<S, string>;
   multi: string;
 };
+
+type ArrayOnly<T> = T extends ReadonlyArray<infer U> ? U[] : never;
 export namespace Aggregation.Accumulator {
   /**
    * A type describing the `$accumulator` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/accumulator/}
    */
-  export interface $accumulator<S> {
+  export interface $accumulator<S, T = any> {
     /**
      * Defines a custom accumulator function.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/accumulator/}
@@ -77,7 +79,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$addToSet` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addToSet/}
    */
-  export interface $addToSet<S> {
+  export interface $addToSet<S, T = any> {
     /**
      * Returns an array of unique expression values for each group. Order of the array elements is undefined.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -90,7 +92,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$avg` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/}
    */
-  export interface $avg<S> {
+  export interface $avg<S, T = any> {
     /**
      * Returns an average of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -103,7 +105,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$bottom` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom/}
    */
-  export interface $bottom<S> {
+  export interface $bottom<S, T = any> {
     /**
      * Returns the bottom element within a group according to the specified sort order.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom/}
@@ -125,7 +127,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$bottomN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN/}
    */
-  export interface $bottomN<S> {
+  export interface $bottomN<S, T = any> {
     /**
      * Returns an aggregation of the bottom n elements within a group, according to the specified sort order. If the group contains fewer than n elements, $bottomN returns all elements in the group.
      * Available in the $group and $setWindowFields stages.
@@ -153,7 +155,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$concatArrays` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
    */
-  export interface $concatArrays<S> {
+  export interface $concatArrays<S, T = any> {
     /**
      * Concatenates arrays to return the concatenated array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
@@ -171,7 +173,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$count` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/count-accumulator/}
    */
-  export interface $count<S> {
+  export interface $count<S, T = any> {
     /**
      * Returns the number of documents in the group or window.
      * Distinct from the $count pipeline stage.
@@ -184,7 +186,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$covariancePop` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/covariancePop/}
    */
-  export interface $covariancePop<S> {
+  export interface $covariancePop<S, T = any> {
     /**
      * Returns the population covariance of two numeric expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/covariancePop/}
@@ -199,7 +201,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$covarianceSamp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/covarianceSamp/}
    */
-  export interface $covarianceSamp<S> {
+  export interface $covarianceSamp<S, T = any> {
     /**
      * Returns the sample covariance of two numeric expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/covarianceSamp/}
@@ -214,7 +216,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$denseRank` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/denseRank/}
    */
-  export interface $denseRank<S> {
+  export interface $denseRank<S, T = any> {
     /**
      * Returns the document position (known as the rank) relative to other documents in the $setWindowFields stage partition. There are no gaps in the ranks. Ties receive the same rank.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/denseRank/}
@@ -226,7 +228,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$derivative` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/derivative/}
    */
-  export interface $derivative<S> {
+  export interface $derivative<S, T = any> {
     /**
      * Returns the average rate of change within the specified window.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/derivative/}
@@ -246,7 +248,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$documentNumber` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/documentNumber/}
    */
-  export interface $documentNumber<S> {
+  export interface $documentNumber<S, T = any> {
     /**
      * Returns the position of a document (known as the document number) in the $setWindowFields stage partition. Ties result in different adjacent document numbers.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/documentNumber/}
@@ -258,7 +260,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$expMovingAvg` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/expMovingAvg/}
    */
-  export interface $expMovingAvg<S> {
+  export interface $expMovingAvg<S, T = any> {
     /**
      * Returns the exponential moving average for the numeric expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/expMovingAvg/}
@@ -285,7 +287,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$first` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/first/}
    */
-  export interface $first<S> {
+  export interface $first<S, T = any> {
     /**
      * Returns the result of an expression for the first document in a group or window.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -298,7 +300,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$firstN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/firstN/}
    */
-  export interface $firstN<S> {
+  export interface $firstN<S, T = any> {
     /**
      * Returns an aggregation of the first n elements within a group.
      * The elements returned are meaningful only if in a specified sort order.
@@ -322,7 +324,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$integral` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/integral/}
    */
-  export interface $integral<S> {
+  export interface $integral<S, T = any> {
     /**
      * Returns the approximation of the area under a curve.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/integral/}
@@ -342,7 +344,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$last` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/last/}
    */
-  export interface $last<S> {
+  export interface $last<S, T = any> {
     /**
      * Returns the result of an expression for the last document in a group or window.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -355,7 +357,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$lastN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/}
    */
-  export interface $lastN<S> {
+  export interface $lastN<S, T = any> {
     /**
      * Returns an aggregation of the last n elements within a group.
      * The elements returned are meaningful only if in a specified sort order.
@@ -379,7 +381,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$linearFill` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/linearFill/}
    */
-  export interface $linearFill<S> {
+  export interface $linearFill<S, T = any> {
     /**
      * Fills null and missing fields in a window using linear interpolation based on surrounding field values.
      * Available in the $setWindowFields stage.
@@ -392,7 +394,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$locf` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/locf/}
    */
-  export interface $locf<S> {
+  export interface $locf<S, T = any> {
     /**
      * Last observation carried forward. Sets values for null and missing fields in a window to the last non-null value for the field.
      * Available in the $setWindowFields stage.
@@ -405,7 +407,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$max` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/max/}
    */
-  export interface $max<S> {
+  export interface $max<S, T = any> {
     /**
      * Returns the maximum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -418,7 +420,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$maxN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN/}
    */
-  export interface $maxN<S> {
+  export interface $maxN<S, T = any> {
     /**
      * Returns the n largest values in an array. Distinct from the $maxN accumulator.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN/}
@@ -440,7 +442,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$median` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/median/}
    */
-  export interface $median<S> {
+  export interface $median<S, T = any> {
     /**
      * Returns an approximation of the median, the 50th percentile, as a scalar value.
      * This operator is available as an accumulator in these stages:
@@ -466,7 +468,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$mergeObjects` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
    */
-  export interface $mergeObjects<S> {
+  export interface $mergeObjects<S, T = any> {
     /**
      * Combines multiple documents into a single document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
@@ -478,7 +480,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$min` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/}
    */
-  export interface $min<S> {
+  export interface $min<S, T = any> {
     /**
      * Returns the minimum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -491,7 +493,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$minN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN/}
    */
-  export interface $minN<S> {
+  export interface $minN<S, T = any> {
     /**
      * Returns the n smallest values in an array. Distinct from the $minN accumulator.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN/}
@@ -513,7 +515,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$percentile` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/percentile/}
    */
-  export interface $percentile<S> {
+  export interface $percentile<S, T = any> {
     /**
      * Returns an array of scalar values that correspond to specified percentile values.
      * This operator is available as an accumulator in these stages:
@@ -545,7 +547,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$push` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/push/}
    */
-  export interface $push<S> {
+  export interface $push<S, T = any> {
     /**
      * Returns an array of values that result from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -558,7 +560,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$rank` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rank/}
    */
-  export interface $rank<S> {
+  export interface $rank<S, T = any> {
     /**
      * Returns the document position (known as the rank) relative to other documents in the $setWindowFields stage partition.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rank/}
@@ -570,7 +572,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$setUnion` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
    */
-  export interface $setUnion<S> {
+  export interface $setUnion<S, T = any> {
     /**
      * Takes two or more arrays and returns an array containing the elements that appear in any input array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
@@ -587,7 +589,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$shift` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/shift/}
    */
-  export interface $shift<S> {
+  export interface $shift<S, T = any> {
     /**
      * Returns the value from an expression applied to a document in a specified position relative to the current document in the $setWindowFields stage partition.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/shift/}
@@ -620,7 +622,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$stdDevPop` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevPop/}
    */
-  export interface $stdDevPop<S> {
+  export interface $stdDevPop<S, T = any> {
     /**
      * Calculates the population standard deviation of the input values. Use if the values encompass the entire population of data you want to represent and do not wish to generalize about a larger population. $stdDevPop ignores non-numeric values.
      * If the values represent only a sample of a population of data from which to generalize about the population, use $stdDevSamp instead.
@@ -634,7 +636,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$stdDevSamp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevSamp/}
    */
-  export interface $stdDevSamp<S> {
+  export interface $stdDevSamp<S, T = any> {
     /**
      * Calculates the sample standard deviation of the input values. Use if the values encompass a sample of a population of data from which to generalize about the population. $stdDevSamp ignores non-numeric values.
      * If the values represent the entire population of data or you do not wish to generalize about a larger population, use $stdDevPop instead.
@@ -648,7 +650,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$sum` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/}
    */
-  export interface $sum<S> {
+  export interface $sum<S, T = any> {
     /**
      * Returns a sum of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -661,7 +663,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$top` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top/}
    */
-  export interface $top<S> {
+  export interface $top<S, T = any> {
     /**
      * Returns the top element within a group according to the specified sort order.
      * Available in the $group and $setWindowFields stages.
@@ -684,7 +686,7 @@ export namespace Aggregation.Accumulator {
    * A type describing the `$topN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN/}
    */
-  export interface $topN<S> {
+  export interface $topN<S, T = any> {
     /**
      * Returns an aggregation of the top n fields within a group, according to the specified sort order.
      * Available in the $group and $setWindowFields stages.
@@ -713,7 +715,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$abs` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/abs/}
    */
-  export interface $abs<S> {
+  export interface $abs<S, T = any> {
     /**
      * Returns the absolute value of a number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/abs/}
@@ -725,7 +727,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$acos` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acos/}
    */
-  export interface $acos<S> {
+  export interface $acos<S, T = any> {
     /**
      * Returns the inverse cosine (arc cosine) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acos/}
@@ -737,7 +739,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$acosh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acosh/}
    */
-  export interface $acosh<S> {
+  export interface $acosh<S, T = any> {
     /**
      * Returns the inverse hyperbolic cosine (hyperbolic arc cosine) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acosh/}
@@ -749,7 +751,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$add` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/add/}
    */
-  export interface $add<S> {
+  export interface $add<S, T = any> {
     /**
      * Adds numbers to return the sum, or adds numbers and a date to return a new date. If adding numbers and a date, treats the numbers as milliseconds. Accepts any number of argument expressions, but at most, one expression can resolve to a date.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/add/}
@@ -766,7 +768,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$allElementsTrue` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/allElementsTrue/}
    */
-  export interface $allElementsTrue<S> {
+  export interface $allElementsTrue<S, T = any> {
     /**
      * Returns true if no element of a set evaluates to false, otherwise, returns false. Accepts a single argument expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/allElementsTrue/}
@@ -778,7 +780,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$and` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/and/}
    */
-  export interface $and<S> {
+  export interface $and<S, T = any> {
     /**
      * Returns true only when all its expressions evaluate to true. Accepts any number of argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/and/}
@@ -798,7 +800,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$anyElementTrue` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/anyElementTrue/}
    */
-  export interface $anyElementTrue<S> {
+  export interface $anyElementTrue<S, T = any> {
     /**
      * Returns true if any elements of a set evaluate to true; otherwise, returns false. Accepts a single argument expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/anyElementTrue/}
@@ -810,31 +812,31 @@ export namespace Aggregation.Expression {
    * A type describing the `$arrayElemAt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayElemAt/}
    */
-  export interface $arrayElemAt<S> {
+  export interface $arrayElemAt<S, T = any> {
     /**
      * Returns the element at the specified array index.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayElemAt/}
      */
-    $arrayElemAt: [array: ResolvesToArray<S>, idx: ResolvesToInt<S>];
+    $arrayElemAt: [array: ResolvesToArray<S, T[]>, idx: ResolvesToInt<S>];
   }
 
   /**
    * A type describing the `$arrayToObject` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayToObject/}
    */
-  export interface $arrayToObject<S> {
+  export interface $arrayToObject<S, T = any> {
     /**
      * Converts an array of key value pairs to a document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayToObject/}
      */
-    $arrayToObject: [array: ResolvesToArray<S>];
+    $arrayToObject: [array: ResolvesToArray<S, [keyof T, T[keyof T]][]>];
   }
 
   /**
    * A type describing the `$asin` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asin/}
    */
-  export interface $asin<S> {
+  export interface $asin<S, T = any> {
     /**
      * Returns the inverse sin (arc sine) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asin/}
@@ -846,7 +848,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$asinh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asinh/}
    */
-  export interface $asinh<S> {
+  export interface $asinh<S, T = any> {
     /**
      * Returns the inverse hyperbolic sine (hyperbolic arc sine) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asinh/}
@@ -858,7 +860,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$atan` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan/}
    */
-  export interface $atan<S> {
+  export interface $atan<S, T = any> {
     /**
      * Returns the inverse tangent (arc tangent) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan/}
@@ -870,7 +872,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$atan2` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan2/}
    */
-  export interface $atan2<S> {
+  export interface $atan2<S, T = any> {
     /**
      * Returns the inverse tangent (arc tangent) of y / x in radians, where y and x are the first and second values passed to the expression respectively.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan2/}
@@ -890,7 +892,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$atanh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atanh/}
    */
-  export interface $atanh<S> {
+  export interface $atanh<S, T = any> {
     /**
      * Returns the inverse hyperbolic tangent (hyperbolic arc tangent) of a value in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atanh/}
@@ -902,7 +904,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$avg` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/}
    */
-  export interface $avg<S> {
+  export interface $avg<S, T = any> {
     /**
      * Returns an average of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -915,7 +917,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$binarySize` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/binarySize/}
    */
-  export interface $binarySize<S> {
+  export interface $binarySize<S, T = any> {
     /**
      * Returns the size of a given string or binary data value's content in bytes.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/binarySize/}
@@ -927,7 +929,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$bitAnd` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitAnd/}
    */
-  export interface $bitAnd<S> {
+  export interface $bitAnd<S, T = any> {
     /**
      * Returns the result of a bitwise and operation on an array of int or long values.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitAnd/}
@@ -939,7 +941,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$bitNot` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitNot/}
    */
-  export interface $bitNot<S> {
+  export interface $bitNot<S, T = any> {
     /**
      * Returns the result of a bitwise not operation on a single argument or an array that contains a single int or long value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitNot/}
@@ -951,7 +953,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$bitOr` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitOr/}
    */
-  export interface $bitOr<S> {
+  export interface $bitOr<S, T = any> {
     /**
      * Returns the result of a bitwise or operation on an array of int or long values.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitOr/}
@@ -963,7 +965,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$bitXor` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitXor/}
    */
-  export interface $bitXor<S> {
+  export interface $bitXor<S, T = any> {
     /**
      * Returns the result of a bitwise xor (exclusive or) operation on an array of int and long values.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bitXor/}
@@ -975,7 +977,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$bsonSize` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bsonSize/}
    */
-  export interface $bsonSize<S> {
+  export interface $bsonSize<S, T = any> {
     /**
      * Returns the size in bytes of a given document (i.e. BSON type Object) when encoded as BSON.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bsonSize/}
@@ -987,7 +989,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$case` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
    */
-  export interface $case<S> {
+  export interface $case<S, T = any> {
     /**
      * Represents a single case in a $switch expression
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
@@ -1001,7 +1003,7 @@ export namespace Aggregation.Expression {
       /**
        * Can be any valid expression.
        */
-      then: Expression<S>;
+      then: Expression<S, T>;
     };
   }
 
@@ -1009,7 +1011,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$ceil` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ceil/}
    */
-  export interface $ceil<S> {
+  export interface $ceil<S, T = any> {
     /**
      * Returns the smallest integer greater than or equal to the specified number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ceil/}
@@ -1021,7 +1023,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$cmp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cmp/}
    */
-  export interface $cmp<S> {
+  export interface $cmp<S, T = any> {
     /**
      * Returns 0 if the two values are equivalent, 1 if the first value is greater than the second, and -1 if the first value is less than the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cmp/}
@@ -1033,7 +1035,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$concat` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concat/}
    */
-  export interface $concat<S> {
+  export interface $concat<S, T = any> {
     /**
      * Concatenates any number of strings.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concat/}
@@ -1045,19 +1047,21 @@ export namespace Aggregation.Expression {
    * A type describing the `$concatArrays` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
    */
-  export interface $concatArrays<S> {
-    /**
-     * Concatenates arrays to return the concatenated array.
-     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
-     */
-    $concatArrays: [...ResolvesToArray<S>[]];
-  }
+  export type $concatArrays<S, U> = U extends (infer T)[]
+    ? {
+        /**
+         * Concatenates arrays to return the concatenated array.
+         * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
+         */
+        $concatArrays: [...ResolvesToArray<S, T[]>[]];
+      }
+    : never;
 
   /**
    * A type describing the `$cond` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cond/}
    */
-  export interface $cond<S> {
+  export interface $cond<S, T = any> {
     /**
      * A ternary operator that evaluates one expression, and depending on the result, returns the value of one of the other two expressions. Accepts either three expressions in an ordered list or three named parameters.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cond/}
@@ -1069,7 +1073,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$convert` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/}
    */
-  export interface $convert<S> {
+  export interface $convert<S, T = any> {
     /**
      * Converts a value to a specified type.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/}
@@ -1096,7 +1100,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$cos` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cos/}
    */
-  export interface $cos<S> {
+  export interface $cos<S, T = any> {
     /**
      * Returns the cosine of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cos/}
@@ -1108,7 +1112,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$cosh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cosh/}
    */
-  export interface $cosh<S> {
+  export interface $cosh<S, T = any> {
     /**
      * Returns the hyperbolic cosine of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cosh/}
@@ -1120,7 +1124,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$createObjectId` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/createObjectId/}
    */
-  export interface $createObjectId<S> {
+  export interface $createObjectId<S, T = any> {
     /**
      * Returns a random object ID
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/createObjectId/}
@@ -1132,7 +1136,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateAdd` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateAdd/}
    */
-  export interface $dateAdd<S> {
+  export interface $dateAdd<S, T = any> {
     /**
      * Adds a number of time units to a date object.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateAdd/}
@@ -1163,7 +1167,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateDiff` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateDiff/}
    */
-  export interface $dateDiff<S> {
+  export interface $dateDiff<S, T = any> {
     /**
      * Returns the difference between two dates.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateDiff/}
@@ -1206,7 +1210,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateFromParts` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromParts/}
    */
-  export interface $dateFromParts<S> {
+  export interface $dateFromParts<S, T = any> {
     /**
      * Constructs a BSON Date object given the date's constituent parts.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromParts/}
@@ -1273,7 +1277,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateFromString` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromString/}
    */
-  export interface $dateFromString<S> {
+  export interface $dateFromString<S, T = any> {
     /**
      * Converts a date/time string to a date object.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromString/}
@@ -1313,7 +1317,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateSubtract` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateSubtract/}
    */
-  export interface $dateSubtract<S> {
+  export interface $dateSubtract<S, T = any> {
     /**
      * Subtracts a number of time units from a date object.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateSubtract/}
@@ -1344,7 +1348,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateToParts` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToParts/}
    */
-  export interface $dateToParts<S> {
+  export interface $dateToParts<S, T = any> {
     /**
      * Returns a document containing the constituent parts of a date.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToParts/}
@@ -1371,7 +1375,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateToString` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToString/}
    */
-  export interface $dateToString<S> {
+  export interface $dateToString<S, T = any> {
     /**
      * Returns the date as a formatted string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToString/}
@@ -1405,7 +1409,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dateTrunc` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateTrunc/}
    */
-  export interface $dateTrunc<S> {
+  export interface $dateTrunc<S, T = any> {
     /**
      * Truncates a date.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateTrunc/}
@@ -1445,7 +1449,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dayOfMonth` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfMonth/}
    */
-  export interface $dayOfMonth<S> {
+  export interface $dayOfMonth<S, T = any> {
     /**
      * Returns the day of the month for a date as a number between 1 and 31.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfMonth/}
@@ -1467,7 +1471,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dayOfWeek` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfWeek/}
    */
-  export interface $dayOfWeek<S> {
+  export interface $dayOfWeek<S, T = any> {
     /**
      * Returns the day of the week for a date as a number between 1 (Sunday) and 7 (Saturday).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfWeek/}
@@ -1489,7 +1493,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$dayOfYear` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfYear/}
    */
-  export interface $dayOfYear<S> {
+  export interface $dayOfYear<S, T = any> {
     /**
      * Returns the day of the year for a date as a number between 1 and 366 (leap year).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfYear/}
@@ -1511,7 +1515,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$degreesToRadians` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/degreesToRadians/}
    */
-  export interface $degreesToRadians<S> {
+  export interface $degreesToRadians<S, T = any> {
     /**
      * Converts a value from degrees to radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/degreesToRadians/}
@@ -1523,7 +1527,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$divide` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/divide/}
    */
-  export interface $divide<S> {
+  export interface $divide<S, T = any> {
     /**
      * Returns the result of dividing the first number by the second. Accepts two argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/divide/}
@@ -1541,7 +1545,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$eq` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/eq/}
    */
-  export interface $eq<S> {
+  export interface $eq<S, T = any> {
     /**
      * Returns true if the values are equivalent.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/eq/}
@@ -1553,7 +1557,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$exp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/exp/}
    */
-  export interface $exp<S> {
+  export interface $exp<S, T = any> {
     /**
      * Raises e to the specified exponent.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/exp/}
@@ -1565,13 +1569,13 @@ export namespace Aggregation.Expression {
    * A type describing the `$filter` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/filter/}
    */
-  export interface $filter<S> {
+  export interface $filter<S, T = any> {
     /**
      * Selects a subset of the array to return an array with only the elements that match the filter condition.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/filter/}
      */
     $filter: {
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
 
       /**
        * An expression that resolves to a boolean value used to determine if an element should be included in the output array. The expression references each element of the input array individually with the variable name specified in as.
@@ -1595,19 +1599,19 @@ export namespace Aggregation.Expression {
    * A type describing the `$first` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/first/}
    */
-  export interface $first<S> {
+  export interface $first<S, T = any> {
     /**
      * Returns the result of an expression for the first document in an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/first/}
      */
-    $first: ResolvesToArray<S>;
+    $first: ResolvesToArray<S, T[]>;
   }
 
   /**
    * A type describing the `$firstN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/firstN-array-element/}
    */
-  export interface $firstN<S> {
+  export interface $firstN<S, T = any> {
     /**
      * Returns a specified number of elements from the beginning of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/firstN-array-element/}
@@ -1621,7 +1625,7 @@ export namespace Aggregation.Expression {
       /**
        * An expression that resolves to the array from which to return n elements.
        */
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
     };
   }
 
@@ -1629,7 +1633,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$floor` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/floor/}
    */
-  export interface $floor<S> {
+  export interface $floor<S, T = any> {
     /**
      * Returns the largest integer less than or equal to the specified number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/floor/}
@@ -1641,7 +1645,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$function` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/function/}
    */
-  export interface $function<S> {
+  export interface $function<S, T = any> {
     /**
      * Defines a custom function.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/function/}
@@ -1665,7 +1669,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$getField` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/getField/}
    */
-  export interface $getField<S> {
+  export interface $getField<S, T = any> {
     /**
      * Returns the value of a specified field from a document. You can use $getField to retrieve the value of fields with names that contain periods (.) or start with dollar signs ($).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/getField/}
@@ -1689,7 +1693,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$gt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gt/}
    */
-  export interface $gt<S> {
+  export interface $gt<S, T = any> {
     /**
      * Returns true if the first value is greater than the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gt/}
@@ -1701,7 +1705,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$gte` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gte/}
    */
-  export interface $gte<S> {
+  export interface $gte<S, T = any> {
     /**
      * Returns true if the first value is greater than or equal to the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gte/}
@@ -1713,7 +1717,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$hour` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hour/}
    */
-  export interface $hour<S> {
+  export interface $hour<S, T = any> {
     /**
      * Returns the hour for a date as a number between 0 and 23.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hour/}
@@ -1735,7 +1739,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$ifNull` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ifNull/}
    */
-  export interface $ifNull<S> {
+  export interface $ifNull<S, T = any> {
     /**
      * Returns either the non-null result of the first expression or the result of the second expression if the first expression results in a null result. Null result encompasses instances of undefined values or missing fields. Accepts two expressions as arguments. The result of the second expression can be null.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ifNull/}
@@ -1747,7 +1751,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$in` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/in/}
    */
-  export interface $in<S> {
+  export interface $in<S, T = any> {
     /**
      * Returns a boolean indicating whether a specified value is in an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/in/}
@@ -1769,7 +1773,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$indexOfArray` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfArray/}
    */
-  export interface $indexOfArray<S> {
+  export interface $indexOfArray<S, T = any> {
     /**
      * Searches an array for an occurrence of a specified value and returns the array index of the first occurrence. Array indexes start at zero.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfArray/}
@@ -1801,7 +1805,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$indexOfBytes` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfBytes/}
    */
-  export interface $indexOfBytes<S> {
+  export interface $indexOfBytes<S, T = any> {
     /**
      * Searches a string for an occurrence of a substring and returns the UTF-8 byte index of the first occurrence. If the substring is not found, returns -1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfBytes/}
@@ -1837,7 +1841,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$indexOfCP` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfCP/}
    */
-  export interface $indexOfCP<S> {
+  export interface $indexOfCP<S, T = any> {
     /**
      * Searches a string for an occurrence of a substring and returns the UTF-8 code point index of the first occurrence. If the substring is not found, returns -1
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfCP/}
@@ -1873,7 +1877,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$isArray` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isArray/}
    */
-  export interface $isArray<S> {
+  export interface $isArray<S, T = any> {
     /**
      * Determines if the operand is an array. Returns a boolean.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isArray/}
@@ -1885,7 +1889,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$isNumber` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isNumber/}
    */
-  export interface $isNumber<S> {
+  export interface $isNumber<S, T = any> {
     /**
      * Returns boolean true if the specified expression resolves to an integer, decimal, double, or long.
      * Returns boolean false if the expression resolves to any other BSON type, null, or a missing field.
@@ -1898,7 +1902,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$isoDayOfWeek` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoDayOfWeek/}
    */
-  export interface $isoDayOfWeek<S> {
+  export interface $isoDayOfWeek<S, T = any> {
     /**
      * Returns the weekday number in ISO 8601 format, ranging from 1 (for Monday) to 7 (for Sunday).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoDayOfWeek/}
@@ -1920,7 +1924,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$isoWeek` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeek/}
    */
-  export interface $isoWeek<S> {
+  export interface $isoWeek<S, T = any> {
     /**
      * Returns the week number in ISO 8601 format, ranging from 1 to 53. Week numbers start at 1 with the week (Monday through Sunday) that contains the year's first Thursday.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeek/}
@@ -1942,7 +1946,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$isoWeekYear` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeekYear/}
    */
-  export interface $isoWeekYear<S> {
+  export interface $isoWeekYear<S, T = any> {
     /**
      * Returns the year number in ISO 8601 format. The year starts with the Monday of week 1 (ISO 8601) and ends with the Sunday of the last week (ISO 8601).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeekYear/}
@@ -1964,19 +1968,19 @@ export namespace Aggregation.Expression {
    * A type describing the `$last` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/last/}
    */
-  export interface $last<S> {
+  export interface $last<S, T = any> {
     /**
      * Returns the result of an expression for the last document in an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/last/}
      */
-    $last: ResolvesToArray<S>;
+    $last: ResolvesToArray<S, T[]>;
   }
 
   /**
    * A type describing the `$lastN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
    */
-  export interface $lastN<S> {
+  export interface $lastN<S, T = any> {
     /**
      * Returns a specified number of elements from the end of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
@@ -1990,7 +1994,7 @@ export namespace Aggregation.Expression {
       /**
        * An expression that resolves to the array from which to return n elements.
        */
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
     };
   }
 
@@ -1998,7 +2002,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$let` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/let/}
    */
-  export interface $let<S> {
+  export interface $let<S, T = any> {
     /**
      * Defines variables for use within the scope of a subexpression and returns the result of the subexpression. Accepts named parameters.
      * Accepts any number of argument expressions.
@@ -2022,7 +2026,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$literal` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/literal/}
    */
-  export interface $literal<S> {
+  export interface $literal<S, T = any> {
     /**
      * Return a value without parsing. Use for values that the aggregation pipeline may interpret as an expression. For example, use a $literal expression to a string that starts with a dollar sign ($) to avoid parsing as a field path.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/literal/}
@@ -2034,7 +2038,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$ln` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ln/}
    */
-  export interface $ln<S> {
+  export interface $ln<S, T = any> {
     /**
      * Calculates the natural log of a number.
      * $ln is equivalent to $log: [ <number>, Math.E ] expression, where Math.E is a JavaScript representation for Euler's number e.
@@ -2047,7 +2051,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$log` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log/}
    */
-  export interface $log<S> {
+  export interface $log<S, T = any> {
     /**
      * Calculates the log of a number in the specified base.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log/}
@@ -2069,7 +2073,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$log10` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log10/}
    */
-  export interface $log10<S> {
+  export interface $log10<S, T = any> {
     /**
      * Calculates the log base 10 of a number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log10/}
@@ -2081,7 +2085,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$lt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lt/}
    */
-  export interface $lt<S> {
+  export interface $lt<S, T = any> {
     /**
      * Returns true if the first value is less than the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lt/}
@@ -2093,7 +2097,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$lte` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lte/}
    */
-  export interface $lte<S> {
+  export interface $lte<S, T = any> {
     /**
      * Returns true if the first value is less than or equal to the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lte/}
@@ -2105,7 +2109,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$ltrim` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ltrim/}
    */
-  export interface $ltrim<S> {
+  export interface $ltrim<S, T = any> {
     /**
      * Removes whitespace or the specified characters from the beginning of a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ltrim/}
@@ -2129,7 +2133,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$map` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/}
    */
-  export interface $map<S> {
+  export interface $map<S, T = any> {
     /**
      * Applies a subexpression to each element of an array and returns the array of resulting values in order. Accepts named parameters.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/}
@@ -2156,7 +2160,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$max` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/max/}
    */
-  export interface $max<S> {
+  export interface $max<S, T = any> {
     /**
      * Returns the maximum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -2169,7 +2173,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$maxN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN-array-element/}
    */
-  export interface $maxN<S> {
+  export interface $maxN<S, T = any> {
     /**
      * Returns the n largest values in an array. Distinct from the $maxN accumulator.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN-array-element/}
@@ -2178,7 +2182,7 @@ export namespace Aggregation.Expression {
       /**
        * An expression that resolves to the array from which to return the maximal n elements.
        */
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
 
       /**
        * An expression that resolves to a positive integer. The integer specifies the number of array elements that $maxN returns.
@@ -2191,7 +2195,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$median` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/median/}
    */
-  export interface $median<S> {
+  export interface $median<S, T = any> {
     /**
      * Returns an approximation of the median, the 50th percentile, as a scalar value.
      * This operator is available as an accumulator in these stages:
@@ -2217,7 +2221,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$mergeObjects` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
    */
-  export interface $mergeObjects<S> {
+  export interface $mergeObjects<S, T = any> {
     /**
      * Combines multiple documents into a single document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
@@ -2234,7 +2238,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$meta` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/meta/}
    */
-  export interface $meta<S> {
+  export interface $meta<S, T = any> {
     /**
      * Access available per-document metadata related to the aggregation operation.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/meta/}
@@ -2246,7 +2250,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$millisecond` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/millisecond/}
    */
-  export interface $millisecond<S> {
+  export interface $millisecond<S, T = any> {
     /**
      * Returns the milliseconds of a date as a number between 0 and 999.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/millisecond/}
@@ -2268,7 +2272,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$min` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/}
    */
-  export interface $min<S> {
+  export interface $min<S, T = any> {
     /**
      * Returns the minimum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -2281,7 +2285,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$minN` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN-array-element/}
    */
-  export interface $minN<S> {
+  export interface $minN<S, T = any> {
     /**
      * Returns the n smallest values in an array. Distinct from the $minN accumulator.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN-array-element/}
@@ -2290,7 +2294,7 @@ export namespace Aggregation.Expression {
       /**
        * An expression that resolves to the array from which to return the maximal n elements.
        */
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
 
       /**
        * An expression that resolves to a positive integer. The integer specifies the number of array elements that $maxN returns.
@@ -2303,7 +2307,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$minute` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minute/}
    */
-  export interface $minute<S> {
+  export interface $minute<S, T = any> {
     /**
      * Returns the minute for a date as a number between 0 and 59.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minute/}
@@ -2325,7 +2329,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$mod` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mod/}
    */
-  export interface $mod<S> {
+  export interface $mod<S, T = any> {
     /**
      * Returns the remainder of the first number divided by the second. Accepts two argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mod/}
@@ -2343,7 +2347,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$month` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/month/}
    */
-  export interface $month<S> {
+  export interface $month<S, T = any> {
     /**
      * Returns the month for a date as a number between 1 (January) and 12 (December).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/month/}
@@ -2365,7 +2369,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$multiply` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/multiply/}
    */
-  export interface $multiply<S> {
+  export interface $multiply<S, T = any> {
     /**
      * Multiplies numbers to return the product. Accepts any number of argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/multiply/}
@@ -2383,7 +2387,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$ne` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ne/}
    */
-  export interface $ne<S> {
+  export interface $ne<S, T = any> {
     /**
      * Returns true if the values are not equivalent.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ne/}
@@ -2395,7 +2399,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$not` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/not/}
    */
-  export interface $not<S> {
+  export interface $not<S, T = any> {
     /**
      * Returns the boolean value that is the opposite of its argument expression. Accepts a single argument expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/not/}
@@ -2407,19 +2411,24 @@ export namespace Aggregation.Expression {
    * A type describing the `$objectToArray` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/objectToArray/}
    */
-  export interface $objectToArray<S> {
-    /**
-     * Converts a document to an array of documents representing key-value pairs.
-     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/objectToArray/}
-     */
-    $objectToArray: ResolvesToObject<S>;
-  }
+  export type $objectToArray<S, U> = U extends [
+    keyof (infer T),
+    (infer T)[keyof (infer T)],
+  ][]
+    ? {
+        /**
+         * Converts a document to an array of documents representing key-value pairs.
+         * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/objectToArray/}
+         */
+        $objectToArray: ResolvesToObject<S, T>;
+      }
+    : never;
 
   /**
    * A type describing the `$or` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/or/}
    */
-  export interface $or<S> {
+  export interface $or<S, T = any> {
     /**
      * Returns true when any of its expressions evaluates to true. Accepts any number of argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/or/}
@@ -2431,7 +2440,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$percentile` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/percentile/}
    */
-  export interface $percentile<S> {
+  export interface $percentile<S, T = any> {
     /**
      * Returns an array of scalar values that correspond to specified percentile values.
      * This operator is available as an accumulator in these stages:
@@ -2463,7 +2472,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$pow` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/pow/}
    */
-  export interface $pow<S> {
+  export interface $pow<S, T = any> {
     /**
      * Raises a number to the specified exponent.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/pow/}
@@ -2475,7 +2484,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$radiansToDegrees` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/radiansToDegrees/}
    */
-  export interface $radiansToDegrees<S> {
+  export interface $radiansToDegrees<S, T = any> {
     /**
      * Converts a value from radians to degrees.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/radiansToDegrees/}
@@ -2487,7 +2496,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$rand` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rand/}
    */
-  export interface $rand<S> {
+  export interface $rand<S, T = any> {
     /**
      * Returns a random float between 0 and 1
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rand/}
@@ -2499,7 +2508,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$range` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/range/}
    */
-  export interface $range<S> {
+  export interface $range<S, T = any> {
     /**
      * Outputs an array containing a sequence of integers according to user-defined inputs.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/range/}
@@ -2526,7 +2535,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$reduce` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reduce/}
    */
-  export interface $reduce<S> {
+  export interface $reduce<S, T = any> {
     /**
      * Applies an expression to each element in an array and combines them into a single value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reduce/}
@@ -2570,7 +2579,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$regexFind` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexFind/}
    */
-  export interface $regexFind<S> {
+  export interface $regexFind<S, T = any> {
     /**
      * Applies a regular expression (regex) to a string and returns information on the first matched substring.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexFind/}
@@ -2593,7 +2602,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$regexFindAll` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexFindAll/}
    */
-  export interface $regexFindAll<S> {
+  export interface $regexFindAll<S, T = any> {
     /**
      * Applies a regular expression (regex) to a string and returns information on the all matched substrings.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexFindAll/}
@@ -2616,7 +2625,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$regexMatch` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexMatch/}
    */
-  export interface $regexMatch<S> {
+  export interface $regexMatch<S, T = any> {
     /**
      * Applies a regular expression (regex) to a string and returns a boolean that indicates if a match is found or not.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/regexMatch/}
@@ -2639,7 +2648,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$replaceAll` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceAll/}
    */
-  export interface $replaceAll<S> {
+  export interface $replaceAll<S, T = any> {
     /**
      * Replaces all instances of a search string in an input string with a replacement string.
      * $replaceAll is both case-sensitive and diacritic-sensitive, and ignores any collation present on a collection.
@@ -2667,7 +2676,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$replaceOne` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceOne/}
    */
-  export interface $replaceOne<S> {
+  export interface $replaceOne<S, T = any> {
     /**
      * Replaces the first instance of a matched string in a given input.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceOne/}
@@ -2694,7 +2703,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$reverseArray` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reverseArray/}
    */
-  export interface $reverseArray<S> {
+  export interface $reverseArray<S, T = any> {
     /**
      * Returns an array with the elements in reverse order.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reverseArray/}
@@ -2706,7 +2715,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$round` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/round/}
    */
-  export interface $round<S> {
+  export interface $round<S, T = any> {
     /**
      * Rounds a number to a whole integer or to a specified decimal place.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/round/}
@@ -2729,7 +2738,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$rtrim` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rtrim/}
    */
-  export interface $rtrim<S> {
+  export interface $rtrim<S, T = any> {
     /**
      * Removes whitespace characters, including null, or the specified characters from the end of a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rtrim/}
@@ -2753,7 +2762,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$second` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/second/}
    */
-  export interface $second<S> {
+  export interface $second<S, T = any> {
     /**
      * Returns the seconds for a date as a number between 0 and 60 (leap seconds).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/second/}
@@ -2775,7 +2784,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$setDifference` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setDifference/}
    */
-  export interface $setDifference<S> {
+  export interface $setDifference<S, T = any> {
     /**
      * Returns a set with elements that appear in the first set but not in the second set; i.e. performs a relative complement of the second set relative to the first. Accepts exactly two argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setDifference/}
@@ -2784,12 +2793,12 @@ export namespace Aggregation.Expression {
       /**
        * The arguments can be any valid expression as long as they each resolve to an array.
        */
-      expression1: ResolvesToArray<S>,
+      expression1: ResolvesToArray<S, T>,
 
       /**
        * The arguments can be any valid expression as long as they each resolve to an array.
        */
-      expression2: ResolvesToArray<S>,
+      expression2: ResolvesToArray<S, T>,
     ];
   }
 
@@ -2797,7 +2806,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$setEquals` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setEquals/}
    */
-  export interface $setEquals<S> {
+  export interface $setEquals<S, T = any> {
     /**
      * Returns true if the input sets have the same distinct elements. Accepts two or more argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setEquals/}
@@ -2809,7 +2818,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$setField` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setField/}
    */
-  export interface $setField<S> {
+  export interface $setField<S, T = any> {
     /**
      * Adds, updates, or removes a specified field in a document. You can use $setField to add, update, or remove fields with names that contain periods (.) or start with dollar signs ($).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setField/}
@@ -2837,19 +2846,19 @@ export namespace Aggregation.Expression {
    * A type describing the `$setIntersection` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIntersection/}
    */
-  export interface $setIntersection<S> {
+  export interface $setIntersection<S, T = any> {
     /**
      * Returns a set with elements that appear in all of the input sets. Accepts any number of argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIntersection/}
      */
-    $setIntersection: [...ResolvesToArray<S>[]];
+    $setIntersection: [...ResolvesToArray<S, T>[]];
   }
 
   /**
    * A type describing the `$setIsSubset` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIsSubset/}
    */
-  export interface $setIsSubset<S> {
+  export interface $setIsSubset<S, T = any> {
     /**
      * Returns true if all elements of the first set appear in the second set, including when the first set equals the second set; i.e. not a strict subset. Accepts exactly two argument expressions.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIsSubset/}
@@ -2864,7 +2873,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$setUnion` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
    */
-  export interface $setUnion<S> {
+  export interface $setUnion<S, T = any> {
     /**
      * Returns a set with elements that appear in any of the input sets.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
@@ -2876,7 +2885,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$sin` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sin/}
    */
-  export interface $sin<S> {
+  export interface $sin<S, T = any> {
     /**
      * Returns the sine of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sin/}
@@ -2888,7 +2897,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$sinh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sinh/}
    */
-  export interface $sinh<S> {
+  export interface $sinh<S, T = any> {
     /**
      * Returns the hyperbolic sine of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sinh/}
@@ -2900,7 +2909,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$size` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/size/}
    */
-  export interface $size<S> {
+  export interface $size<S, T = any> {
     /**
      * Returns the number of elements in the array. Accepts a single expression as argument.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/size/}
@@ -2912,7 +2921,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$slice` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/slice/}
    */
-  export interface $slice<S> {
+  export interface $slice<S, T = any> {
     /**
      * Returns a subset of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/slice/}
@@ -2957,7 +2966,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$sortArray` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortArray/}
    */
-  export interface $sortArray<S> {
+  export interface $sortArray<S, T = any> {
     /**
      * Sorts the elements of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortArray/}
@@ -2968,7 +2977,7 @@ export namespace Aggregation.Expression {
        * The result is null if the expression: is missing, evaluates to null, or evaluates to undefined
        * If the expression evaluates to any other non-array value, the document returns an error.
        */
-      input: ResolvesToArray<S>;
+      input: ResolvesToArray<S, T>;
 
       /**
        * The document specifies a sort ordering.
@@ -2981,7 +2990,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$split` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/split/}
    */
-  export interface $split<S> {
+  export interface $split<S, T = any> {
     /**
      * Splits a string into substrings based on a delimiter. Returns an array of substrings. If the delimiter is not found within the string, returns an array containing the original string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/split/}
@@ -3003,7 +3012,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$sqrt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sqrt/}
    */
-  export interface $sqrt<S> {
+  export interface $sqrt<S, T = any> {
     /**
      * Calculates the square root.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sqrt/}
@@ -3015,7 +3024,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$stdDevPop` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevPop/}
    */
-  export interface $stdDevPop<S> {
+  export interface $stdDevPop<S, T = any> {
     /**
      * Calculates the population standard deviation of the input values. Use if the values encompass the entire population of data you want to represent and do not wish to generalize about a larger population. $stdDevPop ignores non-numeric values.
      * If the values represent only a sample of a population of data from which to generalize about the population, use $stdDevSamp instead.
@@ -3029,7 +3038,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$stdDevSamp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevSamp/}
    */
-  export interface $stdDevSamp<S> {
+  export interface $stdDevSamp<S, T = any> {
     /**
      * Calculates the sample standard deviation of the input values. Use if the values encompass a sample of a population of data from which to generalize about the population. $stdDevSamp ignores non-numeric values.
      * If the values represent the entire population of data or you do not wish to generalize about a larger population, use $stdDevPop instead.
@@ -3042,7 +3051,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$strLenBytes` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenBytes/}
    */
-  export interface $strLenBytes<S> {
+  export interface $strLenBytes<S, T = any> {
     /**
      * Returns the number of UTF-8 encoded bytes in a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenBytes/}
@@ -3054,7 +3063,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$strLenCP` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenCP/}
    */
-  export interface $strLenCP<S> {
+  export interface $strLenCP<S, T = any> {
     /**
      * Returns the number of UTF-8 code points in a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenCP/}
@@ -3066,7 +3075,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$strcasecmp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strcasecmp/}
    */
-  export interface $strcasecmp<S> {
+  export interface $strcasecmp<S, T = any> {
     /**
      * Performs case-insensitive string comparison and returns: 0 if two strings are equivalent, 1 if the first string is greater than the second, and -1 if the first string is less than the second.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strcasecmp/}
@@ -3081,7 +3090,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$substr` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substr/}
    */
-  export interface $substr<S> {
+  export interface $substr<S, T = any> {
     /**
      * Deprecated. Use $substrBytes or $substrCP.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substr/}
@@ -3105,7 +3114,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$substrBytes` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrBytes/}
    */
-  export interface $substrBytes<S> {
+  export interface $substrBytes<S, T = any> {
     /**
      * Returns the substring of a string. Starts with the character at the specified UTF-8 byte index (zero-based) in the string and continues for the specified number of bytes.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrBytes/}
@@ -3129,7 +3138,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$substrCP` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrCP/}
    */
-  export interface $substrCP<S> {
+  export interface $substrCP<S, T = any> {
     /**
      * Returns the substring of a string. Starts with the character at the specified UTF-8 code point (CP) index (zero-based) in the string and continues for the number of code points specified.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrCP/}
@@ -3153,7 +3162,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$subtract` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtract/}
    */
-  export interface $subtract<S> {
+  export interface $subtract<S, T = any> {
     /**
      * Returns the result of subtracting the second value from the first. If the two values are numbers, return the difference. If the two values are dates, return the difference in milliseconds. If the two values are a date and a number in milliseconds, return the resulting date. Accepts two argument expressions. If the two values are a date and a number, specify the date argument first as it is not meaningful to subtract a date from a number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtract/}
@@ -3168,7 +3177,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$sum` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/}
    */
-  export interface $sum<S> {
+  export interface $sum<S, T = any> {
     /**
      * Returns a sum of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
@@ -3181,7 +3190,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$switch` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
    */
-  export interface $switch<S> {
+  export interface $switch<S, T = any> {
     /**
      * Evaluates a series of case expressions. When it finds an expression which evaluates to true, $switch executes a specified expression and breaks out of the control flow.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
@@ -3207,7 +3216,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$tan` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tan/}
    */
-  export interface $tan<S> {
+  export interface $tan<S, T = any> {
     /**
      * Returns the tangent of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tan/}
@@ -3219,7 +3228,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$tanh` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tanh/}
    */
-  export interface $tanh<S> {
+  export interface $tanh<S, T = any> {
     /**
      * Returns the hyperbolic tangent of a value that is measured in radians.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tanh/}
@@ -3231,7 +3240,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toBool` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toBool/}
    */
-  export interface $toBool<S> {
+  export interface $toBool<S, T = any> {
     /**
      * Converts value to a boolean.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toBool/}
@@ -3243,7 +3252,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toDate` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDate/}
    */
-  export interface $toDate<S> {
+  export interface $toDate<S, T = any> {
     /**
      * Converts value to a Date.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDate/}
@@ -3255,7 +3264,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toDecimal` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDecimal/}
    */
-  export interface $toDecimal<S> {
+  export interface $toDecimal<S, T = any> {
     /**
      * Converts value to a Decimal128.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDecimal/}
@@ -3267,7 +3276,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toDouble` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDouble/}
    */
-  export interface $toDouble<S> {
+  export interface $toDouble<S, T = any> {
     /**
      * Converts value to a double.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toDouble/}
@@ -3279,7 +3288,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toHashedIndexKey` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toHashedIndexKey/}
    */
-  export interface $toHashedIndexKey<S> {
+  export interface $toHashedIndexKey<S, T = any> {
     /**
      * Computes and returns the hash value of the input expression using the same hash function that MongoDB uses to create a hashed index. A hash function maps a key or string to a fixed-size numeric value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toHashedIndexKey/}
@@ -3291,7 +3300,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toInt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toInt/}
    */
-  export interface $toInt<S> {
+  export interface $toInt<S, T = any> {
     /**
      * Converts value to an integer.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toInt/}
@@ -3303,7 +3312,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toLong` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toLong/}
    */
-  export interface $toLong<S> {
+  export interface $toLong<S, T = any> {
     /**
      * Converts value to a long.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toLong/}
@@ -3315,7 +3324,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toLower` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toLower/}
    */
-  export interface $toLower<S> {
+  export interface $toLower<S, T = any> {
     /**
      * Converts a string to lowercase. Accepts a single argument expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toLower/}
@@ -3327,7 +3336,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toObjectId` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObjectId/}
    */
-  export interface $toObjectId<S> {
+  export interface $toObjectId<S, T = any> {
     /**
      * Converts value to an ObjectId.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObjectId/}
@@ -3339,7 +3348,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toString` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toString/}
    */
-  export interface $toString<S> {
+  export interface $toString<S, T = any> {
     /**
      * Converts value to a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toString/}
@@ -3351,7 +3360,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$toUpper` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toUpper/}
    */
-  export interface $toUpper<S> {
+  export interface $toUpper<S, T = any> {
     /**
      * Converts a string to uppercase. Accepts a single argument expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toUpper/}
@@ -3363,7 +3372,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$trim` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/trim/}
    */
-  export interface $trim<S> {
+  export interface $trim<S, T = any> {
     /**
      * Removes whitespace or the specified characters from the beginning and end of a string.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/trim/}
@@ -3387,7 +3396,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$trunc` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/trunc/}
    */
-  export interface $trunc<S> {
+  export interface $trunc<S, T = any> {
     /**
      * Truncates a number to a whole integer or to a specified decimal place.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/trunc/}
@@ -3410,7 +3419,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$tsIncrement` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tsIncrement/}
    */
-  export interface $tsIncrement<S> {
+  export interface $tsIncrement<S, T = any> {
     /**
      * Returns the incrementing ordinal from a timestamp as a long.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tsIncrement/}
@@ -3422,7 +3431,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$tsSecond` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tsSecond/}
    */
-  export interface $tsSecond<S> {
+  export interface $tsSecond<S, T = any> {
     /**
      * Returns the seconds from a timestamp as a long.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tsSecond/}
@@ -3434,7 +3443,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$type` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/type/}
    */
-  export interface $type<S> {
+  export interface $type<S, T = any> {
     /**
      * Return the BSON data type of the field.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/type/}
@@ -3446,7 +3455,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$unsetField` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unsetField/}
    */
-  export interface $unsetField<S> {
+  export interface $unsetField<S, T = any> {
     /**
      * You can use $unsetField to remove fields with names that contain periods (.) or that start with dollar signs ($).
      * $unsetField is an alias for $setField using $$REMOVE to remove fields.
@@ -3469,7 +3478,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$week` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/week/}
    */
-  export interface $week<S> {
+  export interface $week<S, T = any> {
     /**
      * Returns the week number for a date as a number between 0 (the partial week that precedes the first Sunday of the year) and 53 (leap year).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/week/}
@@ -3491,7 +3500,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$year` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/year/}
    */
-  export interface $year<S> {
+  export interface $year<S, T = any> {
     /**
      * Returns the year for a date as a number (e.g. 2014).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/year/}
@@ -3513,7 +3522,7 @@ export namespace Aggregation.Expression {
    * A type describing the `$zip` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/zip/}
    */
-  export interface $zip<S> {
+  export interface $zip<S, T = any> {
     /**
      * Merge two arrays together.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/zip/}
@@ -3541,12 +3550,47 @@ export namespace Aggregation.Expression {
     };
   }
 }
+export namespace Aggregation.Pipeline {
+  /**
+   * A type describing the `pipeline` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/core/aggregation-pipeline/}
+   */
+  export interface Pipeline<S, T = any> {
+    /**
+     * An aggregation pipeline consists of one or more stages that process documents. These documents can come from a collection, a view, or a specially designed stage.
+     * @see {@link https://www.mongodb.com/docs/manual/core/aggregation-pipeline/}
+     */
+    pipeline: [
+      /**
+       * A list of stages
+       */
+      ...Stage<S>[],
+    ];
+  }
+
+  /**
+   * A type describing the `updatePipeline` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/tutorial/update-documents-with-aggregation-pipeline/}
+   */
+  export interface UpdatePipeline<S, T = any> {
+    /**
+     * Use aggregation pipelines to perform update operations.
+     * @see {@link https://www.mongodb.com/docs/manual/tutorial/update-documents-with-aggregation-pipeline/}
+     */
+    updatePipeline: [
+      /**
+       * A list of stages
+       */
+      ...UpdateStage<S>[],
+    ];
+  }
+}
 export namespace Aggregation.Query {
   /**
    * A type describing the `$all` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/all/}
    */
-  export interface $all<S> {
+  export interface $all<S, T = any> {
     /**
      * Matches arrays that contain all elements specified in the query.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/all/}
@@ -3558,7 +3602,7 @@ export namespace Aggregation.Query {
    * A type describing the `$and` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/and/}
    */
-  export interface $and<S> {
+  export interface $and<S, T = any> {
     /**
      * Joins query clauses with a logical AND returns all documents that match the conditions of both clauses.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/and/}
@@ -3570,7 +3614,7 @@ export namespace Aggregation.Query {
    * A type describing the `$bitsAllClear` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllClear/}
    */
-  export interface $bitsAllClear<S> {
+  export interface $bitsAllClear<S, T = any> {
     /**
      * Matches numeric or binary values in which a set of bit positions all have a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllClear/}
@@ -3582,7 +3626,7 @@ export namespace Aggregation.Query {
    * A type describing the `$bitsAllSet` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllSet/}
    */
-  export interface $bitsAllSet<S> {
+  export interface $bitsAllSet<S, T = any> {
     /**
      * Matches numeric or binary values in which a set of bit positions all have a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllSet/}
@@ -3594,7 +3638,7 @@ export namespace Aggregation.Query {
    * A type describing the `$bitsAnyClear` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnyClear/}
    */
-  export interface $bitsAnyClear<S> {
+  export interface $bitsAnyClear<S, T = any> {
     /**
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnyClear/}
@@ -3606,7 +3650,7 @@ export namespace Aggregation.Query {
    * A type describing the `$bitsAnySet` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/}
    */
-  export interface $bitsAnySet<S> {
+  export interface $bitsAnySet<S, T = any> {
     /**
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/}
@@ -3618,7 +3662,7 @@ export namespace Aggregation.Query {
    * A type describing the `$box` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/box/}
    */
-  export interface $box<S> {
+  export interface $box<S, T = any> {
     /**
      * Specifies a rectangular box using legacy coordinate pairs for $geoWithin queries. The 2d index supports $box.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/box/}
@@ -3630,7 +3674,7 @@ export namespace Aggregation.Query {
    * A type describing the `$center` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/center/}
    */
-  export interface $center<S> {
+  export interface $center<S, T = any> {
     /**
      * Specifies a circle using legacy coordinate pairs to $geoWithin queries when using planar geometry. The 2d index supports $center.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/center/}
@@ -3642,7 +3686,7 @@ export namespace Aggregation.Query {
    * A type describing the `$centerSphere` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/}
    */
-  export interface $centerSphere<S> {
+  export interface $centerSphere<S, T = any> {
     /**
      * Specifies a circle using either legacy coordinate pairs or GeoJSON format for $geoWithin queries when using spherical geometry. The 2dsphere and 2d indexes support $centerSphere.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/}
@@ -3654,7 +3698,7 @@ export namespace Aggregation.Query {
    * A type describing the `$comment` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
    */
-  export interface $comment<S> {
+  export interface $comment<S, T = any> {
     /**
      * Adds a comment to a query predicate.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
@@ -3666,7 +3710,7 @@ export namespace Aggregation.Query {
    * A type describing the `$elemMatch` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/}
    */
-  export interface $elemMatch<S> {
+  export interface $elemMatch<S, T = any> {
     /**
      * The $elemMatch operator matches documents that contain an array field with at least one element that matches all the specified query criteria.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/}
@@ -3678,7 +3722,7 @@ export namespace Aggregation.Query {
    * A type describing the `$eq` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/eq/}
    */
-  export interface $eq<S> {
+  export interface $eq<S, T = any> {
     /**
      * Matches values that are equal to a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/eq/}
@@ -3690,7 +3734,7 @@ export namespace Aggregation.Query {
    * A type describing the `$exists` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/exists/}
    */
-  export interface $exists<S> {
+  export interface $exists<S, T = any> {
     /**
      * Matches documents that have the specified field.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/exists/}
@@ -3702,7 +3746,7 @@ export namespace Aggregation.Query {
    * A type describing the `$expr` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/}
    */
-  export interface $expr<S> {
+  export interface $expr<S, T = any> {
     /**
      * Allows use of aggregation expressions within the query language.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/}
@@ -3714,7 +3758,7 @@ export namespace Aggregation.Query {
    * A type describing the `$geoIntersects` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/}
    */
-  export interface $geoIntersects<S> {
+  export interface $geoIntersects<S, T = any> {
     /**
      * Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports $geoIntersects.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/}
@@ -3726,7 +3770,7 @@ export namespace Aggregation.Query {
    * A type describing the `$geoWithin` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/}
    */
-  export interface $geoWithin<S> {
+  export interface $geoWithin<S, T = any> {
     /**
      * Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support $geoWithin.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/}
@@ -3738,7 +3782,7 @@ export namespace Aggregation.Query {
    * A type describing the `$geometry` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geometry/}
    */
-  export interface $geometry<S> {
+  export interface $geometry<S, T = any> {
     /**
      * Specifies a geometry in GeoJSON format to geospatial query operators.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geometry/}
@@ -3754,7 +3798,7 @@ export namespace Aggregation.Query {
    * A type describing the `$gt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gt/}
    */
-  export interface $gt<S> {
+  export interface $gt<S, T = any> {
     /**
      * Matches values that are greater than a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gt/}
@@ -3766,7 +3810,7 @@ export namespace Aggregation.Query {
    * A type describing the `$gte` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gte/}
    */
-  export interface $gte<S> {
+  export interface $gte<S, T = any> {
     /**
      * Matches values that are greater than or equal to a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gte/}
@@ -3778,7 +3822,7 @@ export namespace Aggregation.Query {
    * A type describing the `$in` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/in/}
    */
-  export interface $in<S> {
+  export interface $in<S, T = any> {
     /**
      * Matches any of the values specified in an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/in/}
@@ -3790,7 +3834,7 @@ export namespace Aggregation.Query {
    * A type describing the `$jsonSchema` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/jsonSchema/}
    */
-  export interface $jsonSchema<S> {
+  export interface $jsonSchema<S, T = any> {
     /**
      * Validate documents against the given JSON Schema.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/jsonSchema/}
@@ -3802,7 +3846,7 @@ export namespace Aggregation.Query {
    * A type describing the `$lt` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/lt/}
    */
-  export interface $lt<S> {
+  export interface $lt<S, T = any> {
     /**
      * Matches values that are less than a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/lt/}
@@ -3814,7 +3858,7 @@ export namespace Aggregation.Query {
    * A type describing the `$lte` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/lte/}
    */
-  export interface $lte<S> {
+  export interface $lte<S, T = any> {
     /**
      * Matches values that are less than or equal to a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/lte/}
@@ -3826,7 +3870,7 @@ export namespace Aggregation.Query {
    * A type describing the `$maxDistance` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/maxDistance/}
    */
-  export interface $maxDistance<S> {
+  export interface $maxDistance<S, T = any> {
     /**
      * Specifies a maximum distance to limit the results of $near and $nearSphere queries. The 2dsphere and 2d indexes support $maxDistance.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/maxDistance/}
@@ -3838,7 +3882,7 @@ export namespace Aggregation.Query {
    * A type describing the `$minDistance` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/minDistance/}
    */
-  export interface $minDistance<S> {
+  export interface $minDistance<S, T = any> {
     /**
      * Specifies a minimum distance to limit the results of $near and $nearSphere queries. For use with 2dsphere index only.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/minDistance/}
@@ -3850,7 +3894,7 @@ export namespace Aggregation.Query {
    * A type describing the `$mod` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/mod/}
    */
-  export interface $mod<S> {
+  export interface $mod<S, T = any> {
     /**
      * Performs a modulo operation on the value of a field and selects documents with a specified result.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/mod/}
@@ -3862,7 +3906,7 @@ export namespace Aggregation.Query {
    * A type describing the `$ne` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/ne/}
    */
-  export interface $ne<S> {
+  export interface $ne<S, T = any> {
     /**
      * Matches all values that are not equal to a specified value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/ne/}
@@ -3874,7 +3918,7 @@ export namespace Aggregation.Query {
    * A type describing the `$near` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/near/}
    */
-  export interface $near<S> {
+  export interface $near<S, T = any> {
     /**
      * Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support $near.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/near/}
@@ -3896,7 +3940,7 @@ export namespace Aggregation.Query {
    * A type describing the `$nearSphere` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nearSphere/}
    */
-  export interface $nearSphere<S> {
+  export interface $nearSphere<S, T = any> {
     /**
      * Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support $nearSphere.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nearSphere/}
@@ -3918,7 +3962,7 @@ export namespace Aggregation.Query {
    * A type describing the `$nin` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nin/}
    */
-  export interface $nin<S> {
+  export interface $nin<S, T = any> {
     /**
      * Matches none of the values specified in an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nin/}
@@ -3930,7 +3974,7 @@ export namespace Aggregation.Query {
    * A type describing the `$nor` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nor/}
    */
-  export interface $nor<S> {
+  export interface $nor<S, T = any> {
     /**
      * Joins query clauses with a logical NOR returns all documents that fail to match both clauses.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nor/}
@@ -3942,7 +3986,7 @@ export namespace Aggregation.Query {
    * A type describing the `$not` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/}
    */
-  export interface $not<S> {
+  export interface $not<S, T = any> {
     /**
      * Inverts the effect of a query expression and returns documents that do not match the query expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/}
@@ -3954,7 +3998,7 @@ export namespace Aggregation.Query {
    * A type describing the `$or` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/or/}
    */
-  export interface $or<S> {
+  export interface $or<S, T = any> {
     /**
      * Joins query clauses with a logical OR returns all documents that match the conditions of either clause.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/or/}
@@ -3966,7 +4010,7 @@ export namespace Aggregation.Query {
    * A type describing the `$polygon` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/polygon/}
    */
-  export interface $polygon<S> {
+  export interface $polygon<S, T = any> {
     /**
      * Specifies a polygon to using legacy coordinate pairs for $geoWithin queries. The 2d index supports $center.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/polygon/}
@@ -3978,7 +4022,7 @@ export namespace Aggregation.Query {
    * A type describing the `$rand` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/rand/}
    */
-  export interface $rand<S> {
+  export interface $rand<S, T = any> {
     /**
      * Generates a random float between 0 and 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/rand/}
@@ -3990,7 +4034,7 @@ export namespace Aggregation.Query {
    * A type describing the `$regex` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/regex/}
    */
-  export interface $regex<S> {
+  export interface $regex<S, T = any> {
     /**
      * Selects documents where values match a specified regular expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/regex/}
@@ -4002,7 +4046,7 @@ export namespace Aggregation.Query {
    * A type describing the `$sampleRate` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sampleRate/}
    */
-  export interface $sampleRate<S> {
+  export interface $sampleRate<S, T = any> {
     /**
      * Randomly select documents at a given rate. Although the exact number of documents selected varies on each run, the quantity chosen approximates the sample rate expressed as a percentage of the total number of documents.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sampleRate/}
@@ -4014,7 +4058,7 @@ export namespace Aggregation.Query {
    * A type describing the `$size` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/size/}
    */
-  export interface $size<S> {
+  export interface $size<S, T = any> {
     /**
      * Selects documents if the array field is a specified size.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/size/}
@@ -4026,7 +4070,7 @@ export namespace Aggregation.Query {
    * A type describing the `$text` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/}
    */
-  export interface $text<S> {
+  export interface $text<S, T = any> {
     /**
      * Performs text search.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/}
@@ -4060,7 +4104,7 @@ export namespace Aggregation.Query {
    * A type describing the `$type` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/}
    */
-  export interface $type<S> {
+  export interface $type<S, T = any> {
     /**
      * Selects documents if a field is of the specified type.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/}
@@ -4072,7 +4116,7 @@ export namespace Aggregation.Query {
    * A type describing the `$where` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/where/}
    */
-  export interface $where<S> {
+  export interface $where<S, T = any> {
     /**
      * Matches documents that satisfy a JavaScript expression.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/where/}
@@ -4085,7 +4129,7 @@ export namespace Aggregation.Search {
    * A type describing the `autocomplete` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/autocomplete/}
    */
-  export interface Autocomplete<S> {
+  export interface Autocomplete<S, T = any> {
     /**
      * The autocomplete operator performs a search for a word or phrase that
      * contains a sequence of characters from an incomplete input string. The
@@ -4106,7 +4150,7 @@ export namespace Aggregation.Search {
    * A type describing the `compound` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/compound/}
    */
-  export interface Compound<S> {
+  export interface Compound<S, T = any> {
     /**
      * The compound operator combines two or more operators into a single query.
      * Each element of a compound query is called a clause, and each clause
@@ -4127,7 +4171,7 @@ export namespace Aggregation.Search {
    * A type describing the `embeddedDocument` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/embedded-document/}
    */
-  export interface EmbeddedDocument<S> {
+  export interface EmbeddedDocument<S, T = any> {
     /**
      * The embeddedDocument operator is similar to $elemMatch operator.
      * It constrains multiple query predicates to be satisfied from a single
@@ -4146,7 +4190,7 @@ export namespace Aggregation.Search {
    * A type describing the `equals` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/equals/}
    */
-  export interface Equals<S> {
+  export interface Equals<S, T = any> {
     /**
      * The equals operator checks whether a field matches a value you specify.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/equals/}
@@ -4169,7 +4213,7 @@ export namespace Aggregation.Search {
    * A type describing the `exists` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/exists/}
    */
-  export interface Exists<S> {
+  export interface Exists<S, T = any> {
     /**
      * The exists operator tests if a path to a specified indexed field name exists in a document.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/exists/}
@@ -4181,7 +4225,7 @@ export namespace Aggregation.Search {
    * A type describing the `facet` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/facet/}
    */
-  export interface Facet<S> {
+  export interface Facet<S, T = any> {
     /**
      * The facet collector groups results by values or ranges in the specified
      * faceted fields and returns the count for each of those groups.
@@ -4194,7 +4238,7 @@ export namespace Aggregation.Search {
    * A type describing the `geoShape` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoShape/}
    */
-  export interface GeoShape<S> {
+  export interface GeoShape<S, T = any> {
     /**
      * The geoShape operator supports querying shapes with a relation to a given
      * geometry if indexShapes is set to true in the index definition.
@@ -4212,7 +4256,7 @@ export namespace Aggregation.Search {
    * A type describing the `geoWithin` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoWithin/}
    */
-  export interface GeoWithin<S> {
+  export interface GeoWithin<S, T = any> {
     /**
      * The geoWithin operator supports querying geographic points within a given
      * geometry. Only points are returned, even if indexShapes value is true in
@@ -4232,7 +4276,7 @@ export namespace Aggregation.Search {
    * A type describing the `in` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
    */
-  export interface In<S> {
+  export interface In<S, T = any> {
     /**
      * The in operator performs a search for an array of BSON values in a field.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
@@ -4244,7 +4288,7 @@ export namespace Aggregation.Search {
    * A type describing the `moreLikeThis` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/moreLikeThis/}
    */
-  export interface MoreLikeThis<S> {
+  export interface MoreLikeThis<S, T = any> {
     /**
      * The moreLikeThis operator returns documents similar to input documents.
      * The moreLikeThis operator allows you to build features for your applications
@@ -4261,7 +4305,7 @@ export namespace Aggregation.Search {
    * A type describing the `near` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/near/}
    */
-  export interface Near<S> {
+  export interface Near<S, T = any> {
     /**
      * The near operator supports querying and scoring numeric, date, and GeoJSON point values.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/near/}
@@ -4278,7 +4322,7 @@ export namespace Aggregation.Search {
    * A type describing the `phrase` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/phrase/}
    */
-  export interface Phrase<S> {
+  export interface Phrase<S, T = any> {
     /**
      * The phrase operator performs search for documents containing an ordered sequence of terms using the analyzer specified in the index configuration.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/phrase/}
@@ -4296,7 +4340,7 @@ export namespace Aggregation.Search {
    * A type describing the `queryString` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/queryString/}
    */
-  export interface QueryString<S> {
+  export interface QueryString<S, T = any> {
     queryString: { defaultPath: SearchPath<S>; query: string };
   }
 
@@ -4304,7 +4348,7 @@ export namespace Aggregation.Search {
    * A type describing the `range` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/range/}
    */
-  export interface Range<S> {
+  export interface Range<S, T = any> {
     /**
      * The range operator supports querying and scoring numeric, date, and string values.
      * You can use this operator to find results that are within a given numeric, date, objectId, or letter (from the English alphabet) range.
@@ -4324,7 +4368,7 @@ export namespace Aggregation.Search {
    * A type describing the `regex` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/regex/}
    */
-  export interface Regex<S> {
+  export interface Regex<S, T = any> {
     /**
      * regex interprets the query field as a regular expression.
      * regex is a term-level operator, meaning that the query field isn't analyzed.
@@ -4342,7 +4386,7 @@ export namespace Aggregation.Search {
    * A type describing the `text` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/text/}
    */
-  export interface Text<S> {
+  export interface Text<S, T = any> {
     /**
      * The text operator performs a full-text search using the analyzer that you specify in the index configuration.
      * If you omit an analyzer, the text operator uses the default standard analyzer.
@@ -4362,7 +4406,7 @@ export namespace Aggregation.Search {
    * A type describing the `wildcard` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/wildcard/}
    */
-  export interface Wildcard<S> {
+  export interface Wildcard<S, T = any> {
     /**
      * The wildcard operator enables queries which use special characters in the search string that can match any character.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/wildcard/}
@@ -4380,7 +4424,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$addFields` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/}
    */
-  export interface $addFields<S> {
+  export interface $addFields<S, T = any> {
     /**
      * Adds new fields to documents. Outputs documents that contain all existing fields from the input documents and newly added fields.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/}
@@ -4396,7 +4440,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$bucket` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/}
    */
-  export interface $bucket<S> {
+  export interface $bucket<S, T = any> {
     /**
      * Categorizes incoming documents into groups, called buckets, based on a specified expression and bucket boundaries.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/}
@@ -4435,7 +4479,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$bucketAuto` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucketAuto/}
    */
-  export interface $bucketAuto<S> {
+  export interface $bucketAuto<S, T = any> {
     /**
      * Categorizes incoming documents into a specific number of groups, called buckets, based on a specified expression. Bucket boundaries are automatically determined in an attempt to evenly distribute the documents into the specified number of buckets.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucketAuto/}
@@ -4469,7 +4513,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$changeStream` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStream/}
    */
-  export interface $changeStream<S> {
+  export interface $changeStream<S, T = any> {
     /**
      * Returns a Change Stream cursor for the collection or database. This stage can only occur once in an aggregation pipeline and it must occur as the first stage.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStream/}
@@ -4516,7 +4560,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$changeStreamSplitLargeEvent` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStreamSplitLargeEvent/}
    */
-  export interface $changeStreamSplitLargeEvent<S> {
+  export interface $changeStreamSplitLargeEvent<S, T = any> {
     /**
      * Splits large change stream events that exceed 16 MB into smaller fragments returned in a change stream cursor.
      * You can only use $changeStreamSplitLargeEvent in a $changeStream pipeline and it must be the final stage in the pipeline.
@@ -4529,7 +4573,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$collStats` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/}
    */
-  export interface $collStats<S> {
+  export interface $collStats<S, T = any> {
     /**
      * Returns statistics regarding a collection or view.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/}
@@ -4546,7 +4590,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$count` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/count/}
    */
-  export interface $count<S> {
+  export interface $count<S, T = any> {
     /**
      * Returns a count of the number of documents at this stage of the aggregation pipeline.
      * Distinct from the $count aggregation accumulator.
@@ -4559,7 +4603,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$currentOp` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/currentOp/}
    */
-  export interface $currentOp<S> {
+  export interface $currentOp<S, T = any> {
     /**
      * Returns information on active and/or dormant operations for the MongoDB deployment. To run, use the db.aggregate() method.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/currentOp/}
@@ -4577,7 +4621,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$densify` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/}
    */
-  export interface $densify<S> {
+  export interface $densify<S, T = any> {
     /**
      * Creates new documents in a sequence of documents where certain values in a field are missing.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/}
@@ -4606,7 +4650,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$documents` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/documents/}
    */
-  export interface $documents<S> {
+  export interface $documents<S, T = any> {
     /**
      * Returns literal documents from input values.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/documents/}
@@ -4618,7 +4662,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$facet` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/facet/}
    */
-  export interface $facet<S> {
+  export interface $facet<S, T = any> {
     /**
      * Processes multiple aggregation pipelines within a single stage on the same set of input documents. Enables the creation of multi-faceted aggregations capable of characterizing data across multiple dimensions, or facets, in a single stage.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/facet/}
@@ -4630,7 +4674,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$fill` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/}
    */
-  export interface $fill<S> {
+  export interface $fill<S, T = any> {
     /**
      * Populates null and missing field values within documents.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/}
@@ -4667,7 +4711,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$geoNear` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/}
    */
-  export interface $geoNear<S> {
+  export interface $geoNear<S, T = any> {
     /**
      * Returns an ordered stream of documents based on the proximity to a geospatial point. Incorporates the functionality of $match, $sort, and $limit for geospatial data. The output documents include an additional distance field and can include a location identifier field.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/}
@@ -4730,7 +4774,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$graphLookup` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/graphLookup/}
    */
-  export interface $graphLookup<S> {
+  export interface $graphLookup<S, T = any> {
     /**
      * Performs a recursive search on a collection. To each output document, adds a new array field that contains the traversal results of the recursive search for that document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/graphLookup/}
@@ -4783,7 +4827,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$group` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/}
    */
-  export interface $group<S> {
+  export interface $group<S, T = any> {
     /**
      * Groups input documents by a specified identifier expression and applies the accumulator expression(s), if specified, to each group. Consumes all input documents and outputs one document per each distinct group. The output documents only contain the identifier field and, if specified, accumulated fields.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/}
@@ -4806,7 +4850,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$indexStats` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexStats/}
    */
-  export interface $indexStats<S> {
+  export interface $indexStats<S, T = any> {
     /**
      * Returns statistics regarding the use of each index for the collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexStats/}
@@ -4818,7 +4862,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$limit` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/}
    */
-  export interface $limit<S> {
+  export interface $limit<S, T = any> {
     /**
      * Passes the first n documents unmodified to the pipeline where n is the specified limit. For each input document, outputs either one document (for the first n documents) or zero documents (after the first n documents).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/}
@@ -4830,7 +4874,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$listLocalSessions` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/}
    */
-  export interface $listLocalSessions<S> {
+  export interface $listLocalSessions<S, T = any> {
     /**
      * Lists all active sessions recently in use on the currently connected mongos or mongod instance. These sessions may have not yet propagated to the system.sessions collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/}
@@ -4852,7 +4896,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$listSampledQueries` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSampledQueries/}
    */
-  export interface $listSampledQueries<S> {
+  export interface $listSampledQueries<S, T = any> {
     /**
      * Lists sampled queries for all collections or a specific collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSampledQueries/}
@@ -4864,7 +4908,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$listSearchIndexes` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/}
    */
-  export interface $listSearchIndexes<S> {
+  export interface $listSearchIndexes<S, T = any> {
     /**
      * Returns information about existing Atlas Search indexes on a specified collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/}
@@ -4886,7 +4930,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$listSessions` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/}
    */
-  export interface $listSessions<S> {
+  export interface $listSessions<S, T = any> {
     /**
      * Lists all sessions that have been active long enough to propagate to the system.sessions collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/}
@@ -4908,7 +4952,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$lookup` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/}
    */
-  export interface $lookup<S> {
+  export interface $lookup<S, T = any> {
     /**
      * Performs a left outer join to another collection in the same database to filter in documents from the "joined" collection for processing.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/}
@@ -4954,7 +4998,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$match` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/}
    */
-  export interface $match<S> {
+  export interface $match<S, T = any> {
     /**
      * Filters the document stream to allow only matching documents to pass unmodified into the next pipeline stage. $match uses standard MongoDB queries. For each input document, outputs either one document (a match) or zero documents (no match).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/}
@@ -4966,7 +5010,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$merge` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/}
    */
-  export interface $merge<S> {
+  export interface $merge<S, T = any> {
     /**
      * Writes the resulting documents of the aggregation pipeline to a collection. The stage can incorporate (insert new documents, merge documents, replace documents, keep existing documents, fail the operation, process documents with a custom update pipeline) the results into an output collection. To use the $merge stage, it must be the last stage in the pipeline.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/}
@@ -4990,7 +5034,7 @@ export namespace Aggregation.Stage {
       /**
        * The behavior of $merge if a result document and an existing document in the collection have the same value for the specified on field(s).
        */
-      whenMatched?: WhenMatched | Pipeline<S>;
+      whenMatched?: WhenMatched | UpdatePipeline<S>;
 
       /**
        * The behavior of $merge if a result document does not match an existing document in the out collection.
@@ -5003,7 +5047,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$out` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/}
    */
-  export interface $out<S> {
+  export interface $out<S, T = any> {
     /**
      * Writes the resulting documents of the aggregation pipeline to a collection. To use the $out stage, it must be the last stage in the pipeline.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/}
@@ -5015,7 +5059,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$planCacheStats` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/planCacheStats/}
    */
-  export interface $planCacheStats<S> {
+  export interface $planCacheStats<S, T = any> {
     /**
      * Returns plan cache information for a collection.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/planCacheStats/}
@@ -5027,7 +5071,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$project` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/}
    */
-  export interface $project<S> {
+  export interface $project<S, T = any> {
     /**
      * Reshapes each document in the stream, such as by adding new fields or removing existing fields. For each input document, outputs one document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/}
@@ -5039,7 +5083,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$redact` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/redact/}
    */
-  export interface $redact<S> {
+  export interface $redact<S, T = any> {
     /**
      * Reshapes each document in the stream by restricting the content for each document based on information stored in the documents themselves. Incorporates the functionality of $project and $match. Can be used to implement field level redaction. For each input document, outputs either one or zero documents.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/redact/}
@@ -5051,7 +5095,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$replaceRoot` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/}
    */
-  export interface $replaceRoot<S> {
+  export interface $replaceRoot<S, T = any> {
     /**
      * Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the _id field. Specify a document embedded in the input document to promote the embedded document to the top level.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/}
@@ -5063,7 +5107,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$replaceWith` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/}
    */
-  export interface $replaceWith<S> {
+  export interface $replaceWith<S, T = any> {
     /**
      * Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the _id field. Specify a document embedded in the input document to promote the embedded document to the top level.
      * Alias for $replaceRoot.
@@ -5076,7 +5120,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$sample` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/}
    */
-  export interface $sample<S> {
+  export interface $sample<S, T = any> {
     /**
      * Randomly selects the specified number of documents from its input.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/}
@@ -5093,7 +5137,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$scoreFusion` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/scoreFusion/}
    */
-  export interface $scoreFusion<S> {
+  export interface $scoreFusion<S, T = any> {
     /**
      * Combines multiple pipelines using relative score fusion to create hybrid search results.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/scoreFusion/}
@@ -5125,7 +5169,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$search` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/search/}
    */
-  export interface $search<S> {
+  export interface $search<S, T = any> {
     /**
      * Performs a full-text search of the field or fields in an Atlas collection.
      * NOTE: $search is only available for MongoDB Atlas clusters, and is not available for self-managed deployments.
@@ -5190,7 +5234,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$searchMeta` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/searchMeta/}
    */
-  export interface $searchMeta<S> {
+  export interface $searchMeta<S, T = any> {
     /**
      * Returns different types of metadata result documents for the Atlas Search query against an Atlas collection.
      * NOTE: $searchMeta is only available for MongoDB Atlas clusters running MongoDB v4.4.9 or higher, and is not available for self-managed deployments.
@@ -5213,7 +5257,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$set` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/}
    */
-  export interface $set<S> {
+  export interface $set<S, T = any> {
     /**
      * Adds new fields to documents. Outputs documents that contain all existing fields from the input documents and newly added fields.
      * Alias for $addFields.
@@ -5226,7 +5270,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$setWindowFields` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/}
    */
-  export interface $setWindowFields<S> {
+  export interface $setWindowFields<S, T = any> {
     /**
      * Groups documents into windows and applies one or more operators to the documents in each window.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/}
@@ -5254,7 +5298,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$shardedDataDistribution` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/shardedDataDistribution/}
    */
-  export interface $shardedDataDistribution<S> {
+  export interface $shardedDataDistribution<S, T = any> {
     /**
      * Provides data and size distribution information on sharded collections.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/shardedDataDistribution/}
@@ -5266,7 +5310,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$skip` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/}
    */
-  export interface $skip<S> {
+  export interface $skip<S, T = any> {
     /**
      * Skips the first n documents where n is the specified skip number and passes the remaining documents unmodified to the pipeline. For each input document, outputs either zero documents (for the first n documents) or one document (if after the first n documents).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/}
@@ -5278,7 +5322,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$sort` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/}
    */
-  export interface $sort<S> {
+  export interface $sort<S, T = any> {
     /**
      * Reorders the document stream by a specified sort key. Only the order changes; the documents remain unmodified. For each input document, outputs one document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/}
@@ -5290,7 +5334,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$sortByCount` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortByCount/}
    */
-  export interface $sortByCount<S> {
+  export interface $sortByCount<S, T = any> {
     /**
      * Groups incoming documents based on the value of a specified expression, then computes the count of documents in each distinct group.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortByCount/}
@@ -5302,7 +5346,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$unionWith` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unionWith/}
    */
-  export interface $unionWith<S> {
+  export interface $unionWith<S, T = any> {
     /**
      * Performs a union of two collections; i.e. combines pipeline results from two collections into a single result set.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unionWith/}
@@ -5325,7 +5369,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$unset` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/}
    */
-  export interface $unset<S> {
+  export interface $unset<S, T = any> {
     /**
      * Removes or excludes fields from documents.
      * Alias for $project stage that removes or excludes fields.
@@ -5338,7 +5382,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$unwind` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind/}
    */
-  export interface $unwind<S> {
+  export interface $unwind<S, T = any> {
     /**
      * Deconstructs an array field from the input documents to output a document for each element. Each output document replaces the array with an element value. For each input document, outputs n documents where n is the number of array elements and can be zero for an empty array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind/}
@@ -5367,7 +5411,7 @@ export namespace Aggregation.Stage {
    * A type describing the `$vectorSearch` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/}
    */
-  export interface $vectorSearch<S> {
+  export interface $vectorSearch<S, T = any> {
     /**
      * The $vectorSearch stage performs an ANN or ENN search on a vector in the specified field.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/}
@@ -5416,7 +5460,7 @@ export namespace Aggregation.Update {
    * A type describing the `$addToSet` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/}
    */
-  export interface $addToSet<S> {
+  export interface $addToSet<S, T = any> {
     /**
      * Adds a value to an array unless the value is already present.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/}
@@ -5428,7 +5472,7 @@ export namespace Aggregation.Update {
    * A type describing the `$bit` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/bit/}
    */
-  export interface $bit<S> {
+  export interface $bit<S, T = any> {
     /**
      * Performs bitwise updates of integer values.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/bit/}
@@ -5445,7 +5489,7 @@ export namespace Aggregation.Update {
    * A type describing the `$currentDate` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/currentDate/}
    */
-  export interface $currentDate<S> {
+  export interface $currentDate<S, T = any> {
     /**
      * Sets the value of a field to the current date as either a Date or Timestamp.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/currentDate/}
@@ -5463,7 +5507,7 @@ export namespace Aggregation.Update {
    * A type describing the `$inc` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/inc/}
    */
-  export interface $inc<S> {
+  export interface $inc<S, T = any> {
     /**
      * Increments a field by the specified numeric amount.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/inc/}
@@ -5475,7 +5519,7 @@ export namespace Aggregation.Update {
    * A type describing the `$max` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/max/}
    */
-  export interface $max<S> {
+  export interface $max<S, T = any> {
     /**
      * Updates a field only if the specified value is greater than the current field value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/max/}
@@ -5487,7 +5531,7 @@ export namespace Aggregation.Update {
    * A type describing the `$min` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/min/}
    */
-  export interface $min<S> {
+  export interface $min<S, T = any> {
     /**
      * Updates a field only if the specified value is less than the current field value.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/min/}
@@ -5499,7 +5543,7 @@ export namespace Aggregation.Update {
    * A type describing the `$mul` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/mul/}
    */
-  export interface $mul<S> {
+  export interface $mul<S, T = any> {
     /**
      * Multiplies the value of a field by the specified number.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/mul/}
@@ -5511,7 +5555,7 @@ export namespace Aggregation.Update {
    * A type describing the `$pop` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pop/}
    */
-  export interface $pop<S> {
+  export interface $pop<S, T = any> {
     /**
      * Removes the first or last element of an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pop/}
@@ -5523,7 +5567,7 @@ export namespace Aggregation.Update {
    * A type describing the `$pull` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pull/}
    */
-  export interface $pull<S> {
+  export interface $pull<S, T = any> {
     /**
      * Removes all array elements that match a specified value or condition.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pull/}
@@ -5535,7 +5579,7 @@ export namespace Aggregation.Update {
    * A type describing the `$pullAll` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pullAll/}
    */
-  export interface $pullAll<S> {
+  export interface $pullAll<S, T = any> {
     /**
      * Removes all matching values from an array.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pullAll/}
@@ -5547,7 +5591,7 @@ export namespace Aggregation.Update {
    * A type describing the `$push` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/push/}
    */
-  export interface $push<S> {
+  export interface $push<S, T = any> {
     /**
      * Appends a specified value to an array, with optional modifiers.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/push/}
@@ -5559,7 +5603,7 @@ export namespace Aggregation.Update {
    * A type describing the `$rename` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/rename/}
    */
-  export interface $rename<S> {
+  export interface $rename<S, T = any> {
     /**
      * Renames a field.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/rename/}
@@ -5571,7 +5615,7 @@ export namespace Aggregation.Update {
    * A type describing the `$set` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/set/}
    */
-  export interface $set<S> {
+  export interface $set<S, T = any> {
     /**
      * Sets the value of a field.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/set/}
@@ -5583,7 +5627,7 @@ export namespace Aggregation.Update {
    * A type describing the `$setOnInsert` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/setOnInsert/}
    */
-  export interface $setOnInsert<S> {
+  export interface $setOnInsert<S, T = any> {
     /**
      * Sets the value of a field if an update with upsert creates a new document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/setOnInsert/}
@@ -5595,7 +5639,7 @@ export namespace Aggregation.Update {
    * A type describing the `$unset` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/unset/}
    */
-  export interface $unset<S> {
+  export interface $unset<S, T = any> {
     /**
      * Removes the specified field from a document.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/unset/}
@@ -5613,7 +5657,7 @@ export type Regex =
   | { pattern: string; options?: string };
 export type Long = bigint | bson.Long | { $numberLong: string };
 export type Javascript = bson.Code | Function | string;
-export type Geometry<S> =
+export type Geometry<S, T = any> =
   | { type: 'Point'; coordinates: number[] }
   | { type: 'MultiPoint'; coordinates: number[][] }
   | { type: 'LineString'; coordinates: number[][] }
@@ -5637,7 +5681,7 @@ export type BsonPrimitive =
   | Regex
   | Javascript
   | bson.Timestamp;
-export type SearchPath<S> =
+export type SearchPath<S, T = any> =
   | UnprefixedFieldPath<S>
   | UnprefixedFieldPath<S>[]
   | { wildcard: string };
@@ -5667,17 +5711,17 @@ export type TimeUnit =
 export type OutCollection = unknown;
 export type WhenMatched = string;
 export type WhenNotMatched = string;
-export type Expression<S> =
-  | ExpressionOperator<S>
-  | FieldPath<S>
+export type Expression<S, T = any> =
+  | ExpressionOperator<S, T>
+  | FieldPath<S, T>
   | BsonPrimitive
-  | FieldExpression<S>
+  | FieldExpression<S, T>
   | FieldPath<S>[];
-export type ExpressionMap<S> = {
-  [k: string]: Expression<S> | ExpressionMap<S>;
+export type ExpressionMap<S, T = any> = {
+  [k: string]: Expression<S, T> | ExpressionMap<S, T>;
 };
-export type Stage<S> =
-  | StageOperator<S>
+export type Stage<S, T = any> =
+  | StageOperator<S, T>
   | Aggregation.Stage.$addFields<S>
   | Aggregation.Stage.$bucket<S>
   | Aggregation.Stage.$bucketAuto<S>
@@ -5722,9 +5766,20 @@ export type Stage<S> =
   | Aggregation.Stage.$unset<S>
   | Aggregation.Stage.$unwind<S>
   | Aggregation.Stage.$vectorSearch<S>;
-export type Pipeline<S> = Stage<S>[];
+export type UpdateStage<S, T = any> =
+  | Aggregation.Stage.$addFields<S>
+  | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$replaceRoot<S>
+  | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$set<S>
+  | Aggregation.Stage.$unset<S>;
+export type Pipeline<S, T = any> =
+  | Stage<S>[]
+  | Aggregation.Pipeline.Pipeline<S>
+  | Aggregation.Pipeline.UpdatePipeline<S>;
+export type UpdatePipeline<S, T = any> = UpdatePipeline<S>[];
 export type UntypedPipeline = Pipeline<any>;
-export type Query<S> =
+export type Query<S, T = any> =
   | QueryOperator<S>
   | Partial<{ [k in keyof S]: Condition<S[k]> }>
   | Aggregation.Query.$and<S>
@@ -5736,7 +5791,7 @@ export type Query<S> =
   | Aggregation.Query.$sampleRate<S>
   | Aggregation.Query.$text<S>
   | Aggregation.Query.$where<S>;
-export type Accumulator<S> =
+export type Accumulator<S, T = any> =
   | Aggregation.Accumulator.$accumulator<S>
   | Aggregation.Accumulator.$addToSet<S>
   | Aggregation.Accumulator.$avg<S>
@@ -5762,7 +5817,7 @@ export type Accumulator<S> =
   | Aggregation.Accumulator.$sum<S>
   | Aggregation.Accumulator.$top<S>
   | Aggregation.Accumulator.$topN<S>;
-export type SearchHighlight<S> = {
+export type SearchHighlight<S, T = any> = {
   path:
     | UnprefixedFieldPath<S>
     | UnprefixedFieldPath<S>[]
@@ -5774,26 +5829,32 @@ export type SearchHighlight<S> = {
   maxCharsToExamine?: number;
   maxNumPassages?: number;
 };
-export type FieldPath<S> = `$${AFieldPath<S, any>}`;
-export type UnprefixedFieldPath<S> = AFieldPath<S, any>;
-export type NumberFieldPath<S> = `$${AFieldPath<S, Number>}`;
-export type DoubleFieldPath<S> = `$${AFieldPath<S, Double>}`;
-export type StringFieldPath<S> = `$${AFieldPath<S, string>}`;
-export type ObjectFieldPath<S> = `$${AFieldPath<S, Record<string, unknown>>}`;
-export type ArrayFieldPath<S> = `$${AFieldPath<S, unknown[]>}`;
-export type BinDataFieldPath<S> = `$${AFieldPath<S, bson.Binary>}`;
-export type ObjectIdFieldPath<S> = `$${AFieldPath<S, bson.ObjectId>}`;
-export type BoolFieldPath<S> = `$${AFieldPath<S, boolean>}`;
-export type DateFieldPath<S> = `$${AFieldPath<S, Date>}`;
-export type NullFieldPath<S> = `$${AFieldPath<S, null>}`;
-export type RegexFieldPath<S> = `$${AFieldPath<S, Regex>}`;
-export type JavascriptFieldPath<S> = `$${AFieldPath<S, Javascript>}`;
-export type IntFieldPath<S> = `$${AFieldPath<S, Int>}`;
-export type TimestampFieldPath<S> = `$${AFieldPath<S, bson.Timestamp>}`;
-export type LongFieldPath<S> = `$${AFieldPath<S, Long>}`;
-export type DecimalFieldPath<S> = `$${AFieldPath<S, Decimal>}`;
-export type ResolvesToNumber<S> =
-  | ResolvesToAny<S>
+export type FieldPath<S, T = any> = `$${AFieldPath<S, T>}`;
+export type UnprefixedFieldPath<S, T = any> = AFieldPath<S, T>;
+export type NumberFieldPath<S, T = any> = `$${AFieldPath<S, Number>}`;
+export type DoubleFieldPath<S, T = any> = `$${AFieldPath<S, Double>}`;
+export type StringFieldPath<S, T = any> = `$${AFieldPath<S, string>}`;
+export type ObjectFieldPath<
+  S,
+  T = any,
+> = `$${AFieldPath<S, Record<string, unknown>>}`;
+export type ArrayFieldPath<S, T = any> = `$${AFieldPath<S, unknown[]>}`;
+export type BinDataFieldPath<S, T = any> = `$${AFieldPath<S, bson.Binary>}`;
+export type ObjectIdFieldPath<S, T = any> = `$${AFieldPath<S, bson.ObjectId>}`;
+export type BoolFieldPath<S, T = any> = `$${AFieldPath<S, boolean>}`;
+export type DateFieldPath<S, T = any> = `$${AFieldPath<S, Date>}`;
+export type NullFieldPath<S, T = any> = `$${AFieldPath<S, null>}`;
+export type RegexFieldPath<S, T = any> = `$${AFieldPath<S, Regex>}`;
+export type JavascriptFieldPath<S, T = any> = `$${AFieldPath<S, Javascript>}`;
+export type IntFieldPath<S, T = any> = `$${AFieldPath<S, Int>}`;
+export type TimestampFieldPath<
+  S,
+  T = any,
+> = `$${AFieldPath<S, bson.Timestamp>}`;
+export type LongFieldPath<S, T = any> = `$${AFieldPath<S, Long>}`;
+export type DecimalFieldPath<S, T = any> = `$${AFieldPath<S, Decimal>}`;
+export type ResolvesToNumber<S, T = any> =
+  | ResolvesToAny<S, Number>
   | NumberFieldPath<S>
   | Number
   | ResolvesToInt<S>
@@ -5804,8 +5865,8 @@ export type ResolvesToNumber<S> =
   | Aggregation.Expression.$avg<S>
   | Aggregation.Expression.$pow<S>
   | Aggregation.Expression.$sum<S>;
-export type ResolvesToDouble<S> =
-  | ResolvesToAny<S>
+export type ResolvesToDouble<S, T = any> =
+  | ResolvesToAny<S, Double>
   | DoubleFieldPath<S>
   | Double
   | Aggregation.Expression.$acos<S>
@@ -5838,8 +5899,8 @@ export type ResolvesToDouble<S> =
   | Aggregation.Expression.$tanh<S>
   | Aggregation.Expression.$toDouble<S>
   | Aggregation.Query.$rand<S>;
-export type ResolvesToString<S> =
-  | ResolvesToAny<S>
+export type ResolvesToString<S, T = any> =
+  | ResolvesToAny<S, string>
   | StringFieldPath<S>
   | string
   | Aggregation.Expression.$concat<S>
@@ -5857,54 +5918,54 @@ export type ResolvesToString<S> =
   | Aggregation.Expression.$trim<S>
   | Aggregation.Expression.$trunc<S>
   | Aggregation.Expression.$type<S>;
-export type ResolvesToObject<S> =
+export type ResolvesToObject<S, T = any> =
   | '$$ROOT'
-  | ResolvesToAny<S>
-  | ObjectFieldPath<S>
+  | ResolvesToAny<S, Record<string, unknown>>
+  | ObjectFieldPath<S, T>
   | Record<string, unknown>
-  | Aggregation.Expression.$arrayToObject<S>
+  | Aggregation.Expression.$arrayToObject<S, T>
   | Aggregation.Expression.$dateToParts<S>
   | Aggregation.Expression.$mergeObjects<S>
   | Aggregation.Expression.$regexFind<S>
   | Aggregation.Expression.$setField<S>
   | Aggregation.Expression.$unsetField<S>;
-export type ResolvesToArray<S> =
-  | ResolvesToAny<S>
+export type ResolvesToArray<S, T = any> =
+  | ResolvesToAny<S, ArrayOnly<T>>
   | ArrayFieldPath<S>
-  | unknown[]
+  | ArrayOnly<T>
   | Aggregation.Accumulator.$concatArrays<S>
   | Aggregation.Accumulator.$setUnion<S>
-  | Aggregation.Expression.$concatArrays<S>
-  | Aggregation.Expression.$filter<S>
-  | Aggregation.Expression.$firstN<S>
-  | Aggregation.Expression.$lastN<S>
+  | Aggregation.Expression.$concatArrays<S, T>
+  | Aggregation.Expression.$filter<S, T>
+  | Aggregation.Expression.$firstN<S, T>
+  | Aggregation.Expression.$lastN<S, T>
   | Aggregation.Expression.$map<S>
-  | Aggregation.Expression.$maxN<S>
-  | Aggregation.Expression.$minN<S>
-  | Aggregation.Expression.$objectToArray<S>
+  | Aggregation.Expression.$maxN<S, T>
+  | Aggregation.Expression.$minN<S, T>
+  | Aggregation.Expression.$objectToArray<S, T>
   | Aggregation.Expression.$percentile<S>
   | Aggregation.Expression.$range<S>
   | Aggregation.Expression.$regexFindAll<S>
   | Aggregation.Expression.$reverseArray<S>
-  | Aggregation.Expression.$setDifference<S>
-  | Aggregation.Expression.$setIntersection<S>
+  | Aggregation.Expression.$setDifference<S, T>
+  | Aggregation.Expression.$setIntersection<S, T>
   | Aggregation.Expression.$setUnion<S>
   | Aggregation.Expression.$slice<S>
-  | Aggregation.Expression.$sortArray<S>
+  | Aggregation.Expression.$sortArray<S, T>
   | Aggregation.Expression.$split<S>
   | Aggregation.Expression.$zip<S>;
-export type ResolvesToBinData<S> =
-  | ResolvesToAny<S>
+export type ResolvesToBinData<S, T = any> =
+  | ResolvesToAny<S, bson.Binary>
   | BinDataFieldPath<S>
   | bson.Binary;
-export type ResolvesToObjectId<S> =
-  | ResolvesToAny<S>
+export type ResolvesToObjectId<S, T = any> =
+  | ResolvesToAny<S, bson.ObjectId>
   | ObjectIdFieldPath<S>
   | bson.ObjectId
   | Aggregation.Expression.$createObjectId<S>
   | Aggregation.Expression.$toObjectId<S>;
-export type ResolvesToBool<S> =
-  | ResolvesToAny<S>
+export type ResolvesToBool<S, T = any> =
+  | ResolvesToAny<S, boolean>
   | BoolFieldPath<S>
   | boolean
   | Aggregation.Expression.$allElementsTrue<S>
@@ -5925,9 +5986,9 @@ export type ResolvesToBool<S> =
   | Aggregation.Expression.$setEquals<S>
   | Aggregation.Expression.$setIsSubset<S>
   | Aggregation.Expression.$toBool<S>;
-export type ResolvesToDate<S> =
+export type ResolvesToDate<S, T = any> =
   | '$$NOW'
-  | ResolvesToAny<S>
+  | ResolvesToAny<S, Date>
   | DateFieldPath<S>
   | Date
   | Aggregation.Expression.$add<S>
@@ -5938,14 +5999,20 @@ export type ResolvesToDate<S> =
   | Aggregation.Expression.$dateTrunc<S>
   | Aggregation.Expression.$subtract<S>
   | Aggregation.Expression.$toDate<S>;
-export type ResolvesToNull<S> = ResolvesToAny<S> | NullFieldPath<S> | null;
-export type ResolvesToRegex<S> = ResolvesToAny<S> | RegexFieldPath<S> | Regex;
-export type ResolvesToJavascript<S> =
-  | ResolvesToAny<S>
+export type ResolvesToNull<S, T = any> =
+  | ResolvesToAny<S, null>
+  | NullFieldPath<S>
+  | null;
+export type ResolvesToRegex<S, T = any> =
+  | ResolvesToAny<S, RegExp>
+  | RegexFieldPath<S>
+  | Regex;
+export type ResolvesToJavascript<S, T = any> =
+  | ResolvesToAny<S, Javascript>
   | JavascriptFieldPath<S>
   | Javascript;
-export type ResolvesToInt<S> =
-  | ResolvesToAny<S>
+export type ResolvesToInt<S, T = any> =
+  | ResolvesToAny<S, Int>
   | IntFieldPath<S>
   | Int
   | Aggregation.Expression.$add<S>
@@ -5983,13 +6050,13 @@ export type ResolvesToInt<S> =
   | Aggregation.Expression.$toInt<S>
   | Aggregation.Expression.$week<S>
   | Aggregation.Expression.$year<S>;
-export type ResolvesToTimestamp<S> =
-  | ResolvesToAny<S>
+export type ResolvesToTimestamp<S, T = any> =
+  | ResolvesToAny<S, bson.Timestamp>
   | TimestampFieldPath<S>
   | bson.Timestamp
   | '$clusterTime';
-export type ResolvesToLong<S> =
-  | ResolvesToAny<S>
+export type ResolvesToLong<S, T = any> =
+  | ResolvesToAny<S, Long>
   | LongFieldPath<S>
   | Long
   | Aggregation.Expression.$add<S>
@@ -6003,8 +6070,8 @@ export type ResolvesToLong<S> =
   | Aggregation.Expression.$toLong<S>
   | Aggregation.Expression.$tsIncrement<S>
   | Aggregation.Expression.$tsSecond<S>;
-export type ResolvesToDecimal<S> =
-  | ResolvesToAny<S>
+export type ResolvesToDecimal<S, T = any> =
+  | ResolvesToAny<S, Decimal>
   | DecimalFieldPath<S>
   | Decimal
   | Aggregation.Expression.$acos<S>
@@ -6027,44 +6094,44 @@ export type ResolvesToDecimal<S> =
   | Aggregation.Expression.$tan<S>
   | Aggregation.Expression.$tanh<S>
   | Aggregation.Expression.$toDecimal<S>;
-export type AccumulatorOperator<S> =
-  | Aggregation.Accumulator.$accumulator<S>
-  | Aggregation.Accumulator.$addToSet<S>
-  | Aggregation.Accumulator.$avg<S>
-  | Aggregation.Accumulator.$bottom<S>
-  | Aggregation.Accumulator.$bottomN<S>
-  | Aggregation.Accumulator.$concatArrays<S>
-  | Aggregation.Accumulator.$count<S>
-  | Aggregation.Accumulator.$covariancePop<S>
-  | Aggregation.Accumulator.$covarianceSamp<S>
-  | Aggregation.Accumulator.$denseRank<S>
-  | Aggregation.Accumulator.$derivative<S>
-  | Aggregation.Accumulator.$documentNumber<S>
-  | Aggregation.Accumulator.$expMovingAvg<S>
-  | Aggregation.Accumulator.$first<S>
-  | Aggregation.Accumulator.$firstN<S>
-  | Aggregation.Accumulator.$integral<S>
-  | Aggregation.Accumulator.$last<S>
-  | Aggregation.Accumulator.$lastN<S>
-  | Aggregation.Accumulator.$linearFill<S>
-  | Aggregation.Accumulator.$locf<S>
-  | Aggregation.Accumulator.$max<S>
-  | Aggregation.Accumulator.$maxN<S>
-  | Aggregation.Accumulator.$median<S>
-  | Aggregation.Accumulator.$mergeObjects<S>
-  | Aggregation.Accumulator.$min<S>
-  | Aggregation.Accumulator.$minN<S>
-  | Aggregation.Accumulator.$percentile<S>
-  | Aggregation.Accumulator.$push<S>
-  | Aggregation.Accumulator.$rank<S>
-  | Aggregation.Accumulator.$setUnion<S>
-  | Aggregation.Accumulator.$shift<S>
-  | Aggregation.Accumulator.$stdDevPop<S>
-  | Aggregation.Accumulator.$stdDevSamp<S>
-  | Aggregation.Accumulator.$sum<S>
-  | Aggregation.Accumulator.$top<S>
-  | Aggregation.Accumulator.$topN<S>;
-export type Window<S> =
+export type AccumulatorOperator<S, T = any> =
+  | Aggregation.Accumulator.$accumulator<S, T>
+  | Aggregation.Accumulator.$addToSet<S, T>
+  | Aggregation.Accumulator.$avg<S, T>
+  | Aggregation.Accumulator.$bottom<S, T>
+  | Aggregation.Accumulator.$bottomN<S, T>
+  | Aggregation.Accumulator.$concatArrays<S, T>
+  | Aggregation.Accumulator.$count<S, T>
+  | Aggregation.Accumulator.$covariancePop<S, T>
+  | Aggregation.Accumulator.$covarianceSamp<S, T>
+  | Aggregation.Accumulator.$denseRank<S, T>
+  | Aggregation.Accumulator.$derivative<S, T>
+  | Aggregation.Accumulator.$documentNumber<S, T>
+  | Aggregation.Accumulator.$expMovingAvg<S, T>
+  | Aggregation.Accumulator.$first<S, T>
+  | Aggregation.Accumulator.$firstN<S, T>
+  | Aggregation.Accumulator.$integral<S, T>
+  | Aggregation.Accumulator.$last<S, T>
+  | Aggregation.Accumulator.$lastN<S, T>
+  | Aggregation.Accumulator.$linearFill<S, T>
+  | Aggregation.Accumulator.$locf<S, T>
+  | Aggregation.Accumulator.$max<S, T>
+  | Aggregation.Accumulator.$maxN<S, T>
+  | Aggregation.Accumulator.$median<S, T>
+  | Aggregation.Accumulator.$mergeObjects<S, T>
+  | Aggregation.Accumulator.$min<S, T>
+  | Aggregation.Accumulator.$minN<S, T>
+  | Aggregation.Accumulator.$percentile<S, T>
+  | Aggregation.Accumulator.$push<S, T>
+  | Aggregation.Accumulator.$rank<S, T>
+  | Aggregation.Accumulator.$setUnion<S, T>
+  | Aggregation.Accumulator.$shift<S, T>
+  | Aggregation.Accumulator.$stdDevPop<S, T>
+  | Aggregation.Accumulator.$stdDevSamp<S, T>
+  | Aggregation.Accumulator.$sum<S, T>
+  | Aggregation.Accumulator.$top<S, T>
+  | Aggregation.Accumulator.$topN<S, T>;
+export type Window<S, T = any> =
   | Aggregation.Accumulator.$addToSet<S>
   | Aggregation.Accumulator.$avg<S>
   | Aggregation.Accumulator.$bottom<S>
@@ -6097,169 +6164,169 @@ export type Window<S> =
   | Aggregation.Accumulator.$stdDevPop<S>
   | Aggregation.Accumulator.$stdDevSamp<S>
   | Aggregation.Accumulator.$sum<S>;
-export type ExpressionOperator<S> =
-  | Aggregation.Expression.$abs<S>
-  | Aggregation.Expression.$acos<S>
-  | Aggregation.Expression.$acosh<S>
-  | Aggregation.Expression.$add<S>
-  | Aggregation.Expression.$allElementsTrue<S>
-  | Aggregation.Expression.$and<S>
-  | Aggregation.Expression.$anyElementTrue<S>
-  | Aggregation.Expression.$arrayElemAt<S>
-  | Aggregation.Expression.$arrayToObject<S>
-  | Aggregation.Expression.$asin<S>
-  | Aggregation.Expression.$asinh<S>
-  | Aggregation.Expression.$atan<S>
-  | Aggregation.Expression.$atan2<S>
-  | Aggregation.Expression.$atanh<S>
-  | Aggregation.Expression.$avg<S>
-  | Aggregation.Expression.$binarySize<S>
-  | Aggregation.Expression.$bitAnd<S>
-  | Aggregation.Expression.$bitNot<S>
-  | Aggregation.Expression.$bitOr<S>
-  | Aggregation.Expression.$bitXor<S>
-  | Aggregation.Expression.$bsonSize<S>
-  | Aggregation.Expression.$case<S>
-  | Aggregation.Expression.$ceil<S>
-  | Aggregation.Expression.$cmp<S>
-  | Aggregation.Expression.$concat<S>
-  | Aggregation.Expression.$concatArrays<S>
+export type ExpressionOperator<S, T = any> =
+  | Aggregation.Expression.$abs<S, T>
+  | Aggregation.Expression.$acos<S, T>
+  | Aggregation.Expression.$acosh<S, T>
+  | Aggregation.Expression.$add<S, T>
+  | Aggregation.Expression.$allElementsTrue<S, T>
+  | Aggregation.Expression.$and<S, T>
+  | Aggregation.Expression.$anyElementTrue<S, T>
+  | Aggregation.Expression.$arrayElemAt<S, T>
+  | Aggregation.Expression.$arrayToObject<S, T>
+  | Aggregation.Expression.$asin<S, T>
+  | Aggregation.Expression.$asinh<S, T>
+  | Aggregation.Expression.$atan<S, T>
+  | Aggregation.Expression.$atan2<S, T>
+  | Aggregation.Expression.$atanh<S, T>
+  | Aggregation.Expression.$avg<S, T>
+  | Aggregation.Expression.$binarySize<S, T>
+  | Aggregation.Expression.$bitAnd<S, T>
+  | Aggregation.Expression.$bitNot<S, T>
+  | Aggregation.Expression.$bitOr<S, T>
+  | Aggregation.Expression.$bitXor<S, T>
+  | Aggregation.Expression.$bsonSize<S, T>
+  | Aggregation.Expression.$case<S, T>
+  | Aggregation.Expression.$ceil<S, T>
+  | Aggregation.Expression.$cmp<S, T>
+  | Aggregation.Expression.$concat<S, T>
+  | Aggregation.Expression.$concatArrays<S, T>
+  | Aggregation.Expression.$cond<S, T>
+  | Aggregation.Expression.$convert<S, T>
+  | Aggregation.Expression.$cos<S, T>
+  | Aggregation.Expression.$cosh<S, T>
+  | Aggregation.Expression.$createObjectId<S, T>
+  | Aggregation.Expression.$dateAdd<S, T>
+  | Aggregation.Expression.$dateDiff<S, T>
+  | Aggregation.Expression.$dateFromParts<S, T>
+  | Aggregation.Expression.$dateFromString<S, T>
+  | Aggregation.Expression.$dateSubtract<S, T>
+  | Aggregation.Expression.$dateToParts<S, T>
+  | Aggregation.Expression.$dateToString<S, T>
+  | Aggregation.Expression.$dateTrunc<S, T>
+  | Aggregation.Expression.$dayOfMonth<S, T>
+  | Aggregation.Expression.$dayOfWeek<S, T>
+  | Aggregation.Expression.$dayOfYear<S, T>
+  | Aggregation.Expression.$degreesToRadians<S, T>
+  | Aggregation.Expression.$divide<S, T>
+  | Aggregation.Expression.$eq<S, T>
+  | Aggregation.Expression.$exp<S, T>
+  | Aggregation.Expression.$filter<S, T>
+  | Aggregation.Expression.$first<S, T>
+  | Aggregation.Expression.$firstN<S, T>
+  | Aggregation.Expression.$floor<S, T>
+  | Aggregation.Expression.$function<S, T>
+  | Aggregation.Expression.$getField<S, T>
+  | Aggregation.Expression.$gt<S, T>
+  | Aggregation.Expression.$gte<S, T>
+  | Aggregation.Expression.$hour<S, T>
+  | Aggregation.Expression.$ifNull<S, T>
+  | Aggregation.Expression.$in<S, T>
+  | Aggregation.Expression.$indexOfArray<S, T>
+  | Aggregation.Expression.$indexOfBytes<S, T>
+  | Aggregation.Expression.$indexOfCP<S, T>
+  | Aggregation.Expression.$isArray<S, T>
+  | Aggregation.Expression.$isNumber<S, T>
+  | Aggregation.Expression.$isoDayOfWeek<S, T>
+  | Aggregation.Expression.$isoWeek<S, T>
+  | Aggregation.Expression.$isoWeekYear<S, T>
+  | Aggregation.Expression.$last<S, T>
+  | Aggregation.Expression.$lastN<S, T>
+  | Aggregation.Expression.$let<S, T>
+  | Aggregation.Expression.$literal<S, T>
+  | Aggregation.Expression.$ln<S, T>
+  | Aggregation.Expression.$log<S, T>
+  | Aggregation.Expression.$log10<S, T>
+  | Aggregation.Expression.$lt<S, T>
+  | Aggregation.Expression.$lte<S, T>
+  | Aggregation.Expression.$ltrim<S, T>
+  | Aggregation.Expression.$map<S, T>
+  | Aggregation.Expression.$max<S, T>
+  | Aggregation.Expression.$maxN<S, T>
+  | Aggregation.Expression.$median<S, T>
+  | Aggregation.Expression.$mergeObjects<S, T>
+  | Aggregation.Expression.$meta<S, T>
+  | Aggregation.Expression.$millisecond<S, T>
+  | Aggregation.Expression.$min<S, T>
+  | Aggregation.Expression.$minN<S, T>
+  | Aggregation.Expression.$minute<S, T>
+  | Aggregation.Expression.$mod<S, T>
+  | Aggregation.Expression.$month<S, T>
+  | Aggregation.Expression.$multiply<S, T>
+  | Aggregation.Expression.$ne<S, T>
+  | Aggregation.Expression.$not<S, T>
+  | Aggregation.Expression.$objectToArray<S, T>
+  | Aggregation.Expression.$or<S, T>
+  | Aggregation.Expression.$percentile<S, T>
+  | Aggregation.Expression.$pow<S, T>
+  | Aggregation.Expression.$radiansToDegrees<S, T>
+  | Aggregation.Expression.$rand<S, T>
+  | Aggregation.Expression.$range<S, T>
+  | Aggregation.Expression.$reduce<S, T>
+  | Aggregation.Expression.$regexFind<S, T>
+  | Aggregation.Expression.$regexFindAll<S, T>
+  | Aggregation.Expression.$regexMatch<S, T>
+  | Aggregation.Expression.$replaceAll<S, T>
+  | Aggregation.Expression.$replaceOne<S, T>
+  | Aggregation.Expression.$reverseArray<S, T>
+  | Aggregation.Expression.$round<S, T>
+  | Aggregation.Expression.$rtrim<S, T>
+  | Aggregation.Expression.$second<S, T>
+  | Aggregation.Expression.$setDifference<S, T>
+  | Aggregation.Expression.$setEquals<S, T>
+  | Aggregation.Expression.$setField<S, T>
+  | Aggregation.Expression.$setIntersection<S, T>
+  | Aggregation.Expression.$setIsSubset<S, T>
+  | Aggregation.Expression.$setUnion<S, T>
+  | Aggregation.Expression.$sin<S, T>
+  | Aggregation.Expression.$sinh<S, T>
+  | Aggregation.Expression.$size<S, T>
+  | Aggregation.Expression.$slice<S, T>
+  | Aggregation.Expression.$sortArray<S, T>
+  | Aggregation.Expression.$split<S, T>
+  | Aggregation.Expression.$sqrt<S, T>
+  | Aggregation.Expression.$stdDevPop<S, T>
+  | Aggregation.Expression.$stdDevSamp<S, T>
+  | Aggregation.Expression.$strLenBytes<S, T>
+  | Aggregation.Expression.$strLenCP<S, T>
+  | Aggregation.Expression.$strcasecmp<S, T>
+  | Aggregation.Expression.$substr<S, T>
+  | Aggregation.Expression.$substrBytes<S, T>
+  | Aggregation.Expression.$substrCP<S, T>
+  | Aggregation.Expression.$subtract<S, T>
+  | Aggregation.Expression.$sum<S, T>
+  | Aggregation.Expression.$switch<S, T>
+  | Aggregation.Expression.$tan<S, T>
+  | Aggregation.Expression.$tanh<S, T>
+  | Aggregation.Expression.$toBool<S, T>
+  | Aggregation.Expression.$toDate<S, T>
+  | Aggregation.Expression.$toDecimal<S, T>
+  | Aggregation.Expression.$toDouble<S, T>
+  | Aggregation.Expression.$toHashedIndexKey<S, T>
+  | Aggregation.Expression.$toInt<S, T>
+  | Aggregation.Expression.$toLong<S, T>
+  | Aggregation.Expression.$toLower<S, T>
+  | Aggregation.Expression.$toObjectId<S, T>
+  | Aggregation.Expression.$toString<S, T>
+  | Aggregation.Expression.$toUpper<S, T>
+  | Aggregation.Expression.$trim<S, T>
+  | Aggregation.Expression.$trunc<S, T>
+  | Aggregation.Expression.$tsIncrement<S, T>
+  | Aggregation.Expression.$tsSecond<S, T>
+  | Aggregation.Expression.$type<S, T>
+  | Aggregation.Expression.$unsetField<S, T>
+  | Aggregation.Expression.$week<S, T>
+  | Aggregation.Expression.$year<S, T>
+  | Aggregation.Expression.$zip<S, T>;
+export type ResolvesToAny<S, T = any> =
+  | Aggregation.Expression.$arrayElemAt<S, T>
   | Aggregation.Expression.$cond<S>
   | Aggregation.Expression.$convert<S>
-  | Aggregation.Expression.$cos<S>
-  | Aggregation.Expression.$cosh<S>
-  | Aggregation.Expression.$createObjectId<S>
-  | Aggregation.Expression.$dateAdd<S>
-  | Aggregation.Expression.$dateDiff<S>
-  | Aggregation.Expression.$dateFromParts<S>
-  | Aggregation.Expression.$dateFromString<S>
-  | Aggregation.Expression.$dateSubtract<S>
-  | Aggregation.Expression.$dateToParts<S>
-  | Aggregation.Expression.$dateToString<S>
-  | Aggregation.Expression.$dateTrunc<S>
-  | Aggregation.Expression.$dayOfMonth<S>
-  | Aggregation.Expression.$dayOfWeek<S>
-  | Aggregation.Expression.$dayOfYear<S>
-  | Aggregation.Expression.$degreesToRadians<S>
-  | Aggregation.Expression.$divide<S>
-  | Aggregation.Expression.$eq<S>
-  | Aggregation.Expression.$exp<S>
-  | Aggregation.Expression.$filter<S>
-  | Aggregation.Expression.$first<S>
-  | Aggregation.Expression.$firstN<S>
-  | Aggregation.Expression.$floor<S>
-  | Aggregation.Expression.$function<S>
-  | Aggregation.Expression.$getField<S>
-  | Aggregation.Expression.$gt<S>
-  | Aggregation.Expression.$gte<S>
-  | Aggregation.Expression.$hour<S>
-  | Aggregation.Expression.$ifNull<S>
-  | Aggregation.Expression.$in<S>
-  | Aggregation.Expression.$indexOfArray<S>
-  | Aggregation.Expression.$indexOfBytes<S>
-  | Aggregation.Expression.$indexOfCP<S>
-  | Aggregation.Expression.$isArray<S>
-  | Aggregation.Expression.$isNumber<S>
-  | Aggregation.Expression.$isoDayOfWeek<S>
-  | Aggregation.Expression.$isoWeek<S>
-  | Aggregation.Expression.$isoWeekYear<S>
-  | Aggregation.Expression.$last<S>
-  | Aggregation.Expression.$lastN<S>
-  | Aggregation.Expression.$let<S>
-  | Aggregation.Expression.$literal<S>
-  | Aggregation.Expression.$ln<S>
-  | Aggregation.Expression.$log<S>
-  | Aggregation.Expression.$log10<S>
-  | Aggregation.Expression.$lt<S>
-  | Aggregation.Expression.$lte<S>
-  | Aggregation.Expression.$ltrim<S>
-  | Aggregation.Expression.$map<S>
-  | Aggregation.Expression.$max<S>
-  | Aggregation.Expression.$maxN<S>
-  | Aggregation.Expression.$median<S>
-  | Aggregation.Expression.$mergeObjects<S>
-  | Aggregation.Expression.$meta<S>
-  | Aggregation.Expression.$millisecond<S>
-  | Aggregation.Expression.$min<S>
-  | Aggregation.Expression.$minN<S>
-  | Aggregation.Expression.$minute<S>
-  | Aggregation.Expression.$mod<S>
-  | Aggregation.Expression.$month<S>
-  | Aggregation.Expression.$multiply<S>
-  | Aggregation.Expression.$ne<S>
-  | Aggregation.Expression.$not<S>
-  | Aggregation.Expression.$objectToArray<S>
-  | Aggregation.Expression.$or<S>
-  | Aggregation.Expression.$percentile<S>
-  | Aggregation.Expression.$pow<S>
-  | Aggregation.Expression.$radiansToDegrees<S>
-  | Aggregation.Expression.$rand<S>
-  | Aggregation.Expression.$range<S>
-  | Aggregation.Expression.$reduce<S>
-  | Aggregation.Expression.$regexFind<S>
-  | Aggregation.Expression.$regexFindAll<S>
-  | Aggregation.Expression.$regexMatch<S>
-  | Aggregation.Expression.$replaceAll<S>
-  | Aggregation.Expression.$replaceOne<S>
-  | Aggregation.Expression.$reverseArray<S>
-  | Aggregation.Expression.$round<S>
-  | Aggregation.Expression.$rtrim<S>
-  | Aggregation.Expression.$second<S>
-  | Aggregation.Expression.$setDifference<S>
-  | Aggregation.Expression.$setEquals<S>
-  | Aggregation.Expression.$setField<S>
-  | Aggregation.Expression.$setIntersection<S>
-  | Aggregation.Expression.$setIsSubset<S>
-  | Aggregation.Expression.$setUnion<S>
-  | Aggregation.Expression.$sin<S>
-  | Aggregation.Expression.$sinh<S>
-  | Aggregation.Expression.$size<S>
-  | Aggregation.Expression.$slice<S>
-  | Aggregation.Expression.$sortArray<S>
-  | Aggregation.Expression.$split<S>
-  | Aggregation.Expression.$sqrt<S>
-  | Aggregation.Expression.$stdDevPop<S>
-  | Aggregation.Expression.$stdDevSamp<S>
-  | Aggregation.Expression.$strLenBytes<S>
-  | Aggregation.Expression.$strLenCP<S>
-  | Aggregation.Expression.$strcasecmp<S>
-  | Aggregation.Expression.$substr<S>
-  | Aggregation.Expression.$substrBytes<S>
-  | Aggregation.Expression.$substrCP<S>
-  | Aggregation.Expression.$subtract<S>
-  | Aggregation.Expression.$sum<S>
-  | Aggregation.Expression.$switch<S>
-  | Aggregation.Expression.$tan<S>
-  | Aggregation.Expression.$tanh<S>
-  | Aggregation.Expression.$toBool<S>
-  | Aggregation.Expression.$toDate<S>
-  | Aggregation.Expression.$toDecimal<S>
-  | Aggregation.Expression.$toDouble<S>
-  | Aggregation.Expression.$toHashedIndexKey<S>
-  | Aggregation.Expression.$toInt<S>
-  | Aggregation.Expression.$toLong<S>
-  | Aggregation.Expression.$toLower<S>
-  | Aggregation.Expression.$toObjectId<S>
-  | Aggregation.Expression.$toString<S>
-  | Aggregation.Expression.$toUpper<S>
-  | Aggregation.Expression.$trim<S>
-  | Aggregation.Expression.$trunc<S>
-  | Aggregation.Expression.$tsIncrement<S>
-  | Aggregation.Expression.$tsSecond<S>
-  | Aggregation.Expression.$type<S>
-  | Aggregation.Expression.$unsetField<S>
-  | Aggregation.Expression.$week<S>
-  | Aggregation.Expression.$year<S>
-  | Aggregation.Expression.$zip<S>;
-export type ResolvesToAny<S> =
-  | Aggregation.Expression.$arrayElemAt<S>
-  | Aggregation.Expression.$cond<S>
-  | Aggregation.Expression.$convert<S>
-  | Aggregation.Expression.$first<S>
+  | Aggregation.Expression.$first<S, T>
   | Aggregation.Expression.$function<S>
   | Aggregation.Expression.$getField<S>
   | Aggregation.Expression.$ifNull<S>
-  | Aggregation.Expression.$last<S>
+  | Aggregation.Expression.$last<S, T>
   | Aggregation.Expression.$let<S>
   | Aggregation.Expression.$literal<S>
   | Aggregation.Expression.$max<S>
@@ -6267,8 +6334,11 @@ export type ResolvesToAny<S> =
   | Aggregation.Expression.$min<S>
   | Aggregation.Expression.$reduce<S>
   | Aggregation.Expression.$switch<S>;
-export type SwitchBranch<S> = Aggregation.Expression.$case<S>;
-export type FieldQuery<S> =
+export type SwitchBranch<S, T = any> = Aggregation.Expression.$case<S, T>;
+export type PipelineOperator<S, T = any> =
+  | Aggregation.Pipeline.Pipeline<S, T>
+  | Aggregation.Pipeline.UpdatePipeline<S, T>;
+export type FieldQuery<S, T = any> =
   | Aggregation.Query.$all<S>
   | Aggregation.Query.$bitsAllClear<S>
   | Aggregation.Query.$bitsAllSet<S>
@@ -6295,112 +6365,129 @@ export type FieldQuery<S> =
   | Aggregation.Query.$regex<S>
   | Aggregation.Query.$size<S>
   | Aggregation.Query.$type<S>;
-export type QueryOperator<S> =
-  | Aggregation.Query.$all<S>
-  | Aggregation.Query.$and<S>
-  | Aggregation.Query.$bitsAllClear<S>
-  | Aggregation.Query.$bitsAllSet<S>
-  | Aggregation.Query.$bitsAnyClear<S>
-  | Aggregation.Query.$bitsAnySet<S>
-  | Aggregation.Query.$box<S>
-  | Aggregation.Query.$center<S>
-  | Aggregation.Query.$centerSphere<S>
-  | Aggregation.Query.$comment<S>
-  | Aggregation.Query.$elemMatch<S>
-  | Aggregation.Query.$eq<S>
-  | Aggregation.Query.$exists<S>
-  | Aggregation.Query.$expr<S>
-  | Aggregation.Query.$geoIntersects<S>
-  | Aggregation.Query.$geoWithin<S>
-  | Aggregation.Query.$geometry<S>
-  | Aggregation.Query.$gt<S>
-  | Aggregation.Query.$gte<S>
-  | Aggregation.Query.$in<S>
-  | Aggregation.Query.$jsonSchema<S>
-  | Aggregation.Query.$lt<S>
-  | Aggregation.Query.$lte<S>
-  | Aggregation.Query.$maxDistance<S>
-  | Aggregation.Query.$minDistance<S>
-  | Aggregation.Query.$mod<S>
-  | Aggregation.Query.$ne<S>
-  | Aggregation.Query.$near<S>
-  | Aggregation.Query.$nearSphere<S>
-  | Aggregation.Query.$nin<S>
-  | Aggregation.Query.$nor<S>
-  | Aggregation.Query.$not<S>
-  | Aggregation.Query.$or<S>
-  | Aggregation.Query.$polygon<S>
-  | Aggregation.Query.$rand<S>
-  | Aggregation.Query.$regex<S>
-  | Aggregation.Query.$sampleRate<S>
-  | Aggregation.Query.$size<S>
-  | Aggregation.Query.$text<S>
-  | Aggregation.Query.$type<S>
-  | Aggregation.Query.$where<S>;
-export type SearchOperator<S> =
+export type QueryOperator<S, T = any> =
+  | Aggregation.Query.$all<S, T>
+  | Aggregation.Query.$and<S, T>
+  | Aggregation.Query.$bitsAllClear<S, T>
+  | Aggregation.Query.$bitsAllSet<S, T>
+  | Aggregation.Query.$bitsAnyClear<S, T>
+  | Aggregation.Query.$bitsAnySet<S, T>
+  | Aggregation.Query.$box<S, T>
+  | Aggregation.Query.$center<S, T>
+  | Aggregation.Query.$centerSphere<S, T>
+  | Aggregation.Query.$comment<S, T>
+  | Aggregation.Query.$elemMatch<S, T>
+  | Aggregation.Query.$eq<S, T>
+  | Aggregation.Query.$exists<S, T>
+  | Aggregation.Query.$expr<S, T>
+  | Aggregation.Query.$geoIntersects<S, T>
+  | Aggregation.Query.$geoWithin<S, T>
+  | Aggregation.Query.$geometry<S, T>
+  | Aggregation.Query.$gt<S, T>
+  | Aggregation.Query.$gte<S, T>
+  | Aggregation.Query.$in<S, T>
+  | Aggregation.Query.$jsonSchema<S, T>
+  | Aggregation.Query.$lt<S, T>
+  | Aggregation.Query.$lte<S, T>
+  | Aggregation.Query.$maxDistance<S, T>
+  | Aggregation.Query.$minDistance<S, T>
+  | Aggregation.Query.$mod<S, T>
+  | Aggregation.Query.$ne<S, T>
+  | Aggregation.Query.$near<S, T>
+  | Aggregation.Query.$nearSphere<S, T>
+  | Aggregation.Query.$nin<S, T>
+  | Aggregation.Query.$nor<S, T>
+  | Aggregation.Query.$not<S, T>
+  | Aggregation.Query.$or<S, T>
+  | Aggregation.Query.$polygon<S, T>
+  | Aggregation.Query.$rand<S, T>
+  | Aggregation.Query.$regex<S, T>
+  | Aggregation.Query.$sampleRate<S, T>
+  | Aggregation.Query.$size<S, T>
+  | Aggregation.Query.$text<S, T>
+  | Aggregation.Query.$type<S, T>
+  | Aggregation.Query.$where<S, T>;
+export type SearchOperator<S, T = any> =
   | Aggregation.Search.Autocomplete<S>
+  | Aggregation.Search.Autocomplete<S, T>
   | Aggregation.Search.Compound<S>
+  | Aggregation.Search.Compound<S, T>
   | Aggregation.Search.EmbeddedDocument<S>
+  | Aggregation.Search.EmbeddedDocument<S, T>
   | Aggregation.Search.Equals<S>
+  | Aggregation.Search.Equals<S, T>
   | Aggregation.Search.Exists<S>
+  | Aggregation.Search.Exists<S, T>
   | Aggregation.Search.Facet<S>
+  | Aggregation.Search.Facet<S, T>
   | Aggregation.Search.GeoShape<S>
+  | Aggregation.Search.GeoShape<S, T>
   | Aggregation.Search.GeoWithin<S>
+  | Aggregation.Search.GeoWithin<S, T>
   | Aggregation.Search.In<S>
+  | Aggregation.Search.In<S, T>
   | Aggregation.Search.MoreLikeThis<S>
+  | Aggregation.Search.MoreLikeThis<S, T>
   | Aggregation.Search.Near<S>
+  | Aggregation.Search.Near<S, T>
   | Aggregation.Search.Phrase<S>
+  | Aggregation.Search.Phrase<S, T>
   | Aggregation.Search.QueryString<S>
+  | Aggregation.Search.QueryString<S, T>
   | Aggregation.Search.Range<S>
+  | Aggregation.Search.Range<S, T>
   | Aggregation.Search.Regex<S>
+  | Aggregation.Search.Regex<S, T>
   | Aggregation.Search.Text<S>
-  | Aggregation.Search.Wildcard<S>;
-export type StageOperator<S> =
-  | Aggregation.Stage.$addFields<S>
-  | Aggregation.Stage.$bucket<S>
-  | Aggregation.Stage.$bucketAuto<S>
-  | Aggregation.Stage.$changeStream<S>
-  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
-  | Aggregation.Stage.$collStats<S>
-  | Aggregation.Stage.$count<S>
-  | Aggregation.Stage.$currentOp<S>
-  | Aggregation.Stage.$densify<S>
-  | Aggregation.Stage.$documents<S>
-  | Aggregation.Stage.$facet<S>
-  | Aggregation.Stage.$fill<S>
-  | Aggregation.Stage.$geoNear<S>
-  | Aggregation.Stage.$graphLookup<S>
-  | Aggregation.Stage.$group<S>
-  | Aggregation.Stage.$indexStats<S>
-  | Aggregation.Stage.$limit<S>
-  | Aggregation.Stage.$listLocalSessions<S>
-  | Aggregation.Stage.$listSampledQueries<S>
-  | Aggregation.Stage.$listSearchIndexes<S>
-  | Aggregation.Stage.$listSessions<S>
-  | Aggregation.Stage.$lookup<S>
-  | Aggregation.Stage.$match<S>
-  | Aggregation.Stage.$merge<S>
-  | Aggregation.Stage.$out<S>
-  | Aggregation.Stage.$planCacheStats<S>
-  | Aggregation.Stage.$project<S>
-  | Aggregation.Stage.$redact<S>
-  | Aggregation.Stage.$replaceRoot<S>
-  | Aggregation.Stage.$replaceWith<S>
-  | Aggregation.Stage.$sample<S>
-  | Aggregation.Stage.$scoreFusion<S>
-  | Aggregation.Stage.$search<S>
-  | Aggregation.Stage.$searchMeta<S>
-  | Aggregation.Stage.$set<S>
-  | Aggregation.Stage.$setWindowFields<S>
-  | Aggregation.Stage.$shardedDataDistribution<S>
-  | Aggregation.Stage.$skip<S>
-  | Aggregation.Stage.$sort<S>
-  | Aggregation.Stage.$sortByCount<S>
-  | Aggregation.Stage.$unionWith<S>
-  | Aggregation.Stage.$unset<S>
-  | Aggregation.Stage.$unwind<S>
-  | Aggregation.Stage.$vectorSearch<S>;
-export type Update<S> =
+  | Aggregation.Search.Text<S, T>
+  | Aggregation.Search.Wildcard<S>
+  | Aggregation.Search.Wildcard<S, T>;
+export type StageOperator<S, T = any> =
+  | Aggregation.Stage.$addFields<S, T>
+  | Aggregation.Stage.$bucket<S, T>
+  | Aggregation.Stage.$bucketAuto<S, T>
+  | Aggregation.Stage.$changeStream<S, T>
+  | Aggregation.Stage.$changeStreamSplitLargeEvent<S, T>
+  | Aggregation.Stage.$collStats<S, T>
+  | Aggregation.Stage.$count<S, T>
+  | Aggregation.Stage.$currentOp<S, T>
+  | Aggregation.Stage.$densify<S, T>
+  | Aggregation.Stage.$documents<S, T>
+  | Aggregation.Stage.$facet<S, T>
+  | Aggregation.Stage.$fill<S, T>
+  | Aggregation.Stage.$geoNear<S, T>
+  | Aggregation.Stage.$graphLookup<S, T>
+  | Aggregation.Stage.$group<S, T>
+  | Aggregation.Stage.$indexStats<S, T>
+  | Aggregation.Stage.$limit<S, T>
+  | Aggregation.Stage.$listLocalSessions<S, T>
+  | Aggregation.Stage.$listSampledQueries<S, T>
+  | Aggregation.Stage.$listSearchIndexes<S, T>
+  | Aggregation.Stage.$listSessions<S, T>
+  | Aggregation.Stage.$lookup<S, T>
+  | Aggregation.Stage.$match<S, T>
+  | Aggregation.Stage.$merge<S, T>
+  | Aggregation.Stage.$out<S, T>
+  | Aggregation.Stage.$planCacheStats<S, T>
+  | Aggregation.Stage.$project<S, T>
+  | Aggregation.Stage.$redact<S, T>
+  | Aggregation.Stage.$replaceRoot<S, T>
+  | Aggregation.Stage.$replaceWith<S, T>
+  | Aggregation.Stage.$sample<S, T>
+  | Aggregation.Stage.$scoreFusion<S, T>
+  | Aggregation.Stage.$search<S, T>
+  | Aggregation.Stage.$searchMeta<S, T>
+  | Aggregation.Stage.$set<S, T>
+  | Aggregation.Stage.$setWindowFields<S, T>
+  | Aggregation.Stage.$shardedDataDistribution<S, T>
+  | Aggregation.Stage.$skip<S, T>
+  | Aggregation.Stage.$sort<S, T>
+  | Aggregation.Stage.$sortByCount<S, T>
+  | Aggregation.Stage.$unionWith<S, T>
+  | Aggregation.Stage.$unset<S, T>
+  | Aggregation.Stage.$unwind<S, T>
+  | Aggregation.Stage.$vectorSearch<S, T>;
+export type Update<S, T = any> =
   | Aggregation.Update.$addToSet<S>
   | Aggregation.Update.$bit<S>
   | Aggregation.Update.$currentDate<S>
@@ -6416,19 +6503,19 @@ export type Update<S> =
   | Aggregation.Update.$set<S>
   | Aggregation.Update.$setOnInsert<S>
   | Aggregation.Update.$unset<S>;
-export type UpdateOperator<S> =
-  | Aggregation.Update.$addToSet<S>
-  | Aggregation.Update.$bit<S>
-  | Aggregation.Update.$currentDate<S>
-  | Aggregation.Update.$inc<S>
-  | Aggregation.Update.$max<S>
-  | Aggregation.Update.$min<S>
-  | Aggregation.Update.$mul<S>
-  | Aggregation.Update.$pop<S>
-  | Aggregation.Update.$pull<S>
-  | Aggregation.Update.$pullAll<S>
-  | Aggregation.Update.$push<S>
-  | Aggregation.Update.$rename<S>
-  | Aggregation.Update.$set<S>
-  | Aggregation.Update.$setOnInsert<S>
-  | Aggregation.Update.$unset<S>;
+export type UpdateOperator<S, T = any> =
+  | Aggregation.Update.$addToSet<S, T>
+  | Aggregation.Update.$bit<S, T>
+  | Aggregation.Update.$currentDate<S, T>
+  | Aggregation.Update.$inc<S, T>
+  | Aggregation.Update.$max<S, T>
+  | Aggregation.Update.$min<S, T>
+  | Aggregation.Update.$mul<S, T>
+  | Aggregation.Update.$pop<S, T>
+  | Aggregation.Update.$pull<S, T>
+  | Aggregation.Update.$pullAll<S, T>
+  | Aggregation.Update.$push<S, T>
+  | Aggregation.Update.$rename<S, T>
+  | Aggregation.Update.$set<S, T>
+  | Aggregation.Update.$setOnInsert<S, T>
+  | Aggregation.Update.$unset<S, T>;

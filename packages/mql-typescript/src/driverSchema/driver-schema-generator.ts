@@ -14,9 +14,15 @@ export class DriverSchemaGenerator extends GeneratorBase {
       console.error(`No docs reference found for ${test.name}`);
       return '// TODO: No docs reference found';
     }
-    if (!test.pipeline) {
-      console.error(`No pipeline found for ${test.name} at ${test.link}`);
-      return '// TODO: No pipeline found';
+    if (
+      (!('pipeline' in test) || !test.pipeline) &&
+      (!('update' in test) || !test.update) &&
+      (!('filter' in test) || !test.filter)
+    ) {
+      console.error(
+        `No pipeline, update, or filter found for ${test.name} at ${test.link}`,
+      );
+      return '// TODO: No pipeline, update, or filter found';
     }
 
     const docsCrawler = new DocsCrawler(test.link);
