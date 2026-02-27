@@ -86,6 +86,9 @@ export class SchemaGenerator extends GeneratorBase {
       'UnprefixedFieldPath<S>[]',
       '{ wildcard: string }',
     ],
+    bitwiseOperation: [
+      '({ and: Int | Long } | { or: Int | Long } | { xor: Int | Long })',
+    ],
     searchScore: ['unknown'],
     granularity: ['string'],
     fullDocument: ['string'],

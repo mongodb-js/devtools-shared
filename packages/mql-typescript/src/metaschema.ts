@@ -3,12 +3,14 @@ import { z } from 'zod';
 export const Operator = z
   .object({
     name: z.string().regex(new RegExp('^\\$?[a-z][a-zA-Z0-9]*$')),
+    minVersion: z.string().regex(new RegExp('^[0-9]+\\.[0-9]+(\\.[0-9]+)?$')),
     link: z.string().url().regex(new RegExp('^https://')),
     type: z.array(
       z.enum([
         'accumulator',
         'stage',
         'query',
+        'update',
         'fieldQuery',
         'filter',
         'window',
@@ -42,22 +44,22 @@ export const Operator = z
         z
           .object({
             name: z.string().regex(new RegExp('^([_$]?[a-z][a-zA-Z0-9]*|N)$')),
+            minVersion: z
+              .string()
+              .regex(new RegExp('^[0-9]+\\.[0-9]+(\\.[0-9]+)?$'))
+              .optional(),
             type: z.array(
               z.enum([
                 'accumulator',
                 'query',
                 'fieldQuery',
                 'pipeline',
-                'untypedPipeline',
                 'window',
                 'expression',
-                'expressionMap',
                 'geometry',
-                'fieldPath',
                 'unprefixedFieldPath',
                 'timeUnit',
                 'sortSpec',
-                'any',
                 'granularity',
                 'fullDocument',
                 'fullDocumentBeforeChange',
@@ -68,6 +70,9 @@ export const Operator = z
                 'range',
                 'sortBy',
                 'geoPoint',
+                'resolvesToAny',
+                'fieldPath',
+                'any',
                 'resolvesToNumber',
                 'numberFieldPath',
                 'number',
@@ -118,8 +123,8 @@ export const Operator = z
                 'decimal',
                 'searchPath',
                 'searchScore',
+                'bitwiseOperation',
                 'searchOperator',
-                'searchHighlight',
               ]),
             ),
             description: z.string().optional(),
@@ -135,7 +140,7 @@ export const Operator = z
             syntheticVariables: z
               .array(
                 z.object({
-                  name: z.string().regex(new RegExp('^[$]?[a-zA-Z0-9]*$')),
+                  name: z.string().regex(new RegExp('^[$]?[a-zA-Z0-9]+$')),
                   description: z.string().optional(),
                 }),
               )
@@ -148,12 +153,13 @@ export const Operator = z
       .array(
         z
           .object({
-            name: z.string(),
+            name: z.string().optional(),
             link: z.string().url().regex(new RegExp('^https://')).optional(),
-            pipeline: z.array(z.record(z.any())),
+            pipeline: z.array(z.record(z.any())).optional(),
+            filter: z.record(z.any()).optional(),
+            update: z.record(z.any()).optional(),
             schema: z
               .union([
-                z.string(),
                 z.record(
                   z.record(
                     z
@@ -206,10 +212,12 @@ export const Operator = z
                       .strict(),
                   ),
                 ),
+                z.string(),
               ])
               .optional(),
           })
-          .strict(),
+          .strict()
+          .and(z.union([z.any(), z.any()])),
       )
       .optional(),
   })
