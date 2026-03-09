@@ -85,6 +85,7 @@ describe('ServerLogsChecker', function () {
     let cluster: MongoCluster;
 
     beforeEach(async function () {
+      this.timeout(180_000); // Extra time for server binary download
       cluster = await MongoCluster.start({
         topology: 'replset',
         secondaries: 0,
@@ -95,8 +96,8 @@ describe('ServerLogsChecker', function () {
     });
 
     afterEach(async function () {
-      checker.close();
-      await cluster.close();
+      checker?.close();
+      await cluster?.close();
     });
 
     it('collects warnings from the cluster', async function () {
