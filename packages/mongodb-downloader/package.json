@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "debug": "^4.4.0",
-    "tar": "^6.1.15",
+    "tar": "^7.5.11",
     "decompress": "^4.2.1",
     "mongodb-download-url": "^1.8.7",
     "node-fetch": "^2.7.0",
