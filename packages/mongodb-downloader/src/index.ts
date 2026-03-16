@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import fetch from 'node-fetch';
-import tar from 'tar';
+import * as tar from 'tar';
 import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
