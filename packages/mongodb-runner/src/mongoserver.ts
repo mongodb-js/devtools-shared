@@ -53,7 +53,7 @@ export interface MongoServerOptions {
   keyFileContents?: string;
 }
 
-interface SerializedServerProperties {
+export interface SerializedServerProperties {
   _id: string;
   pid?: number;
   port?: number;
@@ -66,6 +66,7 @@ interface SerializedServerProperties {
   isMongos?: boolean;
   isConfigSvr?: boolean;
   keyFileContents?: string;
+  commandline?: string[];
 }
 
 export interface MongoServerEvents {
@@ -98,6 +99,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private isConfigSvr = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
+  private commandline: string[] = [];
 
   get id(): string {
     return this.uuid;
@@ -122,6 +124,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       isMongos: this.isMongos,
       isConfigSvr: this.isConfigSvr,
       keyFileContents: this.keyFileContents,
+      commandline: this.commandline,
     };
   }
 
@@ -140,6 +143,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isMongos = !!serialized.isMongos;
     srv.isConfigSvr = !!serialized.isConfigSvr;
     srv.keyFileContents = serialized.keyFileContents;
+    srv.commandline = serialized.commandline ?? [];
     if (!srv.closing) {
       srv.pid = serialized.pid;
       srv.dbPath = serialized.dbPath;
@@ -261,6 +265,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
 
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
+    srv.commandline = commandline;
     const proc = spawn(executable, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       cwd: options.tmpDir,
