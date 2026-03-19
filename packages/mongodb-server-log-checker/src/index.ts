@@ -31,7 +31,7 @@ export type WarningFilter = number | ((entry: LogEntry) => boolean);
  * Monitors MongoDB server logs and validates that no unexpected warnings occur.
  * Modeled after the mongosh implementation in PR #2574.
  */
-export class ServerLogsChecker {
+export class ServerLogsChecker implements Disposable {
   static defaultAllowedWarnings: WarningFilter[] = [
     4615610, // "Failed to check socket connectivity", generic disconnect error
     7012500, // "Failed to refresh query analysis configurations", normal sharding behavior
@@ -93,6 +93,7 @@ export class ServerLogsChecker {
   private collectedWarnings: LogEntry[] = [];
   private warningFilters: ((entry: LogEntry) => boolean)[] = [];
   private cluster: MongoLogEventEmitter;
+  private ignoreCtx: Set<string> = new Set();
 
   constructor(cluster: MongoLogEventEmitter) {
     this.cluster = cluster;
@@ -106,9 +107,20 @@ export class ServerLogsChecker {
   }
 
   private listener: (serverUUID: string, entry: LogEntry) => void = (
-    _serverUUID: string,
+    serverUUID: string,
     entry: LogEntry,
   ) => {
+    const crossServerCtxID = `${serverUUID}\0${entry.context}`;
+    // Ignore events coming from internal clients (e.g. replset clients)
+    if (
+      entry.id === 51800 &&
+      entry.attr?.doc?.driver?.name === 'MongoDB Internal Client' &&
+      entry.context.startsWith('conn')
+    ) {
+      this.ignoreCtx.add(crossServerCtxID);
+    }
+    if (this.ignoreCtx.has(crossServerCtxID)) return;
+
     // Only collect warnings (W), errors (E), and fatal (F) severity logs
     // Apply filters at collection time - filtered warnings are never stored
     if (
@@ -172,5 +184,10 @@ export class ServerLogsChecker {
    */
   close(): void {
     this.cluster.off('mongoLog', this.listener);
+  }
+
+  /** Disposable alias for close() */
+  [Symbol.dispose](): void {
+    this.close();
   }
 }
