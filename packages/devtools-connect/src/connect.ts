@@ -590,7 +590,6 @@ async function connectMongoClientImpl({
       new DevtoolsConnectionState(clientOptions, logger);
     const mongoClientOptions: MongoClientOptions &
       Partial<DevtoolsConnectOptions> = merge(
-      { __skipPingOnConnect: true },
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
       { allowPartialTrustChain: true },

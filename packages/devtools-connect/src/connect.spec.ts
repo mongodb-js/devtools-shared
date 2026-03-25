@@ -56,7 +56,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'ca',
         'lookup',
@@ -83,7 +82,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -130,7 +128,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'ca',
         'lookup',
@@ -213,7 +210,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -257,7 +253,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'ca',
         'lookup',
@@ -478,7 +473,6 @@ describe('devtools connect', function () {
         expect(
           Object.keys(mClientType.getCalls()[0].args[1]).sort(),
         ).to.deep.equal([
-          '__skipPingOnConnect',
           'allowPartialTrustChain',
           'ca',
           'lookup',
@@ -486,7 +480,6 @@ describe('devtools connect', function () {
         expect(
           Object.keys(mClientType.getCalls()[1].args[1]).sort(),
         ).to.deep.equal([
-          '__skipPingOnConnect',
           'allowPartialTrustChain',
           'lookup',
         ]);
