@@ -27,22 +27,22 @@
   "exports": {
     ".": {
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "import": {
-        "default": "./dist/.esm-wrapper.mjs",
-        "types": "./dist/index.d.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/.esm-wrapper.mjs"
       }
     },
     "./proxy-options": {
       "require": {
-        "default": "./dist/proxy-options-public.js",
-        "types": "./dist/proxy-options-public.d.ts"
+        "types": "./dist/proxy-options-public.d.ts",
+        "default": "./dist/proxy-options-public.js"
       },
       "import": {
-        "default": "./dist/.esm-wrapper-po.mjs",
-        "types": "./dist/proxy-options-public.d.ts"
+        "types": "./dist/proxy-options-public.d.ts",
+        "default": "./dist/.esm-wrapper-po.mjs"
       }
     }
   },
