@@ -28,21 +28,21 @@
   "exports": {
     ".": {
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "import": {
-        "default": "./.esm-wrapper.mjs",
-        "types": "./dist/index.d.ts"
+        "types": "./dist/index.d.ts",
+        "default": "./.esm-wrapper.mjs"
       }
     },
     "./mongo-log-writer": {
-      "default": "./dist/mongo-log-writer.js",
-      "types": "./dist/mongo-log-writer.d.ts"
+      "types": "./dist/mongo-log-writer.d.ts",
+      "default": "./dist/mongo-log-writer.js"
     },
     "./mongo-log-manager": {
-      "default": "./dist/mongo-log-manager.js",
-      "types": "./dist/mongo-log-manager.d.ts"
+      "types": "./dist/mongo-log-manager.d.ts",
+      "default": "./dist/mongo-log-manager.js"
     }
   },
   "files": [

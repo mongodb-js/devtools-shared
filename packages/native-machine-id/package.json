@@ -29,12 +29,12 @@
   "license": "Apache-2.0",
   "exports": {
     "require": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "import": {
-      "default": "./dist/.esm-wrapper.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
     }
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",

@@ -29,12 +29,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     "require": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "import": {
-      "default": "./dist/.esm-wrapper.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
     }
   },
   "scripts": {
