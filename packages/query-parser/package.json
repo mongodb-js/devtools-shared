@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "4.7.6",
+  "version": "4.7.7",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "debug": "^4.4.0",
-    "@mongodb-js/shell-bson-parser": "^1.5.6",
+    "@mongodb-js/shell-bson-parser": "^1.5.7",
     "javascript-stringify": "^2.1.0",
     "lodash": "^4.17.21"
   },
