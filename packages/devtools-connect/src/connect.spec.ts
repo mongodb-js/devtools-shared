@@ -55,12 +55,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -83,7 +78,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -129,12 +123,7 @@ describe('devtools connect', function () {
       expect(calls[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -213,7 +202,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -256,12 +244,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -477,19 +460,10 @@ describe('devtools connect', function () {
         expect(mClientType.getCalls()).to.have.lengthOf(2);
         expect(
           Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-        ).to.deep.equal([
-          '__skipPingOnConnect',
-          'allowPartialTrustChain',
-          'ca',
-          'lookup',
-        ]);
+        ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
         expect(
           Object.keys(mClientType.getCalls()[1].args[1]).sort(),
-        ).to.deep.equal([
-          '__skipPingOnConnect',
-          'allowPartialTrustChain',
-          'lookup',
-        ]);
+        ).to.deep.equal(['allowPartialTrustChain', 'lookup']);
         expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
 
         expect(earlyFailures).to.equal(2);
