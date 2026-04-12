@@ -893,7 +893,7 @@ const STAGE_OPERATORS = [
     fullScan: false,
     firstStage: false,
     score: 1,
-    env: [ATLAS],
+    env: [ATLAS, ON_PREM],
     meta: 'stage',
     version: '8.2.0',
     apiVersions: [],
