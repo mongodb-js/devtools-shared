@@ -367,7 +367,7 @@ const EXPRESSION_OPERATORS = [
     version: '2.2.0',
   },
   {
-    name: '$lt',
+    name: '$lte',
     value: '$lte',
     score: 1,
     meta: 'expr:comp',
@@ -423,6 +423,13 @@ const EXPRESSION_OPERATORS = [
     version: '2.4.0',
   },
   {
+    name: '$minMaxScaler',
+    value: '$minMaxScaler',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.2.0',
+  },
+  {
     name: '$minute',
     value: '$minute',
     score: 1,
@@ -448,13 +455,6 @@ const EXPRESSION_OPERATORS = [
     value: '$multiply',
     score: 1,
     meta: 'expr:arith',
-    version: '2.2.0',
-  },
-  {
-    name: '$new',
-    value: '$new',
-    score: 1,
-    meta: 'expr:comp',
     version: '2.2.0',
   },
   {
@@ -582,6 +582,13 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:set',
     version: '2.6.0',
+  },
+  {
+    name: '$sigmoid',
+    value: '$sigmoid',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.2.0',
   },
   {
     name: '$similarityCosine',
