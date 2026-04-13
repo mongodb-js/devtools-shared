@@ -886,6 +886,35 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$score',
+    value: '$score',
+    label: '$score',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '8.2.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Computes and returns a new score as metadata. It also optionally normalizes the input scores, by default to a range between zero and one.',
+    comment: `/**
+ * score: Required expression. Computes a new value from the input scores and stores the value in the $meta keyword score. Returns an error for non-numeric inputs.
+ * scoreDetails: Optional. Default false. Set to true to include detailed scoring information in {$meta: "scoreDetails"} for debugging and tuning.
+ * normalization: Optional. Default none. Normalizes the input scores before computing the new score. Value can be none, sigmoid or minMaxScaler.
+ * weight: Optional. Default 1. Multiplies the computed score by the weight value. Returns an error for non-numeric inputs.
+ */
+`,
+    snippet: `{
+  score: \${1:expression},
+  scoreDetails: \${2:false},
+  normalization: "\${2:none|sigmoid|minMaxScaler}",
+  weight: \${3:number},
+}`,
+  },
+  {
     name: '$scoreFusion',
     value: '$scoreFusion',
     label: '$scoreFusion',
