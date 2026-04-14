@@ -4,6 +4,7 @@ import {
   satisfiesHighest,
   getDepsFromPackageJson,
   gatherTransitiveDepsInfo,
+  findMisalignments,
 } from './check-transitive-deps';
 
 describe('check-transitive-deps', function () {
@@ -217,6 +218,119 @@ describe('check-transitive-deps', function () {
       });
 
       assert.equal(groups.size, 0);
+    });
+  });
+
+  describe('findMisalignments', function () {
+    it('returns empty array when all versions are aligned', function () {
+      const groups = new Map([
+        [
+          'shared-lib',
+          [
+            { version: '^1.0.0', label: 'pkg-a' },
+            { version: '^1.0.0', label: 'pkg-b' },
+          ],
+        ],
+      ]);
+      assert.deepStrictEqual(findMisalignments(groups), []);
+    });
+
+    it('returns empty array when a dep has only one entry', function () {
+      const groups = new Map([
+        ['shared-lib', [{ version: '^1.0.0', label: 'pkg-a' }]],
+      ]);
+      assert.deepStrictEqual(findMisalignments(groups), []);
+    });
+
+    it('returns empty array for an empty map', function () {
+      assert.deepStrictEqual(findMisalignments(new Map()), []);
+    });
+
+    it('reports a mismatch when versions differ', function () {
+      const groups = new Map([
+        [
+          'shared-lib',
+          [
+            { version: '^1.0.0', label: 'pkg-a' },
+            { version: '^2.0.0', label: 'via tracked-dep@^1.0.0' },
+          ],
+        ],
+      ]);
+
+      const result = findMisalignments(groups);
+      assert.equal(result.length, 1);
+      assert.equal(result[0].name, 'shared-lib');
+      assert.equal(result[0].highestVersion, '^2.0.0');
+      assert.equal(result[0].entries.length, 2);
+    });
+
+    it('marks entries that do not satisfy the highest range', function () {
+      const groups = new Map([
+        [
+          'shared-lib',
+          [
+            { version: '^1.0.0', label: 'pkg-a' },
+            { version: '^2.0.0', label: 'pkg-b' },
+          ],
+        ],
+      ]);
+
+      const entries = findMisalignments(groups)[0].entries;
+      assert.equal(entries[0].satisfiesHighest, false);
+      assert.equal(entries[1].satisfiesHighest, true);
+    });
+
+    it('marks entries that satisfy the highest range', function () {
+      const groups = new Map([
+        [
+          'shared-lib',
+          [
+            { version: '^1.0.0', label: 'pkg-a' },
+            { version: '^1.5.0', label: 'pkg-b' },
+          ],
+        ],
+      ]);
+
+      const entries = findMisalignments(groups)[0].entries;
+      assert.equal(entries[0].satisfiesHighest, true);
+      assert.equal(entries[1].satisfiesHighest, true);
+    });
+
+    it('returns results sorted by dep name', function () {
+      const groups = new Map([
+        [
+          'zlib',
+          [
+            { version: '^1.0.0', label: 'a' },
+            { version: '^2.0.0', label: 'b' },
+          ],
+        ],
+        [
+          'axios',
+          [
+            { version: '^0.21.0', label: 'a' },
+            { version: '^1.0.0', label: 'b' },
+          ],
+        ],
+      ]);
+
+      const names = findMisalignments(groups).map((m) => m.name);
+      assert.deepStrictEqual(names, ['axios', 'zlib']);
+    });
+
+    it('sets satisfiesHighest to null for invalid ranges', function () {
+      const groups = new Map([
+        [
+          'shared-lib',
+          [
+            { version: 'not-valid', label: 'pkg-a' },
+            { version: '^1.0.0', label: 'pkg-b' },
+          ],
+        ],
+      ]);
+
+      const entries = findMisalignments(groups)[0].entries;
+      assert.equal(entries[0].satisfiesHighest, null);
     });
   });
 

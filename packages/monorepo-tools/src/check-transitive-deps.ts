@@ -149,9 +149,9 @@ export async function gatherTransitiveDepsInfo({
   for await (const { packageJson } of packages) {
     const packageName: string = packageJson.name;
     localPackages.set(packageName, packageJson);
-    const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
+    const pkgDeps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
 
-    for (const [depName, version] of deps) {
+    for (const [depName, version] of pkgDeps) {
       if (matchesAnyPattern(depName, config.transitiveDeps)) {
         let entry = ourDirectUsage.get(depName);
         if (!entry) {
@@ -249,6 +249,47 @@ export function getDepsFromPackageJson(
   return deps;
 }
 
+export interface MismatchEntry {
+  version: string;
+  label: string;
+  satisfiesHighest: boolean | null;
+}
+
+export interface Mismatch {
+  name: string;
+  highestVersion: string | null;
+  entries: MismatchEntry[];
+}
+
+export function findMisalignments(
+  groups: Map<string, TransitiveDepsEntry[]>,
+): Mismatch[] {
+  const mismatches: Mismatch[] = [];
+
+  for (const name of [...groups.keys()].sort()) {
+    const entries = groups.get(name)!;
+    const uniqueVersions = new Set(entries.map((e) => e.version));
+    if (uniqueVersions.size <= 1) {
+      continue;
+    }
+
+    const allVersions = entries.map((e) => e.version);
+    const highestVersion = getHighestRange(allVersions);
+
+    mismatches.push({
+      name,
+      highestVersion,
+      entries: entries.map((e) => ({
+        version: e.version,
+        label: e.label,
+        satisfiesHighest: satisfiesHighest(e.version, highestVersion),
+      })),
+    });
+  }
+
+  return mismatches;
+}
+
 async function main(args: ParsedArgs) {
   if (args.help) {
     console.log(USAGE);
@@ -285,37 +326,29 @@ async function main(args: ParsedArgs) {
     return;
   }
 
-  let foundMismatches = false;
-  const misaligned = new Set<string>();
+  const mismatches = findMisalignments(groups);
 
-  for (const transitiveDep of [...groups.keys()].sort()) {
-    const entries = groups.get(transitiveDep);
-    if (!entries) {
-      continue;
-    }
+  if (mismatches.length === 0) {
+    console.log(
+      '%s',
+      chalk.green(
+        'All transitive dependencies are aligned, nothing to report!',
+      ),
+    );
+    return;
+  }
 
-    const uniqueVersions = new Set(entries.map((e) => e.version));
-    if (uniqueVersions.size <= 1) {
-      continue;
-    }
-
-    foundMismatches = true;
-    const allVersions = entries.map((e) => e.version);
-    const highestVersion = getHighestRange(allVersions);
-    const versionPad = Math.max(...allVersions.map((v) => v.length));
+  for (const { name, highestVersion, entries } of mismatches) {
+    const versionPad = Math.max(...entries.map((e) => e.version.length));
 
     console.log(
       '%s  %s',
-      chalk.bold(transitiveDep),
+      chalk.bold(name),
       chalk.dim(`highest: ${highestVersion ?? 'unknown'}`),
     );
     console.log();
 
-    for (const { version, label } of entries) {
-      const match = satisfiesHighest(version, highestVersion);
-      if (match === false) {
-        misaligned.add(transitiveDep);
-      }
+    for (const { version, label, satisfiesHighest: match } of entries) {
       const indicator =
         match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
       console.log(
@@ -330,14 +363,11 @@ async function main(args: ParsedArgs) {
     console.log();
   }
 
-  if (!foundMismatches) {
-    console.log(
-      '%s',
-      chalk.green(
-        'All transitive dependencies are aligned, nothing to report!',
-      ),
-    );
-  } else if (misaligned.size > 0) {
+  const misaligned = mismatches
+    .filter((m) => m.entries.some((e) => e.satisfiesHighest === false))
+    .map((m) => m.name);
+
+  if (misaligned.length > 0) {
     console.log(chalk.bold.red('Misaligned transitive dependencies:'));
     console.log();
     for (const dep of misaligned) {
