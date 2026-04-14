@@ -20,19 +20,17 @@ const DEPENDENCY_GROUPS = [
 
 const USAGE = `Check transitive dependencies for version alignment.
 
-USAGE: check-transitive-deps.js [--deps <list>] [--transitive-deps <list>] [--config <path>] [--ignore-dev-deps]
+USAGE: check-transitive-deps.js [--deps <list>] [--config <path>] [--ignore-dev-deps]
 
 Options:
 
-  --deps              Comma-separated list of direct dependencies to track.
-  --transitive-deps   Comma-separated list of transitive dependencies to check alignment for.
+  --deps              Comma-separated list of dependencies to track.
   --config            Path to config file. Default is .check-transitive-deps.json
   --ignore-dev-deps   Ignore devDependencies when scanning both our own packages and tracked dependencies.
 
 Config file format (.check-transitive-deps.json):
   {
-    "deps": ["package-a", "@my-scope/*"],
-    "transitiveDeps": ["package-x", "package-y"]
+    "deps": ["package-a", "@my-scope/*"]
   }
 
 Glob patterns are supported: * matches any sequence of characters except /.
@@ -48,7 +46,6 @@ all require the same version of a shared transitive dependency.
 
 interface Config {
   deps: string[];
-  transitiveDeps: string[];
 }
 
 async function loadConfig(args: ParsedArgs): Promise<Config> {
@@ -74,14 +71,7 @@ async function loadConfig(args: ParsedArgs): Promise<Config> {
         ? args.deps
         : fileConfig.deps || [];
 
-  const transitiveDeps =
-    typeof args['transitive-deps'] === 'string'
-      ? args['transitive-deps'].split(',').map((s: string) => s.trim())
-      : Array.isArray(args['transitive-deps'])
-        ? args['transitive-deps']
-        : fileConfig.transitiveDeps || [];
-
-  return { deps, transitiveDeps };
+  return { deps };
 }
 
 export function satisfiesHighest(
@@ -120,13 +110,11 @@ export interface TransitiveDepsEntry {
 // callers decide whether to filter those out.
 export async function gatherTransitiveDepsInfo({
   deps,
-  transitiveDeps,
   ignoreDevDeps,
   packages,
   resolveExternal,
 }: {
   deps: string[];
-  transitiveDeps: string[];
   ignoreDevDeps: boolean;
   packages:
     | AsyncIterable<{ packageJson: Record<string, any> }>
@@ -136,7 +124,7 @@ export async function gatherTransitiveDepsInfo({
     versionRange: string,
   ) => Promise<Record<string, any>>;
 }): Promise<Map<string, TransitiveDepsEntry[]>> {
-  const config = { deps, transitiveDeps };
+  const config = { deps };
   // transitiveDep → entries from our own packages that depend on it directly
   const ourDirectUsage = new Map<string, TransitiveDepsEntry[]>();
 
@@ -152,7 +140,7 @@ export async function gatherTransitiveDepsInfo({
     const pkgDeps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
 
     for (const [depName, version] of pkgDeps) {
-      if (matchesAnyPattern(depName, config.transitiveDeps)) {
+      if (matchesAnyPattern(depName, config.deps)) {
         let entry = ourDirectUsage.get(depName);
         if (!entry) {
           entry = [];
@@ -214,7 +202,7 @@ export async function gatherTransitiveDepsInfo({
     for (const { label, packageJson } of manifests) {
       const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
       for (const [depName, version] of deps) {
-        if (matchesAnyPattern(depName, config.transitiveDeps)) {
+        if (matchesAnyPattern(depName, config.deps)) {
           let entry = result.get(depName);
           if (!entry) {
             entry = [];
@@ -298,10 +286,8 @@ async function main(args: ParsedArgs) {
 
   const config = await loadConfig(args);
 
-  if (config.deps.length === 0 || config.transitiveDeps.length === 0) {
-    console.error(
-      'Both --deps (or deps in config) and --transitive-deps (or transitiveDeps in config) must be provided and non-empty.',
-    );
+  if (config.deps.length === 0) {
+    console.error('--deps (or deps in config) must be provided and non-empty.');
     process.exitCode = 1;
     return;
   }

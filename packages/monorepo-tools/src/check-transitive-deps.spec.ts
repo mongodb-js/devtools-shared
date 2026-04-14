@@ -92,8 +92,7 @@ describe('check-transitive-deps', function () {
 
   describe('gatherTransitiveDepsInfo', function () {
     const baseOpts = {
-      deps: ['tracked-dep'],
-      transitiveDeps: ['shared-lib'],
+      deps: ['tracked-dep', 'shared-lib'],
       ignoreDevDeps: false,
     };
 
@@ -120,7 +119,10 @@ describe('check-transitive-deps', function () {
       const groups = await gatherTransitiveDepsInfo({
         ...baseOpts,
         packages,
-        resolveExternal: resolverFor(trackedDepManifest),
+        resolveExternal: async (name, range) => {
+          if (name === 'tracked-dep') return trackedDepManifest;
+          return {};
+        },
       });
 
       const entries = groups.get('shared-lib');
@@ -170,6 +172,11 @@ describe('check-transitive-deps', function () {
           packageJson: {
             name: 'tracked-dep', // this package IS in the monorepo
             dependencies: { 'shared-lib': '^1.0.0' },
+          },
+        },
+        {
+          packageJson: {
+            name: 'shared-lib', // also in the monorepo
           },
         },
         {

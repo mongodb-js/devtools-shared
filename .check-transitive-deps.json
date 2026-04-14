@@ -1,4 +1,3 @@
 {
-  "deps": ["@mongodb-js/*", "mongodb", "mongodb-*"],
-  "transitiveDeps": ["@mongodb-js/*", "mongodb", "mongodb-*"]
+  "deps": ["@mongodb-js/*", "mongodb", "mongodb-*"]
 }
