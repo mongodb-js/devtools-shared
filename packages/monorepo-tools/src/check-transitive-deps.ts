@@ -364,13 +364,13 @@ async function main(args: ParsedArgs) {
   }
 }
 
-process.on('unhandledRejection', (err: Error) => {
-  console.error();
-  console.error(err?.stack || err?.message || err);
-  process.exitCode = 1;
-});
-
 if (process.argv[1]?.endsWith('check-transitive-deps.js')) {
+  process.on('unhandledRejection', (err: Error) => {
+    console.error();
+    console.error(err?.stack || err?.message || err);
+    process.exitCode = 1;
+  });
+
   main(minimist(process.argv.slice(2))).catch((err) =>
     process.nextTick(() => {
       throw err;
