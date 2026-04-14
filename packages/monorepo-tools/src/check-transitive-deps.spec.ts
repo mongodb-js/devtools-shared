@@ -3,6 +3,7 @@ import {
   matchesAnyPattern,
   satisfiesHighest,
   getDepsFromPackageJson,
+  gatherTransitiveDepsInfo,
 } from './check-transitive-deps';
 
 describe('check-transitive-deps', function () {
@@ -85,6 +86,135 @@ describe('check-transitive-deps', function () {
 
     it('returns null for an invalid range', function () {
       assert.equal(satisfiesHighest('not-a-version', '^1.0.0'), null);
+    });
+  });
+
+  describe('gatherTransitiveDepsInfo', function () {
+    const config = {
+      deps: ['tracked-dep'],
+      transitiveDeps: ['shared-lib'],
+    };
+
+    // Builds a stub resolveExternal that returns the given manifest.
+    function resolverFor(manifest: Record<string, any>) {
+      return async (_name: string, _range: string) => Promise.resolve(manifest);
+    }
+
+    it('finds a transitive dep used both directly and via a tracked dep', async function () {
+      const packages = [
+        {
+          packageJson: {
+            name: '@my-scope/pkg-a',
+            dependencies: { 'shared-lib': '^1.0.0', 'tracked-dep': '^2.0.0' },
+          },
+        },
+      ];
+
+      const trackedDepManifest = {
+        name: 'tracked-dep',
+        dependencies: { 'shared-lib': '^1.5.0' },
+      };
+
+      const groups = await gatherTransitiveDepsInfo(config, {
+        ignoreDevDeps: false,
+        packages,
+        resolveExternal: resolverFor(trackedDepManifest),
+      });
+
+      const entries = groups.get('shared-lib');
+      assert.ok(entries, 'shared-lib should be in the result');
+
+      const versions = entries.map((e) => ({
+        version: e.version,
+        label: e.label,
+      }));
+      assert.deepStrictEqual(versions, [
+        { version: '^1.0.0', label: '@my-scope/pkg-a' },
+        { version: '^1.5.0', label: 'via tracked-dep@^2.0.0' },
+      ]);
+    });
+
+    it('excludes devDependencies when ignoreDevDeps is true', async function () {
+      const packages = [
+        {
+          packageJson: {
+            name: 'pkg-a',
+            devDependencies: {
+              'shared-lib': '^1.0.0',
+              'tracked-dep': '^2.0.0',
+            },
+          },
+        },
+      ];
+
+      const trackedDepManifest = {
+        name: 'tracked-dep',
+        devDependencies: { 'shared-lib': '^1.5.0' },
+      };
+
+      const groups = await gatherTransitiveDepsInfo(config, {
+        ignoreDevDeps: true,
+        packages,
+        resolveExternal: resolverFor(trackedDepManifest),
+      });
+
+      assert.equal(groups.size, 0, 'dev deps should be ignored');
+    });
+
+    it('does not treat local monorepo packages as external tracked deps', async function () {
+      const packages = [
+        {
+          packageJson: {
+            name: 'tracked-dep', // this package IS in the monorepo
+            dependencies: { 'shared-lib': '^1.0.0' },
+          },
+        },
+        {
+          packageJson: {
+            name: 'pkg-a',
+            dependencies: { 'tracked-dep': '^1.0.0' },
+          },
+        },
+      ];
+
+      let externalCallCount = 0;
+      const groups = await gatherTransitiveDepsInfo(config, {
+        ignoreDevDeps: false,
+        packages,
+        resolveExternal: async () => {
+          externalCallCount++;
+          return Promise.resolve({});
+        },
+      });
+
+      assert.equal(
+        externalCallCount,
+        0,
+        'resolveExternal should not be called for local packages',
+      );
+      // shared-lib is a direct dep of tracked-dep (local), so it appears via the local scan
+      const entries = groups.get('shared-lib');
+      assert.ok(entries);
+      assert.equal(entries[0].label, 'tracked-dep');
+    });
+
+    it('returns an empty map when nothing matches', async function () {
+      const packages = [
+        {
+          packageJson: {
+            name: 'pkg-a',
+            dependencies: { 'unrelated-dep': '^1.0.0' },
+          },
+        },
+      ];
+
+      const groups = await gatherTransitiveDepsInfo(config, {
+        ignoreDevDeps: false,
+        packages,
+        resolveExternal: resolverFor({}),
+      });
+
+      assert.equal(groups.size, 0);
     });
   });
 

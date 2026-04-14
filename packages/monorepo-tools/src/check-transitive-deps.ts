@@ -110,30 +110,121 @@ export function matchesAnyPattern(name: string, patterns: string[]): boolean {
   });
 }
 
-function collectTransitiveDeps(
-  packageJson: Record<string, unknown>,
-  label: string,
+export interface TransitiveDepsEntry {
+  version: string;
+  label: string;
+}
+
+// Returns a map from transitive dep name → all usages found across our packages
+// and tracked external dependencies. Includes deps with only one unique version;
+// callers decide whether to filter those out.
+export async function gatherTransitiveDepsInfo(
+  config: Config,
   {
     ignoreDevDeps,
-    transitiveDeps,
-    viaTrackedDep,
+    packages,
+    resolveExternal,
   }: {
     ignoreDevDeps: boolean;
-    transitiveDeps: string[];
-    viaTrackedDep: Map<string, Map<string, string>>;
+    packages:
+      | AsyncIterable<{ packageJson: Record<string, any> }>
+      | Iterable<{ packageJson: Record<string, any> }>;
+    resolveExternal: (
+      name: string,
+      versionRange: string,
+    ) => Promise<Record<string, any>>;
   },
-) {
-  const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
-  for (const [depName, version] of deps) {
-    if (matchesAnyPattern(depName, transitiveDeps)) {
-      let entry = viaTrackedDep.get(depName);
-      if (!entry) {
-        entry = new Map();
-        viaTrackedDep.set(depName, entry);
+): Promise<Map<string, TransitiveDepsEntry[]>> {
+  // transitiveDep → entries from our own packages that depend on it directly
+  const ourDirectUsage = new Map<string, TransitiveDepsEntry[]>();
+
+  // external dep name → set of version ranges used across our packages
+  const trackedDepRanges = new Map<string, Set<string>>();
+
+  // local package names → their package.json (to avoid npm lookups)
+  const localPackages = new Map<string, Record<string, any>>();
+
+  for await (const { packageJson } of packages) {
+    const packageName: string = packageJson.name;
+    localPackages.set(packageName, packageJson);
+    const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
+
+    for (const [depName, version] of deps) {
+      if (matchesAnyPattern(depName, config.transitiveDeps)) {
+        let entry = ourDirectUsage.get(depName);
+        if (!entry) {
+          entry = [];
+          ourDirectUsage.set(depName, entry);
+        }
+        entry.push({ version, label: packageName });
       }
-      entry.set(label, version);
+
+      if (matchesAnyPattern(depName, config.deps)) {
+        let ranges = trackedDepRanges.get(depName);
+        if (!ranges) {
+          ranges = new Set();
+          trackedDepRanges.set(depName, ranges);
+        }
+        ranges.add(version);
+      }
     }
   }
+
+  // Packages that live in the monorepo are not external deps.
+  for (const localPkgName of localPackages.keys()) {
+    trackedDepRanges.delete(localPkgName);
+  }
+
+  // Start result with direct usages, then append indirect ones below.
+  const result = new Map<string, TransitiveDepsEntry[]>();
+  for (const [depName, entries] of ourDirectUsage) {
+    result.set(depName, [...entries]);
+  }
+
+  for (const [trackedDepName, versionRanges] of trackedDepRanges) {
+    const manifests: Array<{
+      label: string;
+      packageJson: Record<string, any>;
+    }> = [];
+
+    const localPkg = localPackages.get(trackedDepName);
+    if (localPkg) {
+      manifests.push({ label: trackedDepName, packageJson: localPkg });
+    } else {
+      for (const versionRange of versionRanges) {
+        try {
+          const packageJson = await resolveExternal(
+            trackedDepName,
+            versionRange,
+          );
+          manifests.push({
+            label: `${trackedDepName}@${versionRange}`,
+            packageJson,
+          });
+        } catch (e: any) {
+          console.error(
+            `Warning: could not resolve ${trackedDepName}@${versionRange}: ${e.message as string}`,
+          );
+        }
+      }
+    }
+
+    for (const { label, packageJson } of manifests) {
+      const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
+      for (const [depName, version] of deps) {
+        if (matchesAnyPattern(depName, config.transitiveDeps)) {
+          let entry = result.get(depName);
+          if (!entry) {
+            entry = [];
+            result.set(depName, entry);
+          }
+          entry.push({ version, label: `via ${label}` });
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 export function getDepsFromPackageJson(
@@ -172,102 +263,16 @@ async function main(args: ParsedArgs) {
     return;
   }
 
-  // Our packages that directly depend on a transitive dep we care about.
-  // transitiveDep → [{ packageName, version }]
-  const ourDirectUsage = new Map<
-    string,
-    Array<{ packageName: string; version: string }>
-  >();
-
-  // Tracked direct deps and the version ranges our packages use for them.
-  // trackedDep → Set<versionRange>
-  const trackedDepRanges = new Map<string, Set<string>>();
-
   const ignoreDevDeps: boolean = args['ignore-dev-deps'] === true;
 
-  // Collect local monorepo package.json objects so we can resolve their deps
-  // locally instead of hitting the npm registry (they may be private / unpublished).
-  const localPackages = new Map<string, Record<string, unknown>>();
-
-  for await (const { packageJson } of listAllPackages()) {
-    const packageName: string = packageJson.name;
-    localPackages.set(packageName, packageJson);
-    const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
-
-    for (const [depName, version] of deps) {
-      if (matchesAnyPattern(depName, config.transitiveDeps)) {
-        let entry = ourDirectUsage.get(depName);
-        if (!entry) {
-          entry = [];
-          ourDirectUsage.set(depName, entry);
-        }
-        entry.push({ packageName, version });
-      }
-
-      if (matchesAnyPattern(depName, config.deps)) {
-        let entry = trackedDepRanges.get(depName);
-        if (!entry) {
-          entry = new Set();
-          trackedDepRanges.set(depName, entry);
-        }
-        entry.add(version);
-      }
-    }
-  }
-
-  // Packages that live inside the monorepo are never external deps — remove any
-  // that crept into trackedDepRanges because one of our packages depends on them.
-  for (const localPkgName of localPackages.keys()) {
-    trackedDepRanges.delete(localPkgName);
-  }
-
-  // For each tracked direct dep (at each version range used), resolve its package.json
-  // and collect any transitive deps we care about.
-  // transitiveDep → Map<"trackedDep@range", versionOfTransitiveDep>
-  const viaTrackedDep = new Map<string, Map<string, string>>();
-
-  const collectOpts = {
+  const groups = await gatherTransitiveDepsInfo(config, {
     ignoreDevDeps,
-    transitiveDeps: config.transitiveDeps,
-    viaTrackedDep,
-  };
+    packages: listAllPackages(),
+    resolveExternal: (name, versionRange) =>
+      pacote.manifest(`${name}@${versionRange}`),
+  });
 
-  for (const [trackedDepName, versionRanges] of trackedDepRanges) {
-    // For local monorepo packages, resolve deps from the local package.json
-    // instead of hitting the npm registry (they may be private / unpublished).
-    const localPkg = localPackages.get(trackedDepName);
-    if (localPkg) {
-      collectTransitiveDeps(localPkg, trackedDepName, collectOpts);
-      continue;
-    }
-
-    for (const versionRange of versionRanges) {
-      let resolvedManifest: Record<string, any>;
-      try {
-        resolvedManifest = await pacote.manifest(
-          `${trackedDepName}@${versionRange}`,
-        );
-      } catch (e: any) {
-        console.error(
-          `Warning: could not resolve ${trackedDepName}@${versionRange}: ${e.message as string}`,
-        );
-        continue;
-      }
-
-      collectTransitiveDeps(
-        resolvedManifest,
-        `${trackedDepName}@${versionRange}`,
-        collectOpts,
-      );
-    }
-  }
-
-  const allTransitiveDeps = new Set([
-    ...ourDirectUsage.keys(),
-    ...viaTrackedDep.keys(),
-  ]);
-
-  if (allTransitiveDeps.size === 0) {
+  if (groups.size === 0) {
     console.log(
       '%s',
       chalk.green(
@@ -279,18 +284,9 @@ async function main(args: ParsedArgs) {
 
   let foundMismatches = false;
   const misaligned: string[] = [];
-  for (const transitiveDep of [...allTransitiveDeps].sort()) {
-    const entries = [
-      ...(ourDirectUsage.get(transitiveDep) ?? []).map(
-        ({ packageName, version }) => ({ version, label: packageName }),
-      ),
-      ...[...(viaTrackedDep.get(transitiveDep) ?? new Map())].map(
-        ([trackedDepRef, version]: [string, string]) => ({
-          version,
-          label: `via ${trackedDepRef}`,
-        }),
-      ),
-    ];
+
+  for (const transitiveDep of [...groups.keys()].sort()) {
+    const entries = groups.get(transitiveDep)!;
 
     const uniqueVersions = new Set(entries.map((e) => e.version));
     if (uniqueVersions.size <= 1) {
