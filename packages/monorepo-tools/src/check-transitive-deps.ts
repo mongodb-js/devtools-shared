@@ -273,29 +273,33 @@ async function main(args: ParsedArgs) {
   let foundMismatches = false;
   const misaligned: string[] = [];
   for (const transitiveDep of [...allTransitiveDeps].sort()) {
-    const directUsages = ourDirectUsage.get(transitiveDep) ?? [];
-    const trackedUsages: [string, string][] = [
-      ...(viaTrackedDep.get(transitiveDep) ?? new Map()),
+    const entries = [
+      ...(ourDirectUsage.get(transitiveDep) ?? []).map(
+        ({ packageName, version }) => ({ version, label: packageName }),
+      ),
+      ...[...(viaTrackedDep.get(transitiveDep) ?? new Map())].map(
+        ([trackedDepRef, version]) => ({
+          version,
+          label: `via ${trackedDepRef}`,
+        }),
+      ),
     ];
 
-    const allVersions = [
-      ...directUsages.map((u) => u.version),
-      ...trackedUsages.map(([, v]) => v),
-    ];
-
-    const uniqueVersions = new Set(allVersions);
+    const uniqueVersions = new Set(entries.map((e) => e.version));
     if (uniqueVersions.size <= 1) {
       continue;
     }
 
     foundMismatches = true;
+    const allVersions = entries.map((e) => e.version);
     const highestVersion = getHighestRange(allVersions);
-    const hasMisaligned = allVersions.some(
-      (v) => satisfiesHighest(v, highestVersion) === false,
-    );
-    if (hasMisaligned) {
+
+    if (
+      entries.some((e) => satisfiesHighest(e.version, highestVersion) === false)
+    ) {
       misaligned.push(transitiveDep);
     }
+
     const versionPad = Math.max(...allVersions.map((v) => v.length));
 
     console.log(
@@ -305,7 +309,7 @@ async function main(args: ParsedArgs) {
     );
     console.log();
 
-    for (const { packageName, version } of directUsages) {
+    for (const { version, label } of entries) {
       const match = satisfiesHighest(version, highestVersion);
       const indicator =
         match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
@@ -314,20 +318,7 @@ async function main(args: ParsedArgs) {
         indicator,
         ' '.repeat(versionPad - version.length),
         version,
-        chalk.dim(packageName),
-      );
-    }
-
-    for (const [trackedDepRef, version] of trackedUsages) {
-      const match = satisfiesHighest(version, highestVersion);
-      const indicator =
-        match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
-      console.log(
-        '%s %s%s  %s',
-        indicator,
-        ' '.repeat(versionPad - version.length),
-        version,
-        chalk.dim(`via ${trackedDepRef}`),
+        chalk.dim(label),
       );
     }
 
