@@ -90,9 +90,10 @@ describe('check-transitive-deps', function () {
   });
 
   describe('gatherTransitiveDepsInfo', function () {
-    const config = {
+    const baseOpts = {
       deps: ['tracked-dep'],
       transitiveDeps: ['shared-lib'],
+      ignoreDevDeps: false,
     };
 
     // Builds a stub resolveExternal that returns the given manifest.
@@ -115,8 +116,8 @@ describe('check-transitive-deps', function () {
         dependencies: { 'shared-lib': '^1.5.0' },
       };
 
-      const groups = await gatherTransitiveDepsInfo(config, {
-        ignoreDevDeps: false,
+      const groups = await gatherTransitiveDepsInfo({
+        ...baseOpts,
         packages,
         resolveExternal: resolverFor(trackedDepManifest),
       });
@@ -152,7 +153,8 @@ describe('check-transitive-deps', function () {
         devDependencies: { 'shared-lib': '^1.5.0' },
       };
 
-      const groups = await gatherTransitiveDepsInfo(config, {
+      const groups = await gatherTransitiveDepsInfo({
+        ...baseOpts,
         ignoreDevDeps: true,
         packages,
         resolveExternal: resolverFor(trackedDepManifest),
@@ -178,8 +180,8 @@ describe('check-transitive-deps', function () {
       ];
 
       let externalCallCount = 0;
-      const groups = await gatherTransitiveDepsInfo(config, {
-        ignoreDevDeps: false,
+      const groups = await gatherTransitiveDepsInfo({
+        ...baseOpts,
         packages,
         resolveExternal: async () => {
           externalCallCount++;
@@ -208,8 +210,8 @@ describe('check-transitive-deps', function () {
         },
       ];
 
-      const groups = await gatherTransitiveDepsInfo(config, {
-        ignoreDevDeps: false,
+      const groups = await gatherTransitiveDepsInfo({
+        ...baseOpts,
         packages,
         resolveExternal: resolverFor({}),
       });

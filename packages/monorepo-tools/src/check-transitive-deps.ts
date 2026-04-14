@@ -118,23 +118,25 @@ export interface TransitiveDepsEntry {
 // Returns a map from transitive dep name → all usages found across our packages
 // and tracked external dependencies. Includes deps with only one unique version;
 // callers decide whether to filter those out.
-export async function gatherTransitiveDepsInfo(
-  config: Config,
-  {
-    ignoreDevDeps,
-    packages,
-    resolveExternal,
-  }: {
-    ignoreDevDeps: boolean;
-    packages:
-      | AsyncIterable<{ packageJson: Record<string, any> }>
-      | Iterable<{ packageJson: Record<string, any> }>;
-    resolveExternal: (
-      name: string,
-      versionRange: string,
-    ) => Promise<Record<string, any>>;
-  },
-): Promise<Map<string, TransitiveDepsEntry[]>> {
+export async function gatherTransitiveDepsInfo({
+  deps,
+  transitiveDeps,
+  ignoreDevDeps,
+  packages,
+  resolveExternal,
+}: {
+  deps: string[];
+  transitiveDeps: string[];
+  ignoreDevDeps: boolean;
+  packages:
+    | AsyncIterable<{ packageJson: Record<string, any> }>
+    | Iterable<{ packageJson: Record<string, any> }>;
+  resolveExternal: (
+    name: string,
+    versionRange: string,
+  ) => Promise<Record<string, any>>;
+}): Promise<Map<string, TransitiveDepsEntry[]>> {
+  const config = { deps, transitiveDeps };
   // transitiveDep → entries from our own packages that depend on it directly
   const ourDirectUsage = new Map<string, TransitiveDepsEntry[]>();
 
@@ -265,7 +267,8 @@ async function main(args: ParsedArgs) {
 
   const ignoreDevDeps: boolean = args['ignore-dev-deps'] === true;
 
-  const groups = await gatherTransitiveDepsInfo(config, {
+  const groups = await gatherTransitiveDepsInfo({
+    ...config,
     ignoreDevDeps,
     packages: listAllPackages(),
     resolveExternal: (name, versionRange) =>
@@ -283,10 +286,13 @@ async function main(args: ParsedArgs) {
   }
 
   let foundMismatches = false;
-  const misaligned: string[] = [];
+  const misaligned = new Set<string>();
 
   for (const transitiveDep of [...groups.keys()].sort()) {
-    const entries = groups.get(transitiveDep)!;
+    const entries = groups.get(transitiveDep);
+    if (!entries) {
+      continue;
+    }
 
     const uniqueVersions = new Set(entries.map((e) => e.version));
     if (uniqueVersions.size <= 1) {
@@ -296,13 +302,6 @@ async function main(args: ParsedArgs) {
     foundMismatches = true;
     const allVersions = entries.map((e) => e.version);
     const highestVersion = getHighestRange(allVersions);
-
-    if (
-      entries.some((e) => satisfiesHighest(e.version, highestVersion) === false)
-    ) {
-      misaligned.push(transitiveDep);
-    }
-
     const versionPad = Math.max(...allVersions.map((v) => v.length));
 
     console.log(
@@ -314,6 +313,9 @@ async function main(args: ParsedArgs) {
 
     for (const { version, label } of entries) {
       const match = satisfiesHighest(version, highestVersion);
+      if (match === false) {
+        misaligned.add(transitiveDep);
+      }
       const indicator =
         match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
       console.log(
@@ -335,7 +337,7 @@ async function main(args: ParsedArgs) {
         'All transitive dependencies are aligned, nothing to report!',
       ),
     );
-  } else if (misaligned.length > 0) {
+  } else if (misaligned.size > 0) {
     console.log(chalk.bold.red('Misaligned transitive dependencies:'));
     console.log();
     for (const dep of misaligned) {
