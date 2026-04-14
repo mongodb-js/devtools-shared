@@ -384,7 +384,7 @@ process.on('unhandledRejection', (err: Error) => {
   process.exitCode = 1;
 });
 
-if (require.main === module) {
+if (process.argv[1]?.endsWith('check-transitive-deps.js')) {
   main(minimist(process.argv.slice(2))).catch((err) =>
     process.nextTick(() => {
       throw err;
