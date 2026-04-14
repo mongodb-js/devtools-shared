@@ -84,11 +84,12 @@ async function loadConfig(args: ParsedArgs): Promise<Config> {
   return { deps, transitiveDeps };
 }
 
-function satisfiesHighest(
+export function satisfiesHighest(
   range: string,
   highestVersion: string | null,
 ): boolean | null {
   if (!highestVersion) return null;
+  if (!semver.validRange(range)) return null;
   try {
     const minVer = semver.minVersion(highestVersion);
     if (!minVer) return null;
@@ -98,7 +99,7 @@ function satisfiesHighest(
   }
 }
 
-function matchesAnyPattern(name: string, patterns: string[]): boolean {
+export function matchesAnyPattern(name: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     const regex = new RegExp(
       '^' +
@@ -135,7 +136,7 @@ function collectTransitiveDeps(
   }
 }
 
-function getDepsFromPackageJson(
+export function getDepsFromPackageJson(
   packageJson: Record<string, any>,
   { ignoreDevDeps = false }: { ignoreDevDeps?: boolean } = {},
 ): Map<string, string> {
@@ -355,8 +356,10 @@ process.on('unhandledRejection', (err: Error) => {
   process.exitCode = 1;
 });
 
-main(minimist(process.argv.slice(2))).catch((err) =>
-  process.nextTick(() => {
-    throw err;
-  }),
-);
+if (require.main === module) {
+  main(minimist(process.argv.slice(2))).catch((err) =>
+    process.nextTick(() => {
+      throw err;
+    }),
+  );
+}
