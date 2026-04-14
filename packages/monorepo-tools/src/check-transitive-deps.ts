@@ -5,7 +5,9 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import chalk from 'chalk';
 import pacote from 'pacote';
+import semver from 'semver';
 import { listAllPackages } from './utils/list-all-packages';
+import { getHighestRange } from './utils/semver-helpers';
 import minimist from 'minimist';
 import type { ParsedArgs } from 'minimist';
 
@@ -18,13 +20,14 @@ const DEPENDENCY_GROUPS = [
 
 const USAGE = `Check transitive dependencies for version alignment.
 
-USAGE: check-transitive-deps.js [--deps <list>] [--transitive-deps <list>] [--config <path>]
+USAGE: check-transitive-deps.js [--deps <list>] [--transitive-deps <list>] [--config <path>] [--ignore-dev-deps]
 
 Options:
 
-  --deps             Comma-separated list of direct dependencies to track.
-  --transitive-deps  Comma-separated list of transitive dependencies to check alignment for.
-  --config           Path to config file. Default is .check-transitive-deps.json
+  --deps              Comma-separated list of direct dependencies to track.
+  --transitive-deps   Comma-separated list of transitive dependencies to check alignment for.
+  --config            Path to config file. Default is .check-transitive-deps.json
+  --ignore-dev-deps   Ignore devDependencies when scanning both our own packages and tracked dependencies.
 
 Config file format (.check-transitive-deps.json):
   {
@@ -81,6 +84,20 @@ async function loadConfig(args: ParsedArgs): Promise<Config> {
   return { deps, transitiveDeps };
 }
 
+function satisfiesHighest(
+  range: string,
+  highestVersion: string | null,
+): boolean | null {
+  if (!highestVersion) return null;
+  try {
+    const minVer = semver.minVersion(highestVersion);
+    if (!minVer) return null;
+    return semver.satisfies(minVer, range);
+  } catch {
+    return null;
+  }
+}
+
 function matchesAnyPattern(name: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     const regex = new RegExp(
@@ -94,9 +111,13 @@ function matchesAnyPattern(name: string, patterns: string[]): boolean {
 
 function getDepsFromPackageJson(
   packageJson: Record<string, any>,
+  { ignoreDevDeps = false }: { ignoreDevDeps?: boolean } = {},
 ): Map<string, string> {
   const deps = new Map<string, string>();
   for (const group of DEPENDENCY_GROUPS) {
+    if (ignoreDevDeps && group === 'devDependencies') {
+      continue;
+    }
     for (const [name, version] of Object.entries(
       (packageJson[group] || {}) as Record<string, string>,
     )) {
@@ -135,9 +156,16 @@ async function main(args: ParsedArgs) {
   // trackedDep → Set<versionRange>
   const trackedDepRanges = new Map<string, Set<string>>();
 
+  const ignoreDevDeps: boolean = args['ignore-dev-deps'] === true;
+
+  // Collect local monorepo package.json objects so we can resolve their deps
+  // locally instead of hitting the npm registry (they may be private / unpublished).
+  const localPackages = new Map<string, Record<string, unknown>>();
+
   for await (const { packageJson } of listAllPackages()) {
     const packageName: string = packageJson.name;
-    const deps = getDepsFromPackageJson(packageJson);
+    localPackages.set(packageName, packageJson);
+    const deps = getDepsFromPackageJson(packageJson, { ignoreDevDeps });
 
     for (const [depName, version] of deps) {
       if (matchesAnyPattern(depName, config.transitiveDeps)) {
@@ -160,12 +188,38 @@ async function main(args: ParsedArgs) {
     }
   }
 
+  // Packages that live inside the monorepo are never external deps — remove any
+  // that crept into trackedDepRanges because one of our packages depends on them.
+  for (const localPkgName of localPackages.keys()) {
+    trackedDepRanges.delete(localPkgName);
+  }
+
   // For each tracked direct dep (at each version range used), resolve its package.json
   // and collect any transitive deps we care about.
   // transitiveDep → Map<"trackedDep@range", versionOfTransitiveDep>
   const viaTrackedDep = new Map<string, Map<string, string>>();
 
   for (const [trackedDepName, versionRanges] of trackedDepRanges) {
+    // For local monorepo packages, resolve deps from the local package.json
+    // instead of hitting the npm registry (they may be private / unpublished).
+    const localPkg = localPackages.get(trackedDepName);
+    if (localPkg) {
+      const trackedDepDeps = getDepsFromPackageJson(localPkg, {
+        ignoreDevDeps,
+      });
+      for (const [depName, version] of trackedDepDeps) {
+        if (matchesAnyPattern(depName, config.transitiveDeps)) {
+          let entry = viaTrackedDep.get(depName);
+          if (!entry) {
+            entry = new Map();
+            viaTrackedDep.set(depName, entry);
+          }
+          entry.set(trackedDepName, version);
+        }
+      }
+      continue;
+    }
+
     for (const versionRange of versionRanges) {
       let resolvedManifest: Record<string, any>;
       try {
@@ -179,8 +233,16 @@ async function main(args: ParsedArgs) {
         continue;
       }
 
-      const trackedDepDeps = getDepsFromPackageJson(resolvedManifest);
+      const trackedDepDeps = getDepsFromPackageJson(resolvedManifest, {
+        ignoreDevDeps,
+      });
       for (const [depName, version] of trackedDepDeps) {
+        // We're only interested in deps that we use ourselves.
+        // TODO: Do we want this?
+        //if (!ourDirectUsage.has(depName)) {
+        //  continue;
+        //}
+
         if (matchesAnyPattern(depName, config.transitiveDeps)) {
           let entry = viaTrackedDep.get(depName);
           if (!entry) {
@@ -209,6 +271,7 @@ async function main(args: ParsedArgs) {
   }
 
   let foundMismatches = false;
+  const misaligned: string[] = [];
   for (const transitiveDep of [...allTransitiveDeps].sort()) {
     const directUsages = ourDirectUsage.get(transitiveDep) ?? [];
     const trackedUsages: [string, string][] = [
@@ -226,14 +289,29 @@ async function main(args: ParsedArgs) {
     }
 
     foundMismatches = true;
+    const highestVersion = getHighestRange(allVersions);
+    const hasMisaligned = allVersions.some(
+      (v) => satisfiesHighest(v, highestVersion) === false,
+    );
+    if (hasMisaligned) {
+      misaligned.push(transitiveDep);
+    }
     const versionPad = Math.max(...allVersions.map((v) => v.length));
 
-    console.log(chalk.bold(transitiveDep));
+    console.log(
+      '%s  %s',
+      chalk.bold(transitiveDep),
+      chalk.dim(`highest: ${highestVersion ?? 'unknown'}`),
+    );
     console.log();
 
     for (const { packageName, version } of directUsages) {
+      const match = satisfiesHighest(version, highestVersion);
+      const indicator =
+        match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
       console.log(
-        '  %s%s  %s',
+        '%s %s%s  %s',
+        indicator,
         ' '.repeat(versionPad - version.length),
         version,
         chalk.dim(packageName),
@@ -241,8 +319,12 @@ async function main(args: ParsedArgs) {
     }
 
     for (const [trackedDepRef, version] of trackedUsages) {
+      const match = satisfiesHighest(version, highestVersion);
+      const indicator =
+        match === null ? ' ' : match ? chalk.green('✓') : chalk.red('✗');
       console.log(
-        '  %s%s  %s',
+        '%s %s%s  %s',
+        indicator,
         ' '.repeat(versionPad - version.length),
         version,
         chalk.dim(`via ${trackedDepRef}`),
@@ -259,6 +341,14 @@ async function main(args: ParsedArgs) {
         'All transitive dependencies are aligned, nothing to report!',
       ),
     );
+  } else if (misaligned.length > 0) {
+    console.log(chalk.bold.red('Misaligned transitive dependencies:'));
+    console.log();
+    for (const dep of misaligned) {
+      console.log('  %s', dep);
+    }
+    console.log();
+    process.exitCode = 1;
   }
 }
 
