@@ -119,9 +119,9 @@ describe('check-transitive-deps', function () {
       const groups = await gatherTransitiveDepsInfo({
         ...baseOpts,
         packages,
-        resolveExternal: async (name, range) => {
+        resolveExternal: async (name) => {
           if (name === 'tracked-dep') return trackedDepManifest;
-          return {};
+          return Promise.resolve({});
         },
       });
 
