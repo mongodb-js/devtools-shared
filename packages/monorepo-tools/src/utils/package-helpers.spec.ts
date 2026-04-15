@@ -5,9 +5,9 @@ import {
   getDepsFromPackageJson,
   gatherTransitiveDepsInfo,
   findMisalignments,
-} from './check-transitive-deps';
+} from './package-helpers';
 
-describe('check-transitive-deps', function () {
+describe('package-helpers', function () {
   describe('matchesAnyPattern', function () {
     it('matches an exact package name', function () {
       assert.equal(matchesAnyPattern('foo', ['foo']), true);
