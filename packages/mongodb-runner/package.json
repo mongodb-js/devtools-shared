@@ -63,7 +63,7 @@
     "debug": "^4.4.0",
     "mongodb": "^6.9.0 || ^7.0.0",
     "mongodb-connection-string-url": "^3.0.0 || ^7.0.0",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.3",
