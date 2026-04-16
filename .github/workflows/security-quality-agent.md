@@ -182,7 +182,7 @@ You **do not** dismiss alerts.
 4. **Implement the fix** — Edit the repo as needed and follow existing project conventions. For **npm-style supply-chain fixes** (this monorepo uses `package.json` / lockfiles under the repo root and in `packages/*`):
 
    - **Prefer manifest-first remediation:** bump or change the **direct** dependency in the **`package.json` that actually declares it** (repository root or the relevant workspace package). Let the lockfile (`package-lock.json`, etc.) update as a consequence of that manifest change. **Do not** treat “only editing the lockfile to pin a transitive” as the default approach when a `package.json` range can be updated instead.
-
+   - If a major version bump of the direct dependency is required, evaluate the impact of the upgrade. If the upgrade is simple and does not require a lot of changes, do it, otherwise emit a `create_issue` and link to the alert.
    - **Use `overrides` / resolutions only as a fallback:** add an **`overrides`** (npm) or equivalent **only when** the maintainer of the **direct** dependency has **not** shipped a release that resolves the vulnerable **transitive** on a supported range, so there is no reasonable manifest bump that clears the advisory. When you use overrides, say so in the PR body (which direct dependency is stuck, which advisory it blocks, and what you verified).
 
 5. **Outcome (choose one when the batch is non-empty)**
