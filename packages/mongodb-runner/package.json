@@ -76,7 +76,7 @@
     "@types/node": "^22.15.30",
     "@types/sinon-chai": "^3.2.5",
     "@types/yargs": "^17.0.24",
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",
