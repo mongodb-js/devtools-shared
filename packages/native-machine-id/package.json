@@ -65,7 +65,7 @@
     "mocha": "^8.4.0",
     "depcheck": "^1.4.7",
     "node-machine-id": "^1.1.12",
-    "prettier": "^3.5.3",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "ts-node": "^10.9.2"
   },
