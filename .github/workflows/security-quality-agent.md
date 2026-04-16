@@ -84,7 +84,7 @@ mcp-scripts:
       end
       JQ
     env:
-      GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      GH_TOKEN: "${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}"
 safe-outputs:
   create-pull-request:
     title-prefix: "[security] "
@@ -125,7 +125,7 @@ safe-outputs:
         - name: Assign svc-devtoolsbot on security alert
           env:
             ALERT_QUEUE_BOT: svc-devtoolsbot
-            GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+            GH_TOKEN: "${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}"
           run: |
             set -euo pipefail
             out="${GH_AW_AGENT_OUTPUT:-}"
