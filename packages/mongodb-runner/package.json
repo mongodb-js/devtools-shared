@@ -63,6 +63,7 @@
     "debug": "^4.4.0",
     "mongodb": "^6.9.0 || ^7.0.0",
     "mongodb-connection-string-url": "^3.0.0 || ^7.0.0",
+    "reflect-metadata": "^0.2.2",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
