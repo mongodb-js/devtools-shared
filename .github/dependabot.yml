@@ -10,6 +10,9 @@ updates:
           - "eslint*"
           - "@eslint/*"
           - "@typescript-eslint/*"
+      babel:
+        patterns:
+          - "@babel/*"
     cooldown:
       default-days: 7
     versioning-strategy: increase
