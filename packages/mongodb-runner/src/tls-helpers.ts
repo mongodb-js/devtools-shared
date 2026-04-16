@@ -38,10 +38,10 @@ export async function handleTLSClientKeyOptions({
     modulusLength: 2048,
   };
   const now = Date.now();
-  const keys = await webcrypto.subtle.generateKey(alg, true, [
+  const keys = (await webcrypto.subtle.generateKey(alg, true, [
     'sign',
     'verify',
-  ]);
+  ])) as CryptoKeyPair;
   const cert = await x509.X509CertificateGenerator.createSelfSigned({
     name: 'O=MongoDB, OU=MongoDBRunnerCA, CN=MongoDBRunnerCA',
     notBefore: new Date(now - 1000 * 60 * 60),
