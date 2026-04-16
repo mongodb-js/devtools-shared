@@ -58,7 +58,7 @@
     "@mongodb-js/mocha-config-devtools": "^1.1.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "@mongodb-js/tsconfig-devtools": "^1.1.1",
-    "@leafygreen-ui/emotion": "^4.0.7",
+    "@leafygreen-ui/emotion": "^5.2.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/react": "^17.0.53",
