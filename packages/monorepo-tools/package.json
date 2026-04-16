@@ -66,7 +66,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "chalk": "^4.1.1",
+    "chalk": "^5.6.2",
     "find-up": "^4.1.0",
     "git-log-parser": "^1.2.0",
     "glob": "^10.2.7",
