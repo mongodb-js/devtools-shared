@@ -9,7 +9,7 @@ import type { MongoClientOptions } from 'mongodb';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
-  const argv = await yargs
+  const argv = await yargs(process.argv.slice(2))
     .version(false)
     .scriptName('mongodb-runner')
     .env('MONGODB_RUNNER')

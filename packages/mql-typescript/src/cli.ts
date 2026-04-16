@@ -5,7 +5,7 @@ import { DriverSchemaGenerator } from './driverSchema/driver-schema-generator';
 import type { GeneratorBase } from './generator';
 
 async function main() {
-  const argv = await yargs
+  const argv = await yargs(process.argv.slice(2))
     .command('schema', 'Generates schema from the php driver definitions')
     .command(
       'tests',

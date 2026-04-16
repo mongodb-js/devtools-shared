@@ -11,7 +11,7 @@ export function parseCLIArgs(
   args?: undefined | string | string[],
   defaultPort?: number,
 ): OIDCMockProviderConfig {
-  const yargsParser = yargs
+  const yargsParser = yargs(args ?? process.argv.slice(2))
     .option('port', {
       alias: 'p',
       type: 'string',
@@ -71,7 +71,7 @@ export function parseCLIArgs(
       'Start the OIDC mock identity provider server on port 28200',
     )
     .help();
-  const argv = args ? yargsParser.parseSync(args) : yargsParser.parseSync();
+  const argv = yargsParser.parseSync();
 
   return {
     getTokenPayload() {
