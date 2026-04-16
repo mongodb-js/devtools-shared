@@ -58,6 +58,7 @@ mcp-scripts:
 
       ( $dep | map(select(unassigned)) ) as $dun |
       ( $dun
+        | sort_by((.dependency.package.name // "unknown"))
         | group_by((.dependency.package.name // "unknown"))
         | map({
             pkg: (.[0].dependency.package.name // "unknown"),
@@ -124,7 +125,6 @@ safe-outputs:
             ALERT_QUEUE_BOT: svc-devtoolsbot
           run: |
             set -euo pipefail
-            set -o pipefail
             out="${GH_AW_AGENT_OUTPUT:-}"
             if [[ -z "${out}" || ! -f "${out}" ]]; then
               echo "No GH_AW_AGENT_OUTPUT or file missing"
