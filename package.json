@@ -46,7 +46,7 @@
     "@mongodb-js/monorepo-tools": "^1.2.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.8",
+    "@babel/core": "^7.29.0",
     "@babel/parser": "^7.22.7",
     "depcheck": "^1.4.7",
     "husky": "^8.0.3",
