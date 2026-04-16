@@ -55,7 +55,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
     "@types/pacote": "^11.1.8",
-    "@types/toposort": "^2.0.3",
+    "@types/toposort": "^2.0.7",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",
