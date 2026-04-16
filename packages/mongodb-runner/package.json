@@ -59,10 +59,11 @@
     "@mongodb-js/mongodb-downloader": "^1.1.11",
     "@mongodb-js/oidc-mock-provider": "^0.13.9",
     "@mongodb-js/saslprep": "^1.4.8",
-    "@peculiar/x509": "^1.14.2",
+    "@peculiar/x509": "^2.0.0",
     "debug": "^4.4.0",
     "mongodb": "^6.9.0 || ^7.0.0",
     "mongodb-connection-string-url": "^3.0.0 || ^7.0.0",
+    "reflect-metadata": "^0.2.2",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
