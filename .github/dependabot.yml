@@ -4,6 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
     cooldown:
       default-days: 7
     versioning-strategy: increase
