@@ -28,11 +28,14 @@ mcp-scripts:
     timeout: 120
     run: |
       set -euo pipefail
-      dependabot_raw="$(gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open" --paginate)"
-      code_scanning_raw="$(gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open" --paginate)"
+      # Avoid --argjson for huge API payloads (ARG_MAX / "argument list too long").
+      dep_file="${RUNNER_TEMP}/list-gh-security-dep.json"
+      cs_file="${RUNNER_TEMP}/list-gh-security-cs.json"
+      gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open" --paginate >"$dep_file"
+      gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open" --paginate >"$cs_file"
       jq -n \
-        --argjson dep "$dependabot_raw" \
-        --argjson cs "$code_scanning_raw" \
+        --slurpfile dep "$dep_file" \
+        --slurpfile cs "$cs_file" \
         -f /dev/stdin <<'JQ'
       def sev_rank($s):
         ($s // "" | ascii_downcase)
@@ -56,7 +59,7 @@ mcp-scripts:
       def unassigned:
         ((.assignees // []) | length) == 0;
 
-      ( $dep | map(select(unassigned)) ) as $dun |
+      ( $dep[0] | map(select(unassigned)) ) as $dun |
       ( $dun
         | sort_by((.dependency.package.name // "unknown"))
         | group_by((.dependency.package.name // "unknown"))
@@ -70,7 +73,7 @@ mcp-scripts:
         | if length > 0 then .[0].alerts else [] end
       ) as $dep_sel |
 
-      ( $cs | map(select(unassigned)) ) as $csun |
+      ( $cs[0] | map(select(unassigned)) ) as $csun |
       ( $csun
         | map(. + {_score: code_scanning_score, _num: .number})
         | sort_by([- ._score, - ._num])
@@ -83,6 +86,7 @@ mcp-scripts:
         { dependabot_alerts: [], code_scanning_alerts: $cs_pick }
       end
       JQ
+      rm -f "$dep_file" "$cs_file"
     env:
       GH_TOKEN: "${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}"
 safe-outputs:
