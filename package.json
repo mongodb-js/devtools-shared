@@ -51,5 +51,8 @@
     "depcheck": "^1.4.7",
     "husky": "^8.0.3",
     "lerna": "^7.1.1"
+  },
+  "overrides": {
+    "axios": ">=1.15.0"
   }
 }
