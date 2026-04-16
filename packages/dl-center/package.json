@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "ajv": "^8.18.0",
-    "aws-sdk": "^2.1441.0",
+    "aws-sdk": "^2.1693.0",
     "node-fetch": "^2.7.0"
   }
 }
