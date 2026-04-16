@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.22.8",
-    "@babel/eslint-parser": "^7.22.7",
+    "@babel/eslint-parser": "^7.28.6",
     "@babel/preset-env": "^7.22.7",
     "@babel/preset-react": "^7.22.5",
     "@mongodb-js/eslint-plugin-devtools": "^0.3.2",
