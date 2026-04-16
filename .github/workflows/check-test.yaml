@@ -62,7 +62,7 @@ jobs:
       - name: Use python@3.11
         # Default Python (3.12) doesn't have support for distutils
         # https://github.com/nodejs/node-gyp/issues/2869
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
