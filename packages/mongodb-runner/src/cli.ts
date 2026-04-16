@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import os from 'os';
 import path from 'path';
 import createDebug from 'debug';
@@ -9,7 +10,7 @@ import type { MongoClientOptions } from 'mongodb';
 
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
-  const argv = await yargs(process.argv.slice(2))
+  const argv = await yargs(hideBin(process.argv))
     .version(false)
     .scriptName('mongodb-runner')
     .env('MONGODB_RUNNER')

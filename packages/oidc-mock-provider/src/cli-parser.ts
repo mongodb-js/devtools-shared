@@ -1,4 +1,5 @@
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import type { OIDCMockProviderConfig } from '.';
 
 const DEFAULT_TOKEN_PAYLOAD = JSON.stringify({
@@ -11,7 +12,7 @@ export function parseCLIArgs(
   args?: undefined | string | string[],
   defaultPort?: number,
 ): OIDCMockProviderConfig {
-  const yargsParser = yargs(args ?? process.argv.slice(2))
+  const yargsParser = yargs(args ?? hideBin(process.argv))
     .option('port', {
       alias: 'p',
       type: 'string',
