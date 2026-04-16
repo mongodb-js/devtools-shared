@@ -20,6 +20,9 @@ tools:
     allowed-repos:
       - mongodb-js/devtools-shared
     min-integrity: unapproved
+    github-app:
+      app-id: ${{ vars.DEVTOOLS_BOT_APP_ID }}
+      private-key: ${{ secrets.DEVTOOLS_BOT_PRIVATE_KEY }}
 mcp-scripts:
   list-github-security-items:
     description: >-
@@ -84,7 +87,7 @@ mcp-scripts:
       end
       JQ
     env:
-      GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      GH_TOKEN: "${{ steps.github-mcp-app-token.outputs.token }}"
 safe-outputs:
   create-pull-request:
     title-prefix: "[security] "
@@ -122,10 +125,15 @@ safe-outputs:
           required: true
           type: string
       steps:
+        - uses: actions/create-github-app-token@v3.1.1
+          id: app-token
+          with:
+            app-id: ${{ vars.DEVTOOLS_BOT_APP_ID }}
+            private-key: ${{ secrets.DEVTOOLS_BOT_PRIVATE_KEY }}
         - name: Assign svc-devtoolsbot on security alert
           env:
             ALERT_QUEUE_BOT: svc-devtoolsbot
-            GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+            GH_TOKEN: "${{ steps.app-token.outputs.token }}"
           run: |
             set -euo pipefail
             out="${GH_AW_AGENT_OUTPUT:-}"
