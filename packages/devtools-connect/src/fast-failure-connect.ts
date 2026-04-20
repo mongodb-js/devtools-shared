@@ -1,6 +1,15 @@
 // It probably makes sense to put this into its own package/repository once
 // other tools start using it.
 
+// unused
+export const COMPASS_SOCKET_SERVICE_NON_RETRY_CODES = [
+  3000, // UNAUTHORIZED
+  3003, // FORBIDDEN
+  4004, // NOT_FOUND
+  1008, // VIOLATED_POLICY
+  4101, // DO_NOT_TRY_AGAIN
+];
+
 function isFastFailureConnectionSingleError(
   error: Error & { code?: string },
 ): boolean {
