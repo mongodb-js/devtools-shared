@@ -18,7 +18,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/saslprep",
-  "version": "1.4.6",
+  "version": "1.4.8",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -64,7 +64,7 @@
     "sparse-bitfield": "^3.0.3"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.3",
+    "@mongodb-js/eslint-config-devtools": "^0.11.4",
     "@mongodb-js/mocha-config-devtools": "^1.1.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.2",
     "@mongodb-js/tsconfig-devtools": "^1.1.1",
@@ -72,7 +72,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
     "@types/sinon-chai": "^3.2.5",
-    "@types/sparse-bitfield": "^3.0.1",
+    "@types/sparse-bitfield": "^3.0.4",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
