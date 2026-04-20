@@ -22,7 +22,7 @@ describe('MongoLogManager', function () {
     onerror = sinon.stub();
     directory = path.join(
       os.tmpdir(),
-      `log-writer-test-${Math.random()}-${Date.now()}`
+      `log-writer-test-${Math.random()}-${Date.now()}`,
     );
     await fs.mkdir(directory, { recursive: true });
   });
@@ -84,10 +84,10 @@ describe('MongoLogManager', function () {
 
     const writer = await manager.createLogWriter();
     expect(
-      path.relative(directory, writer.logFilePath as string)[0]
+      path.relative(directory, writer.logFilePath as string)[0],
     ).to.not.equal('.');
     expect((writer.logFilePath as string).includes(writer.logId)).to.equal(
-      true
+      true,
     );
 
     writer.info('component', mongoLogId(12345), 'context', 'message', {
@@ -153,9 +153,9 @@ describe('MongoLogManager', function () {
         paths.map((path) =>
           fs.stat(path).then(
             () => 1,
-            () => 0
-          )
-        )
+            () => 0,
+          ),
+        ),
       )
     ).join('');
   };
@@ -174,7 +174,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
       paths.unshift(filename);
@@ -198,7 +198,7 @@ describe('MongoLogManager', function () {
 
     const faultyFile = path.join(
       directory,
-      ObjectId.createFromTime(offset - 10).toHexString() + '_log'
+      ObjectId.createFromTime(offset - 10).toHexString() + '_log',
     );
     await fs.writeFile(faultyFile, '');
 
@@ -209,7 +209,7 @@ describe('MongoLogManager', function () {
     for (let i = 5; i >= 0; i--) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
       validFiles.push(filename);
@@ -254,7 +254,7 @@ describe('MongoLogManager', function () {
     for (let i = 1; i >= 0; i--) {
       const withoutPrefix = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(withoutPrefix, '');
       paths.push(withoutPrefix);
@@ -263,7 +263,7 @@ describe('MongoLogManager', function () {
         directory,
         'different_' +
           ObjectId.createFromTime(offset - i).toHexString() +
-          '_log'
+          '_log',
       );
       await fs.writeFile(withDifferentPrefix, '');
       paths.push(withDifferentPrefix);
@@ -273,7 +273,7 @@ describe('MongoLogManager', function () {
     for (let i = 9; i >= 0; i--) {
       const filename = path.join(
         directory,
-        `custom_${ObjectId.createFromTime(offset - i).toHexString()}_log`
+        `custom_${ObjectId.createFromTime(offset - i).toHexString()}_log`,
       );
       await fs.writeFile(filename, '');
       paths.push(filename);
@@ -305,7 +305,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '0'.repeat(1024));
       paths.unshift(filename);
@@ -332,7 +332,7 @@ describe('MongoLogManager', function () {
     for (let i = 0; i < 10; i++) {
       const filename = path.join(
         directory,
-        ObjectId.createFromTime(offset - i).toHexString() + '_log'
+        ObjectId.createFromTime(offset - i).toHexString() + '_log',
       );
       await fs.writeFile(filename, '');
     }
@@ -370,7 +370,7 @@ describe('MongoLogManager', function () {
               };
             }
           },
-        } as unknown as Dir)
+        } as unknown as Dir),
       );
     });
 
@@ -426,13 +426,13 @@ describe('MongoLogManager', function () {
         const yesterday = today - 25 * 60 * 60;
         const todayFile = path.join(
           directory,
-          ObjectId.createFromTime(today - i).toHexString() + '_log'
+          ObjectId.createFromTime(today - i).toHexString() + '_log',
         );
         await fs.writeFile(todayFile, '0'.repeat(1024));
 
         const yesterdayFile = path.join(
           directory,
-          ObjectId.createFromTime(yesterday - i).toHexString() + '_log'
+          ObjectId.createFromTime(yesterday - i).toHexString() + '_log',
         );
         await fs.writeFile(yesterdayFile, '0'.repeat(1024));
 
@@ -467,7 +467,7 @@ describe('MongoLogManager', function () {
       for (let i = 0; i < 10; i++) {
         const filename = path.join(
           directory,
-          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+          ObjectId.createFromTime(offset - i).toHexString() + '_log',
         );
         await fs.writeFile(filename, '0'.repeat(1024));
         paths.unshift(filename);
@@ -496,7 +496,7 @@ describe('MongoLogManager', function () {
       for (let i = 0; i < 10; i++) {
         const filename = path.join(
           directory,
-          ObjectId.createFromTime(offset - i).toHexString() + '_log'
+          ObjectId.createFromTime(offset - i).toHexString() + '_log',
         );
         await fs.writeFile(filename, '0'.repeat(1024));
         paths.unshift(filename);
