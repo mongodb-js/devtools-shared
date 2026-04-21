@@ -51,8 +51,5 @@
     "depcheck": "^1.4.7",
     "husky": "^8.0.3",
     "lerna": "^9.0.7"
-  },
-  "overrides": {
-    "flatted": "^3.4.2"
   }
 }
