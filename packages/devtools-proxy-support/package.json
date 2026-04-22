@@ -65,7 +65,7 @@
   },
   "dependencies": {
     "@mongodb-js/socksv5": "^0.0.10",
-    "agent-base": "^7.1.1",
+    "agent-base": "^9.0.0",
     "debug": "^4.4.0",
     "lru-cache": "^11.3.3",
     "node-fetch": "^3.3.2",
