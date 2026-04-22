@@ -73,6 +73,20 @@ const EXPRESSION_OPERATORS = [
     version: '4.4.0',
   },
   {
+    name: '$bottom',
+    value: '$bottom',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
+    name: '$bottomN',
+    value: '$bottomN',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
     name: '$ceil',
     value: '$ceil',
     score: 1,
@@ -724,6 +738,20 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
+  },
+  {
+    name: '$top',
+    value: '$top',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
+    name: '$topN',
+    value: '$topN',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
   },
   {
     name: '$tsSecond',
