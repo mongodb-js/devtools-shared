@@ -206,6 +206,13 @@ const EXPRESSION_OPERATORS = [
     version: '3.0.0',
   },
   {
+    name: '$deserializeEJSON',
+    value: '$deserializeEJSON',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
+  },
+  {
     name: '$divide',
     value: '$divide',
     score: 1,
@@ -561,6 +568,13 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:date',
     version: '2.2.0',
+  },
+  {
+    name: '$serializeEJSON',
+    value: '$serializeEJSON',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
   },
   {
     name: '$setDifference',
