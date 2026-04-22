@@ -283,6 +283,20 @@ const EXPRESSION_OPERATORS = [
     version: '2.2.0',
   },
   {
+    name: '$hash',
+    value: '$hash',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.3.0',
+  },
+  {
+    name: '$hexHash',
+    value: '$hexHash',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.3.0',
+  },
+  {
     name: '$hour',
     value: '$hour',
     score: 1,
