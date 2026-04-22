@@ -52,7 +52,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "acorn": "^8.14.1"
+    "acorn": "^8.16.0"
   },
   "peerDependencies": {
     "bson": "^4.6.3 || ^5 || ^6.10.3 || ^7.0.0"
