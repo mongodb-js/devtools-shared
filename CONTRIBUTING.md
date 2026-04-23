@@ -37,7 +37,7 @@ This monorepo is powered by [`npm workspaces`](https://docs.npmjs.com/cli/v7/usi
 
 Packages in the monorepo are automatically published when a change is merged into the `main` branch. This is done with a CI workflow. Each change to the `main` branch is analyzed to calculate new versions for impacted packages. A pr with the new versions of each changed package is created by a bot and merged on each new change.
 
-The version of packages is calculated following conventional bumps: https://www.conventionalcommits.org/en/v1.0.0/ 
+The version of packages is calculated following conventional bumps: https://www.conventionalcommits.org/en/v1.0.0/
 See https://github.com/mongodb-js/devtools-shared/blob/main/packages/monorepo-tools/src/bump-packages.ts for details.
 
 ### Add / Update / Remove Dependencies in Packages
