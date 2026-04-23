@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@mongodb-js/ts-autocomplete": "^0.5.9",
-    "@mongosh/shell-api": "^5.0.0",
+    "@mongosh/shell-api": "^5.1.6",
     "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
     "typescript": "^5.9.3",
