@@ -73,6 +73,20 @@ const EXPRESSION_OPERATORS = [
     version: '4.4.0',
   },
   {
+    name: '$bottom',
+    value: '$bottom',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
+    name: '$bottomN',
+    value: '$bottomN',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
     name: '$ceil',
     value: '$ceil',
     score: 1,
@@ -192,6 +206,13 @@ const EXPRESSION_OPERATORS = [
     version: '3.0.0',
   },
   {
+    name: '$deserializeEJSON',
+    value: '$deserializeEJSON',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
+  },
+  {
     name: '$divide',
     value: '$divide',
     score: 1,
@@ -260,6 +281,20 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:comp',
     version: '2.2.0',
+  },
+  {
+    name: '$hash',
+    value: '$hash',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.3.0',
+  },
+  {
+    name: '$hexHash',
+    value: '$hexHash',
+    score: 1,
+    meta: 'expr:arith',
+    version: '8.3.0',
   },
   {
     name: '$hour',
@@ -549,6 +584,13 @@ const EXPRESSION_OPERATORS = [
     version: '2.2.0',
   },
   {
+    name: '$serializeEJSON',
+    value: '$serializeEJSON',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
+  },
+  {
     name: '$setDifference',
     value: '$setDifference',
     score: 1,
@@ -724,6 +766,20 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:string',
     version: '2.2.0',
+  },
+  {
+    name: '$top',
+    value: '$top',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
+  },
+  {
+    name: '$topN',
+    value: '$topN',
+    score: 1,
+    meta: 'expr:array',
+    version: '8.1.0',
   },
   {
     name: '$tsSecond',
