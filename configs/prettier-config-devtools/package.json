@@ -1,14 +1,14 @@
 {
   "name": "@mongodb-js/prettier-config-devtools",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Shared Devtools prettier configuration",
   "license": "SSPL",
   "main": "index.json",
   "peerDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.8.1"
   },
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.8.1"
   },
   "scripts": {
     "check": "npm run lint",

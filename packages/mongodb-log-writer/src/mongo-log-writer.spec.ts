@@ -34,7 +34,7 @@ describe('MongoLogWriter', function () {
       'context',
       'message',
       { foo: 'bar' },
-      2
+      2,
     );
     writer.write({
       t: now,
@@ -117,7 +117,7 @@ describe('MongoLogWriter', function () {
       mongoLogId(12345),
       'context',
       'message',
-      new Error('foo')
+      new Error('foo'),
     );
     await writer.flush();
     const log = target
@@ -174,11 +174,11 @@ describe('MongoLogWriter', function () {
     await new Promise(setImmediate);
     expect(errors).to.have.lengthOf(5);
     expect(new Set([...errors.map((err) => err.name)])).to.deep.equal(
-      new Set(['TypeError'])
+      new Set(['TypeError']),
     );
   });
 
-  it('flushes pending writes on the MongoLogWriter itself', async function() {
+  it('flushes pending writes on the MongoLogWriter itself', async function () {
     const chunks: string[] = [];
     const target = new stream.Writable({
       write(chunk, encoding, callback) {
@@ -187,15 +187,20 @@ describe('MongoLogWriter', function () {
         // as opposed to one that does not do asynchronous work outside
         // of microtask queues (promises, nextTick)
         setImmediate(callback);
-      }
+      },
     });
     const w = new MongoLogWriter('id', null, target);
     for (let i = 0; i < 5; i++) {
       w.info('component', mongoLogId(0), 'ctx', 'msg', { i });
     }
     await w.flush();
-    expect(chunks.map(c => c ? JSON.parse(c).attr.i : c)).to.deep.equal([
-      0, 1, 2, 3, 4, ''
+    expect(chunks.map((c) => (c ? JSON.parse(c).attr.i : c))).to.deep.equal([
+      0,
+      1,
+      2,
+      3,
+      4,
+      '',
     ]);
   });
 });

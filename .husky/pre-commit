@@ -1,6 +1,20 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# macOS GUI Git clients (e.g. SourceTree) often run hooks with a minimal PATH and no Homebrew.
+if [ "$(uname -s)" = "Darwin" ]; then
+  export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT" || exit 1
+
+# bin/precommit.js requires dist/precommit.js; build once if missing (fresh clone / clean).
+if [ ! -f packages/monorepo-tools/dist/precommit.js ]; then
+  echo "husky: compiling @mongodb-js/monorepo-tools (dist missing)..."
+  npm run compile --workspace=@mongodb-js/monorepo-tools || exit 1
+fi
+
 # listings staged files only
 fileList=$(git diff --diff-filter=AM --cached --name-only)
 
