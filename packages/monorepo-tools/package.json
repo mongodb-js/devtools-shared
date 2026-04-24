@@ -27,7 +27,8 @@
     "depalign": "./bin/depalign.js",
     "monorepo-where": "./bin/where.js",
     "bump-monorepo-packages": "./bin/bump-packages.js",
-    "request-npm-token": "./bin/request-npm-token.js"
+    "request-npm-token": "./bin/request-npm-token.js",
+    "check-transitive-deps": "./bin/check-transitive-deps.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",

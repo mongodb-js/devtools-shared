@@ -1,0 +1,9 @@
+{
+  "deps": [
+    "@mongodb-js/*",
+    "mongodb",
+    "mongodb-*",
+    "@mongosh/*",
+    "bson"
+  ]
+}
