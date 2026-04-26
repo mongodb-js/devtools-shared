@@ -42,6 +42,9 @@
     "where": "node ./scripts/src/where.js",
     "request-npm-token": "request-npm-token"
   },
+  "overrides": {
+    "postcss": ">=8.5.10"
+  },
   "dependencies": {
     "@mongodb-js/monorepo-tools": "^1.2.3"
   },
