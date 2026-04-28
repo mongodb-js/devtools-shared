@@ -32,7 +32,7 @@
     "precheck": "npm run depcheck",
     "precommit": "precommit",
     "predepcheck": "npm run depalign",
-    "prepare": "husky install",
+    "prepare": "husky",
     "publish-packages": "lerna publish from-package --no-verify-access --no-push --no-git-tag-version --yes",
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",
@@ -49,7 +49,7 @@
     "@babel/core": "^7.29.0",
     "@babel/parser": "^7.22.7",
     "depcheck": "^1.4.7",
-    "husky": "^8.0.3",
+    "husky": "^9.1.7",
     "lerna": "^9.0.7"
   }
 }
