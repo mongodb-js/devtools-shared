@@ -1296,6 +1296,46 @@ const STAGE_OPERATORS = [
   },
 ] as const;
 
+const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
+  name: '$vectorSearch',
+  value: '$vectorSearch',
+  label: '$vectorSearch',
+  outputStage: false,
+  fullScan: false,
+  firstStage: true,
+  score: 1,
+  env: [ATLAS, ON_PREM],
+  meta: 'stage',
+  version: '>=6.0.10 <7.0.0 || >=7.0.2',
+  apiVersions: [],
+  namespaces: [COLLECTION, VIEW],
+  description: 'Performs a kNN search on embeddings in the specified field(s)',
+  comment: `/**
+/**
+ * query: {“text”: Natural Language Query string for performing semantic search} Use this option if using Automated Embedding. 
+ * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. Use this option if you're bringing your own vectors.
+
+ * path: The field to search. (Required)
+ * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
+ * index: Name of the Atlas Search index to use. (Required)
+ * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
+ * model: Specify a model, compatible with the one used during index creation, to perform embedding generation of the \`query\` string. If nothing is specified the same model used during index creation is used. Available only if using Automated Embedding. 
+i * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+ * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
+ */
+`,
+  snippet: `{
+  //query: {"text": \${1:query string}},
+  //queryVector: [\${2:dimension1}, \${3:dimension2}, ...],
+  path: \${4:string},
+  numCandidates: \${5:numCandidates},
+  index: \${6:string},
+  limit: \${7:limit},
+  filter: {\${8:expression}},
+  exact: \${9:boolean}
+}`,
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 (function assertStageOperatorsSceme(_operators: readonly StageOperator[]) {
   // This will fail on compile time if stage operators are not matching the type
@@ -1322,4 +1362,5 @@ export {
   OUT_STAGES,
   FULL_SCAN_STAGES,
   REQUIRED_AS_FIRST_STAGE,
+  VECTOR_SEARCH_AUTO_EMBED_STAGE,
 };
