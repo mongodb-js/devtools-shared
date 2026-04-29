@@ -878,7 +878,7 @@ const STAGE_OPERATORS = [
     description:
       'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
     comment: `/**
- * model: Which reranker model to use
+ * model: Which reranker model to use (rerank-2.5, rerank-2.5-lite, rerank-2, rerank-2-lite)
  * numDocsToRerank: How many documents to rerank
  */
 `,
