@@ -24,7 +24,10 @@ async function runGenerateNotices(structure: Record<string, string>) {
 describe('generate-third-party-notices', function () {
   let clock: SinonFakeTimers;
   before(function () {
-    clock = useFakeTimers(new Date('2023-01-01T12:00:00.468Z'));
+    clock = useFakeTimers({
+      now: new Date('2023-01-01T12:00:00.468Z'),
+      toFake: ['Date'],
+    });
   });
 
   after(function () {
