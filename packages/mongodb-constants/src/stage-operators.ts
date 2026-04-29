@@ -1325,8 +1325,8 @@ i * filter: Any MongoDB Query Language (MQL) match expression that compares an i
  */
 `,
   snippet: `{
-  //query: {"text": \${1:query string}},
-  //queryVector: [\${2:dimension1}, \${3:dimension2}, ...],
+  // query: {"text": \${1:query string}},
+  // queryVector: [\${2:dimension1}, \${3:dimension2}, ...],
   path: \${4:string},
   numCandidates: \${5:numCandidates},
   index: \${6:string},
