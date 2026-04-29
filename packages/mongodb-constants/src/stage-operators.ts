@@ -804,7 +804,7 @@ const STAGE_OPERATORS = [
     score: 1,
     env: [ATLAS],
     meta: 'stage',
-    version: '8.1.0',
+    version: '4.1.11',
     apiVersions: [],
     namespaces: [COLLECTION],
     description:
