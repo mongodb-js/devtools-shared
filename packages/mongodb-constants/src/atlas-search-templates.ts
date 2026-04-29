@@ -131,3 +131,16 @@ export const ATLAS_VECTOR_SEARCH_TEMPLATE: SearchTemplate = {
 }`,
   version: '4.4.0',
 };
+
+export const ATLAS_VECTOR_SEARCH_AUTO_EMBED_TEMPLATE: SearchTemplate = {
+  name: 'Automated embedding',
+  snippet: `{
+  "fields": [{
+    "type": "autoEmbed",
+    "modality": "text",
+    "path": "\${1:<field name to index>}",
+    "model": "voyage-4"
+  }]
+}`,
+  version: '4.4.0',
+};

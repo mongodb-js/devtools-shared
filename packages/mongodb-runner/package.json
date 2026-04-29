@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "6.7.8",
+  "version": "6.7.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -61,7 +61,7 @@
     "@mongodb-js/saslprep": "^1.4.9",
     "@peculiar/x509": "^2.0.0",
     "debug": "^4.4.0",
-    "mongodb": "^6.9.0 || ^7.0.0",
+    "mongodb": "^7.2.0",
     "mongodb-connection-string-url": "^3.0.0 || ^7.0.0",
     "reflect-metadata": "^0.2.2",
     "yargs": "^18.0.0"

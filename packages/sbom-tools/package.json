@@ -16,7 +16,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.10.12",
+  "version": "0.10.13",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -88,7 +88,7 @@
     "lodash": "^4.17.21",
     "node-fetch": "^2.7.0",
     "semver": "^7.7.1",
-    "snyk-policy": "^4.1.7",
+    "snyk-policy": "^5.0.0",
     "spdx-satisfies": "^5.0.1"
   }
 }
