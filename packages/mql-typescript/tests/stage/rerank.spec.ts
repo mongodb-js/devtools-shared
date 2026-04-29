@@ -2,16 +2,16 @@
 /* eslint-disable filename-rules/match */
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import type * as schema from '../../out/schema';
+import * as bson from 'bson';
 
 /**
- * Basic rerank with text query
+ * Rerank after $search
  * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/rerank/}
  */
 function test0() {
   type TestCollection = {
     plot: string;
     title: string;
-    score: number;
   };
 
   const aggregation: schema.Pipeline<TestCollection> = [
@@ -32,25 +32,21 @@ function test0() {
             path: 'plot',
           },
         },
-        rankConstant: 60,
-        scoreDetails: false,
+        model: 'rerank-2.5',
+        numDocsToRerank: 100,
       },
-    },
-    {
-      $limit: 10,
     },
   ];
 }
 
 /**
- * Rerank with scoreDetails enabled
+ * Rerank after $vectorSearch
  * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/rerank/}
  */
 function test1() {
   type TestCollection = {
     plot: string;
     title: string;
-    score: number;
   };
 
   const aggregation: schema.Pipeline<TestCollection> = [
@@ -71,7 +67,8 @@ function test1() {
             path: 'plot',
           },
         },
-        scoreDetails: true,
+        model: 'rerank-2.5',
+        numDocsToRerank: 100,
       },
     },
   ];
