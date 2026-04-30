@@ -57,7 +57,7 @@
     "check-ci": "npm run check",
     "test": "tsc --noEmit tests/**/*.ts",
     "reformat": "npm run prettier -- --write .",
-    "extract-metaschema": "json-refs resolve mongo-php-library/generator/config/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
+    "extract-metaschema": "json-refs resolve mql-specifications/schema.json | json-schema-to-zod -n Operator -o src/metaschema.ts && npm run prettier -- --write src/metaschema.ts",
     "pregenerate-schema": "npm run extract-metaschema",
     "generate-schema": "ts-node src/cli.ts schema",
     "postgenerate-schema": "npm run prettier -- --write out/*",
@@ -66,7 +66,7 @@
     "postgenerate-tests": "npm run prettier -- --write tests/**/*.ts",
     "pregenerate-driver-schema": "npm run extract-metaschema",
     "generate-driver-schema": "ts-node src/cli.ts driver-schema",
-    "postgenerate-driver-schema": "yamlfix -c mongo-php-library/generator/config/.yamlfix.toml mongo-php-library/generator/config",
+    "postgenerate-driver-schema": "yamlfix -c mql-specifications/.yamlfix.toml mql-specifications/definitions",
     "format-generated-files": "npm run postgenerate-schema && npm run postgenerate-tests && npm run postgenerate-driver-schema"
   },
   "devDependencies": {
