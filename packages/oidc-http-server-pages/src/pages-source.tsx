@@ -5,14 +5,26 @@ import {
   Description,
   MongoDBLogo,
   H3,
-  KeylineCard,
+  KeylineCard as _KeylineCard,
   css,
   palette,
   spacing,
   cx,
-  InlineCode,
+  InlineCode as _InlineCode,
   Body,
 } from '@mongodb-js/compass-components';
+
+// Cast to React 19 compatible types. The @mongodb-js/compass-components package
+// was compiled with React 17 types which included event handlers
+// (e.g. onPointerEnterCapture) that were removed in React 19.
+const KeylineCard = _KeylineCard as unknown as React.ComponentType<{
+  className?: string;
+  children?: React.ReactNode;
+  contentStyle?: 'none' | 'clickable';
+}>;
+const InlineCode = _InlineCode as unknown as React.ComponentType<{
+  children?: React.ReactNode;
+}>;
 
 const bodyStyles = css({
   position: 'absolute',
@@ -64,7 +76,7 @@ export type OIDCPageBaseProps = {
 function DocsLink({
   productDocsLink,
   productName,
-}: OIDCPageBaseProps): JSX.Element {
+}: OIDCPageBaseProps): React.JSX.Element {
   return productDocsLink ? (
     <p>
       <Link arrowAppearance="persist" href={productDocsLink}>
@@ -82,7 +94,7 @@ function PageContainer({
 }: {
   title: string;
   children: React.ReactNode;
-}): JSX.Element {
+}): React.JSX.Element {
   return (
     <html lang="en">
       <head>
@@ -103,7 +115,7 @@ function PageContainer({
 
 export type OIDCAcceptedPageProps = OIDCPageBaseProps;
 
-export function OIDCAcceptedPage(props: OIDCAcceptedPageProps): JSX.Element {
+export function OIDCAcceptedPage(props: OIDCAcceptedPageProps): React.JSX.Element {
   return (
     <PageContainer title="Login Successful">
       <Icon
@@ -120,7 +132,7 @@ export function OIDCAcceptedPage(props: OIDCAcceptedPageProps): JSX.Element {
 
 export type OIDCNotFoundPageProps = OIDCPageBaseProps;
 
-export function OIDCNotFoundPage(props: OIDCNotFoundPageProps): JSX.Element {
+export function OIDCNotFoundPage(props: OIDCNotFoundPageProps): React.JSX.Element {
   return (
     <PageContainer title="Page Not Found">
       <Icon glyph="XWithCircle" size={40} className={cx(failureIconStyles)} />
@@ -142,7 +154,7 @@ export function OIDCErrorPage({
   errorDescription,
   errorURI,
   ...baseProps
-}: OIDCErrorPageProps): JSX.Element {
+}: OIDCErrorPageProps): React.JSX.Element {
   return (
     <PageContainer title="Authentication Failed">
       <Icon glyph="XWithCircle" size={40} className={cx(failureIconStyles)} />
