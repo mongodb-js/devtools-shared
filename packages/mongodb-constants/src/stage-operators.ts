@@ -863,6 +863,37 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$rerank',
+    value: '$rerank',
+    label: '$rerank',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS],
+    meta: 'stage',
+    version: '4.1.11',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
+    comment: `/**
+ * query: Query for reranking, with required field text
+ * path: Field(s) to rerank over
+ * model: The reranker model to use (rerank-2.5, rerank-2.5-lite, rerank-2, rerank-2-lite)
+ * numDocsToRerank: Number of documents to rerank
+ */
+`,
+    snippet: `{
+  query: {
+    text: \${1:string}
+  },
+  path: \${2:string},
+  model: '\${3:rerank-2.5}',
+  numDocsToRerank: \${4:numDocsToRerank}
+}`,
+  },
+  {
     name: '$sample',
     value: '$sample',
     label: '$sample',
