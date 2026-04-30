@@ -58,7 +58,7 @@
     "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
-    "@types/sinon-chai": "^3.2.5",
+    "@types/sinon-chai": "^4.0.0",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",
