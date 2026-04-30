@@ -81,7 +81,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^20.1.1",
-    "@pkgjs/nv": "^0.2.1",
+    "@pkgjs/nv": "^0.3.0",
     "commander": "^10.0.1",
     "error-stack-parser": "^2.1.4",
     "find-up": "^4.1.0",
