@@ -1340,9 +1340,9 @@ const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
   version: '>=6.0.10 <7.0.0 || >=7.0.2',
   apiVersions: [],
   namespaces: [COLLECTION, VIEW],
-  description: 'Performs a kNN search on embeddings in the specified field(s)',
+  description:
+    'Performs a vector search (semantic search) over the specified field(s) which have a vector search index defined.',
   comment: `/**
-/**
  * query: {“text”: Natural Language Query string for performing semantic search} Use this option if using Automated Embedding. 
  * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. Use this option if you're bringing your own vectors.
 
@@ -1351,7 +1351,7 @@ const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
  * index: Name of the Atlas Search index to use. (Required)
  * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
  * model: Specify a model, compatible with the one used during index creation, to perform embedding generation of the \`query\` string. If nothing is specified the same model used during index creation is used. Available only if using Automated Embedding. 
-i * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+ * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
  * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
  */
 `,
