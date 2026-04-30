@@ -878,10 +878,10 @@ const STAGE_OPERATORS = [
     description:
       'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
     comment: `/**
- * query: Query for reranking, with required field text
+ * query.text: Query text for reranking. Supports reranking instructions for 2.5 series or newer.
  * path: Field(s) to rerank over
  * model: The reranker model to use (rerank-2.5, rerank-2.5-lite, rerank-2, rerank-2-lite)
- * numDocsToRerank: Number of documents to rerank
+ * numDocsToRerank: The maximum number of documents consumed and returned by the $rerank stage
  */
 `,
     snippet: `{
