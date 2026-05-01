@@ -42,6 +42,17 @@
     "where": "node ./scripts/src/where.js",
     "request-npm-token": "request-npm-token"
   },
+  "overrides": {
+    "mocha": {
+      "js-yaml": "4.1.1"
+    },
+    "@bcherny/json-schema-ref-parser": {
+      "js-yaml": "4.1.1"
+    },
+    "mongodb-schema": {
+      "js-yaml": "4.1.1"
+    }
+  },
   "dependencies": {
     "@mongodb-js/monorepo-tools": "^1.2.3"
   },
