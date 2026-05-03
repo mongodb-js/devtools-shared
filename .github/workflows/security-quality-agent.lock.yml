@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"dacb356c39ca75526ef83001116675113e1336d488cd8def5bd9bb9d5a2e323f","compiler_version":"v0.68.1","strict":true,"agent_id":"copilot"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_CI_TRIGGER_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9"},{"repo":"actions/upload-artifact","sha":"bbbca2ddaa5d8feaa63e36b76fdaad77386f024f","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc","version":"v0.68.1"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"5a1585d6a2266f51c75cbe5db835c4c07fea56793270c7befa047d03c15bbde7","compiler_version":"v0.68.1","strict":true,"agent_id":"copilot"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_CI_TRIGGER_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GH_AW_SECURITY_ADVISORY_PAT","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9"},{"repo":"actions/upload-artifact","sha":"bbbca2ddaa5d8feaa63e36b76fdaad77386f024f","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc","version":"v0.68.1"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -22,23 +22,24 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Fetches security alerts for the agent to process this run; the agent opens a fix PR or a triage issue linking to those alerts, then assigns svc-devtoolsbot on each alert it processed.
+# Fetches open Dependabot alerts for the agent to process this run; the agent opens a fix PR or a triage issue linking to those alerts, then assigns svc-devtoolsbot on each alert it processed.
 #
 # Secrets used:
 #   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_CI_TRIGGER_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
+#   - GH_AW_SECURITY_ADVISORY_PAT
 #   - GITHUB_TOKEN
 #
 # Custom actions used:
 #   - actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-#   - actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-#   - github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+#   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+#   - github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
 
-name: "Security remediation agent"
+name: "Dependabot remediation agent"
 "on":
   schedule:
   - cron: "6 12 * * *"
@@ -50,7 +51,7 @@ permissions: {}
 concurrency:
   group: "gh-aw-${{ github.workflow }}"
 
-run-name: "Security remediation agent"
+run-name: "Dependabot remediation agent"
 
 jobs:
   activation:
@@ -69,7 +70,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+        uses: github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -82,7 +83,7 @@ jobs:
           GH_AW_INFO_VERSION: "1.0.21"
           GH_AW_INFO_AGENT_VERSION: "1.0.21"
           GH_AW_INFO_CLI_VERSION: "v0.68.1"
-          GH_AW_INFO_WORKFLOW_NAME: "Security remediation agent"
+          GH_AW_INFO_WORKFLOW_NAME: "Dependabot remediation agent"
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
@@ -151,19 +152,19 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_a03e9eba1c66dc90_EOF'
+          cat << 'GH_AW_PROMPT_b7c606edd3db8f02_EOF'
           <system>
-          GH_AW_PROMPT_a03e9eba1c66dc90_EOF
+          GH_AW_PROMPT_b7c606edd3db8f02_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_a03e9eba1c66dc90_EOF'
+          cat << 'GH_AW_PROMPT_b7c606edd3db8f02_EOF'
           <safe-output-tools>
           Tools: create_issue, create_pull_request, missing_tool, missing_data, noop, assign_bot_to_security_alert
-          GH_AW_PROMPT_a03e9eba1c66dc90_EOF
+          GH_AW_PROMPT_b7c606edd3db8f02_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_create_pull_request.md"
-          cat << 'GH_AW_PROMPT_a03e9eba1c66dc90_EOF'
+          cat << 'GH_AW_PROMPT_b7c606edd3db8f02_EOF'
           </safe-output-tools>
           <github-context>
           The following GitHub context information is available for this workflow:
@@ -193,12 +194,12 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_a03e9eba1c66dc90_EOF
+          GH_AW_PROMPT_b7c606edd3db8f02_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_a03e9eba1c66dc90_EOF'
+          cat << 'GH_AW_PROMPT_b7c606edd3db8f02_EOF'
           </system>
           {{#runtime-import .github/workflows/security-quality-agent.md}}
-          GH_AW_PROMPT_a03e9eba1c66dc90_EOF
+          GH_AW_PROMPT_b7c606edd3db8f02_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -255,7 +256,7 @@ jobs:
         run: bash "${RUNNER_TEMP}/gh-aw/actions/print_prompt_summary.sh"
       - name: Upload activation artifact
         if: success()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: activation
           path: |
@@ -272,7 +273,6 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
-      security-events: read
     concurrency:
       group: "gh-aw-copilot-${{ github.workflow }}"
     env:
@@ -294,7 +294,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+        uses: github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -362,40 +362,31 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_adceaf840998d6bc_EOF'
-          {"assign-bot-to-security-alert":{"description":"Set assignees to svc-devtoolsbot on a Dependabot or code scanning alert (claims the alert for this automation).","inputs":{"alert_kind":{"default":null,"description":"dependabot or code_scanning (which API to call).","options":["dependabot","code_scanning"],"required":true,"type":"choice"},"alert_number":{"default":null,"description":"Alert number from list-github-security-items.","required":true,"type":"string"}},"output":"Assignee update applied on security alert."},"create_issue":{"labels":["security"],"max":1,"title_prefix":"[security-triage] "},"create_pull_request":{"auto_close_issue":false,"draft":true,"labels":["security"],"max":1,"max_patch_size":1024,"protected_files":["package.json","bun.lockb","bunfig.toml","deno.json","deno.jsonc","deno.lock","global.json","NuGet.Config","Directory.Packages.props","mix.exs","mix.lock","go.mod","go.sum","stack.yaml","stack.yaml.lock","pom.xml","build.gradle","build.gradle.kts","settings.gradle","settings.gradle.kts","gradle.properties","package-lock.json","yarn.lock","pnpm-lock.yaml","npm-shrinkwrap.json","requirements.txt","Pipfile","Pipfile.lock","pyproject.toml","setup.py","setup.cfg","Gemfile","Gemfile.lock","uv.lock","CODEOWNERS"],"protected_files_policy":"allowed","protected_path_prefixes":[".github/",".agents/"],"title_prefix":"[security] "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_adceaf840998d6bc_EOF
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_d310114a4911a052_EOF'
+          {"assign-bot-to-security-alert":{"description":"Set assignees to svc-devtoolsbot on one or more Dependabot alerts (claims them for this automation). Pass every alert number in a single call — the workflow allows only one assign output item per run.","inputs":{"alert_numbers":{"default":null,"description":"JSON array of Dependabot alert numbers to assign, e.g. [12,34,56] (from get-dependabot-alerts). Include all alerts you are dequeuing in this one array.","required":true,"type":"string"}},"output":"Assignee update applied on Dependabot alert(s)."},"create_issue":{"labels":["security"],"max":1,"title_prefix":"[agent-triage] "},"create_pull_request":{"auto_close_issue":false,"draft":true,"labels":["security"],"max":1,"max_patch_size":1024,"protected_files":["package.json","bun.lockb","bunfig.toml","deno.json","deno.jsonc","deno.lock","global.json","NuGet.Config","Directory.Packages.props","mix.exs","mix.lock","go.mod","go.sum","stack.yaml","stack.yaml.lock","pom.xml","build.gradle","build.gradle.kts","settings.gradle","settings.gradle.kts","gradle.properties","package-lock.json","yarn.lock","pnpm-lock.yaml","npm-shrinkwrap.json","requirements.txt","Pipfile","Pipfile.lock","pyproject.toml","setup.py","setup.cfg","Gemfile","Gemfile.lock","uv.lock","CODEOWNERS"],"protected_files_policy":"allowed","protected_path_prefixes":[".github/",".agents/"],"title_prefix":"[agent] "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
+          GH_AW_SAFE_OUTPUTS_CONFIG_d310114a4911a052_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
             {
               "description_suffixes": {
-                "create_issue": " CONSTRAINTS: Maximum 1 issue(s) can be created. Title will be prefixed with \"[security-triage] \". Labels [\"security\"] will be automatically added.",
-                "create_pull_request": " CONSTRAINTS: Maximum 1 pull request(s) can be created. Title will be prefixed with \"[security] \". Labels [\"security\"] will be automatically added. PRs will be created as drafts."
+                "create_issue": " CONSTRAINTS: Maximum 1 issue(s) can be created. Title will be prefixed with \"[agent-triage] \". Labels [\"security\"] will be automatically added.",
+                "create_pull_request": " CONSTRAINTS: Maximum 1 pull request(s) can be created. Title will be prefixed with \"[agent] \". Labels [\"security\"] will be automatically added. PRs will be created as drafts."
               },
               "repo_params": {},
               "dynamic_tools": [
                 {
-                  "description": "Set assignees to svc-devtoolsbot on a Dependabot or code scanning alert (claims the alert for this automation).",
+                  "description": "Set assignees to svc-devtoolsbot on one or more Dependabot alerts (claims them for this automation). Pass every alert number in a single call — the workflow allows only one assign output item per run.",
                   "inputSchema": {
                     "additionalProperties": false,
                     "properties": {
-                      "alert_kind": {
-                        "description": "dependabot or code_scanning (which API to call).",
-                        "enum": [
-                          "dependabot",
-                          "code_scanning"
-                        ],
-                        "type": "string"
-                      },
-                      "alert_number": {
-                        "description": "Alert number from list-github-security-items.",
+                      "alert_numbers": {
+                        "description": "JSON array of Dependabot alert numbers to assign, e.g. [12,34,56] (from get-dependabot-alerts). Include all alerts you are dequeuing in this one array.",
                         "type": "string"
                       }
                     },
                     "required": [
-                      "alert_kind",
-                      "alert_number"
+                      "alert_numbers"
                     ],
                     "type": "object"
                   },
@@ -598,26 +589,29 @@ jobs:
       - name: Write MCP Scripts Config
         run: |
           mkdir -p "${RUNNER_TEMP}/gh-aw/mcp-scripts/logs"
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/tools.json" << 'GH_AW_MCP_SCRIPTS_TOOLS_3cba52476bf5f4ff_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/tools.json" << 'GH_AW_MCP_SCRIPTS_TOOLS_f5eeecfe2e8c26be_EOF'
           {
             "serverName": "mcpscripts",
             "version": "1.0.0",
             "logDir": "${RUNNER_TEMP}/gh-aw/mcp-scripts/logs",
             "tools": [
               {
-                "name": "list-github-security-items",
-                "description": "Returns open security alerts for this repository for the current run: a JSON object with `dependabot_alerts` and `code_scanning_alerts` arrays (each may be empty).",
+                "name": "get-dependabot-alerts",
+                "description": "Returns open Dependabot alerts for this repository for the current run as a JSON object with a `dependabot_alerts` array (may be empty).",
                 "inputSchema": {
                   "properties": {},
                   "type": "object"
                 },
-                "handler": "list-github-security-items.sh",
+                "handler": "get-dependabot-alerts.sh",
+                "env": {
+                  "GH_TOKEN": "GH_TOKEN"
+                },
                 "timeout": 120
               }
             ]
           }
-          GH_AW_MCP_SCRIPTS_TOOLS_3cba52476bf5f4ff_EOF
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs" << 'GH_AW_MCP_SCRIPTS_SERVER_0026643688ed327d_EOF'
+          GH_AW_MCP_SCRIPTS_TOOLS_f5eeecfe2e8c26be_EOF
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs" << 'GH_AW_MCP_SCRIPTS_SERVER_212d7407e9f972b5_EOF'
             const path = require("path");
             const { startHttpServer } = require("./mcp_scripts_mcp_server_http.cjs");
             const configPath = path.join(__dirname, "tools.json");
@@ -631,24 +625,24 @@ jobs:
               console.error("Failed to start mcp-scripts HTTP server:", error);
               process.exit(1);
             });
-          GH_AW_MCP_SCRIPTS_SERVER_0026643688ed327d_EOF
+          GH_AW_MCP_SCRIPTS_SERVER_212d7407e9f972b5_EOF
           chmod +x "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs"
           
       - name: Write MCP Scripts Tool Files
         run: |
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/list-github-security-items.sh" << 'GH_AW_MCP_SCRIPTS_SH_LIST-GITHUB-SECURITY-ITEMS_71adfa21fcbe5078_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/get-dependabot-alerts.sh" << 'GH_AW_MCP_SCRIPTS_SH_GET-DEPENDABOT-ALERTS_fc494759815deeb5_EOF'
           #!/bin/bash
-          # Auto-generated mcp-script tool: list-github-security-items
-          # Returns open security alerts for this repository for the current run: a JSON object with `dependabot_alerts` and `code_scanning_alerts` arrays (each may be empty).
+          # Auto-generated mcp-script tool: get-dependabot-alerts
+          # Returns open Dependabot alerts for this repository for the current run as a JSON object with a `dependabot_alerts` array (may be empty).
           
           set -euo pipefail
           
           set -euo pipefail
-          dependabot_raw="$(gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open" --paginate)"
-          code_scanning_raw="$(gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open" --paginate)"
+          # Avoid --argjson for huge API payloads (ARG_MAX / "argument list too long").
+          dep_file="${RUNNER_TEMP}/get-dependabot-alerts-dep.json"
+          gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open" --paginate >"$dep_file"
           jq -n \
-            --argjson dep "$dependabot_raw" \
-            --argjson cs "$code_scanning_raw" \
+            --slurpfile dep "$dep_file" \
             -f /dev/stdin <<'JQ'
           def sev_rank($s):
             ($s // "" | ascii_downcase)
@@ -661,18 +655,10 @@ jobs:
           def dependabot_score:
             sev_rank(.security_vulnerability.severity // .security_advisory.severity // "");
           
-          def code_scanning_score:
-            if (.security_severity_level != null) and (.security_severity_level != "") then
-              sev_rank(.security_severity_level)
-            else
-              (.severity // "none" | ascii_downcase)
-              | if . == "error" then 3 elif . == "warning" then 2 elif . == "note" then 1 else 0 end
-            end;
-          
           def unassigned:
             ((.assignees // []) | length) == 0;
           
-          ( $dep | map(select(unassigned)) ) as $dun |
+          ( $dep[0] | map(select(unassigned)) ) as $dun |
           ( $dun
             | sort_by((.dependency.package.name // "unknown"))
             | group_by((.dependency.package.name // "unknown"))
@@ -686,23 +672,13 @@ jobs:
             | if length > 0 then .[0].alerts else [] end
           ) as $dep_sel |
           
-          ( $cs | map(select(unassigned)) ) as $csun |
-          ( $csun
-            | map(. + {_score: code_scanning_score, _num: .number})
-            | sort_by([- ._score, - ._num])
-            | if length > 0 then [.[0] | del(._score, ._num)] else [] end
-          ) as $cs_pick |
-          
-          if ($dep_sel | length) > 0 then
-            { dependabot_alerts: $dep_sel, code_scanning_alerts: [] }
-          else
-            { dependabot_alerts: [], code_scanning_alerts: $cs_pick }
-          end
+          { dependabot_alerts: $dep_sel }
           JQ
+          rm -f "$dep_file"
           
           
-          GH_AW_MCP_SCRIPTS_SH_LIST-GITHUB-SECURITY-ITEMS_71adfa21fcbe5078_EOF
-          chmod +x "${RUNNER_TEMP}/gh-aw/mcp-scripts/list-github-security-items.sh"
+          GH_AW_MCP_SCRIPTS_SH_GET-DEPENDABOT-ALERTS_fc494759815deeb5_EOF
+          chmod +x "${RUNNER_TEMP}/gh-aw/mcp-scripts/get-dependabot-alerts.sh"
           
       - name: Generate MCP Scripts Server Config
         id: mcp-scripts-config
@@ -728,6 +704,7 @@ jobs:
           DEBUG: '*'
           GH_AW_MCP_SCRIPTS_PORT: ${{ steps.mcp-scripts-config.outputs.mcp_scripts_port }}
           GH_AW_MCP_SCRIPTS_API_KEY: ${{ steps.mcp-scripts-config.outputs.mcp_scripts_api_key }}
+          GH_TOKEN: ${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}
         run: |
           # Environment variables are set above to prevent template injection
           export DEBUG
@@ -744,6 +721,7 @@ jobs:
           GH_AW_SAFE_OUTPUTS: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS }}
           GH_AW_SAFE_OUTPUTS_API_KEY: ${{ steps.safe-outputs-start.outputs.api_key }}
           GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-start.outputs.port }}
+          GH_TOKEN: ${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -eo pipefail
@@ -761,10 +739,10 @@ jobs:
           export DEBUG="*"
           
           export GH_AW_ENGINE="copilot"
-          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_MCP_SCRIPTS_PORT -e GH_AW_MCP_SCRIPTS_API_KEY -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.17'
+          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_MCP_SCRIPTS_PORT -e GH_AW_MCP_SCRIPTS_API_KEY -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -e GH_TOKEN -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.17'
           
           mkdir -p /home/runner/.copilot
-          cat << GH_AW_MCP_CONFIG_260aebbde23c1443_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
+          cat << GH_AW_MCP_CONFIG_c99ecdc5e7057f09_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
           {
             "mcpServers": {
               "github": {
@@ -824,7 +802,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_260aebbde23c1443_EOF
+          GH_AW_MCP_CONFIG_c99ecdc5e7057f09_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -842,7 +820,7 @@ jobs:
           touch /tmp/gh-aw/agent-step-summary.md
           (umask 177 && touch /tmp/gh-aw/agent-stdio.log)
           # shellcheck disable=SC1003
-          sudo -E awf --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" --env-all --exclude-env COPILOT_GITHUB_TOKEN --exclude-env GITHUB_MCP_SERVER_TOKEN --exclude-env MCP_GATEWAY_API_KEY --allow-domains '*.githubusercontent.com,api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,codeload.github.com,docs.github.com,github-cloud.githubusercontent.com,github-cloud.s3.amazonaws.com,github.blog,github.com,github.githubassets.com,host.docker.internal,lfs.github.com,objects.githubusercontent.com,raw.githubusercontent.com,registry.npmjs.org,telemetry.enterprise.githubcopilot.com' --log-level info --proxy-logs-dir /tmp/gh-aw/sandbox/firewall/logs --audit-dir /tmp/gh-aw/sandbox/firewall/audit --enable-host-access --image-tag 0.25.18 --skip-pull --enable-api-proxy \
+          sudo -E awf --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" --env-all --exclude-env COPILOT_GITHUB_TOKEN --exclude-env GH_TOKEN --exclude-env GITHUB_MCP_SERVER_TOKEN --exclude-env MCP_GATEWAY_API_KEY --allow-domains '*.githubusercontent.com,api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,codeload.github.com,docs.github.com,github-cloud.githubusercontent.com,github-cloud.s3.amazonaws.com,github.blog,github.com,github.githubassets.com,host.docker.internal,lfs.github.com,objects.githubusercontent.com,raw.githubusercontent.com,registry.npmjs.org,telemetry.enterprise.githubcopilot.com' --log-level info --proxy-logs-dir /tmp/gh-aw/sandbox/firewall/logs --audit-dir /tmp/gh-aw/sandbox/firewall/audit --enable-host-access --image-tag 0.25.18 --skip-pull --enable-api-proxy \
             -- /bin/bash -c 'node ${RUNNER_TEMP}/gh-aw/actions/copilot_driver.cjs /usr/local/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --allow-all-tools --allow-all-paths --add-dir "${GITHUB_WORKSPACE}" --prompt "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)"' 2>&1 | tee -a /tmp/gh-aw/agent-stdio.log
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
@@ -853,6 +831,7 @@ jobs:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ steps.set-runtime-paths.outputs.GH_AW_SAFE_OUTPUTS }}
           GH_AW_VERSION: v0.68.1
+          GH_TOKEN: ${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}
           GITHUB_API_URL: ${{ github.api_url }}
           GITHUB_AW: true
           GITHUB_HEAD_REF: ${{ github.head_ref }}
@@ -907,10 +886,11 @@ jobs:
             const { main } = require('${{ runner.temp }}/gh-aw/actions/redact_secrets.cjs');
             await main();
         env:
-          GH_AW_SECRET_NAMES: 'COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN'
+          GH_AW_SECRET_NAMES: 'COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GH_AW_SECURITY_ADVISORY_PAT,GITHUB_TOKEN'
           SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           SECRET_GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
           SECRET_GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          SECRET_GH_AW_SECURITY_ADVISORY_PAT: ${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Append agent step summary
         if: always()
@@ -1001,7 +981,7 @@ jobs:
       - name: Upload agent artifacts
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: agent
           path: |
@@ -1024,7 +1004,7 @@ jobs:
       - name: Upload firewall audit logs
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: firewall-audit-logs
           path: |
@@ -1041,7 +1021,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - name: Download agent output artifact
         continue-on-error: true
@@ -1054,7 +1033,7 @@ jobs:
         run: |
           find "${RUNNER_TEMP}/gh-aw/safe-jobs/" -type f -print
           echo "GH_AW_AGENT_OUTPUT=${RUNNER_TEMP}/gh-aw/safe-jobs/agent_output.json" >> "$GITHUB_OUTPUT"
-      - name: Assign svc-devtoolsbot on security alert
+      - name: Assign svc-devtoolsbot on Dependabot alert
         run: |
           set -euo pipefail
           out="${GH_AW_AGENT_OUTPUT:-}"
@@ -1065,24 +1044,20 @@ jobs:
           failed=0
           body="$(jq -nc --arg u "${ALERT_QUEUE_BOT}" '{assignees: [$u]}')"
           while IFS= read -r item; do
-            kind=$(jq -r '.alert_kind' <<<"${item}")
-            num=$(jq -r '.alert_number' <<<"${item}")
-            case "${kind}" in
-              dependabot) segment="dependabot" ;;
-              code_scanning) segment="code-scanning" ;;
-              *)
-                echo "::error::Unknown alert_kind: ${kind}" >&2
+            while IFS= read -r num; do
+              [[ -z "${num}" || "${num}" == "null" ]] && continue
+              echo "Assigning ${ALERT_QUEUE_BOT} on dependabot alert ${num}"
+              if ! echo "${body}" | gh api --method PATCH \
+                -H "X-GitHub-Api-Version: 2026-03-10" \
+                "repos/${GITHUB_REPOSITORY}/dependabot/alerts/${num}" --input -; then
+                echo "::error::PATCH failed for dependabot alert ${num}" >&2
                 failed=1
-                continue
-                ;;
-            esac
-            echo "Assigning ${ALERT_QUEUE_BOT} on ${segment} alert ${num}"
-            if ! echo "${body}" | gh api --method PATCH \
-              -H "X-GitHub-Api-Version: 2026-03-10" \
-              "repos/${GITHUB_REPOSITORY}/${segment}/alerts/${num}" --input -; then
-              echo "::error::PATCH failed for ${kind} alert ${num}" >&2
-              failed=1
-            fi
+              fi
+            done < <(jq -r '. as $i |
+              ( if ($i.alert_numbers != null) then
+                  ($i.alert_numbers | if type == "array" then . elif type == "string" then (try fromjson catch []) else [] end)
+                elif ($i.alert_number != null) then [$i.alert_number]
+                else [] end ) | .[] | tostring' <<<"${item}")
           done < <(jq -c '.items[]? | select(.type == "assign_bot_to_security_alert")' "${out}")
           if [[ "${failed}" -ne 0 ]]; then
             exit 1
@@ -1090,6 +1065,7 @@ jobs:
         env:
           ALERT_QUEUE_BOT: svc-devtoolsbot
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-safe-job-env.outputs.GH_AW_AGENT_OUTPUT }}
+          GH_TOKEN: ${{ secrets.GH_AW_SECURITY_ADVISORY_PAT }}
 
   conclusion:
     needs:
@@ -1117,7 +1093,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+        uses: github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -1142,7 +1118,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
-          GH_AW_WORKFLOW_NAME: "Security remediation agent"
+          GH_AW_WORKFLOW_NAME: "Dependabot remediation agent"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_REPORT_AS_ISSUE: "true"
@@ -1159,7 +1135,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_MISSING_TOOL_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Security remediation agent"
+          GH_AW_WORKFLOW_NAME: "Dependabot remediation agent"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1173,7 +1149,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: "true"
-          GH_AW_WORKFLOW_NAME: "Security remediation agent"
+          GH_AW_WORKFLOW_NAME: "Dependabot remediation agent"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1187,7 +1163,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Security remediation agent"
+          GH_AW_WORKFLOW_NAME: "Dependabot remediation agent"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_WORKFLOW_ID: "security-quality-agent"
@@ -1225,7 +1201,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+        uses: github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -1290,8 +1266,8 @@ jobs:
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          WORKFLOW_NAME: "Security remediation agent"
-          WORKFLOW_DESCRIPTION: "Fetches security alerts for the agent to process this run; the agent opens a fix PR or a triage issue linking to those alerts, then assigns svc-devtoolsbot on each alert it processed."
+          WORKFLOW_NAME: "Dependabot remediation agent"
+          WORKFLOW_DESCRIPTION: "Fetches open Dependabot alerts for the agent to process this run; the agent opens a fix PR or a triage issue linking to those alerts, then assigns svc-devtoolsbot on each alert it processed."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |
@@ -1343,7 +1319,7 @@ jobs:
           XDG_CONFIG_HOME: /home/runner
       - name: Upload threat detection log
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: detection
           path: /tmp/gh-aw/threat-detection/detection.log
@@ -1379,7 +1355,7 @@ jobs:
       GH_AW_ENGINE_ID: "copilot"
       GH_AW_ENGINE_MODEL: ${{ needs.agent.outputs.model }}
       GH_AW_WORKFLOW_ID: "security-quality-agent"
-      GH_AW_WORKFLOW_NAME: "Security remediation agent"
+      GH_AW_WORKFLOW_NAME: "Dependabot remediation agent"
     outputs:
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}
       code_push_failure_errors: ${{ steps.process_safe_outputs.outputs.code_push_failure_errors }}
@@ -1394,7 +1370,7 @@ jobs:
     steps:
       - name: Setup Scripts
         id: setup
-        uses: github/gh-aw-actions/setup@2fe53acc038ba01c3bbdc767d4b25df31ca5bdfc # v0.68.1
+        uses: github/gh-aw-actions/setup@006ffd856b868b71df342dbe0ba082a963249b31 # v0.69.3
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
@@ -1459,7 +1435,7 @@ jobs:
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
           GH_AW_SAFE_OUTPUT_JOBS: "{\"assign_bot_to_security_alert\":\"\"}"
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_issue\":{\"labels\":[\"security\"],\"max\":1,\"title_prefix\":\"[security-triage] \"},\"create_pull_request\":{\"auto_close_issue\":false,\"draft\":true,\"labels\":[\"security\"],\"max\":1,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"CODEOWNERS\",\"AGENTS.md\"],\"protected_files_policy\":\"allowed\",\"protected_path_prefixes\":[\".github/\",\".agents/\"],\"title_prefix\":\"[security] \"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"},\"report_incomplete\":{}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_issue\":{\"labels\":[\"security\"],\"max\":1,\"title_prefix\":\"[agent-triage] \"},\"create_pull_request\":{\"auto_close_issue\":false,\"draft\":true,\"labels\":[\"security\"],\"max\":1,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"CODEOWNERS\",\"AGENTS.md\"],\"protected_files_policy\":\"allowed\",\"protected_path_prefixes\":[\".github/\",\".agents/\"],\"title_prefix\":\"[agent] \"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"},\"report_incomplete\":{}}"
           GH_AW_CI_TRIGGER_TOKEN: ${{ secrets.GH_AW_CI_TRIGGER_TOKEN }}
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1470,7 +1446,7 @@ jobs:
             await main();
       - name: Upload Safe Outputs Items
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: safe-outputs-items
           path: /tmp/gh-aw/safe-output-items.jsonl

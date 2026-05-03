@@ -311,12 +311,12 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       });
       filterLogStreamForBuildInfo(logEntryStream).then(
         (buildInfo) => {
-          (srv.buildInfo = buildInfo),
+          ((srv.buildInfo = buildInfo),
             debug(
               'got server build info from log',
               srv.serverVersion,
               srv.serverVariant,
-            );
+            ));
         },
         () => {
           /* ignore error */
