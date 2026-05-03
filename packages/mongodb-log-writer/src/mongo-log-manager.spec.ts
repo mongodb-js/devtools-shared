@@ -7,7 +7,7 @@ import path from 'path';
 import os from 'os';
 import { gunzip, constants as zlibConstants } from 'zlib';
 import { promisify } from 'util';
-import sinon from 'ts-sinon';
+import sinon from 'sinon';
 import { expect } from 'chai';
 
 describe('MongoLogManager', function () {

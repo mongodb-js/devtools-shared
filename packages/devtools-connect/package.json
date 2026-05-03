@@ -82,9 +82,9 @@
     "nyc": "^15.1.0",
     "os-dns-native": "^2.0.1",
     "resolve-mongodb-srv": "^1.1.1",
+    "sinon": "^21.1.2",
     "sinon-chai": "^4.0.1",
     "ts-node": "^10.9.2",
-    "ts-sinon": "^2.0.1",
     "typescript": "^5.9.3",
     "prettier": "^3.8.1"
   },

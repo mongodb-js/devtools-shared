@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { PassThrough } from 'stream';
-import sinon from 'ts-sinon';
+import sinon from 'sinon';
 import {
   sign,
   readSignedStream,
