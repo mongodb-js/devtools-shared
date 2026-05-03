@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "3.15.10",
+  "version": "3.16.1",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
@@ -47,8 +47,8 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@mongodb-js/oidc-http-server-pages": "1.2.10",
-    "@mongodb-js/devtools-proxy-support": "^0.7.11",
+    "@mongodb-js/oidc-http-server-pages": "1.2.11",
+    "@mongodb-js/devtools-proxy-support": "^0.7.12",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.1 || ^7.0.0",
     "socks": "^2.7.3"
@@ -56,11 +56,11 @@
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^2.0.8",
     "mongodb": "^6.9.0 || ^7.0.0",
-    "mongodb-log-writer": "^2.5.10"
+    "mongodb-log-writer": "^2.5.11"
   },
   "devDependencies": {
     "@mongodb-js/oidc-plugin": "^2.0.8",
-    "@mongodb-js/saslprep": "^1.4.9",
+    "@mongodb-js/saslprep": "^1.4.10",
     "@types/lodash.merge": "^4.6.7",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
@@ -77,14 +77,14 @@
     "mocha": "^8.4.0",
     "mongodb": "^7.2.0",
     "mongodb6": "npm:mongodb@^6.9.0",
-    "mongodb-log-writer": "^2.5.10",
-    "mongodb-runner": "^6.7.8",
+    "mongodb-log-writer": "^2.5.11",
+    "mongodb-runner": "^6.7.10",
     "nyc": "^15.1.0",
     "os-dns-native": "^2.0.1",
     "resolve-mongodb-srv": "^1.1.1",
-    "sinon-chai": "^3.7.0",
+    "sinon": "^21.1.2",
+    "sinon-chai": "^4.0.1",
     "ts-node": "^10.9.2",
-    "ts-sinon": "^2.0.1",
     "typescript": "^5.9.3",
     "prettier": "^3.8.1"
   },

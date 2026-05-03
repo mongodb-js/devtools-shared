@@ -4,7 +4,24 @@ import { isHumanOidcFlow } from './connect';
 import { EventEmitter, once } from 'events';
 import { MongoClient } from 'mongodb';
 import { MongoClient as MongoClient6 } from 'mongodb6';
-import sinon, { stubConstructor } from 'ts-sinon';
+import sinon from 'sinon';
+
+function stubConstructor<T extends object>(
+  Constructor: new (...args: any[]) => T,
+): sinon.SinonStubbedInstance<T> {
+  const instance = new Constructor();
+  for (const key of Object.keys(instance)) {
+    if (typeof (instance as any)[key] === 'function') {
+      sinon.stub(instance as any, key);
+    }
+  }
+  for (const key of Object.getOwnPropertyNames(Constructor.prototype)) {
+    if (key !== 'constructor' && typeof (instance as any)[key] === 'function') {
+      sinon.stub(instance as any, key);
+    }
+  }
+  return instance as sinon.SinonStubbedInstance<T>;
+}
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
 import { Agent as HTTPSAgent } from 'https';

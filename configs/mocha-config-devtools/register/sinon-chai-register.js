@@ -1,5 +1,6 @@
 'use strict';
 const chai = require('chai');
-const sinonChai = require('sinon-chai');
+const sinonChaiModule = require('sinon-chai');
+const sinonChai = sinonChaiModule.default ?? sinonChaiModule;
 
 chai.use(sinonChai);

@@ -5,3 +5,5 @@ ignores:
   - '@babel/core'
   - '@babel/parser'
   - 'lerna'
+  # sinon is added to the root to ensure it is hoisted and shared across all workspaces
+  - 'sinon'
