@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/eslint-config-devtools",
-  "version": "0.11.3",
+  "version": "0.11.6",
   "description": "Shared DevTools eslint configuration",
   "license": "SSPL",
   "main": "index.js",
@@ -14,11 +14,11 @@
     "eslint": "^7.25.0 || ^8.0.0"
   },
   "dependencies": {
-    "@babel/core": "^7.22.8",
-    "@babel/eslint-parser": "^7.22.7",
-    "@babel/preset-env": "^7.22.7",
-    "@babel/preset-react": "^7.22.5",
-    "@mongodb-js/eslint-plugin-devtools": "^0.3.2",
+    "@babel/core": "^7.29.0",
+    "@babel/eslint-parser": "^7.28.6",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5",
+    "@mongodb-js/eslint-plugin-devtools": "^0.3.4",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
     "eslint-config-prettier": "^10.1.8",
@@ -29,7 +29,7 @@
     "eslint-plugin-react-hooks": "^7.0.1"
   },
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.8.1"
   },
   "scripts": {
     "check": "npm run lint",
