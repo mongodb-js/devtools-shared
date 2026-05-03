@@ -1,4 +1,0 @@
-registry=https://registry.npmjs.org/
-legacy-peer-deps=true
-napi-build-version=7
-foreground-scripts=true

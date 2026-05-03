@@ -28,6 +28,14 @@ const tsRules = {
     'error',
     { prefer: 'type-imports' },
   ],
+  // In typescript-eslint v5, no-explicit-any was a warning; v8 promotes it to error.
+  // Keep warning severity to maintain backward compatibility.
+  '@typescript-eslint/no-explicit-any': 'warn',
+  // These rules are new in typescript-eslint v8 and were not enforced before.
+  // Turn them off to avoid breaking existing codebases on a dep bump.
+  '@typescript-eslint/only-throw-error': 'off',
+  '@typescript-eslint/no-duplicate-type-constituents': 'off',
+  '@typescript-eslint/no-redundant-type-constituents': 'off',
   '@mongodb-js/devtools/no-plain-object-records': 'error',
 };
 
@@ -42,6 +50,8 @@ const testRules = {
   'mocha/no-exclusive-tests': 'error',
   'mocha/no-hooks-for-single-case': 'off',
   'mocha/no-setup-in-describe': 'off',
+  // New rule in eslint-plugin-mocha v10; not enforced before.
+  'mocha/consistent-spacing-between-blocks': 'off',
   '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-empty-function': 'off',
   '@mongodb-js/devtools/no-expect-method-without-call': 'error',
