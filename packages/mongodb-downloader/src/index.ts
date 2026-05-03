@@ -142,6 +142,7 @@ export class MongoDBDownloader {
     if (/\.tgz$|\.tar(\.[^.]+)?$/.exec(url)) {
       // the server's tarballs can contain hard links, which the (unmaintained?)
       // `download` package is unable to handle (https://github.com/kevva/decompress/issues/93)
+      if (!response.body) throw new Error(`No response body for ${url}`);
       await promisify(pipeline)(
         response.body,
         tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 }),
@@ -151,6 +152,7 @@ export class MongoDBDownloader {
         downloadTarget,
         path.basename(new URL(url).pathname),
       );
+      if (!response.body) throw new Error(`No response body for ${url}`);
       await promisify(pipeline)(
         response.body,
         createWriteStream(filename, { highWaterMark: MongoDBDownloader.HWM }),
