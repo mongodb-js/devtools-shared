@@ -112,7 +112,7 @@ const BSON_TO_JS_STRING = {
   ISODate: function (v: Date) {
     try {
       return `ISODate('${v.toISOString()}')`;
-    } catch (ex) {
+    } catch {
       return `ISODate('${v.toString()}')`;
     }
   },

@@ -158,10 +158,12 @@ const walk = (node: Node | null): any => {
 };
 
 export const executeAST = (node: Node) => {
-  if (node.type === 'Program') {
-    if (node.body.length === 1 && node.body[0].type === 'ExpressionStatement') {
-      return walk(node.body[0].expression);
-    }
+  if (
+    node.type === 'Program' &&
+    node.body.length === 1 &&
+    node.body[0].type === 'ExpressionStatement'
+  ) {
+    return walk(node.body[0].expression);
   }
   throw new Error('Invalid AST Found');
 };
