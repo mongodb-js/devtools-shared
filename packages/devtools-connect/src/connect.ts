@@ -434,14 +434,7 @@ export async function connectMongoClient(
 ): Promise<ConnectMongoClientResult> {
   detectAndLogMissingOptionalDependencies(logger);
 
-  const options = {
-    uri,
-    clientOptions,
-    logger,
-    MongoClientClass,
-    useSystemCA,
-  };
-
+  const options = { uri, clientOptions, logger, MongoClientClass, useSystemCA };
   // Connect once with the system certificate store added, and if that fails with
   // a TLS error, try again. In theory adding certificates into the certificate store
   // should not cause failures, but in practice we have observed some, hence this

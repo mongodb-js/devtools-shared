@@ -18,13 +18,16 @@
 -->
 
 ## Description
+
 <!--- Describe your changes in detail -->
 <!--- If applicable, describe (or illustrate) architecture flow -->
 
 ## Open Questions
+
 <!--- Any particular areas you'd like reviewers to pay attention to? -->
 
 ## Checklist
+
 - [ ] I have signed the Contributor License Agreement (https://www.mongodb.com/legal/contributor-agreement)
 - [ ] New tests and/or benchmarks are included
 - [ ] Documentation is changed or added

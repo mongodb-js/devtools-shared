@@ -39,7 +39,7 @@ export class MongoLogManager {
     if (options.prefix) {
       if (!/^[a-z0-9_]+$/i.test(options.prefix)) {
         throw new Error(
-          'Prefix must only contain letters, numbers, and underscores'
+          'Prefix must only contain letters, numbers, and underscores',
         );
       }
     }
@@ -64,7 +64,7 @@ export class MongoLogManager {
   /** Clean up log files older than `retentionDays`. */
   async cleanupOldLogFiles(
     maxDurationMs = 5_000,
-    remainingRetries = 1
+    remainingRetries = 1,
   ): Promise<void> {
     const deletionStartTimestamp = Date.now();
     // Delete files older than N days
@@ -106,7 +106,7 @@ export class MongoLogManager {
         if (!dirent.isFile()) continue;
         const logRegExp = new RegExp(
           `^${this.prefix}(?<id>[a-f0-9]{24})_log(\\.gz)?$`,
-          'i'
+          'i',
         );
         const { id } = logRegExp.exec(dirent.name)?.groups ?? {};
         if (!id) continue;
@@ -157,7 +157,7 @@ export class MongoLogManager {
       if (statErr.code === 'ENOENT' && remainingRetries > 0) {
         await this.cleanupOldLogFiles(
           maxDurationMs - (Date.now() - deletionStartTimestamp),
-          remainingRetries - 1
+          remainingRetries - 1,
         );
       }
     }
@@ -184,7 +184,7 @@ export class MongoLogManager {
     const doGzip = !!this._options.gzip;
     const logFilePath = path.join(
       this._options.directory,
-      `${this.prefix}${logId}_log${doGzip ? '.gz' : ''}`
+      `${this.prefix}${logId}_log${doGzip ? '.gz' : ''}`,
     );
 
     let originalTarget: Writable;
