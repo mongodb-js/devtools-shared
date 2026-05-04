@@ -51,5 +51,8 @@
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "lerna": "^9.0.7"
+  },
+  "overrides": {
+    "gce-ips>yargs>yargs-parser": ">=5.0.1"
   }
 }
