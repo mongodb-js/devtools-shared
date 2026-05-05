@@ -49,6 +49,7 @@ const NS: NSConstructor = function (this: NS, ns: string | NS): NS {
     this.collection = ns.slice(this.dotIndex + 1);
   }
 
+  // https://www.mongodb.com/docs/atlas/reference/internal-database/#internal-databases
   this.internal = /^__mdb_internal_\w/.test(this.database);
 
   this.system = /^(?:system(?!\.profile$).*|enxcol_)\./.test(this.collection);

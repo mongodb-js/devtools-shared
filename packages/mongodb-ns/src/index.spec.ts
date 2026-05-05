@@ -99,7 +99,7 @@ describe('ns', function () {
   it('should identify internal namespaces', function () {
     assert.equal(ns('a').internal, false);
     assert.equal(ns('a.b').isInternal(), false);
-    assert(ns('__mdb_internal').internal);
+    assert(ns('__mdb_internal_bla').internal);
     assert(ns('__mdb_internal_foo_bar').isInternal());
   });
 
