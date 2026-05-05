@@ -14,6 +14,8 @@ type NS = {
   specialish: boolean;
   normal: boolean;
   isNormal(): boolean;
+  internal: boolean;
+  isInternal(): boolean;
   validDatabaseName: boolean;
   validCollectionName: boolean;
   databaseHash: number;
@@ -47,6 +49,9 @@ const NS: NSConstructor = function (this: NS, ns: string | NS): NS {
     this.collection = ns.slice(this.dotIndex + 1);
   }
 
+  // https://www.mongodb.com/docs/atlas/reference/internal-database/#internal-databases
+  this.internal = /^__mdb_internal_\w/.test(this.database);
+
   this.system = /^(?:system(?!\.profile$).*|enxcol_)\./.test(this.collection);
 
   this.oplog = /local\.oplog\.(\$main|rs)/.test(ns);
@@ -58,7 +63,7 @@ const NS: NSConstructor = function (this: NS, ns: string | NS): NS {
     this.command ||
     this.system ||
     this.database === 'config' ||
-    /^__mdb_internal_\w/.test(this.database);
+    this.internal;
 
   this.specialish =
     this.special || ['local', 'admin'].indexOf(this.database) > -1;
@@ -98,6 +103,7 @@ NS.prototype.system = false;
 NS.prototype.oplog = false;
 NS.prototype.normal = false;
 NS.prototype.specialish = false;
+NS.prototype.internal = false;
 
 NS.prototype.isCommand = function () {
   return this.command;
@@ -113,6 +119,9 @@ NS.prototype.isNormal = function () {
 };
 NS.prototype.isOplog = function () {
   return this.oplog;
+};
+NS.prototype.isInternal = function () {
+  return this.internal;
 };
 NS.prototype.isConf = function () {
   return undefined;
