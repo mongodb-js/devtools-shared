@@ -75,7 +75,7 @@
     "ora": "^5.4.0",
     "pacote": "^21.3.1",
     "pkg-up": "^5.0.0",
-    "semver": "^7.7.1",
+    "semver": "^7.7.4",
     "toposort": "^2.0.2"
   },
   "publishConfig": {
