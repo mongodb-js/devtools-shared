@@ -76,7 +76,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
     "@types/sinon-chai": "^4.0.0",
-    "@types/yargs": "^17.0.24",
+    "@types/yargs": "^17.0.35",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
