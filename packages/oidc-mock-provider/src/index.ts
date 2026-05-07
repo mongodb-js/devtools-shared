@@ -8,7 +8,7 @@ import type {
 import { createServer as createHTTPServer } from 'http';
 import type { AddressInfo } from 'net';
 import crypto from 'crypto';
-import type { KeyPairKeyObjectResult } from 'crypto';
+
 import { promisify } from 'util';
 import { URLSearchParams } from 'url';
 
@@ -96,7 +96,7 @@ export class OIDCMockProvider {
 
   // This provider only supports a single RSA key currently.
   private kid: string;
-  private keys: KeyPairKeyObjectResult;
+  private keys: { publicKey: crypto.KeyObject; privateKey: crypto.KeyObject };
 
   private state = new Map<string, unknown>();
   private config: OIDCMockProviderConfig;
