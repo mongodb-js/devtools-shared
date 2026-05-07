@@ -51,7 +51,7 @@
     "@mongodb-js/devtools-proxy-support": "^0.7.14",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^3.0.1 || ^7.0.0",
-    "socks": "^2.7.3"
+    "socks": "^2.8.8"
   },
   "peerDependencies": {
     "@mongodb-js/oidc-plugin": "^2.0.8",
