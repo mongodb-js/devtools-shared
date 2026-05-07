@@ -51,5 +51,28 @@
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "lerna": "^9.0.7"
+  },
+  "overrides": {
+    "mocha": {
+      "minimatch": "3.1.5"
+    },
+    "depcheck": {
+      "minimatch": "7.4.9"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "9.0.9"
+    },
+    "glob@10": {
+      "minimatch": "9.0.9"
+    },
+    "ignore-walk": {
+      "minimatch": "10.2.5"
+    },
+    "@npmcli/package-json": {
+      "minimatch": "10.2.5"
+    },
+    "cacache": {
+      "minimatch": "10.2.5"
+    }
   }
 }
