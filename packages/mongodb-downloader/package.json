@@ -72,7 +72,7 @@
     "@types/proper-lockfile": "^4.1.4",
     "@types/sinon-chai": "^4.0.0",
     "@types/tar": "^6.1.5",
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",

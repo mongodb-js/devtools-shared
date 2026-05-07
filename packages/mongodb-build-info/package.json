@@ -69,7 +69,7 @@
     "@mongodb-js/prettier-config-devtools": "^1.0.3",
     "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/mocha": "^9.1.1",
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "mocha": "^8.4.0",

@@ -125,7 +125,7 @@ async function getFullJSON(opts: VersionListOpts): Promise<FullJSON> {
         `Could not get mongodb versions from ${versionListUrl}: ${response.statusText}`,
       );
     }
-    fullJSON = await response.json();
+    fullJSON = (await response.json()) as FullJSON;
     fullJSONFetchTime = new Date().getTime();
     if (tryWriteCache) {
       const partialFilePath = cachePath + `.partial.${process.pid}`;
