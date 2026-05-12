@@ -1,11 +1,21 @@
-import util from 'util';
 import fetch from 'node-fetch';
 import Ajv from 'ajv';
-import type { Body as Content } from 'aws-sdk/clients/s3';
-import S3 from 'aws-sdk/clients/s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import type { PutObjectCommandInput } from '@aws-sdk/client-s3';
 
 import downloadCenterSchema from './download-center-config.schema.json';
 import type { DownloadCenterConfig, Link } from './download-center-config';
+
+export type Content =
+  | string
+  | Buffer
+  | Uint8Array
+  | Blob
+  | NodeJS.ReadableStream;
 
 export type S3BucketConfig = {
   /**
@@ -34,7 +44,7 @@ export type S3BucketConfig = {
   endpoint?: string;
 
   /**
-   * Whether to force path style URLs for S3 objects..
+   * Whether to force path style URLs for S3 objects.
    *
    * The default is false. Set this to `true`
    * to connect to a local test server using an arbitrary endpoint.
@@ -48,19 +58,17 @@ export type S3BucketConfig = {
    * to connect to a local test server.
    */
   sslEnabled?: boolean;
+
+  /**
+   * AWS region. Defaults to `us-east-1`.
+   */
+  region?: string;
 };
 
 export type UploadAssetOptions = {
   contentType?: string;
   acl?: string;
 };
-
-type S3UploadFunc = (
-  req: S3.PutObjectRequest,
-) => Promise<S3.ManagedUpload.SendData>;
-type S3GetObjectFunc = (
-  params: S3.GetObjectRequest,
-) => Promise<S3.GetObjectOutput>;
 
 type ProbeResponse = {
   ok: boolean;
@@ -175,15 +183,33 @@ export async function validateConfig(
 }
 
 export class DownloadCenter {
-  private s3Upload: S3UploadFunc;
-  private s3GetObject: S3GetObjectFunc;
+  private s3: S3Client;
   private s3BucketName: string;
 
-  constructor(bucketConfig: S3BucketConfig) {
-    const s3 = new S3(bucketConfig);
-    this.s3GetObject = util.promisify(s3.getObject.bind(s3));
-    this.s3Upload = util.promisify(s3.upload.bind(s3));
-    this.s3BucketName = bucketConfig.bucket;
+  constructor({
+    bucket,
+    accessKeyId,
+    secretAccessKey,
+    sessionToken,
+    endpoint,
+    s3ForcePathStyle,
+    sslEnabled,
+    region = 'us-east-1',
+  }: S3BucketConfig) {
+    this.s3 = new S3Client({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+        ...(sessionToken !== undefined && { sessionToken }),
+      },
+      ...(endpoint !== undefined && { endpoint }),
+      ...(s3ForcePathStyle !== undefined && {
+        forcePathStyle: s3ForcePathStyle,
+      }),
+      ...(sslEnabled !== undefined && { tls: sslEnabled }),
+    });
+    this.s3BucketName = bucket;
   }
 
   /**
@@ -196,17 +222,21 @@ export class DownloadCenter {
    * @return {(Promise<Content | undefined>)}
    * @memberof DownloadCenter
    */
-  async downloadAsset(s3ObjectKey: string): Promise<Content | undefined> {
+  async downloadAsset(s3ObjectKey: string): Promise<Buffer | undefined> {
     if (!s3ObjectKey) {
       throw new Error('s3ObjectKey is required');
     }
 
-    const object = await this.s3GetObject({
-      Key: s3ObjectKey,
-      Bucket: this.s3BucketName,
-    });
+    const { Body } = await this.s3.send(
+      new GetObjectCommand({
+        Key: s3ObjectKey,
+        Bucket: this.s3BucketName,
+      }),
+    );
 
-    return object.Body;
+    if (!Body) return undefined;
+
+    return Buffer.from(await Body.transformToByteArray());
   }
 
   /**
@@ -238,15 +268,15 @@ export class DownloadCenter {
 
     const acl = options.acl ?? ACL_PUBLIC_READ;
 
-    const uploadParams: S3.PutObjectRequest = {
-      ACL: acl,
-      Bucket: this.s3BucketName,
-      Key: s3ObjectKey,
-      Body: content,
-      ContentType: options.contentType,
-    };
-
-    await this.s3Upload(uploadParams);
+    await this.s3.send(
+      new PutObjectCommand({
+        ACL: acl as PutObjectCommandInput['ACL'],
+        Bucket: this.s3BucketName,
+        Key: s3ObjectKey,
+        Body: content as PutObjectCommandInput['Body'],
+        ContentType: options.contentType,
+      }),
+    );
   }
 
   /**
