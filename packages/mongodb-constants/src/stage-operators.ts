@@ -156,6 +156,27 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$changeStreamSplitLargeEvent',
+    value: '$changeStreamSplitLargeEvent',
+    label: '$changeStreamSplitLargeEvent',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Splits large change stream events that exceed 16MB into smaller fragments returned as separate events.',
+    comment: `/**
+ * No additional options required.
+ */
+`,
+    snippet: '{}',
+  },
+  {
     name: '$collStats',
     value: '$collStats',
     label: '$collStats',
@@ -512,6 +533,30 @@ const STAGE_OPERATORS = [
   users: [
     { user: '\${2:string}', db: '\${3:string}' }
   ]
+}`,
+  },
+  {
+    name: '$listSearchIndexes',
+    value: '$listSearchIndexes',
+    label: '$listSearchIndexes',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Returns information about existing Atlas Search and Atlas Vector Search indexes on a specified collection.',
+    comment: `/**
+ * name: Optional. The name of the index to return information for.
+ * id: Optional. The id of the index to return information for.
+ */
+`,
+    snippet: `{
+  name: '\${1:indexName}'
 }`,
   },
   {
