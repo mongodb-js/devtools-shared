@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
-    "@babel/parser": "^7.22.7",
+    "@babel/parser": "^7.29.3",
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "lerna": "^9.0.7"
