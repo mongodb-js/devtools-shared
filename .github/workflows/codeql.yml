@@ -32,6 +32,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: 2a7f22484b64c6fc3fd2d6fa5a025bfa328f069a
           submodules: recursive
 
       - name: Initialize CodeQL
