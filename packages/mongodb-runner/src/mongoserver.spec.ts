@@ -21,9 +21,7 @@ describe('MongoServer._ensureMatchingMetadataColl', function () {
     let callCount = 0;
     const commandStub = sinon
       .stub()
-      .callsFake(
-        async () => responses[Math.min(callCount++, responses.length - 1)],
-      );
+      .callsFake(() => responses[Math.min(callCount++, responses.length - 1)]);
     const client = {
       db: sinon.stub().returns({ command: commandStub }),
     } as unknown as MongoClient;
