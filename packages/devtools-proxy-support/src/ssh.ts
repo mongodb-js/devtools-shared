@@ -37,7 +37,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   private connected = false;
   private connectingPromise?: Promise<void>;
   private closed = false;
-  private forwardOut: (
+  private forwardOut!: (
     srcIP: string,
     srcPort: number,
     dstIP: string,
@@ -52,27 +52,49 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     this.logger = logger ?? new EventEmitter().setMaxListeners(Infinity);
     this.proxyOptions = options;
     this.url = new URL(options.proxy ?? '');
-    this.sshClient = new (ssh2().Client)();
-    this.sshClient.on('close', () => {
+    this.sshClient = this.createSshClient();
+  }
+
+  private createSshClient(): SshClient {
+    const client = new (ssh2().Client)();
+    client.on('close', () => {
       this.logger.emit('ssh:client-closed');
       this.connected = false;
     });
-
-    this.forwardOut = promisify(this.sshClient.forwardOut.bind(this.sshClient));
+    client.on('error', () => {
+      // Errors during connection setup are handled through initialize()'s
+      // connectingPromise race, and post-connection errors through _connect()'s
+      // catch block. This listener prevents unhandled 'error' events from
+      // crashing the process when the SSH session dies unexpectedly (e.g. after
+      // the host machine resumes from hibernate).
+      this.connected = false;
+    });
+    this.forwardOut = promisify(client.forwardOut.bind(client));
+    return client;
   }
 
-  async initialize(): Promise<void> {
-    if (this.connected) {
+  async initialize(reinitializeClient = false): Promise<void> {
+    if (this.connected && !reinitializeClient) {
       return;
     }
 
-    if (this.connectingPromise) {
+    if (this.connectingPromise && !reinitializeClient) {
       return this.connectingPromise;
     }
 
     if (this.closed) {
       // A socks5 request could come in after we deliberately closed the connection. Don't reconnect in that case.
       throw new Error('Disconnected.');
+    }
+
+    if (reinitializeClient) {
+      // The previous ssh2 Client instance is in an unrecoverable state (e.g.
+      // "Instance unusable after fatal error" after the TCP connection was killed
+      // mid-stream during hibernate). Create a fresh client before reconnecting.
+      delete this.connectingPromise;
+      this.connected = false;
+      this.sshClient.end();
+      this.sshClient = this.createSshClient();
     }
 
     const sshConnectConfig: ConnectConfig = {
@@ -161,9 +183,14 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       }
       return sock;
     } catch (err: unknown) {
-      const retryableError = /Not connected|Channel open failure/.test(
+      const requiresNewClient = /Instance unusable after fatal error/.test(
         (err as Error).message,
       );
+      const retryableError =
+        requiresNewClient ||
+        /Not connected|Channel open failure|read ECONNRESET|Socket closed/.test(
+          (err as Error).message,
+        );
       this.logger.emit('ssh:failed-forward', {
         host,
         error: String((err as Error).stack),
@@ -173,7 +200,7 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       if (retryableError) {
         this.connected = false;
         if (retriesLeft > 0) {
-          await this.initialize();
+          await this.initialize(requiresNewClient);
           return await this._connect(req, connectOpts, retriesLeft - 1);
         }
       }

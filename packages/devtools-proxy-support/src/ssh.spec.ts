@@ -125,4 +125,46 @@ describe('SSHAgent', function () {
     expect(setup.authHandler).to.have.been.calledTwice;
     expect(setup.canTunnel).to.have.been.calledTwice;
   });
+
+  it('does not crash on unexpected sshClient error events', async function () {
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    await agent.initialize();
+    expect(() => {
+      (agent as any).sshClient.emit(
+        'error',
+        new Error('some unexpected ssh error'),
+      );
+    }).not.to.throw();
+    expect((agent as any).connected).to.be.false;
+  });
+
+  it('reconnects with a fresh SSH client after "Instance unusable after fatal error"', async function () {
+    setup.authHandler = sinon.stub().returns(true);
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    await agent.initialize();
+    const fetch = createFetch(agent);
+    await fetch('http://example.com/hello');
+
+    // Simulate the ssh2 client entering an unrecoverable "unusable" state
+    // (e.g. parser received truncated data during hibernate). When connect()
+    // is called on such a client, ssh2 emits 'error' instead of 'ready'.
+    const brokenClient = (agent as any).sshClient;
+    brokenClient.connect = function () {
+      process.nextTick(() =>
+        brokenClient.emit(
+          'error',
+          new Error('Instance unusable after fatal error'),
+        ),
+      );
+    };
+    (agent as any).connected = false;
+
+    await fetch('http://example.com/hello');
+    // A fresh client was created and a new SSH handshake performed
+    expect(setup.authHandler).to.have.been.calledTwice;
+  });
 });
