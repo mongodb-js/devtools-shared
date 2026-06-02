@@ -90,12 +90,13 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     if (reinitializeClient) {
       // The previous ssh2 Client instance is in an unrecoverable state (e.g.
       // "Instance unusable after fatal error" after the TCP connection was killed
-      // mid-stream during hibernate). Discard it and create a fresh one.
-      // We do not call end() here: the underlying socket is already dead
-      // (forceful RST or broken parser), and calling end() on it may emit
-      // unhandled socket-level errors.
+      // mid-stream during hibernate). End it to release the keepalive timer
+      // and any other internal handles, then create a fresh instance.
+      // ssh2's end() is a no-op when the underlying socket is already dead
+      // (it guards with isWritable()), so this is safe in all cases.
       this.connectingPromise = undefined;
       this.connected = false;
+      this.sshClient.end();
       this.sshClient = this.createSshClient();
     }
 
