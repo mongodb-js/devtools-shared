@@ -2,7 +2,6 @@ import { HTTPServerProxyTestSetup } from '../test/helpers';
 import { SSHAgent } from './ssh';
 import { createFetch } from './fetch';
 import { expect } from 'chai';
-import { once } from 'events';
 import sinon from 'sinon';
 
 describe('SSHAgent', function () {
