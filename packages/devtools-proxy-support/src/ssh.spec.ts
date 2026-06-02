@@ -2,6 +2,7 @@ import { HTTPServerProxyTestSetup } from '../test/helpers';
 import { SSHAgent } from './ssh';
 import { createFetch } from './fetch';
 import { expect } from 'chai';
+import { once } from 'events';
 import sinon from 'sinon';
 
 describe('SSHAgent', function () {
@@ -150,8 +151,10 @@ describe('SSHAgent', function () {
     await fetch('http://example.com/hello');
 
     // Simulate the ssh2 client entering an unrecoverable "unusable" state
-    // (e.g. parser received truncated data during hibernate). When connect()
-    // is called on such a client, ssh2 emits 'error' instead of 'ready'.
+    // (e.g. the TCP connection was killed mid-stream during hibernate). When
+    // connect() is called on such a client, ssh2 emits 'error' instead of
+    // 'ready', which our new createSshClient() path must handle by discarding
+    // the broken instance and creating a fresh one.
     const brokenClient = (agent as any).sshClient;
     brokenClient.connect = function () {
       process.nextTick(() =>

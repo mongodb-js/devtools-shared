@@ -90,10 +90,12 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     if (reinitializeClient) {
       // The previous ssh2 Client instance is in an unrecoverable state (e.g.
       // "Instance unusable after fatal error" after the TCP connection was killed
-      // mid-stream during hibernate). Create a fresh client before reconnecting.
-      delete this.connectingPromise;
+      // mid-stream during hibernate). Discard it and create a fresh one.
+      // We do not call end() here: the underlying socket is already dead
+      // (forceful RST or broken parser), and calling end() on it may emit
+      // unhandled socket-level errors.
+      this.connectingPromise = undefined;
       this.connected = false;
-      this.sshClient.end();
       this.sshClient = this.createSshClient();
     }
 
@@ -139,11 +141,11 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       this.logger.emit('ssh:failed-connection', {
         error: (err as any)?.stack ?? String(err),
       });
-      delete this.connectingPromise;
+      this.connectingPromise = undefined;
       throw err;
     }
 
-    delete this.connectingPromise;
+    this.connectingPromise = undefined;
     this.connected = true;
     this.logger.emit('ssh:established-connection');
   }
@@ -161,12 +163,14 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     retriesLeft = 1,
   ): Promise<Duplex> {
     let host = '';
+    let initializedSuccessfully = false;
     try {
       // Using the `host` header matches what proxy-agent does
       host = connectOpts.host || (req.getHeader('host') as string);
       const url = new URL(req.path, `tcp://${host}:${connectOpts.port}`);
 
       await this.initialize();
+      initializedSuccessfully = true;
 
       let sock: Duplex & Partial<Pick<Socket, 'setTimeout'>> =
         await this.forwardOut('127.0.0.1', 0, url.hostname, +url.port);
@@ -183,9 +187,12 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       }
       return sock;
     } catch (err: unknown) {
-      const requiresNewClient = /Instance unusable after fatal error/.test(
-        (err as Error).message,
-      );
+      // If initialize() itself failed, the ssh2 Client instance may be in a
+      // broken state (e.g. after a forceful TCP reset during hibernate) and
+      // needs to be recreated before the next attempt.
+      const requiresNewClient =
+        !initializedSuccessfully ||
+        /Instance unusable after fatal error/.test((err as Error).message);
       const retryableError =
         requiresNewClient ||
         /Not connected|Channel open failure|read ECONNRESET|Socket closed/.test(
