@@ -66,7 +66,8 @@ export interface ConnectRetryAfterTLSErrorEvent {
 }
 
 export interface ConnectEventMap
-  extends MongoDBOIDCLogEventsMap, ProxyEventMap {
+  extends MongoDBOIDCLogEventsMap,
+    ProxyEventMap {
   /** Signals that a connection attempt is about to be performed. */
   'devtools-connect:connect-attempt-initialized': (
     ev: ConnectAttemptInitializedEvent,
@@ -103,6 +104,10 @@ export interface ConnectEventMap
   'devtools-connect:retry-after-tls-error': (
     ev: ConnectRetryAfterTLSErrorEvent,
   ) => void;
+  /** Signals that the proxy tunnel encountered a session-level error (e.g. SSH connection lost) */
+  'devtools-connect:tunnel-error': (ev: { error: Error }) => void;
+  /** Signals that the proxy tunnel failed to forward a connection */
+  'devtools-connect:tunnel-forwarding-error': (ev: { error: Error }) => void;
 }
 
 export type ConnectEventArgs<K extends keyof ConnectEventMap> =
