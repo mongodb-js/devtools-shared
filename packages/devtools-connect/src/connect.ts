@@ -555,16 +555,14 @@ async function connectMongoClientImpl({
         'mongodb://',
       );
       cleanupOnClientClose.push(() => tunnel?.close());
-      if (tunnel) {
-        tunnel.on('error', (err) => {
-          logger.emit('devtools-connect:tunnel-error', { error: err });
+      tunnel?.on('error', (err) => {
+        logger.emit('devtools-connect:tunnel-error', { error: err });
+      });
+      tunnel?.on('forwardingError', (err) => {
+        logger.emit('devtools-connect:tunnel-forwarding-error', {
+          error: err,
         });
-        tunnel.on('forwardingError', (err) => {
-          logger.emit('devtools-connect:tunnel-forwarding-error', {
-            error: err,
-          });
-        });
-      }
+      });
     }
     for (const proxyLogger of new Set([
       tunnel?.logger,
