@@ -39,6 +39,11 @@ export class HTTPServerProxyTestSetup {
   readonly sshServer: SSHServer;
   readonly sshTunnelInfos: TcpipRequestInfo[] = [];
   readonly connections: Duplex[] = [];
+  // Raw TCP sockets accepted by the SSH server, kept so that tests can
+  // forcibly destroy them (simulating the OS dropping connections during
+  // hibernate). These are the underlying net.Sockets, not the high-level
+  // ssh2 Client objects emitted by the SSH server's 'connection' event.
+  readonly sshServerSockets: Socket[] = [];
   canTunnel: () => boolean = () => true;
   authHandler: undefined | ((username: string, password: string) => boolean);
 
@@ -169,6 +174,29 @@ export class HTTPServerProxyTestSetup {
           });
       },
     );
+    // The ssh2 Server's public 'connection' event hands out high-level Client
+    // objects, but to simulate an abrupt network interruption we need the raw
+    // TCP sockets. ssh2 exposes the underlying net.Server as `_srv`, which
+    // emits 'connection' with the raw socket for every accepted connection.
+    (this.sshServer as unknown as { _srv: Server })._srv.on(
+      'connection',
+      (socket: Socket) => {
+        this.sshServerSockets.push(socket);
+        socket.once('close', () => {
+          const index = this.sshServerSockets.indexOf(socket);
+          if (index !== -1) this.sshServerSockets.splice(index, 1);
+        });
+      },
+    );
+  }
+
+  // Forcibly destroys all currently open SSH server-side TCP sockets using a
+  // TCP reset, simulating an abrupt network interruption such as the OS
+  // killing connections when a laptop hibernates.
+  destroySSHConnections(): void {
+    for (const socket of [...this.sshServerSockets]) {
+      if (!socket.destroyed) socket.resetAndDestroy();
+    }
   }
 
   async listen(): Promise<void> {

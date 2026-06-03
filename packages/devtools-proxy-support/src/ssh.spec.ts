@@ -1,3 +1,4 @@
+import { once } from 'events';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 import { SSHAgent } from './ssh';
 import { createFetch } from './fetch';
@@ -167,6 +168,29 @@ describe('SSHAgent', function () {
 
     await fetch('http://example.com/hello');
     // A fresh client was created and a new SSH handshake performed
+    expect(setup.authHandler).to.have.been.calledTwice;
+  });
+
+  it('reconnects after the underlying connection is destroyed server-side', async function () {
+    setup.authHandler = sinon.stub().returns(true);
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    await agent.initialize();
+    const fetch = createFetch(agent);
+    await fetch('http://example.com/hello');
+    expect(setup.authHandler).to.have.been.calledOnce;
+
+    // Simulate the OS killing network connections during hibernate by
+    // forcibly destroying the SSH server's TCP sockets (with a TCP reset)
+    // from the server side, then wait for the agent to notice the loss.
+    const clientClosed = once(agent.logger, 'ssh:client-closed');
+    setup.destroySSHConnections();
+    await clientClosed;
+
+    // The next request must transparently re-establish the SSH connection.
+    const response = await fetch('http://example.com/hello');
+    expect(await response.text()).to.equal('OK /hello');
     expect(setup.authHandler).to.have.been.calledTwice;
   });
 });
