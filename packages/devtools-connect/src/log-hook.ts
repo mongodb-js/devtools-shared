@@ -21,7 +21,8 @@ import {
 } from '@mongodb-js/devtools-proxy-support';
 
 export interface MongoLogWriter
-  extends OIDCMongoLogWriter, ProxyMongoLogWriter {}
+  extends OIDCMongoLogWriter,
+    ProxyMongoLogWriter {}
 
 export function hookLogger(
   emitter: ConnectLogEmitter,
