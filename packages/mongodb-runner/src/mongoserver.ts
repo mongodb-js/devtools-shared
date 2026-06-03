@@ -51,6 +51,20 @@ export interface MongoServerOptions {
   isConfigSvr?: boolean;
   /** Internal option -- if keyfile auth is used, this will be its contents */
   keyFileContents?: string;
+  /**
+   * Whether to spawn the server process detached from the current Node.js
+   * process (default: `true`).
+   *
+   * When `true`, the server keeps running even if the parent process exits,
+   * which is what the CLI relies on for its persistent-server behavior.
+   *
+   * Library consumers that manage the server lifetime within a single process
+   * (e.g. test suites) can set this to `false` so the server is tied to the
+   * parent process and terminated together with it. In particular, this avoids
+   * orphaned `mongod` processes on Windows when the parent is killed without a
+   * chance to call `close()` (e.g. an out-of-memory test worker).
+   */
+  detached?: boolean;
 }
 
 interface SerializedServerProperties {
@@ -264,7 +278,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const proc = spawn(executable, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       cwd: options.tmpDir,
-      detached: true,
+      detached: options.detached ?? true,
     });
     await once(proc, 'spawn');
     srv.childProcess = proc;

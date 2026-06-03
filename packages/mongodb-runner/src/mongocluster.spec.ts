@@ -5,6 +5,7 @@ import path from 'path';
 import os from 'os';
 import createDebug from 'debug';
 import sinon from 'sinon';
+import childProcess from 'child_process';
 import type { LogEntry } from './mongologreader';
 import type { MongoClientOptions } from 'mongodb';
 import { eventually } from './util';
@@ -79,6 +80,42 @@ describe('MongoCluster', function () {
         arch: 'x64',
       },
     );
+  });
+
+  it('forwards the detached option to the spawned server process', async function () {
+    // Stub spawn so we assert the option is plumbed through without actually
+    // starting a server. binDir is set so no binary download is attempted.
+    const spawnStub = sinon
+      .stub(childProcess, 'spawn')
+      .throws(new Error('stub: not actually spawning a server'));
+    const binDir = path.join(tmpDir, 'unused-bin');
+
+    for (const { detached, expected } of [
+      { detached: undefined, expected: true }, // default preserves CLI behavior
+      { detached: false, expected: false },
+      { detached: true, expected: true },
+    ]) {
+      spawnStub.resetHistory();
+      try {
+        await MongoCluster.start({
+          topology: 'standalone',
+          tmpDir,
+          binDir,
+          ...(detached === undefined ? {} : { detached }),
+        });
+        expect.fail('expected start to throw because spawn is stubbed');
+      } catch (err) {
+        if (
+          !String((err as Error).message).includes(
+            'stub: not actually spawning',
+          )
+        ) {
+          throw err;
+        }
+      }
+      expect(spawnStub).to.have.been.calledOnce;
+      expect(spawnStub.firstCall.args[2]).to.include({ detached: expected });
+    }
   });
 
   it('can spawn a 6.x standalone mongod', async function () {

@@ -150,6 +150,7 @@ export type MongoClusterOptions = Pick<
   | 'docker'
   | 'internalClientOptions'
   | 'host'
+  | 'detached'
 > &
   CommonOptions &
   RSOptions &
