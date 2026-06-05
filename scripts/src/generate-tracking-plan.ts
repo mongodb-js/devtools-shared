@@ -17,7 +17,7 @@
 
 import path from 'path';
 import { parseArgs } from 'node:util';
-import * as ts from 'typescript';
+import ts from 'typescript';
 import * as fs from 'fs';
 
 interface GenerateTrackingPlanConfig {
@@ -36,8 +36,10 @@ function parseConfig(): GenerateTrackingPlanConfig {
     strict: true,
   });
 
-  if (!values['events-file']) throw new Error('Missing required argument: --events-file');
-  if (!values['app-name']) throw new Error('Missing required argument: --app-name');
+  if (!values['events-file'])
+    throw new Error('Missing required argument: --events-file');
+  if (!values['app-name'])
+    throw new Error('Missing required argument: --app-name');
 
   return {
     eventsFile: path.resolve(process.cwd(), values['events-file']),
@@ -68,17 +70,20 @@ interface SectionInfo {
 // TypeScript compiler helpers
 function getTelemetryEventNames(
   sourceFile: ts.SourceFile,
-  unionTypeName: string
+  unionTypeName: string,
 ): string[] {
   const names: string[] = [];
-  ts.forEachChild(sourceFile, (node) => {
+  ts.forEachChild(sourceFile, (node: ts.Node) => {
     if (
       ts.isTypeAliasDeclaration(node) &&
       node.name.text === unionTypeName &&
       ts.isUnionTypeNode(node.type)
     ) {
       for (const member of node.type.types) {
-        if (ts.isTypeReferenceNode(member) && ts.isIdentifier(member.typeName)) {
+        if (
+          ts.isTypeReferenceNode(member) &&
+          ts.isIdentifier(member.typeName)
+        ) {
           names.push(member.typeName.text);
         }
       }
@@ -94,7 +99,7 @@ function buildInMemorySource(
   originalSource: ts.SourceFile,
   eventTypeNames: string[],
   identifyTraitsName: string,
-  commonPropertiesName?: string
+  commonPropertiesName?: string,
 ): ts.SourceFile {
   // Appends "Resolved*" type aliases that flatten intersections and type references
   // into basic types. The TypeChecker then emits fully-expanded, readable types
@@ -105,7 +110,7 @@ function buildInMemorySource(
 type Resolved${name} = {
   name: ${name}['name'];
   payload: ResolveType<${name} extends { payload: infer P } ? P : Record<string, never>>;
-};`
+};`,
     )
     .join('\n');
 
@@ -134,21 +139,29 @@ ${resolvedSections}
 ${resolvedEvents}
 `;
 
-  return ts.createSourceFile('inMemoryFile.ts', text, ts.ScriptTarget.Latest, true);
+  return ts.createSourceFile(
+    'inMemoryFile.ts',
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+  );
 }
 
 function createChecker(sourceFile: ts.SourceFile): ts.TypeChecker {
   const options = { strictNullChecks: true };
   const host = ts.createCompilerHost(options);
-  host.getSourceFile = (fileName) =>
+  host.getSourceFile = (fileName: string) =>
     fileName === 'inMemoryFile.ts' ? sourceFile : undefined;
   const program = ts.createProgram(['inMemoryFile.ts'], options, host);
   return program.getTypeChecker();
 }
 
-function findDeclaration(sourceFile: ts.SourceFile, name: string): ts.NamedDeclaration {
+function findDeclaration(
+  sourceFile: ts.SourceFile,
+  name: string,
+): ts.NamedDeclaration {
   let found: ts.NamedDeclaration | undefined;
-  sourceFile.forEachChild((node) => {
+  sourceFile.forEachChild((node: ts.Node) => {
     if (
       (ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) &&
       node.name.text === name
@@ -163,7 +176,7 @@ function findDeclaration(sourceFile: ts.SourceFile, name: string): ts.NamedDecla
 function extractPropertiesFromType(
   type: ts.Type,
   node: ts.Node,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): PropertyInfo[] {
   const props: PropertyInfo[] = [];
 
@@ -172,12 +185,18 @@ function extractPropertiesFromType(
     const isOptionalFlag = (prop.getFlags() & ts.SymbolFlags.Optional) !== 0;
     const allowsUndefined =
       propType.isUnion() &&
-      propType.types.some((t) => t.flags & ts.TypeFlags.Undefined);
+      propType.types.some((t: ts.Type) => t.flags & ts.TypeFlags.Undefined);
 
     props.push({
       name: prop.getName(),
-      type: checker.typeToString(propType, undefined, ts.TypeFormatFlags.NoTruncation),
-      description: ts.displayPartsToString(prop.getDocumentationComment(checker)),
+      type: checker.typeToString(
+        propType,
+        undefined,
+        ts.TypeFormatFlags.NoTruncation,
+      ),
+      description: ts.displayPartsToString(
+        prop.getDocumentationComment(checker),
+      ),
       required: !isOptionalFlag && !allowsUndefined,
     });
   }
@@ -185,7 +204,11 @@ function extractPropertiesFromType(
   for (const indexInfo of checker.getIndexInfosOfType(type)) {
     props.push({
       name: `[key: ${checker.typeToString(indexInfo.keyType)}]`,
-      type: checker.typeToString(indexInfo.type, undefined, ts.TypeFormatFlags.NoTruncation),
+      type: checker.typeToString(
+        indexInfo.type,
+        undefined,
+        ts.TypeFormatFlags.NoTruncation,
+      ),
       description: '',
       required: false,
     });
@@ -197,13 +220,16 @@ function extractPropertiesFromType(
 function parseTelemetryEvent(
   typeName: string,
   sourceFile: ts.SourceFile,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): EventInfo {
   const originalNode = findDeclaration(sourceFile, typeName);
-  const resolvedNode = findDeclaration(sourceFile, `Resolved${typeName}`) as ts.TypeAliasDeclaration;
+  const resolvedNode = findDeclaration(
+    sourceFile,
+    `Resolved${typeName}`,
+  ) as ts.TypeAliasDeclaration;
 
   const originalSymbol = checker.getSymbolAtLocation(
-    (originalNode as ts.TypeAliasDeclaration | ts.InterfaceDeclaration).name
+    (originalNode as ts.TypeAliasDeclaration | ts.InterfaceDeclaration).name,
   );
   const description = originalSymbol
     ? ts.displayPartsToString(originalSymbol.getDocumentationComment(checker))
@@ -216,21 +242,28 @@ function parseTelemetryEvent(
 
   const resolvedType = checker.getTypeAtLocation(resolvedNode);
 
-  const nameSymbol = resolvedType.getProperties().find((p) => p.getName() === 'name');
+  const nameSymbol = resolvedType
+    .getProperties()
+    .find((p: ts.Symbol) => p.getName() === 'name');
   let eventName = typeName;
   if (nameSymbol) {
-    const nameType = checker.getTypeOfSymbolAtLocation(nameSymbol, resolvedNode);
+    const nameType = checker.getTypeOfSymbolAtLocation(
+      nameSymbol,
+      resolvedNode,
+    );
     eventName = nameType.isStringLiteral()
       ? nameType.value
       : checker.typeToString(nameType);
   }
 
-  const payloadSymbol = resolvedType.getProperties().find((p) => p.getName() === 'payload');
+  const payloadSymbol = resolvedType
+    .getProperties()
+    .find((p: ts.Symbol) => p.getName() === 'payload');
   const properties = payloadSymbol
     ? extractPropertiesFromType(
         checker.getTypeOfSymbolAtLocation(payloadSymbol, resolvedNode),
         resolvedNode,
-        checker
+        checker,
       )
     : [];
 
@@ -240,16 +273,16 @@ function parseTelemetryEvent(
 function parseSectionType(
   typeName: string,
   sourceFile: ts.SourceFile,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): SectionInfo {
   const originalNode = findDeclaration(sourceFile, typeName);
   const resolvedNode = findDeclaration(
     sourceFile,
-    `Resolved${typeName}`
+    `Resolved${typeName}`,
   ) as ts.TypeAliasDeclaration;
 
   const originalSymbol = checker.getSymbolAtLocation(
-    (originalNode as ts.TypeAliasDeclaration | ts.InterfaceDeclaration).name
+    (originalNode as ts.TypeAliasDeclaration | ts.InterfaceDeclaration).name,
   );
   const description = originalSymbol
     ? ts.displayPartsToString(originalSymbol.getDocumentationComment(checker))
@@ -272,7 +305,10 @@ function escapeTableCell(text: string): string {
   return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
-function renderPropertiesTable(properties: PropertyInfo[], lines: string[]): void {
+function renderPropertiesTable(
+  properties: PropertyInfo[],
+  lines: string[],
+): void {
   if (properties.length === 0) {
     lines.push('_No additional properties._');
     return;
@@ -281,12 +317,16 @@ function renderPropertiesTable(properties: PropertyInfo[], lines: string[]): voi
   lines.push('|----------|------|----------|-------------|');
   for (const prop of properties) {
     lines.push(
-      `| \`${prop.name}\` | \`${escapeTableCell(prop.type)}\` | ${prop.required ? 'Yes' : 'No'} | ${escapeTableCell(prop.description)} |`
+      `| \`${prop.name}\` | \`${escapeTableCell(prop.type)}\` | ${prop.required ? 'Yes' : 'No'} | ${escapeTableCell(prop.description)} |`,
     );
   }
 }
 
-function renderSection(title: string, info: SectionInfo, lines: string[]): void {
+function renderSection(
+  title: string,
+  info: SectionInfo,
+  lines: string[],
+): void {
   lines.push(`## ${title}`);
   lines.push('');
   if (info.description) {
@@ -301,7 +341,7 @@ function generateMarkdown(
   config: GenerateTrackingPlanConfig,
   events: EventInfo[],
   identifyTraits: SectionInfo,
-  commonProperties?: SectionInfo
+  commonProperties?: SectionInfo,
 ): string {
   const lines: string[] = [];
   const date = new Date().toISOString().split('T')[0];
@@ -309,9 +349,9 @@ function generateMarkdown(
   lines.push(`# ${config.appName} Tracking Plan`);
   lines.push('');
   lines.push(`> Auto-generated on ${date}. Do not edit manually.`);
-  lines.push('> Run `npm run generate-tracking-plan` to regenerate from source.');
-
-
+  lines.push(
+    '> Run `npm run generate-tracking-plan` to regenerate from source.',
+  );
   lines.push('');
 
   if (commonProperties) {
@@ -360,33 +400,37 @@ function generateTrackingPlan(config: GenerateTrackingPlanConfig): string {
     config.eventsFile,
     fs.readFileSync(config.eventsFile, 'utf8'),
     ts.ScriptTarget.Latest,
-    true
+    true,
   );
 
   const unionTypeName = 'TelemetryEvent';
   const identifyTraitsName = 'IdentifyTraits';
   const commonPropertiesName = 'CommonEventProperties';
-
   const eventTypeNames = getTelemetryEventNames(originalSource, unionTypeName);
-
   const inMemorySource = buildInMemorySource(
     originalSource,
     eventTypeNames,
     identifyTraitsName,
-    commonPropertiesName
+    commonPropertiesName,
   );
   const checker = createChecker(inMemorySource);
 
-  const identifyTraits = parseSectionType(identifyTraitsName, inMemorySource, checker);
+  const identifyTraits = parseSectionType(
+    identifyTraitsName,
+    inMemorySource,
+    checker,
+  );
   const hasCommonProperties = originalSource.statements.some(
-    (n) => (ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n)) && n.name.text === commonPropertiesName
+    (n) =>
+      (ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n)) &&
+      n.name.text === commonPropertiesName,
   );
   const commonProperties = hasCommonProperties
     ? parseSectionType(commonPropertiesName, inMemorySource, checker)
     : undefined;
 
   const events = eventTypeNames.map((name) =>
-    parseTelemetryEvent(name, inMemorySource, checker)
+    parseTelemetryEvent(name, inMemorySource, checker),
   );
 
   return generateMarkdown(config, events, identifyTraits, commonProperties);
