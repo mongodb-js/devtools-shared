@@ -262,8 +262,12 @@ function slugify(text: string): string {
     .replace(/\s+/g, '-');
 }
 
-function escapeTableCell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+export function escapeTableCell(text: string): string {
+  return text
+    .replaceAll('\\', '\\\\')
+    .replaceAll('|', '\\|')
+    .replaceAll('\r\n', ' ')
+    .replaceAll('\n', ' ');
 }
 
 function renderPropertiesTable(
@@ -278,7 +282,7 @@ function renderPropertiesTable(
   lines.push('|----------|------|----------|-------------|');
   for (const prop of properties) {
     lines.push(
-      `| \`${prop.name}\` | \`${escapeTableCell(prop.type)}\` | ${prop.required ? 'Yes' : 'No'} | ${escapeTableCell(prop.description)} |`,
+      `| \`${escapeTableCell(prop.name)}\` | \`${escapeTableCell(prop.type)}\` | ${prop.required ? 'Yes' : 'No'} | ${escapeTableCell(prop.description)} |`,
     );
   }
 }
@@ -307,7 +311,9 @@ function generateMarkdown(
   const lines: string[] = [];
   const date = new Date().toISOString().split('T')[0];
 
-  lines.push(`# ${config.appName ?? 'Tracking Plan'}`);
+  lines.push(
+    `# ${config.appName ? `${config.appName} Tracking Plan` : 'Tracking Plan'}`,
+  );
   lines.push('');
   lines.push(`> Auto-generated on ${date}. Do not edit manually.`);
   lines.push(

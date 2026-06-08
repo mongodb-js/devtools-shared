@@ -1,10 +1,31 @@
 import assert from 'assert';
 import path from 'path';
-import { generateTrackingPlan } from '../src/index';
+import { generateTrackingPlan, escapeTableCell } from '../src/index';
 
 const FIXTURE_FILE = path.resolve(__dirname, 'fixtures/telemetry-events.ts');
 
 describe('TrackingPlan', function () {
+  describe('escapeTableCell', function () {
+    it('leaves plain text unchanged', function () {
+      assert.strictEqual(escapeTableCell('hello world'), 'hello world');
+    });
+
+    it('escapes pipe characters', function () {
+      assert.strictEqual(escapeTableCell('a | b'), 'a \\| b');
+    });
+
+    it('escapes backslashes before pipes', function () {
+      assert.strictEqual(escapeTableCell('a\\|b'), 'a\\\\\\|b');
+    });
+
+    it('replaces Unix newlines with a space', function () {
+      assert.strictEqual(escapeTableCell('line1\nline2'), 'line1 line2');
+    });
+
+    it('replaces Windows newlines with a space', function () {
+      assert.strictEqual(escapeTableCell('line1\r\nline2'), 'line1 line2');
+    });
+  });
   let result: string;
 
   before(function () {
