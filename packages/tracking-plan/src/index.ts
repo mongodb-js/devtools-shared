@@ -1,50 +1,11 @@
-#!/usr/bin/env ts-node
-/**
- * Generates a Markdown tracking plan from typed telemetry event definitions.
- *
- * Reads a TypeScript telemetry events file and produces a structured Markdown
- * document with a table of contents, per-event property tables, an Identity
- * section, and an optional Common Properties section.
- *
- * Events must follow the shape: { name: 'event-name'; payload: { ... } }
- * Categories are read from JSDoc @category tags on each event type.
- *
- * Usage:
- *   ts-node path/to/generate-tracking-plan.ts \
- *     --events-file=<path>   path to the telemetry-events TypeScript file
- *     --app-name=<name>      app name used in the markdown title (e.g. 'compass')
- */
-
-import path from 'path';
-import { parseArgs } from 'node:util';
 import ts from 'typescript';
 import * as fs from 'fs';
 
-interface GenerateTrackingPlanConfig {
+export interface GenerateTrackingPlanConfig {
   /** Absolute path to the telemetry events TypeScript file */
   eventsFile: string;
-  /** App name used in the markdown title */
-  appName: string;
-}
-
-function parseConfig(): GenerateTrackingPlanConfig {
-  const { values } = parseArgs({
-    options: {
-      'events-file': { type: 'string' },
-      'app-name': { type: 'string' },
-    },
-    strict: true,
-  });
-
-  if (!values['events-file'])
-    throw new Error('Missing required argument: --events-file');
-  if (!values['app-name'])
-    throw new Error('Missing required argument: --app-name');
-
-  return {
-    eventsFile: path.resolve(process.cwd(), values['events-file']),
-    appName: values['app-name'],
-  };
+  /** App name used in the markdown title. Defaults to "Tracking Plan" if omitted. */
+  appName?: string;
 }
 
 interface PropertyInfo {
@@ -346,7 +307,7 @@ function generateMarkdown(
   const lines: string[] = [];
   const date = new Date().toISOString().split('T')[0];
 
-  lines.push(`# ${config.appName} Tracking Plan`);
+  lines.push(`# ${config.appName ?? 'Tracking Plan'}`);
   lines.push('');
   lines.push(`> Auto-generated on ${date}. Do not edit manually.`);
   lines.push(
@@ -395,7 +356,9 @@ function generateMarkdown(
   return lines.join('\n');
 }
 
-function generateTrackingPlan(config: GenerateTrackingPlanConfig): string {
+export function generateTrackingPlan(
+  config: GenerateTrackingPlanConfig,
+): string {
   const originalSource = ts.createSourceFile(
     config.eventsFile,
     fs.readFileSync(config.eventsFile, 'utf8'),
@@ -435,6 +398,3 @@ function generateTrackingPlan(config: GenerateTrackingPlanConfig): string {
 
   return generateMarkdown(config, events, identifyTraits, commonProperties);
 }
-
-const config = parseConfig();
-process.stdout.write(generateTrackingPlan(config) + '\n');
