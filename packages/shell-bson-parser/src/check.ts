@@ -18,32 +18,30 @@ class Checker {
         node.arguments.every(this.checkSafeExpression)
       );
     }
-    if (allowMethods) {
-      if (node.callee.type === 'MemberExpression') {
-        const object = node.callee.object;
-        const property = node.callee.property as Identifier;
-        // If we're only referring to identifiers, we don't need to check deeply.
-        if (object.type === 'Identifier' && property.type === 'Identifier') {
-          return (
-            isMethodWhitelisted(object.name, property.name) &&
-            node.arguments.every(this.checkSafeExpression)
-          );
-        } else if (
-          (object.type === 'NewExpression' ||
-            object.type === 'CallExpression') &&
-          object.callee.type === 'Identifier'
-        ) {
-          const callee = object.callee;
-          return (
-            isMethodWhitelisted(callee.name, property.name) &&
-            node.arguments.every(this.checkSafeExpression)
-          );
-        } else {
-          return (
-            this.checkSafeExpression(object) &&
-            node.arguments.every(this.checkSafeExpression)
-          );
-        }
+    if (allowMethods && node.callee.type === 'MemberExpression') {
+      const object = node.callee.object;
+      const property = node.callee.property as Identifier;
+      // If we're only referring to identifiers, we don't need to check deeply.
+      if (object.type === 'Identifier' && property.type === 'Identifier') {
+        return (
+          isMethodWhitelisted(object.name, property.name) &&
+          node.arguments.every(this.checkSafeExpression)
+        );
+      } else if (
+        (object.type === 'NewExpression' ||
+          object.type === 'CallExpression') &&
+        object.callee.type === 'Identifier'
+      ) {
+        const callee = object.callee;
+        return (
+          isMethodWhitelisted(callee.name, property.name) &&
+          node.arguments.every(this.checkSafeExpression)
+        );
+      } else {
+        return (
+          this.checkSafeExpression(object) &&
+          node.arguments.every(this.checkSafeExpression)
+        );
       }
     }
     return false;
@@ -106,11 +104,13 @@ class Checker {
 }
 
 export const checkTree = (node: Node, options: Options) => {
-  if (node.type === 'Program') {
-    if (node.body.length === 1 && node.body[0].type === 'ExpressionStatement') {
-      const checker = new Checker(options);
-      return checker.checkSafeExpression(node.body[0].expression);
-    }
+  if (
+    node.type === 'Program' &&
+    node.body.length === 1 &&
+    node.body[0].type === 'ExpressionStatement'
+  ) {
+    const checker = new Checker(options);
+    return checker.checkSafeExpression(node.body[0].expression);
   }
   return false;
 };
