@@ -61,7 +61,7 @@ async function resolveMachineId({
   onError,
 }: GetDeviceIdOptions): Promise<string> {
   try {
-    const originalId = (await getMachineId())?.toUpperCase();
+    const originalId = await getMachineId();
 
     if (!originalId) {
       onError?.('resolutionError', new Error('Failed to resolve machine ID'));

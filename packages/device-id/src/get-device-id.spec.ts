@@ -1,5 +1,13 @@
+import { createHmac } from 'crypto';
 import { expect } from 'chai';
 import { getDeviceId } from './get-device-id';
+
+// Replicates machineid.ProtectedID(appID) from github.com/denisbrodbeck/machineid:
+// https://github.com/denisbrodbeck/machineid/blob/master/helper.go
+// HMAC-SHA256(key=rawMachineId, message=appID), no case normalization.
+function atlasCLIDeviceId(rawMachineId: string): string {
+  return createHmac('sha256', rawMachineId).update('atlascli').digest('hex');
+}
 
 describe('getDeviceId', function () {
   it('returns a hashed device id when machine id is available', async function () {
@@ -15,19 +23,18 @@ describe('getDeviceId', function () {
     expect(deviceId).to.not.equal('unknown');
   });
 
-  it('converts machine id to uppercase when using node-machine-id', async function () {
+  it('produces different hashes for lower and uppercase machine ids', async function () {
     const mockMachineId = 'test-machine-id';
-    const getMachineId = () => Promise.resolve(mockMachineId);
 
     const resultA = await getDeviceId({
-      getMachineId,
+      getMachineId: () => Promise.resolve(mockMachineId),
     });
 
     const resultB = await getDeviceId({
       getMachineId: () => Promise.resolve(mockMachineId.toUpperCase()),
     });
 
-    expect(resultA).to.equal(resultB);
+    expect(resultA).to.not.equal(resultB);
   });
 
   it('returns "unknown" when machine id is not found', async function () {
@@ -146,6 +153,36 @@ describe('getDeviceId', function () {
         expect(result).to.equal(testCase.expectedResult);
         expect(capturedError?.[0]).to.equal('abort');
         expect(capturedError?.[1].message).to.equal('Aborted by abort signal');
+      });
+    }
+  });
+
+  describe('Atlas CLI compatibility', function () {
+    // Machine IDs format (case and hyphens) matter to catch case normalization bug.
+    const cases = [
+      {
+        platform: 'Linux',
+        // /etc/machine-id is always lowercase hex without hyphens
+        rawMachineId: 'a8098c1af14ef2e1dc4d7f5b4e08d4c0',
+      },
+      {
+        platform: 'macOS',
+        // IOPlatformUUID from IOKit is uppercase with hyphens
+        rawMachineId: 'A8098C1A-F14E-F2E1-DC4D-7F5B4E08D4C0',
+      },
+      {
+        platform: 'Windows',
+        // MachineGuid from HKLM\SOFTWARE\Microsoft\Cryptography is lowercase with hyphens
+        rawMachineId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+      },
+    ];
+
+    for (const { platform, rawMachineId } of cases) {
+      it(`matches Atlas CLI output for ${platform} machine id format`, async function () {
+        const result = await getDeviceId({
+          getMachineId: () => Promise.resolve(rawMachineId),
+        });
+        expect(result).to.equal(atlasCLIDeviceId(rawMachineId));
       });
     }
   });
