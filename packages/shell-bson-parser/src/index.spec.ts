@@ -731,12 +731,15 @@ describe('@mongodb-js/shell-bson-parser', function () {
       ).to.equal('');
     });
 
-    it('should prevent attempting to break the sandbox', function () {
-      const withIdentifier =
+    it('should prevent attempting to break the sandbox for identifiers', function () {
+      const input =
         "{ exploit: clearImmediate.constructor('return process;')().exit(1) }";
-      expect(parse(withIdentifier, options)).to.equal('');
-      const withLiteral = `{ exploit: "".toString.constructor('return process;')().exit(1) }`;
-      expect(parse(withLiteral, options)).to.equal('');
+      expect(parse(input, options)).to.equal('');
+    });
+
+    it('should prevent attempting to break the sandbox for literals', function () {
+      const input = `{ exploit: "".toString.constructor('return process;')().exit(1) }`;
+      expect(parse(input, options)).to.equal('');
     });
   });
 
