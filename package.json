@@ -51,5 +51,8 @@
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "lerna": "^9.0.7"
+  },
+  "overrides": {
+    "ip-address": "^10.1.1"
   }
 }
