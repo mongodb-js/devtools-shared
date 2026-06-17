@@ -321,12 +321,6 @@ function generateMarkdown(
   );
   lines.push('');
 
-  if (commonProperties) {
-    renderSection('Common Properties', commonProperties, lines);
-  }
-
-  renderSection('Identity', identifyTraits, lines);
-
   const byCategory = new Map<string, EventInfo[]>();
   for (const event of events) {
     if (!byCategory.has(event.category)) byCategory.set(event.category, []);
@@ -336,12 +330,23 @@ function generateMarkdown(
 
   lines.push('## Table of Contents');
   lines.push('');
+  if (commonProperties) {
+    lines.push('- [Common Properties](#common-properties)');
+  }
+  lines.push('- [Identity](#identity)');
   for (const cat of sortedCategories) {
     lines.push(`- [${cat}](#${slugify(cat)})`);
     for (const event of byCategory.get(cat)!) {
       lines.push(`  - [${event.eventName}](#${slugify(event.eventName)})`);
     }
   }
+  lines.push('');
+
+  if (commonProperties) {
+    renderSection('Common Properties', commonProperties, lines);
+  }
+
+  renderSection('Identity', identifyTraits, lines);
 
   for (const cat of sortedCategories) {
     lines.push('');
