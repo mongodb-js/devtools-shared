@@ -701,17 +701,7 @@ const STAGE_OPERATORS = [
  */
 `,
     // eslint-disable-next-line quotes
-    snippet: `{
-  db: '\${1:string}',
-  coll: '\${2:string}',
-  /*
-  timeseries: {
-    timeField: '\${3:field}',
-    bucketMaxSpanSeconds: '\${4:number}',
-    granularity: '\${5:granularity}'
-  }
-  */
-}`,
+    snippet: `'\${1:string}'`,
   },
   {
     name: '$out',
@@ -759,17 +749,12 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  s3: {
-    bucket: '\${1:string}',
-    region: '\${2:string}',
-    filename: '\${3:string}',
-    format: {
-      name: '\${4:string}',
-      maxFileSize: '\${5:bytes}',
-      maxRowGroupSize: '\${6:string}',
-      columnCompression: '\${7:string}'
-    },
-    errorMode: '\${8:string}'
+  s3: '\${1:s3url}',
+  atlas: {
+    db: '\${2:db}',
+    coll: '\${3:coll}',
+    projectId: '\${4:projectId}',
+    clusterName: '\${5:clusterName}'
   }
 }`,
   },
@@ -986,8 +971,8 @@ const STAGE_OPERATORS = [
     snippet: `{
   score: \${1:expression},
   scoreDetails: \${2:false},
-  normalization: "\${2:none|sigmoid|minMaxScaler}",
-  weight: \${3:number},
+  normalization: "\${3:none|sigmoid|minMaxScaler}",
+  weight: \${4:number},
 }`,
   },
   {
@@ -1066,8 +1051,7 @@ const STAGE_OPERATORS = [
   index: '\${1:string}',
   text: {
     query: '\${2:string}',
-    path: '\${3:string}',
-    matchCriteria: '\${4:any}',
+    path: '\${3:string}'
   }
 }`,
   },
