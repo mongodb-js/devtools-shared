@@ -2,7 +2,7 @@ import { createHmac } from 'crypto';
 import { expect } from 'chai';
 import { getDeviceId } from './get-device-id';
 
-// Replicates machineid.ProtectedID(appID) from github.com/denisbrodbeck/machineid:
+// Replicates machineid.ProtectedID(appID) from
 // https://github.com/denisbrodbeck/machineid/blob/master/helper.go
 // HMAC-SHA256(key=rawMachineId, message=appID), no case normalization.
 function atlasCLIDeviceId(rawMachineId: string): string {
