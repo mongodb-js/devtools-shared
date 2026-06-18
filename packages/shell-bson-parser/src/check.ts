@@ -23,7 +23,16 @@ class Checker {
         const object = node.callee.object;
         const property = node.callee.property as Identifier;
         // If we're only referring to identifiers, we don't need to check deeply.
-        if (object.type === 'Identifier' && property.type === 'Identifier') {
+
+        if (object.type === 'Literal' && property.type === 'Identifier') {
+          return (
+            isMethodWhitelisted(typeof object.value, property.name) &&
+            node.arguments.every(this.checkSafeExpression)
+          );
+        } else if (
+          object.type === 'Identifier' &&
+          property.type === 'Identifier'
+        ) {
           return (
             isMethodWhitelisted(object.name, property.name) &&
             node.arguments.every(this.checkSafeExpression)
