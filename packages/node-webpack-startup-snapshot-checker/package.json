@@ -1,5 +1,5 @@
 {
-  "name": "node-webpack-startup-snapshot-checker",
+  "name": "@mongodb-js/node-webpack-startup-snapshot-checker",
   "description": "Test script for verifying whether a given Node.js module can be included in Node.js snapshots",
   "author": {
     "name": "MongoDB Inc",
