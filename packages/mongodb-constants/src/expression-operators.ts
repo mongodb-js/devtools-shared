@@ -880,6 +880,13 @@ const EXPRESSION_OPERATORS = [
     version: '3.2.0',
   },
   {
+    name: '$subtype',
+    value: '$subtype',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
+  },
+  {
     name: '$switch',
     value: '$switch',
     score: 1,
