@@ -185,6 +185,13 @@ const EXPRESSION_OPERATORS = [
     version: '4.2.0',
   },
   {
+    name: '$createObjectId',
+    value: '$createObjectId',
+    score: 1,
+    meta: 'expr:misc',
+    version: '8.3.0',
+  },
+  {
     name: '$createUUID',
     value: '$createUUID',
     score: 1,
