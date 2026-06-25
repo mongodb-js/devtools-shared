@@ -906,7 +906,7 @@ const STAGE_OPERATORS = [
     apiVersions: [],
     namespaces: [COLLECTION],
     description:
-      'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
+      'Use MongoDB Voyage AI reranker models to refine the ranks of candidate documents and provide more accurate relevancy scores.',
     comment: `/**
  * query.text: Query text for reranking. Supports reranking instructions for 2.5 series or newer.
  * path: Field(s) to rerank over
