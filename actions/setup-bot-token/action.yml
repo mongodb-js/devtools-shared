@@ -7,6 +7,10 @@ inputs:
   private-key:
     description: The app private key
     required: true
+  owner:
+    description: The owner of the app
+  repositories:
+    description: The repositories to use for the app
 outputs:
   token:
     description: The token to use for the GitHub App
@@ -25,6 +29,8 @@ runs:
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
+        owner: ${{ inputs.owner }}
+        repositories: ${{ inputs.repositories }}
 
     - name: Get GitHub App User ID
       id: get-user-id
