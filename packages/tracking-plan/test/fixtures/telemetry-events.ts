@@ -4,13 +4,19 @@ export interface CommonEventProperties {
   session_id: string;
 }
 
-/** Traits sent with identify calls. */
-export interface IdentifyTraits {
-  /** Unique identifier for the device. */
-  device_id: string;
-  /** The operating system platform. */
-  platform: string;
-}
+/**
+ * Fired when a user is identified.
+ * @category Identity
+ */
+export type IdentifyEvent = {
+  name: 'Identify';
+  payload: {
+    /** Unique identifier for the device. */
+    device_id: string;
+    /** The operating system platform. */
+    platform: string;
+  };
+};
 
 /**
  * Fired when a connection to the server is established.
@@ -50,4 +56,5 @@ export type ApplicationLaunchedEvent = {
 export type TelemetryEvent =
   | ConnectionEvent
   | QueryExecutedEvent
-  | ApplicationLaunchedEvent;
+  | ApplicationLaunchedEvent
+  | IdentifyEvent;
