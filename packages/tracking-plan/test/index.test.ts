@@ -45,8 +45,8 @@ describe('TrackingPlan', function () {
     assert.ok(result.includes('Do not edit manually'));
   });
 
-  it('renders the Identity section with trait properties', function () {
-    assert.ok(result.includes('## Identity'));
+  it('renders the identify event alongside other events with its payload properties', function () {
+    assert.ok(result.includes('### Identify'));
     assert.ok(result.includes('`device_id`'));
     assert.ok(result.includes('`platform`'));
   });
