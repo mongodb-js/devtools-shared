@@ -59,24 +59,23 @@ function getTelemetryEventNames(
 function buildInMemorySource(
   originalSource: ts.SourceFile,
   eventTypeNames: string[],
-  identifyTraitsName: string,
   commonPropertiesName?: string,
 ): ts.SourceFile {
   // Appends "Resolved*" type aliases that flatten intersections and type references
   // into basic types. The TypeChecker then emits fully-expanded, readable types
   // for each event property in the tracking plan.
+  // All events (including identity events) must have a `payload` field.
   const resolvedEvents = eventTypeNames
     .map(
       (name) => `
 type Resolved${name} = {
   name: ${name}['name'];
-  payload: ResolveType<${name} extends { payload: infer P } ? P : Record<string, never>>;
+  payload: ResolveType<${name}['payload']>;
 };`,
     )
     .join('\n');
 
   const resolvedSections = [
-    `type Resolved${identifyTraitsName} = ResolveType<${identifyTraitsName}>;`,
     commonPropertiesName
       ? `type Resolved${commonPropertiesName} = ResolveType<${commonPropertiesName}>;`
       : '',
@@ -305,7 +304,6 @@ function renderSection(
 function generateMarkdown(
   config: GenerateTrackingPlanConfig,
   events: EventInfo[],
-  identifyTraits: SectionInfo,
   commonProperties?: SectionInfo,
 ): string {
   const lines: string[] = [];
@@ -333,7 +331,6 @@ function generateMarkdown(
   if (commonProperties) {
     lines.push('- [Common Properties](#common-properties)');
   }
-  lines.push('- [Identity](#identity)');
   for (const cat of sortedCategories) {
     lines.push(`- [${cat}](#${slugify(cat)})`);
     for (const event of byCategory.get(cat)!) {
@@ -345,8 +342,6 @@ function generateMarkdown(
   if (commonProperties) {
     renderSection('Common Properties', commonProperties, lines);
   }
-
-  renderSection('Identity', identifyTraits, lines);
 
   for (const cat of sortedCategories) {
     lines.push('');
@@ -378,22 +373,15 @@ export function generateTrackingPlan(
   );
 
   const unionTypeName = 'TelemetryEvent';
-  const identifyTraitsName = 'IdentifyTraits';
   const commonPropertiesName = 'CommonEventProperties';
   const eventTypeNames = getTelemetryEventNames(originalSource, unionTypeName);
   const inMemorySource = buildInMemorySource(
     originalSource,
     eventTypeNames,
-    identifyTraitsName,
     commonPropertiesName,
   );
   const checker = createChecker(inMemorySource);
 
-  const identifyTraits = parseSectionType(
-    identifyTraitsName,
-    inMemorySource,
-    checker,
-  );
   const hasCommonProperties = originalSource.statements.some(
     (n) =>
       (ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n)) &&
@@ -407,5 +395,5 @@ export function generateTrackingPlan(
     parseTelemetryEvent(name, inMemorySource, checker),
   );
 
-  return generateMarkdown(config, events, identifyTraits, commonProperties);
+  return generateMarkdown(config, events, commonProperties);
 }
