@@ -57,6 +57,15 @@ const SYSTEM_VARIABLES = [
     description: 'One of the allowed results of a `$redact` expression.',
   },
   {
+    name: '$$IDX',
+    value: '$$IDX',
+    score: 1,
+    meta: 'variable:system',
+    version: '8.3.0',
+    description:
+      'A variable that references the index of the current array element in $map, $filter, and $reduce expressions. Use arrayIndexAs to specify a custom name instead.',
+  },
+  {
     name: '$$PRUNE',
     value: '$$PRUNE',
     score: 1,

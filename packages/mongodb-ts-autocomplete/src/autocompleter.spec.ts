@@ -321,6 +321,19 @@ service host, so typescript wouldn't load all the dependencies.
     }
   });
 
+  it('suggests arrayIndexAs inside $filter, $map, $reduce operators', async function () {
+    const operators = ['$filter', '$map', '$reduce'] as const;
+    for (const op of operators) {
+      const completions = await autocompleter.autocomplete(
+        `db.foo.aggregate([{ $project: { result: { ${op}: { array`,
+      );
+      const names = completions.map((c) => c.name);
+      expect(names, `${op} should suggest arrayIndexAs`).to.include(
+        'arrayIndexAs',
+      );
+    }
+  });
+
   describe('getConnectionSchemaCode', function () {
     it('generates code for a connection', async function () {
       const docs = [
