@@ -21,6 +21,7 @@ import {
   jsonClone,
   makeConnectionString,
   sleep,
+  eventually,
 } from './util';
 
 /**
@@ -435,17 +436,33 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private async _ensureMatchingMetadataColl(
     client: MongoClient,
     mode: 'insert-new' | 'restore-check',
+    retryOptions?: { intervalMs?: number; timeoutMs?: number },
   ): Promise<void> {
-    const hello = await client.db('admin').command({ hello: 1 });
-    const { arbiterOnly } = hello;
-    if (arbiterOnly === this.isArbiter) {
-      debug('skipping metadata check for arbiter');
+    let hello = await client.db('admin').command({ hello: 1 });
+    if (this.isArbiter) {
+      // RS convergence: hello.arbiterOnly may lag behind the RS config while the
+      // member transitions to ARBITER state. Retry until confirmed or timeout.
+      if (!hello.arbiterOnly) {
+        await eventually(
+          async () => {
+            hello = await client.db('admin').command({ hello: 1 });
+            if (!hello.arbiterOnly) {
+              throw new Error(
+                'Arbiter flag mismatch -- server should be arbiter but hello indicates it is not',
+              );
+            }
+          },
+          retryOptions ?? { intervalMs: 500, timeoutMs: 30_000 },
+        );
+      }
+      debug('skipping metadata check for confirmed arbiter');
       return;
     }
-    if (this.isArbiter) {
-      throw new Error(
-        'Arbiter flag mismatch -- server should be arbiter but hello indicates it is not',
-      );
+    if (hello.arbiterOnly) {
+      // isArbiter may not be set yet (e.g. during deserialize where it is
+      // assigned after _populateBuildInfo); skip metadata check.
+      debug('skipping metadata check for arbiter');
+      return;
     }
 
     const isMongoS = hello.msg === 'isdbgrid';

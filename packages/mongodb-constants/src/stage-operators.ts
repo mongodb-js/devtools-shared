@@ -902,11 +902,11 @@ const STAGE_OPERATORS = [
     score: 1,
     env: [ATLAS],
     meta: 'stage',
-    version: '4.1.11',
+    version: '7.0.0',
     apiVersions: [],
     namespaces: [COLLECTION],
     description:
-      'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
+      'Use MongoDB Voyage AI reranker models to refine the ranks of candidate documents and provide more accurate relevancy scores.',
     comment: `/**
  * query.text: Query text for reranking. Supports reranking instructions for 2.5 series or newer.
  * path: Field(s) to rerank over
@@ -1260,6 +1260,7 @@ const STAGE_OPERATORS = [
     namespaces: [...ANY_NAMESPACE],
     description: 'Perform a union with a pipeline on another collection.',
     comment: `/**
+ * db: Optional. The target database name (MongoDB 9.0+).
  * coll: The collection name.
  * pipeline: The pipeline on the other collection.
  */

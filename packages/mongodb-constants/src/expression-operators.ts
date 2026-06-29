@@ -185,6 +185,27 @@ const EXPRESSION_OPERATORS = [
     version: '4.2.0',
   },
   {
+    name: '$createObjectId',
+    value: '$createObjectId',
+    score: 1,
+    meta: 'expr:misc',
+    version: '8.3.0',
+  },
+  {
+    name: '$createUUID',
+    value: '$createUUID',
+    score: 1,
+    meta: 'expr:misc',
+    version: '8.3.0',
+  },
+  {
+    name: '$currentDate',
+    value: '$currentDate',
+    score: 1,
+    meta: 'expr:date',
+    version: '8.3.0',
+  },
+  {
     name: '$dateAdd',
     value: '$dateAdd',
     score: 1,
@@ -857,6 +878,13 @@ const EXPRESSION_OPERATORS = [
     score: 1,
     meta: 'expr:arith',
     version: '3.2.0',
+  },
+  {
+    name: '$subtype',
+    value: '$subtype',
+    score: 1,
+    meta: 'expr:type',
+    version: '8.3.0',
   },
   {
     name: '$switch',

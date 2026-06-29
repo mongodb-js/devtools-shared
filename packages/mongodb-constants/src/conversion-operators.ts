@@ -24,6 +24,13 @@ const CONVERSION_OPERATORS = [
     version: '3.7.2',
   },
   {
+    name: '$toArray',
+    value: '$toArray',
+    score: 1,
+    meta: 'conv',
+    version: '8.3.0',
+  },
+  {
     name: '$toBool',
     value: '$toBool',
     score: 1,
@@ -64,6 +71,13 @@ const CONVERSION_OPERATORS = [
     score: 1,
     meta: 'conv',
     version: '3.7.2',
+  },
+  {
+    name: '$toObject',
+    value: '$toObject',
+    score: 1,
+    meta: 'conv',
+    version: '8.3.0',
   },
   {
     name: '$toObjectId',

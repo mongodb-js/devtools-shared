@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/tracking-plan",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Generate a Markdown tracking plan from typed telemetry event definitions.",
   "license": "Apache-2.0",
   "repository": {
@@ -16,6 +16,14 @@
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
     "email": "compass@mongodb.com"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
