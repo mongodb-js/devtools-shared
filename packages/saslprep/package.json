@@ -70,7 +70,7 @@
     "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^22.15.30",
+    "@types/node": "^25.5.2",
     "@types/sinon-chai": "^4.0.0",
     "@types/sparse-bitfield": "^3.0.4",
     "chai": "^4.5.0",
