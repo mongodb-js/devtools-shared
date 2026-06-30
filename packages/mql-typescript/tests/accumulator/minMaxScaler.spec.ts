@@ -9,11 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minMaxScaler/#examples}
  */
 function test0() {
-  type example = {
+  type TestCollection = {
+    _id: number;
     a: number;
   };
 
-  const aggregation: schema.Pipeline<example> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $setWindowFields: {
         sortBy: { a: 1 },

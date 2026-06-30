@@ -9,7 +9,13 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSampledQueries/#list-sampled-queries-for-all-collections}
  */
 function test0() {
-  // TODO: no schema found for listSampledQueries.List Sampled Queries for All Collections
+  type TestCollection = {
+    _id: bson.ObjectId;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $listSampledQueries: {} },
+  ];
 }
 
 /**
@@ -17,5 +23,11 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSampledQueries/#list-sampled-queries-for-a-specific-collection}
  */
 function test1() {
-  // TODO: no schema found for listSampledQueries.List Sampled Queries for A Specific Collection
+  type TestCollection = {
+    _id: bson.ObjectId;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $listSampledQueries: { namespace: 'social.post' } },
+  ];
 }

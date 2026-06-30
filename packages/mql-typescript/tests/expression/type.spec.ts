@@ -9,7 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/type/#example}
  */
 function test0() {
-  type TestCollection = {
+  type coll = {
     _id: number;
     a:
       | number
@@ -20,10 +20,11 @@ function test0() {
           c: string;
         }
       | string
-      | bson.Long;
+      | bson.Long
+      | null;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<coll> = [
     { $project: { a: { $type: '$a' } } },
   ];
 }

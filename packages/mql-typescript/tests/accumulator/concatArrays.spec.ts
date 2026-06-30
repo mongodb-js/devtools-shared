@@ -9,5 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/#example}
  */
 function test0() {
-  // TODO: no schema found for concatArrays.Warehouse collection
+  type warehouses = {
+    instock: Array<string>;
+    ordered: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<warehouses> = [
+    { $project: { items: { $concatArrays: ['$instock', '$ordered'] } } },
+  ];
 }

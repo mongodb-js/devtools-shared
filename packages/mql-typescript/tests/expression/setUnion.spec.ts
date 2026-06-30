@@ -9,13 +9,18 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/#example}
  */
 function test0() {
-  type flowers = {
+  type sales = {
     _id: number;
-    flowerFieldA: Array<string>;
-    flowerFieldB: Array<string | Array<string>>;
+    items: Array<
+      | string
+      | {
+          accessories: Array<string>;
+        }
+    >;
+    location: string;
   };
 
-  const aggregation: schema.Pipeline<flowers> = [
+  const aggregation: schema.Pipeline<sales> = [
     {
       $project: {
         flowerFieldA: 1,

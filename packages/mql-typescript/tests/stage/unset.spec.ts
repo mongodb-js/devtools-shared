@@ -9,7 +9,21 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/#remove-a-single-field}
  */
 function test0() {
-  // TODO: no schema found for unset.Remove a Single Field
+  type books = {
+    _id: number;
+    title: string;
+    isbn: string;
+    author: {
+      last: string;
+      first: string;
+    };
+    copies: Array<{
+      warehouse: string;
+      qty: number;
+    }>;
+  };
+
+  const aggregation: schema.Pipeline<books> = [{ $unset: ['copies'] }];
 }
 
 /**
@@ -17,7 +31,21 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/#remove-top-level-fields}
  */
 function test1() {
-  // TODO: no schema found for unset.Remove Top-Level Fields
+  type books = {
+    _id: number;
+    title: string;
+    isbn: string;
+    author: {
+      last: string;
+      first: string;
+    };
+    copies: Array<{
+      warehouse: string;
+      qty: number;
+    }>;
+  };
+
+  const aggregation: schema.Pipeline<books> = [{ $unset: ['isbn', 'copies'] }];
 }
 
 /**
@@ -25,5 +53,24 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/#remove-embedded-fields}
  */
 function test2() {
-  // TODO: no schema found for unset.Remove Embedded Fields
+  type books = {
+    _id: number;
+    title: string;
+    isbn: string;
+    author: {
+      last: string;
+      first: string;
+    };
+    copies: Array<{
+      warehouse: string;
+      qty: number;
+    }>;
+  };
+
+  const aggregation: schema.Pipeline<books> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $unset: ['isbn', 'author.first', 'copies.warehouse'] } as any,
+  ];
 }

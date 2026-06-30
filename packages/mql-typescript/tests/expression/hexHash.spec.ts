@@ -12,7 +12,6 @@ function test0() {
   type files = {
     _id: number;
     filename: string;
-    hexHash: string;
   };
 
   const aggregation: schema.Pipeline<files> = [
@@ -30,5 +29,16 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hexHash/#null-or-missing-input}
  */
 function test1() {
-  // TODO: no schema found for hexHash.Null or Missing Input
+  type TestCollection = {
+    val: null;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $documents: [{ val: null }, {}] },
+    {
+      $project: {
+        hexHash: { $hexHash: { input: '$val', algorithm: 'sha256' } },
+      },
+    },
+  ];
 }

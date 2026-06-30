@@ -9,5 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStreamSplitLargeEvent/#example}
  */
 function test0() {
-  // TODO: no schema found for changeStreamSplitLargeEvent.Example
+  type myCollection = {
+    _id: bson.Int32 | number;
+    largeField: string;
+  };
+
+  const aggregation: schema.Pipeline<myCollection> = [
+    { $changeStreamSplitLargeEvent: {} },
+  ];
 }

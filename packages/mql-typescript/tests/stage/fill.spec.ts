@@ -9,7 +9,24 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/#fill-missing-field-values-with-a-constant-value}
  */
 function test0() {
-  // TODO: no schema found for fill.Fill Missing Field Values with a Constant Value
+  type dailySales = {
+    date: Date;
+    bootsSold: number;
+    sandalsSold: number;
+    sneakersSold: number;
+  };
+
+  const aggregation: schema.Pipeline<dailySales> = [
+    {
+      $fill: {
+        output: {
+          bootsSold: { value: 0 },
+          sandalsSold: { value: 0 },
+          sneakersSold: { value: 0 },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -17,7 +34,14 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/#fill-missing-field-values-with-linear-interpolation}
  */
 function test1() {
-  // TODO: no schema found for fill.Fill Missing Field Values with Linear Interpolation
+  type stock = {
+    time: Date;
+    price: number;
+  };
+
+  const aggregation: schema.Pipeline<stock> = [
+    { $fill: { sortBy: { time: 1 }, output: { price: { method: 'linear' } } } },
+  ];
 }
 
 /**
@@ -25,7 +49,14 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/#fill-missing-field-values-based-on-the-last-observed-value}
  */
 function test2() {
-  // TODO: no schema found for fill.Fill Missing Field Values Based on the Last Observed Value
+  type restaurantReviews = {
+    date: Date;
+    score: number;
+  };
+
+  const aggregation: schema.Pipeline<restaurantReviews> = [
+    { $fill: { sortBy: { date: 1 }, output: { score: { method: 'locf' } } } },
+  ];
 }
 
 /**
@@ -33,7 +64,21 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/#fill-data-for-distinct-partitions}
  */
 function test3() {
-  // TODO: no schema found for fill.Fill Data for Distinct Partitions
+  type restaurantReviewsMultiple = {
+    date: Date;
+    restaurant: string;
+    score: number;
+  };
+
+  const aggregation: schema.Pipeline<restaurantReviewsMultiple> = [
+    {
+      $fill: {
+        sortBy: { date: 1 },
+        partitionBy: { restaurant: '$restaurant' },
+        output: { score: { method: 'locf' } },
+      },
+    },
+  ];
 }
 
 /**
@@ -41,5 +86,19 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/#indicate-if-a-field-was-populated-using--fill}
  */
 function test4() {
-  // TODO: no schema found for fill.Indicate if a Field was Populated Using $fill
+  type restaurantReviews = {
+    date: Date;
+    score: number;
+  };
+
+  const aggregation: schema.Pipeline<restaurantReviews> = [
+    {
+      $set: {
+        valueExisted: {
+          $ifNull: [{ $toBool: { $toString: '$score' } }, false],
+        },
+      },
+    },
+    { $fill: { sortBy: { date: 1 }, output: { score: { method: 'locf' } } } },
+  ];
 }

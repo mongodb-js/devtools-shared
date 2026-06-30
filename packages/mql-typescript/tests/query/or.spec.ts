@@ -9,7 +9,17 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/or/#-or-clauses-and-indexes}
  */
 function test0() {
-  // TODO: no schema found for or.$or Clauses
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    { $match: { $or: [{ quantity: { $lt: 20 } }, { price: 10 }] } },
+  ];
 }
 
 /**
@@ -17,5 +27,18 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/or/#error-handling}
  */
 function test1() {
-  // TODO: no schema found for or.Error Handling
+  type example = {
+    x: bson.Int32 | number;
+  };
+
+  const aggregation: schema.Pipeline<example> = [
+    {
+      $match: {
+        $or: [
+          { x: { $eq: 0 } },
+          { $expr: { $eq: [{ $divide: [1, '$x'] }, 3] } },
+        ],
+      },
+    },
+  ];
 }

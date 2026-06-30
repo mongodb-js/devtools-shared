@@ -9,7 +9,17 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#output-to-same-database}
  */
 function test0() {
-  // TODO: no schema found for out.Output to Same Database
+  type books = {
+    _id: number;
+    title: string;
+    author: string;
+    copies: number;
+  };
+
+  const aggregation: schema.Pipeline<books> = [
+    { $group: { _id: '$author', books: { $push: '$title' } } },
+    { $out: { coll: 'authors' } },
+  ];
 }
 
 /**
@@ -17,7 +27,17 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#output-to-a-different-database}
  */
 function test1() {
-  // TODO: no schema found for out.Output to a Different Database
+  type books = {
+    _id: number;
+    title: string;
+    author: string;
+    copies: number;
+  };
+
+  const aggregation: schema.Pipeline<books> = [
+    { $group: { _id: '$author', books: { $push: '$title' } } },
+    { $out: { db: 'reporting', coll: 'authors' } },
+  ];
 }
 
 /**
@@ -25,23 +45,5 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#output-to-a-time-series-collection}
  */
 function test2() {
-  type sensors = {
-    timestamp: Date;
-    sensorId: string;
-    temperature: number;
-  };
-
-  const aggregation: schema.Pipeline<sensors> = [
-    {
-      $out: {
-        db: 'reporting',
-        coll: 'sensorData',
-        timeseries: {
-          timeField: 'timestamp',
-          metaField: 'sensorId',
-          granularity: 'hours',
-        },
-      },
-    },
-  ];
+  // TODO: no schema found for out.Output to a Time Series Collection: // TODO: No schema found in docs
 }

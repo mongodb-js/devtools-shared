@@ -9,11 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/#add-to-each-element-of-an-array}
  */
 function test0() {
-  type grades = {
-    quizzes: Array<number>;
+  type TestCollection = {
+    theaterId: number;
+    adjustedCoordinates: Array<number>;
   };
 
-  const aggregation: schema.Pipeline<grades> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' ($map references the variable names defined in the `as` field, which is not available statically).
      */
@@ -36,12 +37,12 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/#truncate-each-array-element}
  */
 function test1() {
-  type deliveries = {
-    city: string;
-    distances: Array<number>;
+  type TestCollection = {
+    theaterId: number;
+    adjustedCoordinates: Array<number>;
   };
 
-  const aggregation: schema.Pipeline<deliveries> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     /**
      * This stage is unsupported by the static type system, so we're casting it to 'any' ($map references the variable names defined in the `as` field, which is not available statically).
      */
@@ -65,27 +66,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/#convert-celsius-temperatures-to-fahrenheit}
  */
 function test2() {
-  type temperatures = {
-    date: Date;
-    tempsC: Array<number>;
-  };
-
-  const aggregation: schema.Pipeline<temperatures> = [
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' ($map references the variable names defined in the `as` field, which is not available statically).
-     */
-    {
-      $addFields: {
-        tempsF: {
-          $map: {
-            input: '$tempsC',
-            as: 'tempInCelsius',
-            in: { $add: [{ $multiply: ['$$tempInCelsius', 1.8] }, 32] },
-          },
-        },
-      },
-    } as any,
-  ];
+  // TODO: no schema found for map.Convert Celsius Temperatures to Fahrenheit: // TODO: No schema found in docs
 }
 
 /**
@@ -93,25 +74,5 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/}
  */
 function test3() {
-  type data = {
-    scores: Array<number>;
-  };
-
-  const aggregation: schema.Pipeline<data> = [
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' ($map references the variable names defined in the `as` and `arrayIndexAs` fields, which is not available statically).
-     */
-    {
-      $project: {
-        result: {
-          $map: {
-            input: '$scores',
-            as: 'score',
-            arrayIndexAs: 'idx',
-            in: { $add: ['$$score', '$$idx'] },
-          },
-        },
-      },
-    } as any,
-  ];
+  // TODO: no schema found for map.Use Array Index: // TODO: No schema found in docs
 }

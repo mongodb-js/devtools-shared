@@ -9,7 +9,14 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#count-the-number-of-documents-in-a-collection}
  */
 function test0() {
-  // TODO: no schema found for group.Count the Number of Documents in a Collection
+  type TestCollection = {
+    _id: null;
+    count: number;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $group: { _id: null, count: { $count: {} } } },
+  ];
 }
 
 /**
@@ -17,7 +24,14 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#retrieve-distinct-values}
  */
 function test1() {
-  // TODO: no schema found for group.Retrieve Distinct Values
+  type TestCollection = {
+    _id: null;
+    count: number;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $group: { _id: '$item' } },
+  ];
 }
 
 /**
@@ -25,7 +39,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-by-item-having}
  */
 function test2() {
-  // TODO: no schema found for group.Group by Item Having
+  // TODO: no schema found for group.Group by Item Having: // TODO: No schema found in docs
 }
 
 /**
@@ -33,7 +47,33 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#calculate-count--sum--and-average}
  */
 function test3() {
-  // TODO: no schema found for group.Calculate Count Sum and Average
+  type sales = {
+    _id: bson.Int32 | number;
+    item: string;
+    price: bson.Decimal128;
+    quantity: bson.Int32 | number;
+    date: Date;
+  };
+
+  const aggregation: schema.Pipeline<sales> = [
+    {
+      $match: {
+        date: {
+          $gte: new Date('2014-01-01T00:00:00.000Z'),
+          $lt: new Date('2015-01-01T00:00:00.000Z'),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+        totalSaleAmount: { $sum: { $multiply: ['$price', '$quantity'] } },
+        averageQuantity: { $avg: '$quantity' },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { totalSaleAmount: -1 } },
+  ];
 }
 
 /**
@@ -41,7 +81,24 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-by-null}
  */
 function test4() {
-  // TODO: no schema found for group.Group by null
+  type sales = {
+    _id: bson.Int32 | number;
+    item: string;
+    price: bson.Decimal128;
+    quantity: bson.Int32 | number;
+    date: Date;
+  };
+
+  const aggregation: schema.Pipeline<sales> = [
+    {
+      $group: {
+        _id: null,
+        totalSaleAmount: { $sum: { $multiply: ['$price', '$quantity'] } },
+        averageQuantity: { $avg: '$quantity' },
+        count: { $sum: 1 },
+      },
+    },
+  ];
 }
 
 /**
@@ -49,7 +106,14 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#pivot-data}
  */
 function test5() {
-  // TODO: no schema found for group.Pivot Data
+  type TestCollection = {
+    _id: null;
+    count: number;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $group: { _id: '$author', books: { $push: '$title' } } },
+  ];
 }
 
 /**
@@ -57,5 +121,5 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-documents-by-author}
  */
 function test6() {
-  // TODO: no schema found for group.Group Documents by author
+  // TODO: no schema found for group.Group Documents by author: // TODO: No schema found in docs
 }

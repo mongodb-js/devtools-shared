@@ -9,7 +9,31 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/#using-two--set-stages}
  */
 function test0() {
-  // TODO: no schema found for set.Using Two $set Stages
+  type scores = {
+    _id: number;
+    student: string;
+    homework: Array<number>;
+    quiz: Array<number>;
+    extraCredit: number;
+  };
+
+  const aggregation: schema.Pipeline<scores> = [
+    {
+      $set: {
+        totalHomework: { $sum: ['$homework'] },
+        totalQuiz: { $sum: ['$quiz'] },
+      },
+    },
+
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (second $set stage references fields created in the first).
+     */
+    {
+      $set: {
+        totalScore: { $add: ['$totalHomework', '$totalQuiz', '$extraCredit'] },
+      },
+    } as any,
+  ];
 }
 
 /**
@@ -17,7 +41,18 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/#adding-fields-to-an-embedded-document}
  */
 function test1() {
-  // TODO: no schema found for set.Adding Fields to an Embedded Document
+  type vehicles = {
+    _id: number;
+    type: string;
+    specs: {
+      doors: number;
+      wheels: number;
+    };
+  };
+
+  const aggregation: schema.Pipeline<vehicles> = [
+    { $set: { 'specs.fuel_type': 'unleaded' } },
+  ];
 }
 
 /**
@@ -25,7 +60,13 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/#overwriting-an-existing-field}
  */
 function test2() {
-  // TODO: no schema found for set.Overwriting an existing field
+  type animals = {
+    _id: number;
+    dogs: number;
+    cats: number;
+  };
+
+  const aggregation: schema.Pipeline<animals> = [{ $set: { cats: 20 } }];
 }
 
 /**
@@ -33,7 +74,18 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/#add-element-to-an-array}
  */
 function test3() {
-  // TODO: no schema found for set.Add Element to an Array
+  type scores = {
+    _id: number;
+    student: string;
+    homework: Array<number>;
+    quiz: Array<number>;
+    extraCredit: number;
+  };
+
+  const aggregation: schema.Pipeline<scores> = [
+    { $match: { _id: 1 } },
+    { $set: { homework: { $concatArrays: ['$homework', [7]] } } },
+  ];
 }
 
 /**
@@ -41,5 +93,15 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/#creating-a-new-field-with-existing-fields}
  */
 function test4() {
-  // TODO: no schema found for set.Creating a New Field with Existing Fields
+  type scores = {
+    _id: number;
+    student: string;
+    homework: Array<number>;
+    quiz: Array<number>;
+    extraCredit: number;
+  };
+
+  const aggregation: schema.Pipeline<scores> = [
+    { $set: { quizAverage: { $avg: ['$quiz'] } } },
+  ];
 }

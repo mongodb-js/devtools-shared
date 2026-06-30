@@ -9,7 +9,15 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/regex/#perform-a-like-match}
  */
 function test0() {
-  // TODO: no schema found for regex.Perform a LIKE Match
+  type products = {
+    _id: number;
+    sku: string;
+    description: string;
+  };
+
+  const aggregation: schema.Pipeline<products> = [
+    { $match: { sku: { $regex: new bson.BSONRegExp('789$', '') } } },
+  ];
 }
 
 /**
@@ -17,5 +25,13 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/regex/#perform-case-insensitive-regular-expression-match}
  */
 function test1() {
-  // TODO: no schema found for regex.Perform Case-Insensitive Regular Expression Match
+  type products = {
+    _id: number;
+    sku: string;
+    description: string;
+  };
+
+  const aggregation: schema.Pipeline<products> = [
+    { $match: { sku: { $regex: new bson.BSONRegExp('^ABC', 'i') } } },
+  ];
 }

@@ -9,5 +9,19 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/#example}
  */
 function test0() {
-  // TODO: no schema found for setUnion.Flowers collection
+  type flowers = {
+    flowerFieldA: Array<string>;
+    flowerFieldB: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<flowers> = [
+    {
+      $project: {
+        flowerFieldA: 1,
+        flowerFieldB: 1,
+        allValues: { $setUnion: ['$flowerFieldA', '$flowerFieldB'] },
+        _id: 0,
+      },
+    },
+  ];
 }

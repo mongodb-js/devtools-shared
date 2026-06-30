@@ -9,7 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#equality-match}
  */
 function test0() {
-  // TODO: no schema found for match.Equality Match
+  // TODO: no schema found for match.Equality Match: // TODO: No schema found in docs
 }
 
 /**
@@ -17,5 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#perform-a-count}
  */
 function test1() {
-  // TODO: no schema found for match.Perform a Count
+  // TODO: no schema found for match.Perform a Count: // TODO: No schema found in docs
 }

@@ -9,24 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceOne/#example}
  */
 function test0() {
-  type inventory = {
-    _id: number;
-    item: string;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    {
-      $project: {
-        item: {
-          $replaceOne: {
-            input: '$item',
-            find: 'blue paint',
-            replacement: 'red paint',
-          },
-        },
-      },
-    },
-  ];
+  // TODO: no schema found for replaceOne.Example: // TODO: No schema found in docs
 }
 
 /**

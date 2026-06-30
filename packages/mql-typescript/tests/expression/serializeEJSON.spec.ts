@@ -9,18 +9,31 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#canonical-extended-json-example}
  */
 function test0() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    title: string;
-    year: bson.Int32 | number;
-    runtime: bson.Int32 | number;
-    released: Date;
-    cast: unknown[];
-    genres: unknown[];
-    directors: unknown[];
+    ejson: {
+      _id: {
+        $oid: string;
+      };
+      title: string;
+      year: {
+        $numberInt: string;
+      };
+      runtime: {
+        $numberInt: string;
+      };
+      released: {
+        $date: {
+          $numberLong: string;
+        };
+      };
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { title: 'Inception' } },
     { $project: { ejson: { $serializeEJSON: { input: '$$ROOT' } } } },
   ];
@@ -31,18 +44,31 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#relaxed-extended-json-example}
  */
 function test1() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    title: string;
-    year: bson.Int32 | number;
-    runtime: bson.Int32 | number;
-    released: Date;
-    cast: unknown[];
-    genres: unknown[];
-    directors: unknown[];
+    ejson: {
+      _id: {
+        $oid: string;
+      };
+      title: string;
+      year: {
+        $numberInt: string;
+      };
+      runtime: {
+        $numberInt: string;
+      };
+      released: {
+        $date: {
+          $numberLong: string;
+        };
+      };
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -57,14 +83,31 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#convert-to-json-string}
  */
 function test2() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    title: string;
-    year: bson.Int32 | number;
-    released: Date;
+    ejson: {
+      _id: {
+        $oid: string;
+      };
+      title: string;
+      year: {
+        $numberInt: string;
+      };
+      runtime: {
+        $numberInt: string;
+      };
+      released: {
+        $date: {
+          $numberLong: string;
+        };
+      };
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { title: 'The Godfather' } },
     {
       $project: {
@@ -80,18 +123,31 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#serialize-specific-fields}
  */
 function test3() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    title: string;
-    year: bson.Int32 | number;
-    released: Date;
-    runtime: bson.Int32 | number;
-    imdb: {
-      rating: bson.Double | number;
+    ejson: {
+      _id: {
+        $oid: string;
+      };
+      title: string;
+      year: {
+        $numberInt: string;
+      };
+      runtime: {
+        $numberInt: string;
+      };
+      released: {
+        $date: {
+          $numberLong: string;
+        };
+      };
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
     };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { year: { $gte: 2010 } } },
     {
       $project: {
@@ -115,13 +171,31 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#use-onerror-for-error-handling}
  */
 function test4() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    title: string;
-    customField: string;
+    ejson: {
+      _id: {
+        $oid: string;
+      };
+      title: string;
+      year: {
+        $numberInt: string;
+      };
+      runtime: {
+        $numberInt: string;
+      };
+      released: {
+        $date: {
+          $numberLong: string;
+        };
+      };
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         title: 1,

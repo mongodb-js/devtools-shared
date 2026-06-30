@@ -9,7 +9,18 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/#compare-two-fields-from-a-single-document}
  */
 function test0() {
-  // TODO: no schema found for expr.Compare Two Fields from A Single Document
+  type TestCollection = {
+    title: string;
+    tomatoes: {
+      viewer: {
+        rating: number;
+      };
+    };
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $match: { $expr: { $gt: ['$spent', '$budget'] } } },
+  ];
 }
 
 /**
@@ -17,5 +28,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/#using--expr-with-conditional-statements}
  */
 function test1() {
-  // TODO: no schema found for expr.Using $expr With Conditional Statements
+  // TODO: no schema found for expr.Using $expr With Conditional Statements: // TODO: No schema found in docs
 }

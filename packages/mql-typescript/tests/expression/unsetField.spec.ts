@@ -30,7 +30,7 @@ function test1() {
     _id: number;
     item: string;
     qty: number;
-    $price: number;
+    'price.usd': number;
   };
 
   const aggregation: schema.Pipeline<inventory> = [

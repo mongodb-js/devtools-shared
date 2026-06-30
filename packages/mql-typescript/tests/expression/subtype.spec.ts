@@ -9,11 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtype/}
  */
 function test0() {
-  type data = {
-    myBinDataField: bson.Binary;
-  };
-
-  const aggregation: schema.Pipeline<data> = [
-    { $project: { result: { $subtype: '$myBinDataField' } } },
-  ];
+  // TODO: no schema found for subtype.Example: // TODO: No schema found in docs
 }

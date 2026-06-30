@@ -9,7 +9,25 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-data-type}
  */
 function test0() {
-  // TODO: no schema found for type.Querying by Data Type
+  type addressBook = {
+    _id: bson.Int32 | number;
+    address: string;
+    zipCode:
+      | string
+      | bson.Int32
+      | number
+      | bson.Double
+      | number
+      | Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<addressBook> = [
+    { $match: { zipCode: { $type: [2] } } },
+    { $match: { zipCode: { $type: ['string'] } } },
+    { $match: { zipCode: { $type: [1] } } },
+    { $match: { zipCode: { $type: ['double'] } } },
+    { $match: { zipCode: { $type: ['number'] } } },
+  ];
 }
 
 /**
@@ -17,7 +35,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-multiple-data-type}
  */
 function test1() {
-  // TODO: no schema found for type.Querying by Multiple Data Type
+  // TODO: no schema found for type.Querying by Multiple Data Type: // TODO: No schema found in docs
 }
 
 /**
@@ -25,7 +43,36 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-minkey-and-maxkey}
  */
 function test2() {
-  // TODO: no schema found for type.Querying by MinKey and MaxKey
+  type restaurants = {
+    _id: number;
+    address: {
+      building: string;
+      coord: Array<number>;
+      street: string;
+      zipcode: string;
+    };
+    borough: string;
+    cuisine: string;
+    grades: Array<{
+      date: Date;
+      grade: string | bson.MinKey;
+      score: number;
+    }>;
+    name: string;
+    restaurant_id: string;
+  };
+
+  const aggregation: schema.Pipeline<restaurants> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $match: { zipCode: { $type: ['minKey'] } } } as any,
+
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $match: { zipCode: { $type: ['maxKey'] } } } as any,
+  ];
 }
 
 /**
@@ -33,5 +80,19 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-array-type}
  */
 function test3() {
-  // TODO: no schema found for type.Querying by Array Type
+  type addressBook = {
+    _id: bson.Int32 | number;
+    address: string;
+    zipCode:
+      | string
+      | bson.Int32
+      | number
+      | bson.Double
+      | number
+      | Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<addressBook> = [
+    { $match: { zipCode: { $type: ['array'] } } },
+  ];
 }

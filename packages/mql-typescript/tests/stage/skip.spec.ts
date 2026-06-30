@@ -9,5 +9,9 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/#example}
  */
 function test0() {
-  // TODO: no schema found for skip.Example
+  type TestCollection = {
+    _id: bson.ObjectId;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [{ $skip: 5 }];
 }

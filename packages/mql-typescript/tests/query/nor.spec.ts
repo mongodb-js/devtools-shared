@@ -9,7 +9,17 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nor/#-nor-query-with-two-expressions}
  */
 function test0() {
-  // TODO: no schema found for nor.Query with Two Expressions
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    { $match: { $nor: [{ price: 1.99 }, { sale: true }] } },
+  ];
 }
 
 /**
@@ -17,7 +27,19 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nor/#-nor-and-additional-comparisons}
  */
 function test1() {
-  // TODO: no schema found for nor.Additional Comparisons
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    {
+      $match: { $nor: [{ price: 1.99 }, { qty: { $lt: 20 } }, { sale: true }] },
+    },
+  ];
 }
 
 /**
@@ -25,5 +47,24 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nor/#-nor-and--exists}
  */
 function test2() {
-  // TODO: no schema found for nor.$nor and $exists
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    {
+      $match: {
+        $nor: [
+          { price: 1.99 },
+          { price: { $exists: false } },
+          { sale: true },
+          { sale: { $exists: false } },
+        ],
+      },
+    },
+  ];
 }

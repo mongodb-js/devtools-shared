@@ -9,14 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ifNull/#single-input-expression}
  */
 function test0() {
-  type inventory = {
-    _id: number;
-    item: string;
-    description: string | null;
-    quantity: number;
+  type TestCollection = {
+    title: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<inventory> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         item: 1,
@@ -31,14 +29,12 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ifNull/#multiple-input-expressions}
  */
 function test1() {
-  type inventory = {
-    _id: number;
-    item: string;
-    description: string | null;
-    quantity: number;
+  type TestCollection = {
+    title: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<inventory> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         item: 1,

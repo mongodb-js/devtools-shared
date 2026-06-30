@@ -9,5 +9,15 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gt/#match-document-fields}
  */
 function test0() {
-  // TODO: no schema found for gt.Match Document Fields
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    { $match: { qty: { $gt: 20 } } },
+  ];
 }

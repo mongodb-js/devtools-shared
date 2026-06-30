@@ -9,7 +9,15 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-specific-fields-in-output-documents}
  */
 function test0() {
-  // TODO: no schema found for project.Include Specific Fields in Output Documents
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { title: 1, author: 1 } },
+  ];
 }
 
 /**
@@ -17,7 +25,15 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#suppress-_id-field-in-the-output-documents}
  */
 function test1() {
-  // TODO: no schema found for project.Suppress id Field in the Output Documents
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { _id: 0, title: 1, author: 1 } },
+  ];
 }
 
 /**
@@ -25,7 +41,15 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#exclude-fields-from-output-documents}
  */
 function test2() {
-  // TODO: no schema found for project.Exclude Fields from Output Documents
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { lastModified: 0 } },
+  ];
 }
 
 /**
@@ -33,7 +57,16 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#exclude-fields-from-embedded-documents}
  */
 function test3() {
-  // TODO: no schema found for project.Exclude Fields from Embedded Documents
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { 'author.first': 0, lastModified: 0 } },
+    { $project: { author: { first: 0 }, lastModified: 0 } },
+  ];
 }
 
 /**
@@ -41,7 +74,28 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#conditionally-exclude-fields}
  */
 function test4() {
-  // TODO: no schema found for project.Conditionally Exclude Fields
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    {
+      $project: {
+        title: 1,
+        'author.first': 1,
+        'author.last': 1,
+        'author.middle': {
+          $cond: {
+            if: { $eq: ['', '$author.middle'] },
+            then: '$$REMOVE',
+            else: '$author.middle',
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -49,7 +103,16 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-specific-fields-from-embedded-documents}
  */
 function test5() {
-  // TODO: no schema found for project.Include Specific Fields from Embedded Documents
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { 'stop.title': 1 } },
+    { $project: { stop: { title: 1 } } },
+  ];
 }
 
 /**
@@ -57,7 +120,28 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-computed-fields}
  */
 function test6() {
-  // TODO: no schema found for project.Include Computed Fields
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    {
+      $project: {
+        title: 1,
+        isbn: {
+          prefix: { $substr: ['$isbn', 0, 3] },
+          group: { $substr: ['$isbn', 3, 2] },
+          publisher: { $substr: ['$isbn', 5, 4] },
+          title: { $substr: ['$isbn', 9, 3] },
+          checkDigit: { $substr: ['$isbn', 12, 1] },
+        },
+        lastName: '$author.last',
+        copiesSold: '$copies',
+      },
+    },
+  ];
 }
 
 /**
@@ -65,5 +149,13 @@ function test6() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#project-new-array-fields}
  */
 function test7() {
-  // TODO: no schema found for project.Project New Array Fields
+  type TestCollection = {
+    _id: bson.ObjectId;
+    x: bson.Int32 | number;
+    y: bson.Int32 | number;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $project: { myArray: ['$x', '$y'] } },
+  ];
 }

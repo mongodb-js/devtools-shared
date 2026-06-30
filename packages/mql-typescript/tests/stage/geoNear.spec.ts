@@ -9,7 +9,27 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/#maximum-distance}
  */
 function test0() {
-  // TODO: no schema found for geoNear.Maximum Distance
+  type places = {
+    name: string;
+    location: {
+      type: string;
+      coordinates: Array<number>;
+    };
+    category: string;
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $geoNear: {
+        near: { type: 'Point', coordinates: [-73.99279, 40.719296] },
+        distanceField: 'dist.calculated',
+        maxDistance: 2,
+        query: { category: 'Parks' },
+        includeLocs: 'dist.location',
+        spherical: true,
+      },
+    },
+  ];
 }
 
 /**
@@ -17,7 +37,27 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/#minimum-distance}
  */
 function test1() {
-  // TODO: no schema found for geoNear.Minimum Distance
+  type places = {
+    name: string;
+    location: {
+      type: string;
+      coordinates: Array<number>;
+    };
+    category: string;
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $geoNear: {
+        near: { type: 'Point', coordinates: [-73.99279, 40.719296] },
+        distanceField: 'dist.calculated',
+        minDistance: 2,
+        query: { category: 'Parks' },
+        includeLocs: 'dist.location',
+        spherical: true,
+      },
+    },
+  ];
 }
 
 /**
@@ -25,7 +65,27 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/#-geonear-with-the-let-option}
  */
 function test2() {
-  // TODO: no schema found for geoNear.with the let option
+  type places = {
+    name: string;
+    location: {
+      type: string;
+      coordinates: Array<number>;
+    };
+    category: string;
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $geoNear: {
+        near: '$$pt',
+        distanceField: 'distance',
+        maxDistance: 2,
+        query: { category: 'Parks' },
+        includeLocs: 'dist.location',
+        spherical: true,
+      },
+    },
+  ];
 }
 
 /**
@@ -33,7 +93,26 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/#-geonear-with-bound-let-option}
  */
 function test3() {
-  // TODO: no schema found for geoNear.with Bound let Option
+  type places = {
+    name: string;
+    location: {
+      type: string;
+      coordinates: Array<number>;
+    };
+    category: string;
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $lookup: {
+        from: 'places',
+        let: { pt: '$location' },
+        pipeline: [{ $geoNear: { near: '$$pt', distanceField: 'distance' } }],
+        as: 'joinedField',
+      },
+    },
+    { $match: { name: 'Sara D. Roosevelt Park' } },
+  ];
 }
 
 /**
@@ -41,5 +120,26 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/#specify-which-geospatial-index-to-use}
  */
 function test4() {
-  // TODO: no schema found for geoNear.Specify Which Geospatial Index to Use
+  type places = {
+    _id: number;
+    name: string;
+    location: {
+      type: string;
+      coordinates: Array<number>;
+    };
+    legacy: Array<number>;
+    category: string;
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $geoNear: {
+        near: { type: 'Point', coordinates: [-73.98142, 40.71782] },
+        key: 'location',
+        distanceField: 'dist.calculated',
+        query: { category: 'Parks' },
+      },
+    },
+    { $limit: 5 },
+  ];
 }

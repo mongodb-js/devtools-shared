@@ -9,5 +9,9 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStream/#examples}
  */
 function test0() {
-  // TODO: no schema found for changeStream.Example
+  type names = {
+    _id: bson.ObjectId;
+  };
+
+  const aggregation: schema.Pipeline<names> = [{ $changeStream: {} }];
 }

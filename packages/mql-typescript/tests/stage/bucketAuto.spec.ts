@@ -9,5 +9,20 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucketAuto/#single-facet-aggregation}
  */
 function test0() {
-  // TODO: no schema found for bucketAuto.Single Facet Aggregation
+  type artwork = {
+    _id: bson.Int32 | number;
+    title: string;
+    artist: string;
+    year: bson.Int32 | number;
+    price: bson.Decimal128;
+    dimensions: {
+      height: bson.Int32 | number;
+      width: bson.Int32 | number;
+      units: string;
+    };
+  };
+
+  const aggregation: schema.Pipeline<artwork> = [
+    { $bucketAuto: { groupBy: '$price', buckets: 4 } },
+  ];
 }

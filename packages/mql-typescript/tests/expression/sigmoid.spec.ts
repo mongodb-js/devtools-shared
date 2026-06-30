@@ -9,12 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sigmoid/#examples}
  */
 function test0() {
-  type scores = {
-    _id: bson.ObjectId;
-    score: bson.Double | number;
-  };
-
-  const aggregation: schema.Pipeline<scores> = [
-    { $set: { scaled: { $sigmoid: '$score' } } },
-  ];
+  // TODO: no schema found for sigmoid.Example: // TODO: No schema found in docs
 }

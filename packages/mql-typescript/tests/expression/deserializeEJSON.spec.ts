@@ -9,18 +9,22 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#deserialize-extended-json-document}
  */
 function test0() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
     title: string;
-    year: bson.Int32 | number;
-    runtime: bson.Int32 | number;
-    released: Date;
-    cast: unknown[];
-    genres: unknown[];
-    directors: unknown[];
+    deserialized: {
+      _id: bson.ObjectId;
+      title: string;
+      year: number;
+      runtime: number;
+      released: Date;
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -42,7 +46,24 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#parse-json-string-and-deserialize}
  */
 function test1() {
-  // TODO: no schema found for deserializeEJSON.Parse JSON String and Deserialize
+  type TestCollection = {
+    jsonData: string;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    {
+      $documents: [
+        {
+          jsonData:
+            '{"_id":{"$oid":"507f1f77bcf86cd799439011"},"title":"The Matrix","year":{"$numberInt":"1999"},"rating":{"$numberDouble":"8.7"}}',
+        },
+      ],
+    },
+    {
+      $project: { parsed: { $convert: { input: '$jsonData', to: 'object' } } },
+    },
+    { $project: { movie: { $deserializeEJSON: { input: '$parsed' } } } },
+  ];
 }
 
 /**
@@ -50,17 +71,22 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#deserialize-specific-fields}
  */
 function test2() {
-  type movies = {
+  type TestCollection = {
     _id: bson.ObjectId;
     title: string;
-    released: Date;
-    runtime: bson.Int32 | number;
-    imdb: {
-      rating: bson.Double | number;
+    deserialized: {
+      _id: bson.ObjectId;
+      title: string;
+      year: number;
+      runtime: number;
+      released: Date;
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
     };
   };
 
-  const aggregation: schema.Pipeline<movies> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -90,12 +116,22 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#use-onerror-for-error-handling}
  */
 function test3() {
-  type data = {
+  type TestCollection = {
     _id: bson.ObjectId;
-    ejsonField: string;
+    title: string;
+    deserialized: {
+      _id: bson.ObjectId;
+      title: string;
+      year: number;
+      runtime: number;
+      released: Date;
+      cast: Array<string>;
+      genres: Array<string>;
+      directors: Array<string>;
+    };
   };
 
-  const aggregation: schema.Pipeline<data> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         result: {

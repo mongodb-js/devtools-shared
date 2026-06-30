@@ -9,7 +9,34 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/#intersects-a-polygon}
  */
 function test0() {
-  // TODO: no schema found for geoIntersects.Intersects a Polygon
+  type places = {
+    loc: {
+      type: string;
+      coordinates: Array<Array<Array<bson.Double | number>>>;
+    };
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $match: {
+        loc: {
+          $geoIntersects: {
+            $geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [0, 0],
+                  [3, 6],
+                  [6, 1],
+                  [0, 0],
+                ],
+              ],
+            },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -17,5 +44,40 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/#intersects-a--big--polygon}
  */
 function test1() {
-  // TODO: no schema found for geoIntersects.Intersects a Big Polygon
+  type places = {
+    loc: {
+      type: string;
+      coordinates: Array<Array<Array<bson.Double | number>>>;
+    };
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $match: {
+        loc: {
+          $geoIntersects: {
+            $geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [-100, 60],
+                  [-100, 0],
+                  [-100, -60],
+                  [100, -60],
+                  [100, 60],
+                  [-100, 60],
+                ],
+              ],
+              crs: {
+                type: 'name',
+                properties: {
+                  name: 'urn:x-mongodb:crs:strictwinding:EPSG:4326',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
 }

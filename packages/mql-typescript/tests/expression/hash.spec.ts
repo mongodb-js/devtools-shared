@@ -12,7 +12,6 @@ function test0() {
   type files = {
     _id: number;
     filename: string;
-    hash: bson.Binary;
   };
 
   const aggregation: schema.Pipeline<files> = [
@@ -65,5 +64,12 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hash/#null-or-missing-input}
  */
 function test3() {
-  // TODO: no schema found for hash.Null or Missing Input
+  type TestCollection = {
+    val: null;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $documents: [{ val: null }, {}] },
+    { $project: { hash: { $hash: { input: '$val', algorithm: 'sha256' } } } },
+  ];
 }

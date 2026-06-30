@@ -9,7 +9,29 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-documents-window-to-obtain-cumulative-quantity-for-each-state}
  */
 function test0() {
-  // TODO: no schema found for setWindowFields.Use Documents Window to Obtain Cumulative Quantity for Each State
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: '$state',
+        sortBy: { orderDate: 1 },
+        output: {
+          cumulativeQuantityForState: {
+            $sum: '$quantity',
+            window: { documents: ['unbounded', 'current'] },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -17,7 +39,29 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-documents-window-to-obtain-cumulative-quantity-for-each-year}
  */
 function test1() {
-  // TODO: no schema found for setWindowFields.Use Documents Window to Obtain Cumulative Quantity for Each Year
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: { $year: { date: '$orderDate' } },
+        sortBy: { orderDate: 1 },
+        output: {
+          cumulativeQuantityForYear: {
+            $sum: '$quantity',
+            window: { documents: ['unbounded', 'current'] },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -25,7 +69,29 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-documents-window-to-obtain-moving-average-quantity-for-each-year}
  */
 function test2() {
-  // TODO: no schema found for setWindowFields.Use Documents Window to Obtain Moving Average Quantity for Each Year
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: { $year: { date: '$orderDate' } },
+        sortBy: { orderDate: 1 },
+        output: {
+          averageQuantity: {
+            $avg: '$quantity',
+            window: { documents: [-1, 0] },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -33,7 +99,33 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-documents-window-to-obtain-cumulative-and-maximum-quantity-for-each-year}
  */
 function test3() {
-  // TODO: no schema found for setWindowFields.Use Documents Window to Obtain Cumulative and Maximum Quantity for Each Year
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: { $year: { date: '$orderDate' } },
+        sortBy: { orderDate: 1 },
+        output: {
+          cumulativeQuantityForYear: {
+            $sum: '$quantity',
+            window: { documents: ['unbounded', 'current'] },
+          },
+          maximumQuantityForYear: {
+            $max: '$quantity',
+            window: { documents: ['unbounded', 'unbounded'] },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -41,7 +133,29 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#range-window-example}
  */
 function test4() {
-  // TODO: no schema found for setWindowFields.Range Window Example
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: '$state',
+        sortBy: { price: 1 },
+        output: {
+          quantityFromSimilarOrders: {
+            $sum: '$quantity',
+            window: { range: [-10, 10] },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -49,7 +163,29 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-a-time-range-window-with-a-positive-upper-bound}
  */
 function test5() {
-  // TODO: no schema found for setWindowFields.Use a Time Range Window with a Positive Upper Bound
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: '$state',
+        sortBy: { orderDate: 1 },
+        output: {
+          recentOrders: {
+            $push: '$orderDate',
+            window: { range: ['unbounded', 10], unit: 'month' },
+          },
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -57,5 +193,27 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setWindowFields/#use-a-time-range-window-with-a-negative-upper-bound}
  */
 function test6() {
-  // TODO: no schema found for setWindowFields.Use a Time Range Window with a Negative Upper Bound
+  type cakeSales = {
+    _id: number;
+    type: string;
+    orderDate: Date;
+    state: string;
+    price: number;
+    quantity: number;
+  };
+
+  const aggregation: schema.Pipeline<cakeSales> = [
+    {
+      $setWindowFields: {
+        partitionBy: '$state',
+        sortBy: { orderDate: 1 },
+        output: {
+          recentOrders: {
+            $push: '$orderDate',
+            window: { range: ['unbounded', -10], unit: 'month' },
+          },
+        },
+      },
+    },
+  ];
 }

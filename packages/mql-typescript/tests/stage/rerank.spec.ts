@@ -9,5 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/vector-search/query/aggregation-stages/rerank/#examples}
  */
 function test0() {
-  // TODO: no schema found for rerank.Example
+  // TODO: no schema found for rerank.Example: // TODO: No schema found in docs
 }

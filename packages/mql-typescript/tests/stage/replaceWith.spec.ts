@@ -9,7 +9,24 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#-replacewith-an-embedded-document-field}
  */
 function test0() {
-  // TODO: no schema found for replaceWith.an Embedded Document Field
+  type people = {
+    _id: number;
+    name: string;
+    age: number;
+    pets: {
+      dogs: number;
+      cats: number;
+      fish: number;
+    };
+  };
+
+  const aggregation: schema.Pipeline<people> = [
+    {
+      $replaceWith: {
+        $mergeObjects: [{ dogs: 0, cats: 0, birds: 0, fish: 0 }, '$pets'],
+      },
+    },
+  ];
 }
 
 /**
@@ -17,7 +34,29 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#-replacewith-a-document-nested-in-an-array}
  */
 function test1() {
-  // TODO: no schema found for replaceWith.a Document Nested in an Array
+  type students = {
+    _id: number;
+    grades: Array<{
+      test: number;
+      grade: number;
+      mean: number;
+      std: number;
+    }>;
+  };
+
+  const aggregation: schema.Pipeline<students> = [
+    { $unwind: { path: '$grades' } },
+
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $match: { 'grades.grade': { $gte: 90 } } } as any,
+
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (this test accesses nested fields, which is not currently supported).
+     */
+    { $replaceWith: '$grades' } as any,
+  ];
 }
 
 /**
@@ -25,7 +64,27 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#-replacewith-a-newly-created-document}
  */
 function test2() {
-  // TODO: no schema found for replaceWith.a Newly Created Document
+  type sales = {
+    _id: number;
+    item: string;
+    price: number;
+    quantity: number;
+    date: Date;
+    status: string;
+  };
+
+  const aggregation: schema.Pipeline<sales> = [
+    { $match: { status: 'C' } },
+    {
+      $replaceWith: {
+        _id: '$_id',
+        item: '$item',
+        amount: { $multiply: ['$price', '$quantity'] },
+        status: 'Complete',
+        asofDate: '$$NOW',
+      },
+    },
+  ];
 }
 
 /**
@@ -33,5 +92,21 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#-replacewith-a-new-document-created-from---root-and-a-default-document}
  */
 function test3() {
-  // TODO: no schema found for replaceWith.a New Document Created from $$ROOT and a Default Document
+  type contacts = {
+    _id: number;
+    name: string;
+    email: string;
+    cell: string;
+  };
+
+  const aggregation: schema.Pipeline<contacts> = [
+    {
+      $replaceWith: {
+        $mergeObjects: [
+          { _id: '', name: '', email: '', cell: '', home: '' },
+          '$$ROOT',
+        ],
+      },
+    },
+  ];
 }

@@ -9,5 +9,11 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/shardedDataDistribution/#examples}
  */
 function test0() {
-  // TODO: no schema found for shardedDataDistribution.Example
+  type TestCollection = {
+    _id: bson.ObjectId;
+  };
+
+  const aggregation: schema.Pipeline<TestCollection> = [
+    { $shardedDataDistribution: {} },
+  ];
 }

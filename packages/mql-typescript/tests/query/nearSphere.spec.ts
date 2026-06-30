@@ -9,5 +9,24 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nearSphere/#specify-center-point-using-geojson}
  */
 function test0() {
-  // TODO: no schema found for nearSphere.Specify Center Point Using GeoJSON
+  type places = {
+    location: {
+      type: string;
+      coordinates: Array<bson.Double | number>;
+    };
+  };
+
+  const aggregation: schema.Pipeline<places> = [
+    {
+      $match: {
+        location: {
+          $nearSphere: {
+            $geometry: { type: 'Point', coordinates: [-73.9667, 40.78] },
+            $minDistance: 1000,
+            $maxDistance: 5000,
+          },
+        },
+      },
+    },
+  ];
 }

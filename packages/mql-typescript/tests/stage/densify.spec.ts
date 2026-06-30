@@ -9,7 +9,30 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/#densify-time-series-data}
  */
 function test0() {
-  // TODO: no schema found for densify.Densify Time Series Data
+  type weather = {
+    metadata: {
+      sensorId: number;
+      type: string;
+    };
+    timestamp: Date;
+    temp: number;
+  };
+
+  const aggregation: schema.Pipeline<weather> = [
+    {
+      $densify: {
+        field: 'timestamp',
+        range: {
+          step: 1,
+          unit: 'hour',
+          bounds: [
+            new Date('2021-05-18T00:00:00.000Z'),
+            new Date('2021-05-18T08:00:00.000Z'),
+          ],
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -17,5 +40,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/#densifiction-with-partitions}
  */
 function test1() {
-  // TODO: no schema found for densify.Densifiction with Partitions
+  // TODO: no schema found for densify.Densifiction with Partitions: // TODO: No schema found in docs
 }
