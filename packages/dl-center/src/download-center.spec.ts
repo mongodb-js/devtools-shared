@@ -118,7 +118,7 @@ describe('download center client', function () {
         .catch((e) => e);
 
       expect(error.message).equal(
-        'Invalid configuration: data.versions should be array',
+        'Invalid configuration: data/versions must be array',
       );
     });
 
@@ -255,7 +255,7 @@ describe('download center client', function () {
         expect(() => {
           validateConfigSchema(invalidConfig);
         }).to.throw(
-          'Invalid configuration: data should have' +
+          'Invalid configuration: data must have' +
             " required property 'manual_link'",
         );
       });

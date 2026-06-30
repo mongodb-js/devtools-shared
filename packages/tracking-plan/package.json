@@ -1,0 +1,78 @@
+{
+  "name": "@mongodb-js/tracking-plan",
+  "version": "0.3.2",
+  "description": "Generate a Markdown tracking plan from typed telemetry event definitions.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb-js/devtools-shared.git"
+  },
+  "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/tracking-plan",
+  "author": {
+    "name": "MongoDB Inc",
+    "email": "compass@mongodb.com"
+  },
+  "bugs": {
+    "url": "https://jira.mongodb.org/projects/COMPASS/issues",
+    "email": "compass@mongodb.com"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
+    }
+  },
+  "bin": {
+    "tracking-plan": "bin/tracking-plan.js"
+  },
+  "scripts": {
+    "bootstrap": "npm run compile",
+    "prepublishOnly": "npm run compile",
+    "compile": "tsc -p tsconfig.json && gen-esm-wrapper . ./dist/.esm-wrapper.mjs",
+    "typecheck": "tsc --noEmit",
+    "eslint": "eslint",
+    "prettier": "prettier",
+    "lint": "npm run eslint . && npm run prettier -- --check .",
+    "lint-fix": "npm run eslint . -- --fix && npm run prettier -- --write .",
+    "depcheck": "depcheck",
+    "check": "npm run typecheck && npm run lint && npm run depcheck",
+    "check-ci": "npm run check",
+    "test": "mocha",
+    "test-ci": "mocha",
+    "reformat": "npm run prettier -- --write ."
+  },
+  "devDependencies": {
+    "@mongodb-js/eslint-config-devtools": "^0.11.7",
+    "@mongodb-js/mocha-config-devtools": "^1.1.2",
+    "@mongodb-js/prettier-config-devtools": "^1.0.3",
+    "@mongodb-js/tsconfig-devtools": "^1.1.2",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^22.15.30",
+    "depcheck": "^1.4.7",
+    "eslint": "^7.25.0 || ^8.0.0",
+    "gen-esm-wrapper": "^1.1.3",
+    "mocha": "^8.4.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "mongodb",
+    "mongodb.js",
+    "telemetry",
+    "tracking-plan"
+  ]
+}

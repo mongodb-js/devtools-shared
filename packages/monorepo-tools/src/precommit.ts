@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 
 import path from 'path';
-import pkgUp from 'pkg-up';
+import { pkgUp } from 'pkg-up';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
 import * as fs from 'fs/promises';

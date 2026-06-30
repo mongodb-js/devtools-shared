@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import * as x509 from '@peculiar/x509';
 import { webcrypto } from 'crypto';
 import { safePromiseAll, uuid } from './util';

@@ -1,11 +1,12 @@
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import { SchemaGenerator } from './schema-generator';
 import { TestGenerator } from './testGenerator/test-generator';
 import { DriverSchemaGenerator } from './driverSchema/driver-schema-generator';
 import type { GeneratorBase } from './generator';
 
 async function main() {
-  const argv = await yargs
+  const argv = await yargs(hideBin(process.argv))
     .command('schema', 'Generates schema from the php driver definitions')
     .command(
       'tests',

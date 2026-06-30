@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+      babel:
+        patterns:
+          - "@babel/*"
+    cooldown:
+      default-days: 7
+    versioning-strategy: increase
+    open-pull-requests-limit: 15
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    labels:
+      - dependencies
+      - javascript
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+      - github-actions
+
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+      - submodule

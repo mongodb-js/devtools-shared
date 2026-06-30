@@ -47,22 +47,25 @@ jobs:
         run: sudo apt-get -y update && sudo apt-get -y install libkrb5-dev libsecret-1-dev net-tools libstdc++6 gnome-keyring
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: recursive
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          node-version: 22.21.1
           cache: "npm"
+
+      - name: Install npm
+        run: npm install -g npm@11.16.0
 
       - name: Use python@3.11
         # Default Python (3.12) doesn't have support for distutils
         # https://github.com/nodejs/node-gyp/issues/2869
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

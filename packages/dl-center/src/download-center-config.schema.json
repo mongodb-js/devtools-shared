@@ -13,7 +13,6 @@
   "properties": {
     "versions": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "type": "object",
         "required": ["_id", "version", "platform"],

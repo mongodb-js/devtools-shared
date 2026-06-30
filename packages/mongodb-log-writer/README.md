@@ -10,12 +10,14 @@ const manager = new MongoLogManager({
   retentionDays: 30,
   onwarn: console.warn,
   onerror: console.error,
-  gzip: true
+  gzip: true,
 });
 await manager.cleanupOldLogfiles();
 
 const writer = manager.createLogWriter();
-writer.info('component', mongoLogId(12345), 'context', 'message', { foo: 'bar' });
+writer.info('component', mongoLogId(12345), 'context', 'message', {
+  foo: 'bar',
+});
 ```
 
 ## LICENSE

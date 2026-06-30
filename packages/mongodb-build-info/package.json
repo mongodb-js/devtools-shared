@@ -1,6 +1,6 @@
 {
   "name": "mongodb-build-info",
-  "version": "1.9.6",
+  "version": "1.9.11",
   "description": "Extract information from mongodb's buildInfo",
   "author": "Irina Shestak <shestak.irina@gmail.com>",
   "contributors": [
@@ -37,12 +37,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     "require": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "import": {
-      "default": "./dist/.esm-wrapper.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
     }
   },
   "scripts": {
@@ -64,10 +64,10 @@
     "release": "release-it"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.3",
-    "@mongodb-js/mocha-config-devtools": "^1.1.0",
-    "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.1.1",
+    "@mongodb-js/eslint-config-devtools": "^0.11.7",
+    "@mongodb-js/mocha-config-devtools": "^1.1.2",
+    "@mongodb-js/prettier-config-devtools": "^1.0.3",
+    "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/mocha": "^9.1.1",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",

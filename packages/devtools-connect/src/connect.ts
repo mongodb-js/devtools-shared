@@ -434,14 +434,7 @@ export async function connectMongoClient(
 ): Promise<ConnectMongoClientResult> {
   detectAndLogMissingOptionalDependencies(logger);
 
-  const options = {
-    uri,
-    clientOptions,
-    logger,
-    MongoClientClass,
-    useSystemCA,
-  };
-
+  const options = { uri, clientOptions, logger, MongoClientClass, useSystemCA };
   // Connect once with the system certificate store added, and if that fails with
   // a TLS error, try again. In theory adding certificates into the certificate store
   // should not cause failures, but in practice we have observed some, hence this
@@ -562,6 +555,14 @@ async function connectMongoClientImpl({
         'mongodb://',
       );
       cleanupOnClientClose.push(() => tunnel?.close());
+      tunnel?.on('error', (err) => {
+        logger.emit('devtools-connect:tunnel-error', { error: err });
+      });
+      tunnel?.on('forwardingError', (err) => {
+        logger.emit('devtools-connect:tunnel-forwarding-error', {
+          error: err,
+        });
+      });
     }
     for (const proxyLogger of new Set([
       tunnel?.logger,
@@ -590,7 +591,6 @@ async function connectMongoClientImpl({
       new DevtoolsConnectionState(clientOptions, logger);
     const mongoClientOptions: MongoClientOptions &
       Partial<DevtoolsConnectOptions> = merge(
-      { __skipPingOnConnect: true },
       clientOptions,
       shouldAddOidcCallbacks ? state.oidcPlugin.mongoClientOptions : {},
       { allowPartialTrustChain: true },

@@ -156,6 +156,27 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$changeStreamSplitLargeEvent',
+    value: '$changeStreamSplitLargeEvent',
+    label: '$changeStreamSplitLargeEvent',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Splits large change stream events that exceed 16MB into smaller fragments returned as separate events.',
+    comment: `/**
+ * No additional options required.
+ */
+`,
+    snippet: '{}',
+  },
+  {
     name: '$collStats',
     value: '$collStats',
     label: '$collStats',
@@ -515,6 +536,30 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$listSearchIndexes',
+    value: '$listSearchIndexes',
+    label: '$listSearchIndexes',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Returns information about existing Atlas Search and Atlas Vector Search indexes on a specified collection.',
+    comment: `/**
+ * name: Optional. The name of the index to return information for.
+ * id: Optional. The id of the index to return information for.
+ */
+`,
+    snippet: `{
+  name: '\${1:indexName}'
+}`,
+  },
+  {
     name: '$lookup',
     value: '$lookup',
     label: '$lookup',
@@ -656,17 +701,7 @@ const STAGE_OPERATORS = [
  */
 `,
     // eslint-disable-next-line quotes
-    snippet: `{
-  db: '\${1:string}',
-  coll: '\${2:string}',
-  /*
-  timeseries: {
-    timeField: '\${3:field}',
-    bucketMaxSpanSeconds: '\${4:number}',
-    granularity: '\${5:granularity}'
-  }
-  */
-}`,
+    snippet: `'\${1:string}'`,
   },
   {
     name: '$out',
@@ -714,17 +749,12 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  s3: {
-    bucket: '\${1:string}',
-    region: '\${2:string}',
-    filename: '\${3:string}',
-    format: {
-      name: '\${4:string}',
-      maxFileSize: '\${5:bytes}',
-      maxRowGroupSize: '\${6:string}',
-      columnCompression: '\${7:string}'
-    },
-    errorMode: '\${8:string}'
+  s3: '\${1:s3url}',
+  atlas: {
+    db: '\${2:db}',
+    coll: '\${3:coll}',
+    projectId: '\${4:projectId}',
+    clusterName: '\${5:clusterName}'
   }
 }`,
   },
@@ -863,6 +893,37 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$rerank',
+    value: '$rerank',
+    label: '$rerank',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Use MongoDB Voyage AI reranker models to refine the ranks of candidate documents and provide more accurate relevancy scores.',
+    comment: `/**
+ * query.text: Query text for reranking. Supports reranking instructions for 2.5 series or newer.
+ * path: Field(s) to rerank over
+ * model: The reranker model to use (rerank-2.5, rerank-2.5-lite, rerank-2, rerank-2-lite)
+ * numDocsToRerank: The maximum number of documents consumed and returned by the $rerank stage
+ */
+`,
+    snippet: `{
+  query: {
+    text: \${1:string}
+  },
+  path: \${2:string},
+  model: '\${3:rerank-2.5}',
+  numDocsToRerank: \${4:numDocsToRerank}
+}`,
+  },
+  {
     name: '$sample',
     value: '$sample',
     label: '$sample',
@@ -883,6 +944,35 @@ const STAGE_OPERATORS = [
 `,
     snippet: `{
   size: \${1:number}
+}`,
+  },
+  {
+    name: '$score',
+    value: '$score',
+    label: '$score',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '8.2.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Computes and returns a new score as metadata. It also optionally normalizes the input scores, by default to a range between zero and one.',
+    comment: `/**
+ * score: Required expression. Computes a new value from the input scores and stores the value in the $meta keyword score. Returns an error for non-numeric inputs.
+ * scoreDetails: Optional. Default false. Set to true to include detailed scoring information in {$meta: "scoreDetails"} for debugging and tuning.
+ * normalization: Optional. Default none. Normalizes the input scores before computing the new score. Value can be none, sigmoid or minMaxScaler.
+ * weight: Optional. Default 1. Multiplies the computed score by the weight value. Returns an error for non-numeric inputs.
+ */
+`,
+    snippet: `{
+  score: \${1:expression},
+  scoreDetails: \${2:false},
+  normalization: "\${3:none|sigmoid|minMaxScaler}",
+  weight: \${4:number},
 }`,
   },
   {
@@ -961,8 +1051,7 @@ const STAGE_OPERATORS = [
   index: '\${1:string}',
   text: {
     query: '\${2:string}',
-    path: '\${3:string}',
-    matchCriteria: '\${4:any}',
+    path: '\${3:string}'
   }
 }`,
   },
@@ -1171,6 +1260,7 @@ const STAGE_OPERATORS = [
     namespaces: [...ANY_NAMESPACE],
     description: 'Perform a union with a pipeline on another collection.',
     comment: `/**
+ * db: Optional. The target database name (MongoDB 9.0+).
  * coll: The collection name.
  * pipeline: The pipeline on the other collection.
  */
@@ -1267,6 +1357,46 @@ const STAGE_OPERATORS = [
   },
 ] as const;
 
+const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
+  name: '$vectorSearch',
+  value: '$vectorSearch',
+  label: '$vectorSearch',
+  outputStage: false,
+  fullScan: false,
+  firstStage: true,
+  score: 1,
+  env: [ATLAS, ON_PREM],
+  meta: 'stage',
+  version: '>=6.0.10 <7.0.0 || >=7.0.2',
+  apiVersions: [],
+  namespaces: [COLLECTION, VIEW],
+  description:
+    'Performs a vector search (semantic search) over the specified field(s) which have a vector search index defined.',
+  comment: `/**
+ * query: {“text”: Natural Language Query string for performing semantic search} Use this option if using Automated Embedding. 
+ * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. Use this option if you're bringing your own vectors.
+
+ * path: The field to search. (Required)
+ * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
+ * index: Name of the Atlas Search index to use. (Required)
+ * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
+ * model: Specify a model, compatible with the one used during index creation, to perform embedding generation of the \`query\` string. If nothing is specified the same model used during index creation is used. Available only if using Automated Embedding. 
+ * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
+ * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
+ */
+`,
+  snippet: `{
+  // query: {"text": \${1:query string}},
+  // queryVector: [\${2:dimension1}, \${3:dimension2}, ...],
+  path: \${4:string},
+  numCandidates: \${5:numCandidates},
+  index: \${6:string},
+  limit: \${7:limit},
+  filter: {\${8:expression}},
+  exact: \${9:boolean}
+}`,
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 (function assertStageOperatorsSceme(_operators: readonly StageOperator[]) {
   // This will fail on compile time if stage operators are not matching the type
@@ -1293,4 +1423,5 @@ export {
   OUT_STAGES,
   FULL_SCAN_STAGES,
   REQUIRED_AS_FIRST_STAGE,
+  VECTOR_SEARCH_AUTO_EMBED_STAGE,
 };

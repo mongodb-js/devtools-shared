@@ -1,0 +1,11 @@
+ignores:
+ - '@mongodb-js/prettier-config-devtools'
+ - '@mongodb-js/tsconfig-devtools'
+ - '@types/node'
+ - '@types/react'
+ - '@types/react-dom'
+ - '@types/chai'
+ - '@types/sinon-chai'
+ - 'sinon'
+ignore-patterns:
+ - 'dist'

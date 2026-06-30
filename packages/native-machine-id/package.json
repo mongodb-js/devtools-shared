@@ -1,7 +1,10 @@
 {
-  "name": "native-machine-id",
-  "version": "0.3.6",
+  "name": "@mongodb-js/native-machine-id",
+  "version": "0.3.12",
   "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -29,12 +32,12 @@
   "license": "Apache-2.0",
   "exports": {
     "require": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "import": {
-      "default": "./dist/.esm-wrapper.mjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/.esm-wrapper.mjs"
     }
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
@@ -53,19 +56,19 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.3",
-    "@mongodb-js/mocha-config-devtools": "^1.1.0",
-    "@mongodb-js/prettier-config-devtools": "^1.0.2",
-    "@mongodb-js/tsconfig-devtools": "^1.1.1",
+    "@mongodb-js/eslint-config-devtools": "^0.11.7",
+    "@mongodb-js/mocha-config-devtools": "^1.1.2",
+    "@mongodb-js/prettier-config-devtools": "^1.0.3",
+    "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/mocha": "^9.1.1",
     "@types/node": "^22.15.30",
-    "@types/sinon-chai": "^3.2.5",
+    "@types/sinon-chai": "^4.0.0",
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",
     "mocha": "^8.4.0",
     "depcheck": "^1.4.7",
     "node-machine-id": "^1.1.12",
-    "prettier": "^3.5.3",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "ts-node": "^10.9.2"
   },

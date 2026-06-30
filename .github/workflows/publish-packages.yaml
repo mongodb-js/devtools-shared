@@ -27,7 +27,7 @@ jobs:
           app-id: ${{ vars.DEVTOOLS_BOT_APP_ID }}
           private-key: ${{ secrets.DEVTOOLS_BOT_PRIVATE_KEY }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # don't checkout a detatched HEAD
           ref: ${{ github.head_ref }}
@@ -38,13 +38,13 @@ jobs:
           fetch-depth: "0"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          node-version: 22.21.1
           cache: "npm"
 
       - name: Install npm
-        run: npm install -g npm@9
+        run: npm install -g npm@11.16.0
 
       - name: Install Dependencies
         run: |

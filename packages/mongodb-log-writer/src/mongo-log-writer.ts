@@ -89,7 +89,7 @@ export class MongoLogWriter extends Writable {
     logId: string,
     logFilePath: string | null,
     target: PlainWritable,
-    now?: () => Date
+    now?: () => Date,
   ) {
     super({ objectMode: true });
     this._logId = logId;
@@ -116,7 +116,7 @@ export class MongoLogWriter extends Writable {
   _write(
     info: MongoLogEntry | typeof kFlushDummy,
     encoding: unknown,
-    callback: (err?: Error | null | undefined) => void
+    callback: (err?: Error | null | undefined) => void,
   ): void {
     if (info === kFlushDummy) {
       this._target.write('', callback);
@@ -179,7 +179,7 @@ export class MongoLogWriter extends Writable {
     }
     this._target.write(
       EJSON.stringify(fullInfo, { relaxed: true }) + '\n',
-      callback
+      callback,
     );
   }
 
@@ -200,7 +200,7 @@ export class MongoLogWriter extends Writable {
     id: MongoLogId,
     context: string,
     message: string,
-    attr?: unknown
+    attr?: unknown,
   ): void {
     const logEntry: MongoLogEntry = {
       s: 'I',
@@ -221,7 +221,7 @@ export class MongoLogWriter extends Writable {
     id: MongoLogId,
     context: string,
     message: string,
-    attr?: unknown
+    attr?: unknown,
   ): void {
     const logEntry: MongoLogEntry = {
       s: 'W',
@@ -242,7 +242,7 @@ export class MongoLogWriter extends Writable {
     id: MongoLogId,
     context: string,
     message: string,
-    attr?: unknown
+    attr?: unknown,
   ): void {
     const logEntry: MongoLogEntry = {
       s: 'E',
@@ -263,7 +263,7 @@ export class MongoLogWriter extends Writable {
     id: MongoLogId,
     context: string,
     message: string,
-    attr?: unknown
+    attr?: unknown,
   ): void {
     const logEntry: MongoLogEntry = {
       s: 'F',
@@ -285,7 +285,7 @@ export class MongoLogWriter extends Writable {
     context: string,
     message: string,
     attr?: unknown,
-    level: 1 | 2 | 3 | 4 | 5 = 1
+    level: 1 | 2 | 3 | 4 | 5 = 1,
   ): void {
     const logEntry: MongoLogEntry = {
       s: `D${level}`,
@@ -306,38 +306,38 @@ export class MongoLogWriter extends Writable {
     component: string;
     write(
       entry: Omit<MongoLogEntry, 'c'>,
-      cb?: (error?: Error | null) => void
+      cb?: (error?: Error | null) => void,
     ): boolean;
     info(
       id: MongoLogId,
       context: string,
       message: string,
-      attr?: unknown
+      attr?: unknown,
     ): void;
     warn(
       id: MongoLogId,
       context: string,
       message: string,
-      attr?: unknown
+      attr?: unknown,
     ): void;
     error(
       id: MongoLogId,
       context: string,
       message: string,
-      attr?: unknown
+      attr?: unknown,
     ): void;
     fatal(
       id: MongoLogId,
       context: string,
       message: string,
-      attr?: unknown
+      attr?: unknown,
     ): void;
     debug(
       id: MongoLogId,
       context: string,
       message: string,
       attr?: unknown,
-      level?: 1 | 2 | 3 | 4 | 5
+      level?: 1 | 2 | 3 | 4 | 5,
     ): void;
   } {
     return {

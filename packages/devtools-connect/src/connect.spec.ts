@@ -10,6 +10,7 @@ import sinonChai from 'sinon-chai';
 import { Agent as HTTPSAgent } from 'https';
 import { MongoCluster } from 'mongodb-runner';
 import { tmpdir } from 'os';
+import * as devtoolsProxySupport from '@mongodb-js/devtools-proxy-support';
 
 chai.use(sinonChai);
 
@@ -55,12 +56,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(mClient.connect.getCalls()).to.have.lengthOf(1);
       expect(result.client).to.equal(mClient);
     });
@@ -83,7 +79,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -129,12 +124,7 @@ describe('devtools connect', function () {
       expect(calls[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -213,7 +203,6 @@ describe('devtools connect', function () {
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
       ).to.deep.equal([
-        '__skipPingOnConnect',
         'allowPartialTrustChain',
         'autoEncryption',
         'ca',
@@ -256,12 +245,7 @@ describe('devtools connect', function () {
       expect(mClientType.getCalls()[0].args[0]).to.equal(uri);
       expect(
         Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-      ).to.deep.equal([
-        '__skipPingOnConnect',
-        'allowPartialTrustChain',
-        'ca',
-        'lookup',
-      ]);
+      ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
       expect(commandSpy).to.have.been.calledOnceWithExactly({ buildInfo: 1 });
       expect(result.client).to.equal(mClientSecond);
     });
@@ -477,19 +461,10 @@ describe('devtools connect', function () {
         expect(mClientType.getCalls()).to.have.lengthOf(2);
         expect(
           Object.keys(mClientType.getCalls()[0].args[1]).sort(),
-        ).to.deep.equal([
-          '__skipPingOnConnect',
-          'allowPartialTrustChain',
-          'ca',
-          'lookup',
-        ]);
+        ).to.deep.equal(['allowPartialTrustChain', 'ca', 'lookup']);
         expect(
           Object.keys(mClientType.getCalls()[1].args[1]).sort(),
-        ).to.deep.equal([
-          '__skipPingOnConnect',
-          'allowPartialTrustChain',
-          'lookup',
-        ]);
+        ).to.deep.equal(['allowPartialTrustChain', 'lookup']);
         expect((mClient as any).connect.getCalls()).to.have.lengthOf(2);
 
         expect(earlyFailures).to.equal(2);
@@ -555,6 +530,79 @@ describe('devtools connect', function () {
           proxyConnectEvents[1].agent.proxyOptions.ca,
         );
       });
+    });
+
+    describe('tunnel error events', function () {
+      let originalDescriptor: PropertyDescriptor;
+      let fakeTunnel: EventEmitter & {
+        listen: sinon.SinonStub;
+        close: sinon.SinonStub;
+        config: any;
+        logger: EventEmitter;
+      };
+
+      beforeEach(function () {
+        const tunnel = Object.assign(new EventEmitter(), {
+          listen: sinon.stub().resolves(),
+          close: sinon.stub().resolves(),
+          config: {
+            proxyHost: '127.0.0.1',
+            proxyPort: 1080,
+            proxyUsername: 'u',
+            proxyPassword: 'p',
+          },
+          logger: new EventEmitter(),
+        });
+        fakeTunnel = tunnel as any;
+
+        // devtools-proxy-support exports createSocks5Tunnel as a non-writable
+        // getter, so sinon.stub() can't replace it. Use Object.defineProperty
+        // directly to inject the fake tunnel factory.
+        originalDescriptor = Object.getOwnPropertyDescriptor(
+          devtoolsProxySupport,
+          'createSocks5Tunnel',
+        )!;
+        Object.defineProperty(devtoolsProxySupport, 'createSocks5Tunnel', {
+          configurable: true,
+          writable: true,
+          value: () => fakeTunnel,
+        });
+      });
+
+      afterEach(function () {
+        Object.defineProperty(
+          devtoolsProxySupport,
+          'createSocks5Tunnel',
+          originalDescriptor,
+        );
+      });
+
+      for (const [tunnelEvent, busEvent] of [
+        ['error', 'devtools-connect:tunnel-error'],
+        ['forwardingError', 'devtools-connect:tunnel-forwarding-error'],
+      ] as const) {
+        it(`emits ${busEvent} when tunnel emits '${tunnelEvent}'`, async function () {
+          const mClient = stubConstructor(FakeMongoClient);
+          const mClientType = sinon.stub().returns(mClient);
+          mClient.connect.resolves(mClient);
+
+          const { client } = await connectMongoClient(
+            'localhost:27017',
+            { ...defaultOpts, proxy: { proxy: 'socks5://localhost:1080' } },
+            bus,
+            mClientType as any,
+          );
+
+          const received: any[] = [];
+          bus.on(busEvent, (ev) => received.push(ev));
+          fakeTunnel.emit(tunnelEvent, new Error(`test ${tunnelEvent}`));
+
+          expect(received).to.have.lengthOf(1);
+          expect(received[0].error.message).to.equal(`test ${tunnelEvent}`);
+
+          mClient.emit('close');
+        });
+      }
     });
   });
 

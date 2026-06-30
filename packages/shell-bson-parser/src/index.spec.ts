@@ -724,6 +724,23 @@ describe('@mongodb-js/shell-bson-parser', function () {
         });
       });
     }
+
+    it('should not allow calling IIFE', function () {
+      expect(
+        parse('{ date: (function() { return "10"; })() }', options),
+      ).to.equal('');
+    });
+
+    it('should prevent attempting to break the sandbox for identifiers', function () {
+      const input =
+        "{ exploit: clearImmediate.constructor('return process;')().exit(1) }";
+      expect(parse(input, options)).to.equal('');
+    });
+
+    it('should prevent attempting to break the sandbox for literals', function () {
+      const input = `{ exploit: "".toString.constructor('return process;')().exit(1) }`;
+      expect(parse(input, options)).to.equal('');
+    });
   });
 
   describe('Comments', function () {
@@ -749,16 +766,6 @@ describe('@mongodb-js/shell-bson-parser', function () {
         to: 'see',
       });
     });
-  });
-
-  it('should not allow calling IIFE', function () {
-    expect(parse('{ date: (function() { return "10"; })() }')).to.equal('');
-  });
-
-  it('should prevent attempting to break the sandbox', function () {
-    const input =
-      "{ exploit: clearImmediate.constructor('return process;')().exit(1) }";
-    expect(parse(input)).to.equal('');
   });
 
   it('should correctly parse NumberLong and Int64 bigger than Number.MAX_SAFE_INTEGER', function () {
