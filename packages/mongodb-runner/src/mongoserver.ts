@@ -21,6 +21,7 @@ import {
   jsonClone,
   makeConnectionString,
   sleep,
+  eventually,
 } from './util';
 
 /**
@@ -51,6 +52,20 @@ export interface MongoServerOptions {
   isConfigSvr?: boolean;
   /** Internal option -- if keyfile auth is used, this will be its contents */
   keyFileContents?: string;
+  /**
+   * Whether to spawn the server process detached from the current Node.js
+   * process (default: `true`).
+   *
+   * When `true`, the server keeps running even if the parent process exits,
+   * which is what the CLI relies on for its persistent-server behavior.
+   *
+   * Library consumers that manage the server lifetime within a single process
+   * (e.g. test suites) can set this to `false` so the server is tied to the
+   * parent process and terminated together with it. In particular, this avoids
+   * orphaned `mongod` processes on Windows when the parent is killed without a
+   * chance to call `close()` (e.g. an out-of-memory test worker).
+   */
+  detached?: boolean;
 }
 
 interface SerializedServerProperties {
@@ -264,7 +279,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const proc = spawn(executable, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       cwd: options.tmpDir,
-      detached: true,
+      detached: options.detached ?? true,
     });
     await once(proc, 'spawn');
     srv.childProcess = proc;
@@ -421,17 +436,33 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   private async _ensureMatchingMetadataColl(
     client: MongoClient,
     mode: 'insert-new' | 'restore-check',
+    retryOptions?: { intervalMs?: number; timeoutMs?: number },
   ): Promise<void> {
-    const hello = await client.db('admin').command({ hello: 1 });
-    const { arbiterOnly } = hello;
-    if (arbiterOnly === this.isArbiter) {
-      debug('skipping metadata check for arbiter');
+    let hello = await client.db('admin').command({ hello: 1 });
+    if (this.isArbiter) {
+      // RS convergence: hello.arbiterOnly may lag behind the RS config while the
+      // member transitions to ARBITER state. Retry until confirmed or timeout.
+      if (!hello.arbiterOnly) {
+        await eventually(
+          async () => {
+            hello = await client.db('admin').command({ hello: 1 });
+            if (!hello.arbiterOnly) {
+              throw new Error(
+                'Arbiter flag mismatch -- server should be arbiter but hello indicates it is not',
+              );
+            }
+          },
+          retryOptions ?? { intervalMs: 500, timeoutMs: 30_000 },
+        );
+      }
+      debug('skipping metadata check for confirmed arbiter');
       return;
     }
-    if (this.isArbiter) {
-      throw new Error(
-        'Arbiter flag mismatch -- server should be arbiter but hello indicates it is not',
-      );
+    if (hello.arbiterOnly) {
+      // isArbiter may not be set yet (e.g. during deserialize where it is
+      // assigned after _populateBuildInfo); skip metadata check.
+      debug('skipping metadata check for arbiter');
+      return;
     }
 
     const isMongoS = hello.msg === 'isdbgrid';

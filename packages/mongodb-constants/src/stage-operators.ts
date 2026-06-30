@@ -156,6 +156,27 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$changeStreamSplitLargeEvent',
+    value: '$changeStreamSplitLargeEvent',
+    label: '$changeStreamSplitLargeEvent',
+    outputStage: false,
+    fullScan: false,
+    firstStage: false,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [1],
+    namespaces: [DATABASE],
+    description:
+      'Splits large change stream events that exceed 16MB into smaller fragments returned as separate events.',
+    comment: `/**
+ * No additional options required.
+ */
+`,
+    snippet: '{}',
+  },
+  {
     name: '$collStats',
     value: '$collStats',
     label: '$collStats',
@@ -515,6 +536,30 @@ const STAGE_OPERATORS = [
 }`,
   },
   {
+    name: '$listSearchIndexes',
+    value: '$listSearchIndexes',
+    label: '$listSearchIndexes',
+    outputStage: false,
+    fullScan: false,
+    firstStage: true,
+    score: 1,
+    env: [ATLAS, ON_PREM],
+    meta: 'stage',
+    version: '7.0.0',
+    apiVersions: [],
+    namespaces: [COLLECTION],
+    description:
+      'Returns information about existing Atlas Search and Atlas Vector Search indexes on a specified collection.',
+    comment: `/**
+ * name: Optional. The name of the index to return information for.
+ * id: Optional. The id of the index to return information for.
+ */
+`,
+    snippet: `{
+  name: '\${1:indexName}'
+}`,
+  },
+  {
     name: '$lookup',
     value: '$lookup',
     label: '$lookup',
@@ -656,17 +701,7 @@ const STAGE_OPERATORS = [
  */
 `,
     // eslint-disable-next-line quotes
-    snippet: `{
-  db: '\${1:string}',
-  coll: '\${2:string}',
-  /*
-  timeseries: {
-    timeField: '\${3:field}',
-    bucketMaxSpanSeconds: '\${4:number}',
-    granularity: '\${5:granularity}'
-  }
-  */
-}`,
+    snippet: `'\${1:string}'`,
   },
   {
     name: '$out',
@@ -714,17 +749,12 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-  s3: {
-    bucket: '\${1:string}',
-    region: '\${2:string}',
-    filename: '\${3:string}',
-    format: {
-      name: '\${4:string}',
-      maxFileSize: '\${5:bytes}',
-      maxRowGroupSize: '\${6:string}',
-      columnCompression: '\${7:string}'
-    },
-    errorMode: '\${8:string}'
+  s3: '\${1:s3url}',
+  atlas: {
+    db: '\${2:db}',
+    coll: '\${3:coll}',
+    projectId: '\${4:projectId}',
+    clusterName: '\${5:clusterName}'
   }
 }`,
   },
@@ -872,11 +902,11 @@ const STAGE_OPERATORS = [
     score: 1,
     env: [ATLAS],
     meta: 'stage',
-    version: '4.1.11',
+    version: '7.0.0',
     apiVersions: [],
     namespaces: [COLLECTION],
     description:
-      'Use our best-in-class Voyage reranker models to rerank sets of documents from previous stages.',
+      'Use MongoDB Voyage AI reranker models to refine the ranks of candidate documents and provide more accurate relevancy scores.',
     comment: `/**
  * query.text: Query text for reranking. Supports reranking instructions for 2.5 series or newer.
  * path: Field(s) to rerank over
@@ -941,8 +971,8 @@ const STAGE_OPERATORS = [
     snippet: `{
   score: \${1:expression},
   scoreDetails: \${2:false},
-  normalization: "\${2:none|sigmoid|minMaxScaler}",
-  weight: \${3:number},
+  normalization: "\${3:none|sigmoid|minMaxScaler}",
+  weight: \${4:number},
 }`,
   },
   {
@@ -1021,8 +1051,7 @@ const STAGE_OPERATORS = [
   index: '\${1:string}',
   text: {
     query: '\${2:string}',
-    path: '\${3:string}',
-    matchCriteria: '\${4:any}',
+    path: '\${3:string}'
   }
 }`,
   },
@@ -1231,6 +1260,7 @@ const STAGE_OPERATORS = [
     namespaces: [...ANY_NAMESPACE],
     description: 'Perform a union with a pipeline on another collection.',
     comment: `/**
+ * db: Optional. The target database name (MongoDB 9.0+).
  * coll: The collection name.
  * pipeline: The pipeline on the other collection.
  */
