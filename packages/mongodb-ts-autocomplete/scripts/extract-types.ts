@@ -123,6 +123,7 @@ const deps: Readonly<Record<string, string[]>> = {
     'sqlite.d.ts',
     'stream.d.ts',
     'stream/consumers.d.ts',
+    'stream/iter.d.ts',
     'stream/promises.d.ts',
     'stream/web.d.ts',
     'string_decoder.d.ts',
@@ -157,6 +158,7 @@ const deps: Readonly<Record<string, string[]>> = {
     'web-globals/url.d.ts',
     'worker_threads.d.ts',
     'zlib.d.ts',
+    'zlib/iter.d.ts',
   ],
   assert: [
     'package.json',
