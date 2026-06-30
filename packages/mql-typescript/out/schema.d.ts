@@ -19,7 +19,7 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
-type FieldExpression<T> = { [k: string]: FieldPath<T> };
+type FieldExpression<T> = { [k: string]: Expression<T> };
 
 type MultiAnalyzerSpec<T> = {
   value: KeysOfAType<T, string>;
@@ -485,6 +485,37 @@ export namespace Aggregation.Accumulator {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/}
      */
     $min: Expression<S>;
+  }
+
+  /**
+   * A type describing the `$minMaxScaler` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minMaxScaler/}
+   */
+  export interface $minMaxScaler<S> {
+    /**
+     * Normalizes a numeric expression within a window of values. By default, values can range
+     * between zero and one. The smallest value becomes zero, the largest value becomes one, and
+     * all other values scale proportionally in between. You can also specify a custom minimum
+     * and maximum value for the normalized output range.
+     * Available only in the $setWindowFields stage.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minMaxScaler/}
+     */
+    $minMaxScaler: {
+      /**
+       * Numeric expression containing the value that you want to normalize.
+       */
+      input: ResolvesToNumber<S>;
+
+      /**
+       * Minimum value that you want in the output. If omitted, defaults to 0.
+       */
+      min?: Number;
+
+      /**
+       * Maximum value that you want in the output. If omitted, defaults to 1.
+       */
+      max?: Number;
+    };
   }
 
   /**
@@ -972,6 +1003,66 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$bottom` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom-array-operator/}
+   */
+  export interface $bottom<S> {
+    /**
+     * Returns the bottom element within an array according to the specified sort order.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom-array-operator/}
+     */
+    $bottom: {
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the bottom element.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
+   * A type describing the `$bottomN` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN-array-operator/}
+   */
+  export interface $bottomN<S> {
+    /**
+     * Returns an aggregation of the bottom n elements within an array, according to the specified sort order.
+     * If the array contains fewer than n elements, $bottomN returns all elements in the array.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN-array-operator/}
+     */
+    $bottomN: {
+      /**
+       * An expression that resolves to a positive integer. The integer specifies the number of array elements that $bottomN returns.
+       */
+      n: ResolvesToInt<S>;
+
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the bottom n elements.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
    * A type describing the `$bsonSize` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bsonSize/}
    */
@@ -1071,7 +1162,11 @@ export namespace Aggregation.Expression {
    */
   export interface $convert<S> {
     /**
-     * Converts a value to a specified type.
+     * Converts a value to a specified type. Any type can be converted to string.
+     * If the optional base argument is specified, $convert interprets the input string as a
+     * number in the given base and converts it to a decimal, or converts a numeric value to a
+     * string representation in that base. Supported bases are 2 (binary), 8 (octal), 10
+     * (decimal), and 16 (hexadecimal).
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/}
      */
     $convert: {
@@ -1089,6 +1184,17 @@ export namespace Aggregation.Expression {
        * If unspecified, $convert returns null if the input is null or missing.
        */
       onNull?: Expression<S>;
+
+      /**
+       * The numeric base to use when converting between strings and integers. Must be one of
+       * 2 (binary), 8 (octal), 10 (decimal), or 16 (hexadecimal).
+       * When converting a string to a number, $convert interprets the string as a number in
+       * the given base and returns the decimal equivalent.
+       * When converting a number to a string, $convert returns the string representation of
+       * the number in the given base.
+       * If unspecified, $convert uses base 10.
+       */
+      base?: ResolvesToInt<S>;
     };
   }
 
@@ -1520,6 +1626,32 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$deserializeEJSON` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/}
+   */
+  export interface $deserializeEJSON<S> {
+    /**
+     * Converts Extended JSON (EJSON) format to native BSON values. Use this expression to
+     * transform EJSON type wrappers into their corresponding BSON types after parsing a JSON
+     * string with $convert.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/}
+     */
+    $deserializeEJSON: {
+      /**
+       * The Extended JSON value to convert to native BSON format. This should be a BSON
+       * document containing EJSON type wrappers.
+       */
+      input: ResolvesToObject<S>;
+
+      /**
+       * The value to return if the operation encounters an error during conversion.
+       * If unspecified, the operation throws an error and stops.
+       */
+      onError?: Expression<S>;
+    };
+  }
+
+  /**
    * A type describing the `$divide` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/divide/}
    */
@@ -1707,6 +1839,40 @@ export namespace Aggregation.Expression {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gte/}
      */
     $gte: [expression1: Expression<S>, expression2: Expression<S>];
+  }
+
+  /**
+   * A type describing the `$hash` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hash/}
+   */
+  export interface $hash<S> {
+    /**
+     * Generates and returns a binary hash value (BinData) from a UTF-8 string or binary data. Use $hash in an aggregation
+     * pipeline to compute binary hashes for storage, verification, or comparison. To get a hexadecimal string instead of
+     * binary data, use $hexHash.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hash/}
+     */
+    $hash: {
+      input: ResolvesToString<S> | ResolvesToBinData<S> | ResolvesToNull<S>;
+      algorithm: string;
+    };
+  }
+
+  /**
+   * A type describing the `$hexHash` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hexHash/}
+   */
+  export interface $hexHash<S> {
+    /**
+     * Generates and returns an uppercase hexadecimal string representation of a hash value from a UTF-8 string or binary
+     * data. Use $hexHash in an aggregation pipeline to compute hex-encoded hashes for storage, verification, or comparison.
+     * To get binary data instead of a hexadecimal string, use $hash.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hexHash/}
+     */
+    $hexHash: {
+      input: ResolvesToString<S> | ResolvesToBinData<S> | ResolvesToNull<S>;
+      algorithm: string;
+    };
   }
 
   /**
@@ -1974,12 +2140,12 @@ export namespace Aggregation.Expression {
 
   /**
    * A type describing the `$lastN` operator.
-   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/#array-operator}
    */
   export interface $lastN<S> {
     /**
      * Returns a specified number of elements from the end of an array.
-     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN-array-element/}
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/#array-operator}
      */
     $lastN: {
       /**
@@ -2009,7 +2175,7 @@ export namespace Aggregation.Expression {
        * Assignment block for the variables accessible in the in expression. To assign a variable, specify a string for the variable name and assign a valid expression for the value.
        * The variable assignments have no meaning outside the in expression, not even within the vars block itself.
        */
-      vars: Record<string, unknown>;
+      vars: ExpressionMap<S>;
 
       /**
        * The expression to evaluate.
@@ -2143,7 +2309,13 @@ export namespace Aggregation.Expression {
       /**
        * A name for the variable that represents each individual element of the input array. If no name is specified, the variable name defaults to this.
        */
-      as?: ResolvesToString<S>;
+      as?: string;
+
+      /**
+       * A name for the variable that represents the index of the current element in
+       * the input array. If specified, this variable is available within the in expression.
+       */
+      arrayIndexAs?: string;
 
       /**
        * An expression that is applied to each element of the input array. The expression references each element individually with the variable name specified in as.
@@ -2204,7 +2376,7 @@ export namespace Aggregation.Expression {
       /**
        * $median calculates the 50th percentile value of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $median calculation ignores it.
        */
-      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
+      input: ResolvesToNumber<S> | unknown[];
 
       /**
        * The method that mongod uses to calculate the 50th percentile value. The method must be 'approximate'.
@@ -2444,7 +2616,7 @@ export namespace Aggregation.Expression {
       /**
        * $percentile calculates the percentile values of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $percentile calculation ignores it.
        */
-      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
+      input: ResolvesToNumber<S> | unknown[];
 
       /**
        * $percentile calculates a percentile value for each element in p. The elements represent percentages and must evaluate to numeric values in the range 0.0 to 1.0, inclusive.
@@ -2550,19 +2722,33 @@ export namespace Aggregation.Expression {
        * - value is the variable that represents the cumulative value of the expression.
        * - this is the variable that refers to the element being processed.
        */
-      in: Expression<
-        S & {
-          /**
-           * The variable that refers to the element being processed.
-           */
-          $this: any;
+      in:
+        | Expression<
+            S & {
+              /**
+               * The variable that refers to the element being processed.
+               */
+              $this: any;
 
-          /**
-           * The variable that represents the cumulative value of the expression.
-           */
-          $value: any;
-        }
-      >;
+              /**
+               * The variable that represents the cumulative value of the expression.
+               */
+              $value: any;
+            }
+          >
+        | ExpressionMap<
+            S & {
+              /**
+               * The variable that refers to the element being processed.
+               */
+              $this: any;
+
+              /**
+               * The variable that represents the cumulative value of the expression.
+               */
+              $value: any;
+            }
+          >;
     };
   }
 
@@ -2674,17 +2860,17 @@ export namespace Aggregation.Expression {
      */
     $replaceOne: {
       /**
-       * The string on which you wish to apply the find. Can be any valid expression that resolves to a string or a null. If input refers to a field that is missing, $replaceAll returns null.
+       * The string on which you wish to apply the find. Can be any valid expression that resolves to a string or a null. If input refers to a field that is missing, $replaceOne returns null.
        */
       input: ResolvesToString<S> | ResolvesToNull<S>;
 
       /**
-       * The string to search for within the given input. Can be any valid expression that resolves to a string or a null. If find refers to a field that is missing, $replaceAll returns null.
+       * The string or regex to search for within the given input. Can be any valid expression that resolves to a string, a regex, or a null. If find refers to a field that is missing, $replaceOne returns null.
        */
-      find: ResolvesToString<S> | ResolvesToNull<S>;
+      find: ResolvesToString<S> | ResolvesToNull<S> | ResolvesToRegex<S>;
 
       /**
-       * The string to use to replace all matched instances of find in input. Can be any valid expression that resolves to a string or a null.
+       * The string to use to replace the first matched instance of find in input. Can be any valid expression that resolves to a string or a null.
        */
       replacement: ResolvesToString<S> | ResolvesToNull<S>;
     };
@@ -2768,6 +2954,39 @@ export namespace Aggregation.Expression {
        * The timezone of the operation result. timezone must be a valid expression that resolves to a string formatted as either an Olson Timezone Identifier or a UTC Offset. If no timezone is provided, the result is displayed in UTC.
        */
       timezone?: ResolvesToString<S>;
+    };
+  }
+
+  /**
+   * A type describing the `$serializeEJSON` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/}
+   */
+  export interface $serializeEJSON<S> {
+    /**
+     * Converts BSON values to Extended JSON (EJSON) format. The result is a
+     * BSON document with EJSON type wrappers that can then be converted to
+     * a JSON string using $toString.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/}
+     */
+    $serializeEJSON: {
+      /**
+       * The BSON value to convert to Extended JSON format.
+       */
+      input: Expression<S>;
+
+      /**
+       * Specifies whether to use Relaxed Extended JSON format. If true, numeric types
+       * (Int32, Int64, Double) are represented as native JSON numbers for better readability.
+       * If false or unspecified, uses Canonical Extended JSON format which preserves type
+       * information for all BSON types. Defaults to false.
+       */
+      relaxed?: ResolvesToBool<S>;
+
+      /**
+       * The value to return if the operation encounters an error during conversion.
+       * If unspecified, the operation throws an error and stops.
+       */
+      onError?: Expression<S>;
     };
   }
 
@@ -2870,6 +3089,90 @@ export namespace Aggregation.Expression {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
      */
     $setUnion: [...ResolvesToArray<S>[]];
+  }
+
+  /**
+   * A type describing the `$sigmoid` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sigmoid/}
+   */
+  export interface $sigmoid<S> {
+    /**
+     * Returns the sigmoid of a value, defined as 1 / (1 + e^(-x)). The result is a value between 0 and 1.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sigmoid/}
+     */
+    $sigmoid: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$similarityCosine` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityCosine/}
+   */
+  export interface $similarityCosine<S> {
+    /**
+     * Returns the cosine similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityCosine/}
+     */
+    $similarityCosine: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
+  }
+
+  /**
+   * A type describing the `$similarityDotProduct` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityDotProduct/}
+   */
+  export interface $similarityDotProduct<S> {
+    /**
+     * Returns the dot product similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityDotProduct/}
+     */
+    $similarityDotProduct: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
+  }
+
+  /**
+   * A type describing the `$similarityEuclidean` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityEuclidean/}
+   */
+  export interface $similarityEuclidean<S> {
+    /**
+     * Returns the Euclidean similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityEuclidean/}
+     */
+    $similarityEuclidean: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
   }
 
   /**
@@ -2993,7 +3296,7 @@ export namespace Aggregation.Expression {
       string: ResolvesToString<S>,
 
       /**
-       * The delimiter to use when splitting the string expression. delimiter can be any valid expression as long as it resolves to a string.
+       * The delimiter to use when splitting the string expression. delimiter can be any valid expression as long as it resolves to a string or a regular expression.
        */
       delimiter: ResolvesToString<S> | ResolvesToRegex<S>,
     ];
@@ -3165,6 +3468,19 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$subtype` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtype/}
+   */
+  export interface $subtype<S> {
+    /**
+     * Returns the subtype of a given value as an integer. In MongoDB 8.3, the only expression
+     * that contains a subtype is a BinData expression.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtype/}
+     */
+    $subtype: ResolvesToBinData<S>;
+  }
+
+  /**
    * A type describing the `$sum` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/}
    */
@@ -3225,6 +3541,19 @@ export namespace Aggregation.Expression {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tanh/}
      */
     $tanh: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$toArray` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toArray/}
+   */
+  export interface $toArray<S> {
+    /**
+     * Converts a value to an array. If the value cannot be converted, $toArray errors.
+     * If the value is null or missing, $toArray returns null.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toArray/}
+     */
+    $toArray: Expression<S>;
   }
 
   /**
@@ -3324,6 +3653,19 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$toObject` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObject/}
+   */
+  export interface $toObject<S> {
+    /**
+     * Converts a string to an object. If the value cannot be converted, $toObject errors.
+     * If the value is null or missing, $toObject returns null.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObject/}
+     */
+    $toObject: Expression<S>;
+  }
+
+  /**
    * A type describing the `$toObjectId` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObjectId/}
    */
@@ -3357,6 +3699,66 @@ export namespace Aggregation.Expression {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toUpper/}
      */
     $toUpper: ResolvesToString<S>;
+  }
+
+  /**
+   * A type describing the `$top` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top-array-operator/}
+   */
+  export interface $top<S> {
+    /**
+     * Returns the top element within an array according to the specified sort order.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top-array-operator/}
+     */
+    $top: {
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the top element.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
+   * A type describing the `$topN` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN-array-operator/}
+   */
+  export interface $topN<S> {
+    /**
+     * Returns an aggregation of the top n elements within an array, according to the specified sort order.
+     * If the array contains fewer than n elements, $topN returns all elements in the array.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN-array-operator/}
+     */
+    $topN: {
+      /**
+       * An expression that resolves to a positive integer. The integer specifies the number of array elements that $topN returns.
+       */
+      n: ResolvesToInt<S>;
+
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the top n elements.
+       */
+      input: ResolvesToArray<S>;
+    };
   }
 
   /**
@@ -3575,7 +3977,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which a set of bit positions all have a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllClear/}
      */
-    $bitsAllClear: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAllClear: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3587,7 +3989,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which a set of bit positions all have a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllSet/}
      */
-    $bitsAllSet: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAllSet: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3599,7 +4001,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnyClear/}
      */
-    $bitsAnyClear: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAnyClear: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3611,7 +4013,7 @@ export namespace Aggregation.Query {
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/}
      */
-    $bitsAnySet: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAnySet: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -4114,12 +4516,13 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/compound/}
      */
     compound: {
-      must?: SearchOperator<S> | SearchOperator<S>[];
-      mustNot?: SearchOperator<S> | SearchOperator<S>[];
-      should?: SearchOperator<S> | SearchOperator<S>[];
-      filter?: SearchOperator<S> | SearchOperator<S>[];
+      must?: SearchOperator<S> | unknown[];
+      mustNot?: SearchOperator<S> | unknown[];
+      should?: SearchOperator<S> | unknown[];
+      filter?: SearchOperator<S> | unknown[];
       minimumShouldMatch?: Int;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4162,6 +4565,7 @@ export namespace Aggregation.Search {
         | Number
         | string;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4229,6 +4633,30 @@ export namespace Aggregation.Search {
   }
 
   /**
+   * A type describing the `hasAncestor` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasancestor/}
+   */
+  export interface HasAncestor<S> {
+    /**
+     * The `hasAncestor` operator queries an `embeddedDocuments` type field specified in the `ancestorPath`. The `ancestorPath` is a parent of the field specified in the `returnScope`.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasancestor/}
+     */
+    hasAncestor: { ancestorPath: SearchPath<S>; operator: SearchOperator<S> };
+  }
+
+  /**
+   * A type describing the `hasRoot` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasroot/}
+   */
+  export interface HasRoot<S> {
+    /**
+     * The `hasRoot` operator can be used to query root-level fields when you specify the `returnScope` and `returnStoredSource` options.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasroot/}
+     */
+    hasRoot: { operator: SearchOperator<S> };
+  }
+
+  /**
    * A type describing the `in` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
    */
@@ -4237,7 +4665,12 @@ export namespace Aggregation.Search {
      * The in operator performs a search for an array of BSON values in a field.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
      */
-    in: { path: SearchPath<S>; value: any | any[]; score?: SearchScore };
+    in: {
+      path: SearchPath<S>;
+      value: any | unknown[];
+      score?: SearchScore;
+      doesNotAffect?: string | unknown[];
+    };
   }
 
   /**
@@ -4252,7 +4685,7 @@ export namespace Aggregation.Search {
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/moreLikeThis/}
      */
     moreLikeThis: {
-      like: Record<string, unknown> | Record<string, unknown>[];
+      like: Record<string, unknown> | unknown[];
       score?: SearchScore;
     };
   }
@@ -4285,7 +4718,7 @@ export namespace Aggregation.Search {
      */
     phrase: {
       path: SearchPath<S>;
-      query: string | string[];
+      query: string | unknown[];
       slop?: Int;
       synonyms?: string;
       score?: SearchScore;
@@ -4317,6 +4750,7 @@ export namespace Aggregation.Search {
       lt?: Date | Number | string | bson.ObjectId;
       lte?: Date | Number | string | bson.ObjectId;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4354,6 +4788,60 @@ export namespace Aggregation.Search {
       fuzzy?: Record<string, unknown>;
       matchCriteria?: string;
       synonyms?: string;
+      score?: SearchScore;
+    };
+  }
+
+  /**
+   * A type describing the `vectorSearch` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/vector-search/}
+   */
+  export interface VectorSearch<S> {
+    /**
+     * The vectorSearch operator performs an ANN or ENN search on a vector field. It can only be
+     * used as a top-level operator in a $search or $searchMeta query, not nested under compound
+     * or other operators.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/vector-search/}
+     */
+    vectorSearch: {
+      /**
+       * The indexed vector field to search.
+       */
+      path: SearchPath<S>;
+
+      /**
+       * Array of numbers or a BinData value that represents the query vector. The number type
+       * must match the indexed field value type.
+       */
+      queryVector: bson.Binary | unknown[];
+
+      /**
+       * The integer number of documents to return in the results. This value cannot exceed
+       * numCandidates if numCandidates is specified.
+       */
+      limit: Int;
+
+      /**
+       * If false, runs an ANN search. If true, runs an ENN search. Defaults to false.
+       * This parameter is required if numCandidates is omitted.
+       */
+      exact?: boolean;
+
+      /**
+       * The number of nearest neighbors to use during the search. Value must be less than or
+       * equal to 10000 and cannot be less than limit. This field is required if exact is false
+       * or omitted.
+       */
+      numCandidates?: Int;
+
+      /**
+       * Any Atlas Search operator to filter documents based on metadata or specific search criteria.
+       */
+      filter?: SearchOperator<S>;
+
+      /**
+       * Score assigned to matching search results.
+       */
       score?: SearchScore;
     };
   }
@@ -4745,7 +5233,7 @@ export namespace Aggregation.Stage {
       /**
        * Expression that specifies the value of the connectFromField with which to start the recursive search. Optionally, startWith may be array of values, each of which is individually followed through the traversal process.
        */
-      startWith: Expression<S> | Expression<S>[];
+      startWith: Expression<S> | unknown[];
 
       /**
        * Field name whose value $graphLookup uses to recursively match against the connectToField of other documents in the collection. If the value is an array, each element is individually followed through the traversal process.
@@ -4980,7 +5468,7 @@ export namespace Aggregation.Stage {
       /**
        * Field or fields that act as a unique identifier for a document. The identifier determines if a results document matches an existing document in the output collection.
        */
-      on?: string | string[];
+      on?: string | unknown[];
 
       /**
        * Specifies variables for use in the whenMatched pipeline.
@@ -4990,7 +5478,7 @@ export namespace Aggregation.Stage {
       /**
        * The behavior of $merge if a result document and an existing document in the collection have the same value for the specified on field(s).
        */
-      whenMatched?: WhenMatched | Pipeline<S>;
+      whenMatched?: WhenMatched | UpdatePipeline<S>;
 
       /**
        * The behavior of $merge if a result document does not match an existing document in the out collection.
@@ -5008,7 +5496,48 @@ export namespace Aggregation.Stage {
      * Writes the resulting documents of the aggregation pipeline to a collection. To use the $out stage, it must be the last stage in the pipeline.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/}
      */
-    $out: string | OutCollection;
+    $out: {
+      /**
+       * The output collection name.
+       */
+      coll: string;
+
+      /**
+       * The output database name. If omitted, defaults to the current database.
+       */
+      db?: string;
+
+      /**
+       * Specifies the configuration to use when writing to a time series collection.
+       * The timeField is required. All other fields are optional.
+       */
+      timeseries?: {
+        /**
+         * The name of the field which contains the date in each time series document.
+         */
+        timeField: string;
+
+        /**
+         * The name of the field which contains metadata in each time series document.
+         */
+        metaField?: string;
+
+        /**
+         * The granularity of time measurements. Value can be seconds, minutes, or hours.
+         */
+        granularity?: TimeGranularity;
+
+        /**
+         * The maximum time span between measurements in a bucket.
+         */
+        bucketMaxSpanSeconds?: Int;
+
+        /**
+         * The interval that determines the starting timestamp for a new bucket.
+         */
+        bucketRoundingSeconds?: Int;
+      };
+    };
   }
 
   /**
@@ -5033,6 +5562,43 @@ export namespace Aggregation.Stage {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/}
      */
     $project: {} & { [specification: string]: Expression<S> };
+  }
+
+  /**
+   * A type describing the `$rankFusion` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rankFusion/}
+   */
+  export interface $rankFusion<S> {
+    /**
+     * Combines multiple pipelines using rank-based fusion to create hybrid search results.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rankFusion/}
+     */
+    $rankFusion: {
+      /**
+       * An object that specifies the pipelines to combine with rank fusion.
+       */
+      input: {
+        /**
+         * Map from name to ranked input pipeline. Each pipeline must operate on the same collection.
+         */
+        pipelines: Pipeline<S>;
+      };
+
+      /**
+       * An object that specifies how to combine the ranked results.
+       */
+      combination?: {
+        /**
+         * Map from pipeline name to weight (non-negative number). If unspecified, default weight is 1 for each pipeline.
+         */
+        weights?: Number;
+      };
+
+      /**
+       * Set to true to include detailed scoring information.
+       */
+      scoreDetails?: boolean;
+    };
   }
 
   /**
@@ -5073,6 +5639,43 @@ export namespace Aggregation.Stage {
   }
 
   /**
+   * A type describing the `$rerank` operator.
+   * @see {@link https://www.mongodb.com/docs/vector-search/query/aggregation-stages/rerank/}
+   */
+  export interface $rerank<S> {
+    /**
+     * Reranks documents using a Voyage AI reranking model to improve relevance scoring.
+     * @see {@link https://www.mongodb.com/docs/vector-search/query/aggregation-stages/rerank/}
+     */
+    $rerank: {
+      /**
+       * Name of the Voyage AI reranking model to use (e.g. rerank-2.5, rerank-2.5-lite).
+       */
+      model: string;
+
+      /**
+       * Query object for reranking.
+       */
+      query: {
+        /**
+         * Query text used to score document relevance.
+         */
+        text: string;
+      };
+
+      /**
+       * Field path or array of field paths to use for reranking.
+       */
+      path: string | unknown[];
+
+      /**
+       * Maximum number of documents to send to Voyage AI for reranking. Value must be between 1 and 1000.
+       */
+      numDocsToRerank: Int;
+    };
+  }
+
+  /**
    * A type describing the `$sample` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/}
    */
@@ -5090,6 +5693,44 @@ export namespace Aggregation.Stage {
   }
 
   /**
+   * A type describing the `$score` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/score/}
+   */
+  export interface $score<S> {
+    /**
+     * Computes and returns a new score as metadata. It also optionally normalizes the input
+     * scores, by default to a range between zero and one.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/score/}
+     */
+    $score: {
+      /**
+       * Computes a new value from the input scores and stores the value in the $meta keyword
+       * score. Returns an error for non-numeric inputs.
+       */
+      score: Expression<S>;
+
+      /**
+       * Normalizes the score to the range of 0 to 1. Value can be:
+       * - none: Doesn't normalize. If omitted, defaults to none.
+       * - sigmoid: Applies the sigmoid expression: 1 / (1 + e^-x).
+       * - minMaxScaler: Applies the $minMaxScaler window function.
+       */
+      normalization?: ScoreNormalization;
+
+      /**
+       * Number to multiply the score expression by after normalization.
+       */
+      weight?: Expression<S>;
+
+      /**
+       * Specifies if $score computes and populates the $scoreDetails metadata field for each
+       * output document.
+       */
+      scoreDetails?: boolean;
+    };
+  }
+
+  /**
    * A type describing the `$scoreFusion` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/scoreFusion/}
    */
@@ -5100,24 +5741,44 @@ export namespace Aggregation.Stage {
      */
     $scoreFusion: {
       /**
-       * An object with the following required fields:
-       * - input.pipelines: Map from name to input pipeline. Each pipeline must be operating on the same collection. Minimum of one pipeline.
-       * - input.normalization: Normalizes the score to the range 0 to 1 before combining the results. Value can be none, sigmoid or minMaxScaler.
+       * An object that specifies the pipelines to combine with score fusion.
        */
-      input: Record<string, unknown>;
+      input: {
+        /**
+         * Map from name to input pipeline. Each pipeline must be operating on the same collection.
+         */
+        pipelines: Pipeline<S>;
+
+        /**
+         * Normalizes the score to the range 0 to 1 before combining the results. Value can be none, sigmoid or minMaxScaler.
+         */
+        normalization: string;
+      };
 
       /**
-       * An object with the following optional fields:
-       * - combination.weights: Map from pipeline name to numbers (non-negative). If unspecified, default weight is 1 for each pipeline.
-       * - combination.method: Specifies method for combining scores. Value can be avg or expression. Default is avg.
-       * - combination.expression: This is the custom expression that is used when combination.method is set to expression.
+       * An object that specifies how to combine the scores.
        */
-      combination?: Record<string, unknown>;
+      combination?: {
+        /**
+         * Map from pipeline name to weight (non-negative number). If unspecified, default weight is 1 for each pipeline.
+         */
+        weights?: Number;
+
+        /**
+         * Specifies method for combining scores. Value can be avg or expression. Default is avg.
+         */
+        method?: string;
+
+        /**
+         * Custom expression used when combination.method is set to expression.
+         */
+        expression?: Expression<S>;
+      };
 
       /**
        * Set to true to include detailed scoring information.
        */
-      scoreDetails: boolean;
+      scoreDetails?: boolean;
     };
   }
 
@@ -5175,6 +5836,11 @@ export namespace Aggregation.Stage {
       sort?: Record<string, unknown>;
 
       /**
+       * Object that sets the context of the query to the specified embedded document field. You must also specify `returnStoredSource` and set it to `true`.
+       */
+      returnScope?: Record<string, unknown>;
+
+      /**
        * Flag that specifies whether to perform a full document lookup on the backend database or return only stored source fields directly from Atlas Search.
        */
       returnStoredSource?: boolean;
@@ -5206,6 +5872,16 @@ export namespace Aggregation.Stage {
        * Document that specifies the count options for retrieving a count of the results.
        */
       count?: Record<string, unknown>;
+
+      /**
+       * Object that sets the context of the query to the specified embedded document field. You must also specify `returnStoredSource` and set it to `true` if your cluster MongoDB version is less than 8.2.
+       */
+      returnScope?: Record<string, unknown>;
+
+      /**
+       * Flag that specifies whether to perform a full document lookup on the backend database or return only stored source fields directly from Atlas Search.
+       */
+      returnStoredSource?: boolean;
     };
   }
 
@@ -5389,9 +6065,10 @@ export namespace Aggregation.Stage {
       path: string;
 
       /**
-       * Array of numbers that represent the query vector. The number type must match the indexed field value type.
+       * Array of numbers or a BinData value that represent the query vector. The number type
+       * must match the indexed field value type.
        */
-      queryVector: unknown[];
+      queryVector: bson.Binary | unknown[];
 
       /**
        * This is required if numCandidates is omitted. false to run ANN search. true to run ENN search.
@@ -5399,7 +6076,7 @@ export namespace Aggregation.Stage {
       exact?: boolean;
 
       /**
-       * Any match query that compares an indexed field with a boolean, date, objectId, number (not decimals), string, or UUID to use as a pre-filter.
+       * Any match query that compares an indexed field with a boolean, date, objectId, number, string, or UUID to use as a pre-filter.
        */
       filter?: Query<S>;
 
@@ -5408,6 +6085,26 @@ export namespace Aggregation.Stage {
        * Number of nearest neighbors to use during the search. Value must be less than or equal to (<=) 10000. You can't specify a number less than the number of documents to return (limit).
        */
       numCandidates?: Int;
+
+      /**
+       * If true, the search returns only the stored source fields configured on the index directly from the index and skips a full document lookup. If omitted, the default value is false.
+       */
+      returnStoredSource?: boolean;
+
+      /**
+       * Configure how MongoDB Vector Search scores documents that contain nested arrays.
+       */
+      nestedOptions?: {
+        /**
+         * Specifies how to score documents that contain nested arrays. Value can be avg or max.
+         */
+        scoreMode?: string;
+      };
+
+      /**
+       * Any match query that compares an indexed top-level field with a boolean, date, objectId, number, string, or UUID to use as a pre-filter. Only valid if `nestedRoot` is specified in the index definition.
+       */
+      parentFilter?: Query<S>;
     };
   }
 }
@@ -5528,7 +6225,7 @@ export namespace Aggregation.Update {
      * Removes all array elements that match a specified value or condition.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pull/}
      */
-    $pull: {} & { [field: string]: any };
+    $pull: {} & { [field: string]: FieldQuery<S> };
   }
 
   /**
@@ -5647,6 +6344,8 @@ export type BitwiseOperation =
   | { xor: Int | Long };
 export type SearchScore = unknown;
 export type Granularity = string;
+export type TimeGranularity = 'seconds' | 'minutes' | 'hours';
+export type ScoreNormalization = 'none' | 'sigmoid' | 'minMaxScaler';
 export type FullDocument = string;
 export type FullDocumentBeforeChange = string;
 export type AccumulatorPercentile = string;
@@ -5681,37 +6380,27 @@ export type Stage<S> =
   | Aggregation.Stage.$addFields<S>
   | Aggregation.Stage.$bucket<S>
   | Aggregation.Stage.$bucketAuto<S>
-  | Aggregation.Stage.$changeStream<S>
-  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
-  | Aggregation.Stage.$collStats<S>
   | Aggregation.Stage.$count<S>
-  | Aggregation.Stage.$currentOp<S>
   | Aggregation.Stage.$densify<S>
-  | Aggregation.Stage.$documents<S>
   | Aggregation.Stage.$facet<S>
   | Aggregation.Stage.$fill<S>
-  | Aggregation.Stage.$geoNear<S>
   | Aggregation.Stage.$graphLookup<S>
   | Aggregation.Stage.$group<S>
-  | Aggregation.Stage.$indexStats<S>
   | Aggregation.Stage.$limit<S>
-  | Aggregation.Stage.$listLocalSessions<S>
   | Aggregation.Stage.$listSampledQueries<S>
   | Aggregation.Stage.$listSearchIndexes<S>
-  | Aggregation.Stage.$listSessions<S>
   | Aggregation.Stage.$lookup<S>
   | Aggregation.Stage.$match<S>
-  | Aggregation.Stage.$merge<S>
-  | Aggregation.Stage.$out<S>
   | Aggregation.Stage.$planCacheStats<S>
   | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$rankFusion<S>
   | Aggregation.Stage.$redact<S>
   | Aggregation.Stage.$replaceRoot<S>
   | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$rerank<S>
   | Aggregation.Stage.$sample<S>
+  | Aggregation.Stage.$score<S>
   | Aggregation.Stage.$scoreFusion<S>
-  | Aggregation.Stage.$search<S>
-  | Aggregation.Stage.$searchMeta<S>
   | Aggregation.Stage.$set<S>
   | Aggregation.Stage.$setWindowFields<S>
   | Aggregation.Stage.$shardedDataDistribution<S>
@@ -5720,9 +6409,9 @@ export type Stage<S> =
   | Aggregation.Stage.$sortByCount<S>
   | Aggregation.Stage.$unionWith<S>
   | Aggregation.Stage.$unset<S>
-  | Aggregation.Stage.$unwind<S>
-  | Aggregation.Stage.$vectorSearch<S>;
+  | Aggregation.Stage.$unwind<S>;
 export type Pipeline<S> = Stage<S>[];
+export type UpdatePipeline<S> = UpdateStage<S>[];
 export type UntypedPipeline = Pipeline<any>;
 export type Query<S> =
   | QueryOperator<S>
@@ -5828,6 +6517,10 @@ export type ResolvesToDouble<S> =
   | Aggregation.Expression.$radiansToDegrees<S>
   | Aggregation.Expression.$rand<S>
   | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$sigmoid<S>
+  | Aggregation.Expression.$similarityCosine<S>
+  | Aggregation.Expression.$similarityDotProduct<S>
+  | Aggregation.Expression.$similarityEuclidean<S>
   | Aggregation.Expression.$sin<S>
   | Aggregation.Expression.$sinh<S>
   | Aggregation.Expression.$sqrt<S>
@@ -5844,6 +6537,7 @@ export type ResolvesToString<S> =
   | string
   | Aggregation.Expression.$concat<S>
   | Aggregation.Expression.$dateToString<S>
+  | Aggregation.Expression.$hexHash<S>
   | Aggregation.Expression.$ltrim<S>
   | Aggregation.Expression.$replaceAll<S>
   | Aggregation.Expression.$replaceOne<S>
@@ -5864,9 +6558,12 @@ export type ResolvesToObject<S> =
   | Record<string, unknown>
   | Aggregation.Expression.$arrayToObject<S>
   | Aggregation.Expression.$dateToParts<S>
+  | Aggregation.Expression.$deserializeEJSON<S>
   | Aggregation.Expression.$mergeObjects<S>
   | Aggregation.Expression.$regexFind<S>
+  | Aggregation.Expression.$serializeEJSON<S>
   | Aggregation.Expression.$setField<S>
+  | Aggregation.Expression.$toObject<S>
   | Aggregation.Expression.$unsetField<S>;
 export type ResolvesToArray<S> =
   | ResolvesToAny<S>
@@ -5874,6 +6571,7 @@ export type ResolvesToArray<S> =
   | unknown[]
   | Aggregation.Accumulator.$concatArrays<S>
   | Aggregation.Accumulator.$setUnion<S>
+  | Aggregation.Expression.$bottomN<S>
   | Aggregation.Expression.$concatArrays<S>
   | Aggregation.Expression.$filter<S>
   | Aggregation.Expression.$firstN<S>
@@ -5892,11 +6590,14 @@ export type ResolvesToArray<S> =
   | Aggregation.Expression.$slice<S>
   | Aggregation.Expression.$sortArray<S>
   | Aggregation.Expression.$split<S>
+  | Aggregation.Expression.$toArray<S>
+  | Aggregation.Expression.$topN<S>
   | Aggregation.Expression.$zip<S>;
 export type ResolvesToBinData<S> =
   | ResolvesToAny<S>
   | BinDataFieldPath<S>
-  | bson.Binary;
+  | bson.Binary
+  | Aggregation.Expression.$hash<S>;
 export type ResolvesToObjectId<S> =
   | ResolvesToAny<S>
   | ObjectIdFieldPath<S>
@@ -5980,6 +6681,7 @@ export type ResolvesToInt<S> =
   | Aggregation.Expression.$strLenCP<S>
   | Aggregation.Expression.$strcasecmp<S>
   | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$subtype<S>
   | Aggregation.Expression.$toInt<S>
   | Aggregation.Expression.$week<S>
   | Aggregation.Expression.$year<S>;
@@ -6053,6 +6755,7 @@ export type AccumulatorOperator<S> =
   | Aggregation.Accumulator.$median<S>
   | Aggregation.Accumulator.$mergeObjects<S>
   | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minMaxScaler<S>
   | Aggregation.Accumulator.$minN<S>
   | Aggregation.Accumulator.$percentile<S>
   | Aggregation.Accumulator.$push<S>
@@ -6088,6 +6791,7 @@ export type Window<S> =
   | Aggregation.Accumulator.$maxN<S>
   | Aggregation.Accumulator.$median<S>
   | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minMaxScaler<S>
   | Aggregation.Accumulator.$minN<S>
   | Aggregation.Accumulator.$percentile<S>
   | Aggregation.Accumulator.$push<S>
@@ -6118,6 +6822,8 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$bitNot<S>
   | Aggregation.Expression.$bitOr<S>
   | Aggregation.Expression.$bitXor<S>
+  | Aggregation.Expression.$bottom<S>
+  | Aggregation.Expression.$bottomN<S>
   | Aggregation.Expression.$bsonSize<S>
   | Aggregation.Expression.$case<S>
   | Aggregation.Expression.$ceil<S>
@@ -6141,6 +6847,7 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$dayOfWeek<S>
   | Aggregation.Expression.$dayOfYear<S>
   | Aggregation.Expression.$degreesToRadians<S>
+  | Aggregation.Expression.$deserializeEJSON<S>
   | Aggregation.Expression.$divide<S>
   | Aggregation.Expression.$eq<S>
   | Aggregation.Expression.$exp<S>
@@ -6152,6 +6859,8 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$getField<S>
   | Aggregation.Expression.$gt<S>
   | Aggregation.Expression.$gte<S>
+  | Aggregation.Expression.$hash<S>
+  | Aggregation.Expression.$hexHash<S>
   | Aggregation.Expression.$hour<S>
   | Aggregation.Expression.$ifNull<S>
   | Aggregation.Expression.$in<S>
@@ -6205,12 +6914,17 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$round<S>
   | Aggregation.Expression.$rtrim<S>
   | Aggregation.Expression.$second<S>
+  | Aggregation.Expression.$serializeEJSON<S>
   | Aggregation.Expression.$setDifference<S>
   | Aggregation.Expression.$setEquals<S>
   | Aggregation.Expression.$setField<S>
   | Aggregation.Expression.$setIntersection<S>
   | Aggregation.Expression.$setIsSubset<S>
   | Aggregation.Expression.$setUnion<S>
+  | Aggregation.Expression.$sigmoid<S>
+  | Aggregation.Expression.$similarityCosine<S>
+  | Aggregation.Expression.$similarityDotProduct<S>
+  | Aggregation.Expression.$similarityEuclidean<S>
   | Aggregation.Expression.$sin<S>
   | Aggregation.Expression.$sinh<S>
   | Aggregation.Expression.$size<S>
@@ -6227,10 +6941,12 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$substrBytes<S>
   | Aggregation.Expression.$substrCP<S>
   | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$subtype<S>
   | Aggregation.Expression.$sum<S>
   | Aggregation.Expression.$switch<S>
   | Aggregation.Expression.$tan<S>
   | Aggregation.Expression.$tanh<S>
+  | Aggregation.Expression.$toArray<S>
   | Aggregation.Expression.$toBool<S>
   | Aggregation.Expression.$toDate<S>
   | Aggregation.Expression.$toDecimal<S>
@@ -6239,9 +6955,12 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$toInt<S>
   | Aggregation.Expression.$toLong<S>
   | Aggregation.Expression.$toLower<S>
+  | Aggregation.Expression.$toObject<S>
   | Aggregation.Expression.$toObjectId<S>
   | Aggregation.Expression.$toString<S>
   | Aggregation.Expression.$toUpper<S>
+  | Aggregation.Expression.$top<S>
+  | Aggregation.Expression.$topN<S>
   | Aggregation.Expression.$trim<S>
   | Aggregation.Expression.$trunc<S>
   | Aggregation.Expression.$tsIncrement<S>
@@ -6253,6 +6972,7 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$zip<S>;
 export type ResolvesToAny<S> =
   | Aggregation.Expression.$arrayElemAt<S>
+  | Aggregation.Expression.$bottom<S>
   | Aggregation.Expression.$cond<S>
   | Aggregation.Expression.$convert<S>
   | Aggregation.Expression.$first<S>
@@ -6266,7 +6986,8 @@ export type ResolvesToAny<S> =
   | Aggregation.Expression.$meta<S>
   | Aggregation.Expression.$min<S>
   | Aggregation.Expression.$reduce<S>
-  | Aggregation.Expression.$switch<S>;
+  | Aggregation.Expression.$switch<S>
+  | Aggregation.Expression.$top<S>;
 export type SwitchBranch<S> = Aggregation.Expression.$case<S>;
 export type FieldQuery<S> =
   | Aggregation.Query.$all<S>
@@ -6346,6 +7067,8 @@ export type SearchOperator<S> =
   | Aggregation.Search.Facet<S>
   | Aggregation.Search.GeoShape<S>
   | Aggregation.Search.GeoWithin<S>
+  | Aggregation.Search.HasAncestor<S>
+  | Aggregation.Search.HasRoot<S>
   | Aggregation.Search.In<S>
   | Aggregation.Search.MoreLikeThis<S>
   | Aggregation.Search.Near<S>
@@ -6354,7 +7077,15 @@ export type SearchOperator<S> =
   | Aggregation.Search.Range<S>
   | Aggregation.Search.Regex<S>
   | Aggregation.Search.Text<S>
+  | Aggregation.Search.VectorSearch<S>
   | Aggregation.Search.Wildcard<S>;
+export type UpdateStage<S> =
+  | Aggregation.Stage.$addFields<S>
+  | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$replaceRoot<S>
+  | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$set<S>
+  | Aggregation.Stage.$unset<S>;
 export type StageOperator<S> =
   | Aggregation.Stage.$addFields<S>
   | Aggregation.Stage.$bucket<S>
@@ -6383,10 +7114,13 @@ export type StageOperator<S> =
   | Aggregation.Stage.$out<S>
   | Aggregation.Stage.$planCacheStats<S>
   | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$rankFusion<S>
   | Aggregation.Stage.$redact<S>
   | Aggregation.Stage.$replaceRoot<S>
   | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$rerank<S>
   | Aggregation.Stage.$sample<S>
+  | Aggregation.Stage.$score<S>
   | Aggregation.Stage.$scoreFusion<S>
   | Aggregation.Stage.$search<S>
   | Aggregation.Stage.$searchMeta<S>
@@ -6400,6 +7134,22 @@ export type StageOperator<S> =
   | Aggregation.Stage.$unset<S>
   | Aggregation.Stage.$unwind<S>
   | Aggregation.Stage.$vectorSearch<S>;
+export type InputStage<S> =
+  | Aggregation.Stage.$changeStream<S>
+  | Aggregation.Stage.$collStats<S>
+  | Aggregation.Stage.$currentOp<S>
+  | Aggregation.Stage.$documents<S>
+  | Aggregation.Stage.$geoNear<S>
+  | Aggregation.Stage.$indexStats<S>
+  | Aggregation.Stage.$listLocalSessions<S>
+  | Aggregation.Stage.$listSessions<S>
+  | Aggregation.Stage.$search<S>
+  | Aggregation.Stage.$searchMeta<S>
+  | Aggregation.Stage.$vectorSearch<S>;
+export type OutputStage<S> =
+  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
+  | Aggregation.Stage.$merge<S>
+  | Aggregation.Stage.$out<S>;
 export type Update<S> =
   | Aggregation.Update.$addToSet<S>
   | Aggregation.Update.$bit<S>

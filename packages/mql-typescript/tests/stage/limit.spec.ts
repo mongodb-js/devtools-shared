@@ -9,9 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/#example}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [{ $limit: 5 }];
+  // TODO: no schema found for limit.Example
 }

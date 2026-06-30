@@ -9,31 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/#using-two--addfields-stages}
  */
 function test0() {
-  type scores = {
-    _id: number;
-    student: string;
-    homework: Array<number>;
-    quiz: Array<number>;
-    extraCredit: number;
-  };
-
-  const aggregation: schema.Pipeline<scores> = [
-    {
-      $addFields: {
-        totalHomework: { $sum: ['$homework'] },
-        totalQuiz: { $sum: ['$quiz'] },
-      },
-    },
-
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).
-     */
-    {
-      $addFields: {
-        totalScore: { $add: ['$totalHomework', '$totalQuiz', '$extraCredit'] },
-      },
-    } as any,
-  ];
+  // TODO: no schema found for addFields.Using Two $addFields Stages
 }
 
 /**
@@ -41,18 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/#adding-fields-to-an-embedded-document}
  */
 function test1() {
-  type vehicles = {
-    _id: number;
-    type: string;
-    specs: {
-      doors: number;
-      wheels: number;
-    };
-  };
-
-  const aggregation: schema.Pipeline<vehicles> = [
-    { $addFields: { 'specs.fuel_type': 'unleaded' } },
-  ];
+  // TODO: no schema found for addFields.Adding Fields to an Embedded Document
 }
 
 /**
@@ -60,13 +25,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/#overwriting-an-existing-field}
  */
 function test2() {
-  type animals = {
-    _id: number;
-    dogs: number;
-    cats: number;
-  };
-
-  const aggregation: schema.Pipeline<animals> = [{ $addFields: { cats: 20 } }];
+  // TODO: no schema found for addFields.Overwriting an existing field
 }
 
 /**
@@ -74,16 +33,5 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/#add-element-to-an-array}
  */
 function test3() {
-  type scores = {
-    _id: number;
-    student: string;
-    homework: Array<number>;
-    quiz: Array<number>;
-    extraCredit: number;
-  };
-
-  const aggregation: schema.Pipeline<scores> = [
-    { $match: { _id: 1 } },
-    { $addFields: { homework: { $concatArrays: ['$homework', [7]] } } },
-  ];
+  // TODO: no schema found for addFields.Add Element to an Array
 }

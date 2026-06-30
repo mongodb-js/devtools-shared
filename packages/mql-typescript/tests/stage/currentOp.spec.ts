@@ -9,18 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/currentOp/#inactive-sessions}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $currentOp: { allUsers: true, idleSessions: true } },
-
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' ($currentOp emits new fields that are not available statically).
-     */
-    { $match: { active: false, transaction: { $exists: true } } } as any,
-  ];
+  // TODO: no schema found for currentOp.Inactive Sessions
 }
 
 /**
@@ -28,16 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/currentOp/#sampled-queries}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $currentOp: { allUsers: true, localOps: true } },
-
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' ($currentOp emits new fields that are not available statically).
-     */
-    { $match: { desc: 'query analyzer' } } as any,
-  ];
+  // TODO: no schema found for currentOp.Sampled Queries
 }

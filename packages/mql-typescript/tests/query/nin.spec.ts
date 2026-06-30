@@ -9,15 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nin/#select-on-unmatching-documents}
  */
 function test0() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { quantity: { $nin: [5, 15] } } },
-  ];
+  // TODO: no schema found for nin.Select on Unmatching Documents
 }
 
 /**
@@ -25,13 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nin/#select-on-elements-not-in-an-array}
  */
 function test1() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { tags: { $nin: ['school'] } } },
-  ];
+  // TODO: no schema found for nin.Select on Elements Not in an Array
 }

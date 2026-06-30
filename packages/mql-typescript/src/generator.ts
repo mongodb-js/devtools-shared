@@ -200,6 +200,12 @@ export abstract class GeneratorBase {
     'definitions',
   );
 
+  // The `types` category describes closed-set types using a different schema
+  // (schemas/type.json); those types are modeled directly in the generator's
+  // type mappings. The `pipeline` category describes the top-level pipeline
+  // containers, which are also modeled directly as type mappings.
+  private static readonly ignoredCategories = new Set(['types', 'pipeline']);
+
   private async *listCategories(
     filterRegex: RegExp | undefined,
   ): AsyncIterable<{
@@ -209,6 +215,9 @@ export abstract class GeneratorBase {
     for await (const folder of await fs.readdir(this.configDir, {
       withFileTypes: true,
     })) {
+      if (GeneratorBase.ignoredCategories.has(folder.name)) {
+        continue;
+      }
       if (folder.isDirectory() && filterRegex?.test(folder.name) !== false) {
         yield {
           category: folder.name,

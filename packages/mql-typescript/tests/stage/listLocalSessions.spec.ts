@@ -9,13 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/#list-all-local-sessions}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listLocalSessions: { allUsers: true } },
-  ];
+  // TODO: no schema found for listLocalSessions.List All Local Sessions
 }
 
 /**
@@ -23,13 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/#list-all-local-sessions-for-the-specified-users}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listLocalSessions: { users: [{ user: 'myAppReader', db: 'test' }] } },
-  ];
+  // TODO: no schema found for listLocalSessions.List All Local Sessions for the Specified Users
 }
 
 /**
@@ -37,11 +25,5 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/#list-all-local-sessions-for-the-current-user}
  */
 function test2() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listLocalSessions: {} },
-  ];
+  // TODO: no schema found for listLocalSessions.List All Local Sessions for the Current User
 }

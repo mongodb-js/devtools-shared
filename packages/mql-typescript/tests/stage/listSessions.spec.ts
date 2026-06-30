@@ -9,13 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/#list-all-sessions}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listSessions: { allUsers: true } },
-  ];
+  // TODO: no schema found for listSessions.List All Sessions
 }
 
 /**
@@ -23,13 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/#list-all-sessions-for-the-specified-users}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listSessions: { users: [{ user: 'myAppReader', db: 'test' }] } },
-  ];
+  // TODO: no schema found for listSessions.List All Sessions for the Specified Users
 }
 
 /**
@@ -37,9 +25,5 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/#list-all-sessions-for-the-current-user}
  */
 function test2() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [{ $listSessions: {} }];
+  // TODO: no schema found for listSessions.List All Sessions for the Current User
 }

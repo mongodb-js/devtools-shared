@@ -20,8 +20,8 @@ function test0() {
   const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
-        quizAvg: { $avg: '$quizzes' },
-        labAvg: { $avg: '$labs' },
+        quizAvg: { $avg: ['$quizzes'] },
+        labAvg: { $avg: ['$labs'] },
         examAvg: { $avg: ['$final', '$midterm'] },
       },
     },

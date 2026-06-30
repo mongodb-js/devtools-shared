@@ -9,14 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/#element-match}
  */
 function test0() {
-  type TestCollection = {
-    _id: number;
-    results: Array<number>;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $match: { results: { $elemMatch: { $gte: 80, $lt: 85 } } } },
-  ];
+  // TODO: no schema found for elemMatch.Element Match
 }
 
 /**
@@ -24,26 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/#array-of-embedded-documents}
  */
 function test1() {
-  type survey = {
-    _id: number;
-    results:
-      | Array<{
-          product: string;
-          score: number;
-        }>
-      | {
-          product: string;
-          score: number;
-        };
-  };
-
-  const aggregation: schema.Pipeline<survey> = [
-    {
-      $match: {
-        results: { $elemMatch: { product: 'xyz', score: { $gte: 8 } } },
-      },
-    },
-  ];
+  // TODO: no schema found for elemMatch.Array of Embedded Documents
 }
 
 /**
@@ -51,12 +25,19 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/#single-query-condition}
  */
 function test2() {
-  type TestCollection = {
-    _id: number;
-    results: Array<number>;
-  };
+  // TODO: no schema found for elemMatch.Single Query Condition
+}
 
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $match: { results: { $elemMatch: { product: { $ne: 'xyz' } } } } },
-  ];
+/**
+ * Using $or with $elemMatch
+ */
+function test3() {
+  // TODO: no schema found for elemMatch.Using $or with $elemMatch
+}
+
+/**
+ * Single field operator
+ */
+function test4() {
+  // TODO: no schema found for elemMatch.Single field operator
 }

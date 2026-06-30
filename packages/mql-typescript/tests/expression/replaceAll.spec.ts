@@ -5,8 +5,8 @@ import type * as schema from '../../out/schema';
 import * as bson from 'bson';
 
 /**
- * Example
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceAll/#example}
+ * Replace Using a String
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceAll/#replace-using-a-string}
  */
 function test0() {
   type inventory = {
@@ -21,6 +21,31 @@ function test0() {
           $replaceAll: {
             input: '$item',
             find: 'blue paint',
+            replacement: 'red paint',
+          },
+        },
+      },
+    },
+  ];
+}
+
+/**
+ * Replace Using Regex
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceAll/#replace-using-regex}
+ */
+function test1() {
+  type inventory = {
+    _id: number;
+    item: string;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    {
+      $project: {
+        item: {
+          $replaceAll: {
+            input: '$item',
+            find: new bson.BSONRegExp('\\bblue paint\\b', ''),
             replacement: 'red paint',
           },
         },

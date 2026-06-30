@@ -92,6 +92,35 @@ const inventorySchema: SchemaInfo = {
   },
 };
 
+// The docs examples for these operators live on pages with several sibling
+// examples, so the crawler cannot reliably infer their collection schema.
+const zipCodeSchema: SchemaInfo = {
+  collectionName: 'addressBook',
+  schema: {
+    _id: { types: [{ bsonType: 'Int32' }] },
+    address: { types: [{ bsonType: 'String' }] },
+    zipCode: {
+      types: [
+        { bsonType: 'String' },
+        { bsonType: 'Int32' },
+        { bsonType: 'Double' },
+        { bsonType: 'Array', types: [{ bsonType: 'String' }] },
+      ],
+    },
+  },
+};
+
+const salesByDateSchema: SchemaInfo = {
+  collectionName: 'sales',
+  schema: {
+    _id: { types: [{ bsonType: 'Int32' }] },
+    item: { types: [{ bsonType: 'String' }] },
+    price: { types: [{ bsonType: 'Decimal128' }] },
+    quantity: { types: [{ bsonType: 'Int32' }] },
+    date: { types: [{ bsonType: 'Date' }] },
+  },
+};
+
 const mflixMoviesSchema: SchemaInfo = {
   collectionName: 'movies',
   schema: {
@@ -1415,6 +1444,34 @@ type SchemaMap = {
 };
 
 const staticSchemas: SchemaMap = {
+  accumulator: {
+    concatArrays: {
+      ['Warehouse collection']: {
+        collectionName: 'warehouses',
+        schema: {
+          instock: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+          ordered: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+        },
+      },
+    },
+    setUnion: {
+      ['Flowers collection']: {
+        collectionName: 'flowers',
+        schema: {
+          flowerFieldA: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+          flowerFieldB: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+        },
+      },
+    },
+  },
   expression: {
     dateFromParts: {
       Example: {
@@ -1496,6 +1553,15 @@ const staticSchemas: SchemaMap = {
       },
     },
     exists: inventorySchema,
+    gt: inventorySchema,
+    gte: inventorySchema,
+    lt: inventorySchema,
+    lte: inventorySchema,
+    nin: inventorySchema,
+    type: {
+      ['Querying by Data Type']: zipCodeSchema,
+      ['Querying by Array Type']: zipCodeSchema,
+    },
     geoIntersects: geoPolygonSchema,
     geoWithin: geoPolygonSchema,
     jsonSchema: {
@@ -1563,6 +1629,22 @@ const staticSchemas: SchemaMap = {
     wildcard: mflixMoviesSchema,
   },
   stage: {
+    project: {
+      // The docs page for this example shares its insertion code with sibling
+      // examples, so the crawler cannot reliably infer the {x, y} collection.
+      'Project New Array Fields': {
+        collectionName: 'TestCollection',
+        schema: {
+          _id: { types: [{ bsonType: 'ObjectId' }] },
+          x: { types: [{ bsonType: 'Int32' }] },
+          y: { types: [{ bsonType: 'Int32' }] },
+        },
+      },
+    },
+    group: {
+      ['Calculate Count Sum and Average']: salesByDateSchema,
+      ['Group by null']: salesByDateSchema,
+    },
     sort: {
       collectionName: 'users',
       schema: {

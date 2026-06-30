@@ -14,6 +14,24 @@ export class DocsCrawler {
 
   private virtualConsole: VirtualConsole;
 
+  // Documentation pages are fetched once per page (ignoring the URL fragment),
+  // since a single operator page typically backs several tests that only differ
+  // by their anchor.
+  private static domCache = new Map<string, Promise<JSDOM>>();
+
+  private fetchDom(): Promise<JSDOM> {
+    const url = new URL(this.url);
+    url.hash = '';
+    const cacheKey = url.toString();
+
+    let dom = DocsCrawler.domCache.get(cacheKey);
+    if (!dom) {
+      dom = JSDOM.fromURL(cacheKey, { virtualConsole: this.virtualConsole });
+      DocsCrawler.domCache.set(cacheKey, dom);
+    }
+    return dom;
+  }
+
   private fuzzyParse(json: string): unknown[] | undefined {
     // Sometimes the snippet will end with ellipsis instead of json
     json = json.replace(/\.\.\.$/g, '');
@@ -149,9 +167,7 @@ export class DocsCrawler {
     }
 
     try {
-      const dom = await JSDOM.fromURL(this.url, {
-        virtualConsole: this.virtualConsole,
-      });
+      const dom = await this.fetchDom();
       const exampleSection = dom.window.document
         .querySelector(`a[href='${fragment}']:not([target])`)
         ?.closest('section');

@@ -9,17 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#count-the-number-of-documents-in-a-collection}
  */
 function test0() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [
-    { $group: { _id: null, count: { $count: {} } } },
-  ];
+  // TODO: no schema found for group.Count the Number of Documents in a Collection
 }
 
 /**
@@ -27,15 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#retrieve-distinct-values}
  */
 function test1() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [{ $group: { _id: '$item' } }];
+  // TODO: no schema found for group.Retrieve Distinct Values
 }
 
 /**
@@ -43,27 +25,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-by-item-having}
  */
 function test2() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [
-    {
-      $group: {
-        _id: '$item',
-        totalSaleAmount: { $sum: { $multiply: ['$price', '$quantity'] } },
-      },
-    },
-
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).
-     */
-    { $match: { totalSaleAmount: { $gte: 100 } } } as any,
-  ];
+  // TODO: no schema found for group.Group by Item Having
 }
 
 /**
@@ -71,33 +33,7 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#calculate-count--sum--and-average}
  */
 function test3() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [
-    {
-      $match: {
-        date: {
-          $gte: new Date('2014-01-01T00:00:00.000Z'),
-          $lt: new Date('2015-01-01T00:00:00.000Z'),
-        },
-      },
-    },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-        totalSaleAmount: { $sum: { $multiply: ['$price', '$quantity'] } },
-        averageQuantity: { $avg: '$quantity' },
-        count: { $sum: 1 },
-      },
-    },
-    { $sort: { totalSaleAmount: -1 } },
-  ];
+  // TODO: no schema found for group.Calculate Count Sum and Average
 }
 
 /**
@@ -105,24 +41,7 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-by-null}
  */
 function test4() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [
-    {
-      $group: {
-        _id: null,
-        totalSaleAmount: { $sum: { $multiply: ['$price', '$quantity'] } },
-        averageQuantity: { $avg: '$quantity' },
-        count: { $sum: 1 },
-      },
-    },
-  ];
+  // TODO: no schema found for group.Group by null
 }
 
 /**
@@ -130,16 +49,7 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#pivot-data}
  */
 function test5() {
-  type books = {
-    _id: number;
-    title: string;
-    author: string;
-    copies: number;
-  };
-
-  const aggregation: schema.Pipeline<books> = [
-    { $group: { _id: '$author', books: { $push: '$title' } } },
-  ];
+  // TODO: no schema found for group.Pivot Data
 }
 
 /**
@@ -147,20 +57,5 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#group-documents-by-author}
  */
 function test6() {
-  type sales = {
-    _id: number;
-    item: string;
-    price: bson.Decimal128;
-    quantity: bson.Int32 | number;
-    date: Date;
-  };
-
-  const aggregation: schema.Pipeline<sales> = [
-    { $group: { _id: '$author', books: { $push: '$$ROOT' } } },
-
-    /**
-     * This stage is unsupported by the static type system, so we're casting it to 'any' (it may involve a projected field).
-     */
-    { $addFields: { totalCopies: { $sum: ['$books.copies'] } } } as any,
-  ];
+  // TODO: no schema found for group.Group Documents by author
 }

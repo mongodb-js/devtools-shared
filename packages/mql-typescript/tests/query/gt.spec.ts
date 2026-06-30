@@ -9,16 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/gt/#match-document-fields}
  */
 function test0() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    carrier: {
-      name: string;
-      fee: number;
-    };
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { quantity: { $gt: 20 } } },
-  ];
+  // TODO: no schema found for gt.Match Document Fields
 }

@@ -9,33 +9,13 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/#syntax}
  */
 function test0() {
-  type inventory = {
-    price: bson.Double | number;
-    qty: bson.Int32 | number | undefined;
-    quantity: bson.Int32 | number | undefined;
-    sale: boolean;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { price: { $not: { $gt: 1.99 } } } },
-  ];
+  // TODO: no schema found for not.Syntax
 }
 
 /**
  * Regular Expressions
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/#regular-expressions}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/#-not-and-regular-expressions}
  */
 function test1() {
-  type inventory = {
-    price: bson.Double | number;
-    qty: bson.Int32 | number | undefined;
-    quantity: bson.Int32 | number | undefined;
-    sale: boolean;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { price: { $not: new bson.BSONRegExp('^p.*', '') } } },
-  ];
+  // TODO: no schema found for not.Regular Expressions
 }

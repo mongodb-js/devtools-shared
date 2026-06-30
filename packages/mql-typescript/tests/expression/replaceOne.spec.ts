@@ -28,3 +28,28 @@ function test0() {
     },
   ];
 }
+
+/**
+ * Replace Using Regex
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceOne/#replace-using-regex}
+ */
+function test1() {
+  type inventory = {
+    _id: number;
+    item: string;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    {
+      $project: {
+        item: {
+          $replaceOne: {
+            input: '$item',
+            find: new bson.BSONRegExp('\\bblue paint\\b', ''),
+            replacement: 'red paint',
+          },
+        },
+      },
+    },
+  ];
+}

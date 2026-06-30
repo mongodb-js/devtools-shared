@@ -11,11 +11,13 @@ type TestType = NonNullable<typeof Operator._output.tests>[number];
 export class DriverSchemaGenerator extends GeneratorBase {
   private async getSchemaFromDocs(test: TestType): Promise<object | string> {
     if (!test.link) {
-      console.error(`No docs reference found for ${test.name}`);
+      console.error(`No docs reference found for ${String(test.name)}`);
       return '// TODO: No docs reference found';
     }
-    if (!test.pipeline) {
-      console.error(`No pipeline found for ${test.name} at ${test.link}`);
+    if (!('pipeline' in test) || !test.pipeline) {
+      console.error(
+        `No pipeline found for ${String(test.name)} at ${test.link}`,
+      );
       return '// TODO: No pipeline found';
     }
 
@@ -24,7 +26,7 @@ export class DriverSchemaGenerator extends GeneratorBase {
 
     if (!schema) {
       console.error(
-        `Could not extract schema for ${test.name} at ${test.link}`,
+        `Could not extract schema for ${String(test.name)} at ${test.link}`,
       );
       return '// TODO: No schema found in docs';
     }
@@ -45,8 +47,13 @@ export class DriverSchemaGenerator extends GeneratorBase {
     test: TestType;
     rawYaml: { tests: { name: string; schema: object | string }[] };
   }): Promise<void> {
+    if (test.name === undefined) {
+      return;
+    }
+
+    const testName = test.name;
     const yamlTest = rawYaml.tests.find(
-      (t: { name: string }) => t.name === test.name,
+      (t: { name: string }) => t.name === testName,
     );
 
     if (!yamlTest) {
@@ -57,7 +64,7 @@ export class DriverSchemaGenerator extends GeneratorBase {
     }
 
     yamlTest.schema =
-      getStaticSchema({ category, operator, test: test.name }) ??
+      getStaticSchema({ category, operator, test: testName }) ??
       (await this.getSchemaFromDocs(test));
   }
 
@@ -86,7 +93,7 @@ export class DriverSchemaGenerator extends GeneratorBase {
           lineWidth: -1,
         });
 
-        updatedYaml = `# $schema: ../schema.json\n${updatedYaml}`;
+        updatedYaml = `# $schema: ../../schemas/operator.json\n${updatedYaml}`;
 
         await fs.writeFile(operator.path, updatedYaml, 'utf8');
       }

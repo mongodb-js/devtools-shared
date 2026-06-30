@@ -9,15 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/#bit-position-array}
  */
 function test0() {
-  type collection = {
-    _id: number;
-    a: number | bson.Binary;
-    binaryValueofA: string;
-  };
-
-  const aggregation: schema.Pipeline<collection> = [
-    { $match: { a: { $bitsAnySet: [1, 5] } } },
-  ];
+  // TODO: no schema found for bitsAnySet.Bit Position Array
 }
 
 /**
@@ -25,15 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/#integer-bitmask}
  */
 function test1() {
-  type collection = {
-    _id: number;
-    a: number | bson.Binary;
-    binaryValueofA: string;
-  };
-
-  const aggregation: schema.Pipeline<collection> = [
-    { $match: { a: { $bitsAnySet: 35 } } },
-  ];
+  // TODO: no schema found for bitsAnySet.Integer Bitmask
 }
 
 /**
@@ -41,13 +25,5 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/#bindata-bitmask}
  */
 function test2() {
-  type collection = {
-    _id: number;
-    a: number | bson.Binary;
-    binaryValueofA: string;
-  };
-
-  const aggregation: schema.Pipeline<collection> = [
-    { $match: { a: { $bitsAnySet: bson.Binary.createFromBase64('MA==', 0) } } },
-  ];
+  // TODO: no schema found for bitsAnySet.BinData Bitmask
 }

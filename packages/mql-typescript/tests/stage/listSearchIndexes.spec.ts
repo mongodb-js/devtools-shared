@@ -9,13 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/#return-all-search-indexes}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listSearchIndexes: {} },
-  ];
+  // TODO: no schema found for listSearchIndexes.Return All Search Indexes
 }
 
 /**
@@ -23,13 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/#return-a-single-search-index-by-name}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listSearchIndexes: { name: 'synonym-mappings' } },
-  ];
+  // TODO: no schema found for listSearchIndexes.Return a Single Search Index by Name
 }
 
 /**
@@ -37,11 +25,5 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/#return-a-single-search-index-by-id}
  */
 function test2() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $listSearchIndexes: { id: '6524096020da840844a4c4a7' } },
-  ];
+  // TODO: no schema found for listSearchIndexes.Return a Single Search Index by id
 }

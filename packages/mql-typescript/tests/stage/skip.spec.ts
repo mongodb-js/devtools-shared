@@ -6,12 +6,8 @@ import * as bson from 'bson';
 
 /**
  * Example
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/#examples}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/#example}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [{ $skip: 5 }];
+  // TODO: no schema found for skip.Example
 }

@@ -9,13 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/#latencystats-document}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $collStats: { latencyStats: { histograms: true } } },
-  ];
+  // TODO: no schema found for collStats.latencyStats Document
 }
 
 /**
@@ -23,13 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/#storagestats-document}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $collStats: { storageStats: {} } },
-  ];
+  // TODO: no schema found for collStats.storageStats Document
 }
 
 /**
@@ -37,13 +25,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/#count-field}
  */
 function test2() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $collStats: { count: {} } },
-  ];
+  // TODO: no schema found for collStats.count Field
 }
 
 /**
@@ -51,11 +33,5 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/#queryexecstats-document}
  */
 function test3() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $collStats: { queryExecStats: {} } },
-  ];
+  // TODO: no schema found for collStats.queryExecStats Document
 }

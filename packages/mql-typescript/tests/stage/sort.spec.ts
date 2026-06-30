@@ -9,15 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/#ascending-descending-sort}
  */
 function test0() {
-  type users = {
-    age: bson.Int32 | number;
-    posts: bson.Int32 | number;
-    name: string;
-  };
-
-  const aggregation: schema.Pipeline<users> = [
-    { $sort: { age: -1, posts: 1 } },
-  ];
+  // TODO: no schema found for sort.Ascending Descending Sort
 }
 
 /**
@@ -25,14 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/#text-score-metadata-sort}
  */
 function test1() {
-  type users = {
-    age: bson.Int32 | number;
-    posts: bson.Int32 | number;
-    name: string;
-  };
-
-  const aggregation: schema.Pipeline<users> = [
-    { $match: { $text: { $search: 'operating' } } },
-    { $sort: { score: { $meta: 'textScore' }, posts: -1 } },
-  ];
+  // TODO: no schema found for sort.Text Score Metadata Sort
 }

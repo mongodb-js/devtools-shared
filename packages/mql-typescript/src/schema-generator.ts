@@ -4,13 +4,24 @@ import { GeneratorBase } from './generator';
 import { Operator } from './metaschema';
 import { capitalize } from './utils';
 
-type ArgType = NonNullable<
-  typeof Operator._type.arguments
->[number]['type'][number];
+type ArgumentT = NonNullable<typeof Operator._type.arguments>[number];
 
-type SyntheticVariables = NonNullable<
-  typeof Operator._type.arguments
->[number]['syntheticVariables'];
+type TypeRef = ArgumentT['type'][number];
+
+// The plain (string) form of a type reference. Type references may also be
+// objects carrying a `generic` type parameter, which the generator ignores.
+type ArgType = Extract<TypeRef, string>;
+
+type SyntheticVariables = ArgumentT['syntheticVariables'];
+
+/**
+ * Normalizes a type reference (which may be a plain name or an object carrying
+ * a generic type parameter) to its plain name. Generics are not reflected in
+ * the generated TypeScript definitions.
+ */
+function typeRefName<T extends string>(type: T | { name: T }): T {
+  return typeof type === 'string' ? type : type.name;
+}
 
 export class SchemaGenerator extends GeneratorBase {
   private schemaOutputFile = path.resolve(
@@ -91,6 +102,8 @@ export class SchemaGenerator extends GeneratorBase {
     ],
     searchScore: ['unknown'],
     granularity: ['string'],
+    timeGranularity: ['"seconds"', '"minutes"', '"hours"'],
+    scoreNormalization: ['"none"', '"sigmoid"', '"minMaxScaler"'],
     fullDocument: ['string'],
     fullDocumentBeforeChange: ['string'],
     accumulatorPercentile: ['string'],
@@ -125,6 +138,7 @@ export class SchemaGenerator extends GeneratorBase {
     ],
     stage_S: [this.toTypeName('StageOperator<S>')],
     pipeline_S: [this.toTypeName('stage<S>[]')],
+    updatePipeline_S: [this.toTypeName('updateStage<S>[]')],
     untypedPipeline: [this.toTypeName('Pipeline<any>')],
     query_S: [
       this.toTypeName('QueryOperator<S>'),
@@ -278,7 +292,7 @@ export class SchemaGenerator extends GeneratorBase {
 
       // TBD: Nested fields
       type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
-      type FieldExpression<T> = { [k: string]: FieldPath<T> };
+      type FieldExpression<T> = { [k: string]: Expression<T> };
 
       type MultiAnalyzerSpec<T> = {
         value: KeysOfAType<T, string>;
@@ -316,17 +330,25 @@ export class SchemaGenerator extends GeneratorBase {
     return undefined;
   }
 
-  private emitArg(
-    arg: NonNullable<typeof Operator._type.arguments>[number],
-    named: boolean,
-  ): void {
+  private emitArg(arg: ArgumentT, named: boolean): void {
     if (named) {
       this.emit(`${arg.name}${arg.optional ? '?' : ''}: `);
     }
 
-    const allowsArrays = arg.type.includes('array');
-    const argTypes = arg.type
-      .filter((t) => t !== 'array')
+    // Object-typed arguments may carry their own nested `arguments`, which
+    // describe a typed object structure rather than a free-form record. The
+    // recursive `arguments` reference is typed as `any` in the generated
+    // metaschema (the reference cycle is broken during extraction), so we
+    // restore the element type here.
+    if (arg.arguments) {
+      this.emitObjectFromArgs(arg.arguments as ArgumentT[]);
+      return;
+    }
+
+    const types = arg.type.map(typeRefName);
+    const allowsArrays = types.includes('array');
+    const nonArrayTypes = types.filter((t) => t !== 'array');
+    const argTypes = nonArrayTypes
       .map((type) => {
         const name = this.getArgumentTypeName(type, arg.syntheticVariables);
         if (!name) {
@@ -337,14 +359,32 @@ export class SchemaGenerator extends GeneratorBase {
       .join(' | ');
 
     if (allowsArrays) {
-      if (arg.type.length > 1) {
-        this.emit(`(${argTypes}) | (${argTypes})[]`);
+      // `array` is a top-level alternative: the argument may be a plain
+      // (untyped) array in addition to any of the other listed types.
+      if (nonArrayTypes.length > 0) {
+        this.emit(`(${argTypes}) | unknown[]`);
       } else {
         this.emit('unknown[]');
       }
     } else {
       this.emit(argTypes);
     }
+  }
+
+  /**
+   * Emits a typed object literal from a list of (sub-)arguments. Used for
+   * object-typed arguments that describe a nested, typed structure.
+   */
+  private emitObjectFromArgs(args: ArgumentT[]): void {
+    this.emit('{');
+    for (const arg of args) {
+      if (arg.description) {
+        this.emitComment(arg.description);
+      }
+      this.emitArg(arg, true);
+      this.emit(';');
+    }
+    this.emit('}');
   }
 
   /**
@@ -439,7 +479,7 @@ export class SchemaGenerator extends GeneratorBase {
         }
         this.emit(`${parsed.name}:`);
         for (const type of parsed.type) {
-          (this.typeMappings[`${type}_S`] ??= []).push(
+          (this.typeMappings[`${typeRefName(type)}_S`] ??= []).push(
             `${namespace}.${ifaceName}<S>`,
           );
         }
@@ -524,7 +564,9 @@ export class SchemaGenerator extends GeneratorBase {
                             `RecordWithStaticFields<${objectType}, ${this.toComment(
                               arg.description,
                             )} ${arg.type
-                              .map((t) => this.getArgumentTypeName(t))
+                              .map((t) =>
+                                this.getArgumentTypeName(typeRefName(t)),
+                              )
                               .join(' | ')}>`,
                           );
                         }
