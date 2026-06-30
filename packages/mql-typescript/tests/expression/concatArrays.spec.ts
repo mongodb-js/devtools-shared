@@ -10,6 +10,7 @@ import * as bson from 'bson';
  */
 function test0() {
   type warehouses = {
+    _id: number;
     instock: Array<string>;
     ordered: Array<string>;
   };

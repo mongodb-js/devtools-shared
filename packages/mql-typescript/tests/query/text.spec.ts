@@ -9,7 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-for-a-single-word}
  */
 function test0() {
-  // TODO: no schema found for text.Search for a Single Word: // TODO: No schema found in docs
+  // TODO: no schema found for text.Search for a Single Word
 }
 
 /**
@@ -17,7 +17,7 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-for-a-single-word}
  */
 function test1() {
-  // TODO: no schema found for text.Match Any of the Search Terms: // TODO: No schema found in docs
+  // TODO: no schema found for text.Match Any of the Search Terms
 }
 
 /**
@@ -25,7 +25,7 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-a-different-language}
  */
 function test2() {
-  // TODO: no schema found for text.Search a Different Language: // TODO: No schema found in docs
+  // TODO: no schema found for text.Search a Different Language
 }
 
 /**
@@ -33,7 +33,7 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#case-and-diacritic-insensitive-search}
  */
 function test3() {
-  // TODO: no schema found for text.Case and Diacritic Insensitive Search: // TODO: No schema found in docs
+  // TODO: no schema found for text.Case and Diacritic Insensitive Search
 }
 
 /**
@@ -41,7 +41,7 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
 function test4() {
-  // TODO: no schema found for text.Perform Case Sensitive Search: // TODO: No schema found in docs
+  // TODO: no schema found for text.Perform Case Sensitive Search
 }
 
 /**
@@ -49,7 +49,7 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
 function test5() {
-  // TODO: no schema found for text.Diacritic Sensitive Search: // TODO: No schema found in docs
+  // TODO: no schema found for text.Diacritic Sensitive Search
 }
 
 /**
@@ -57,5 +57,5 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
 function test6() {
-  // TODO: no schema found for text.Text Search Score Examples: // TODO: No schema found in docs
+  // TODO: no schema found for text.Text Search Score Examples
 }

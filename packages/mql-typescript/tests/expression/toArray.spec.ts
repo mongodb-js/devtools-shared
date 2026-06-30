@@ -30,6 +30,7 @@ function test0() {
  */
 function test1() {
   type t = {
+    _id: number;
     v: bson.Binary;
   };
 

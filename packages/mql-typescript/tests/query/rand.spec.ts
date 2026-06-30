@@ -9,5 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/rand/#select-random-items-from-a-collection}
  */
 function test0() {
-  // TODO: no schema found for rand.Select Random Items From a Collection: // TODO: No schema found in docs
+  // TODO: no schema found for rand.Select Random Items From a Collection
 }

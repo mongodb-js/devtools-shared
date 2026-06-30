@@ -12,6 +12,7 @@ function test0() {
   type files = {
     _id: number;
     filename: string;
+    hash: bson.Binary;
   };
 
   const aggregation: schema.Pipeline<files> = [

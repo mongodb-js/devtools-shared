@@ -9,22 +9,18 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#deserialize-extended-json-document}
  */
 function test0() {
-  type TestCollection = {
+  type movies = {
     _id: bson.ObjectId;
     title: string;
-    deserialized: {
-      _id: bson.ObjectId;
-      title: string;
-      year: number;
-      runtime: number;
-      released: Date;
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
-    };
+    year: bson.Int32 | number;
+    runtime: bson.Int32 | number;
+    released: Date;
+    cast: unknown[];
+    genres: unknown[];
+    directors: unknown[];
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -71,22 +67,17 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#deserialize-specific-fields}
  */
 function test2() {
-  type TestCollection = {
+  type movies = {
     _id: bson.ObjectId;
     title: string;
-    deserialized: {
-      _id: bson.ObjectId;
-      title: string;
-      year: number;
-      runtime: number;
-      released: Date;
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    released: Date;
+    runtime: bson.Int32 | number;
+    imdb: {
+      rating: bson.Double | number;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -116,22 +107,12 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/#use-onerror-for-error-handling}
  */
 function test3() {
-  type TestCollection = {
+  type data = {
     _id: bson.ObjectId;
-    title: string;
-    deserialized: {
-      _id: bson.ObjectId;
-      title: string;
-      year: number;
-      runtime: number;
-      released: Date;
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
-    };
+    ejsonField: string;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<data> = [
     {
       $project: {
         result: {

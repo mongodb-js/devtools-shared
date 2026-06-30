@@ -10,8 +10,9 @@ import * as bson from 'bson';
  */
 function test0() {
   type flowers = {
+    _id: number;
     flowerFieldA: Array<string>;
-    flowerFieldB: Array<string>;
+    flowerFieldB: Array<string | Array<string>>;
   };
 
   const aggregation: schema.Pipeline<flowers> = [

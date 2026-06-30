@@ -31,7 +31,7 @@ function test1() {
   type inventory = {
     _id: number;
     item: string;
-    'price.usd': number;
+    $price: number;
     qty: number;
   };
 

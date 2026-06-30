@@ -9,7 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/#use-in--project-stage}
  */
 function test0() {
-  type TestCollection = {
+  type students = {
     _id: number;
     quizzes: Array<number>;
     labs: Array<number>;
@@ -17,7 +17,7 @@ function test0() {
     midterm: number;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<students> = [
     {
       $project: {
         quizTotal: { $sum: ['$quizzes'] },

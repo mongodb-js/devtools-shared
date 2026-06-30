@@ -82,8 +82,8 @@ function test3() {
   type inventory = {
     _id: number;
     item: string;
-    price: number;
     qty: number;
+    $price: number;
   };
 
   const aggregation: schema.Pipeline<inventory> = [
@@ -129,8 +129,8 @@ function test5() {
   type inventory = {
     _id: number;
     item: string;
-    price: number;
     qty: number;
+    $price: number;
   };
 
   const aggregation: schema.Pipeline<inventory> = [

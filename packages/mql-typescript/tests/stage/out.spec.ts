@@ -45,5 +45,23 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#output-to-a-time-series-collection}
  */
 function test2() {
-  // TODO: no schema found for out.Output to a Time Series Collection: // TODO: No schema found in docs
+  type sensors = {
+    timestamp: Date;
+    sensorId: string;
+    temperature: number;
+  };
+
+  const aggregation: schema.Pipeline<sensors> = [
+    {
+      $out: {
+        db: 'reporting',
+        coll: 'sensorData',
+        timeseries: {
+          timeField: 'timestamp',
+          metaField: 'sensorId',
+          granularity: 'hours',
+        },
+      },
+    },
+  ];
 }

@@ -9,5 +9,11 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/score/}
  */
 function test0() {
-  // TODO: no schema found for score.Example: // TODO: No schema found in docs
+  type movies = {
+    plot_embedding: Array<bson.Double | number>;
+  };
+
+  const aggregation: schema.Pipeline<movies> = [
+    { $score: { score: { $meta: 'vectorSearchScore' } } },
+  ];
 }

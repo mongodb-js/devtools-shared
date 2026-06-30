@@ -9,7 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/#use-in--project-stage}
  */
 function test0() {
-  type students = {
+  type TestCollection = {
     _id: number;
     quizzes: Array<number>;
     labs: Array<number>;
@@ -17,7 +17,7 @@ function test0() {
     midterm: number;
   };
 
-  const aggregation: schema.Pipeline<students> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         quizMin: { $min: ['$quizzes'] },

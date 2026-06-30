@@ -10,59 +10,14 @@ import * as bson from 'bson';
  */
 function test0() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
+    _id: bson.ObjectId;
     title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
-    plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
-    imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
-    };
+    year: bson.Int32 | number;
+    runtime: bson.Int32 | number;
+    released: Date;
+    cast: unknown[];
+    genres: unknown[];
+    directors: unknown[];
   };
 
   const aggregation: schema.Pipeline<movies> = [
@@ -77,59 +32,14 @@ function test0() {
  */
 function test1() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
+    _id: bson.ObjectId;
     title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
-    plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
-    imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
-    };
+    year: bson.Int32 | number;
+    runtime: bson.Int32 | number;
+    released: Date;
+    cast: unknown[];
+    genres: unknown[];
+    directors: unknown[];
   };
 
   const aggregation: schema.Pipeline<movies> = [
@@ -148,59 +58,10 @@ function test1() {
  */
 function test2() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
+    _id: bson.ObjectId;
     title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
-    plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
-    imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
-    };
+    year: bson.Int32 | number;
+    released: Date;
   };
 
   const aggregation: schema.Pipeline<movies> = [
@@ -220,58 +81,13 @@ function test2() {
  */
 function test3() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
+    _id: bson.ObjectId;
     title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
-    plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
+    year: bson.Int32 | number;
+    released: Date;
+    runtime: bson.Int32 | number;
     imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
+      rating: bson.Double | number;
     };
   };
 
@@ -300,59 +116,9 @@ function test3() {
  */
 function test4() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
+    _id: bson.ObjectId;
     title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
-    plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
-    imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
-    };
+    customField: string;
   };
 
   const aggregation: schema.Pipeline<movies> = [
