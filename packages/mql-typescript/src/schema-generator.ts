@@ -475,7 +475,15 @@ export class SchemaGenerator extends GeneratorBase {
         );
         this.emit(`export interface ${ifaceName}<S> {`);
         if (parsed.description) {
-          this.emitComment(parsed.description, parsed.link);
+          // Append a "New in MongoDB" note derived from the operator's
+          // `minVersion`, matching how the documentation annotates operators.
+          // `1.0` denotes the initial release (i.e. the operator has always
+          // existed), so we omit the note in that case.
+          const versionNote =
+            parsed.minVersion === '1.0'
+              ? ''
+              : `\nNew in MongoDB ${parsed.minVersion}.`;
+          this.emitComment(`${parsed.description}${versionNote}`, parsed.link);
         }
         this.emit(`${parsed.name}:`);
         for (const type of parsed.type) {

@@ -9,18 +9,12 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/#example}
  */
 function test0() {
-  type sales = {
-    _id: number;
-    items: Array<
-      | string
-      | {
-          accessories: Array<string>;
-        }
-    >;
-    location: string;
+  type warehouses = {
+    instock: Array<string>;
+    ordered: Array<string>;
   };
 
-  const aggregation: schema.Pipeline<sales> = [
+  const aggregation: schema.Pipeline<warehouses> = [
     { $project: { items: { $concatArrays: ['$instock', '$ordered'] } } },
   ];
 }

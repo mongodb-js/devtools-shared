@@ -1473,6 +1473,33 @@ const staticSchemas: SchemaMap = {
     },
   },
   expression: {
+    concatArrays: {
+      Example: {
+        collectionName: 'warehouses',
+        schema: {
+          instock: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+          ordered: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+        },
+      },
+    },
+    setUnion: {
+      Example: {
+        collectionName: 'flowers',
+        schema: {
+          flowerFieldA: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+          flowerFieldB: {
+            types: [{ bsonType: 'Array', types: [{ bsonType: 'String' }] }],
+          },
+        },
+      },
+    },
+    serializeEJSON: mflixMoviesSchema,
     dateFromParts: {
       Example: {
         collectionName: 'sales',

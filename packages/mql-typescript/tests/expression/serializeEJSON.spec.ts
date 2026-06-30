@@ -9,31 +9,63 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#canonical-extended-json-example}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    ejson: {
-      _id: {
-        $oid: string;
+  type movies = {
+    _id: {
+      $oid: string;
+    };
+    title: string;
+    year: {
+      $numberInt: string;
+    };
+    runtime: {
+      $numberInt: string;
+    };
+    released: {
+      $date: {
+        $numberLong: string;
       };
-      title: string;
-      year: {
+    };
+    poster: string;
+    plot: string;
+    fullplot: string;
+    lastupdated: string;
+    type: string;
+    directors: Array<string>;
+    imdb: {
+      rating: {
+        $numberDouble: string;
+      };
+      votes: {
         $numberInt: string;
       };
-      runtime: {
+      id: {
         $numberInt: string;
       };
-      released: {
+    };
+    cast: Array<string>;
+    countries: Array<string>;
+    genres: Array<string>;
+    tomatoes: {
+      viewer: {
+        rating: {
+          $numberDouble: string;
+        };
+        numReviews: {
+          $numberInt: string;
+        };
+      };
+      lastUpdated: {
         $date: {
           $numberLong: string;
         };
       };
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    };
+    num_mflix_comments: {
+      $numberInt: string;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { title: 'Inception' } },
     { $project: { ejson: { $serializeEJSON: { input: '$$ROOT' } } } },
   ];
@@ -44,31 +76,63 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#relaxed-extended-json-example}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    ejson: {
-      _id: {
-        $oid: string;
+  type movies = {
+    _id: {
+      $oid: string;
+    };
+    title: string;
+    year: {
+      $numberInt: string;
+    };
+    runtime: {
+      $numberInt: string;
+    };
+    released: {
+      $date: {
+        $numberLong: string;
       };
-      title: string;
-      year: {
+    };
+    poster: string;
+    plot: string;
+    fullplot: string;
+    lastupdated: string;
+    type: string;
+    directors: Array<string>;
+    imdb: {
+      rating: {
+        $numberDouble: string;
+      };
+      votes: {
         $numberInt: string;
       };
-      runtime: {
+      id: {
         $numberInt: string;
       };
-      released: {
+    };
+    cast: Array<string>;
+    countries: Array<string>;
+    genres: Array<string>;
+    tomatoes: {
+      viewer: {
+        rating: {
+          $numberDouble: string;
+        };
+        numReviews: {
+          $numberInt: string;
+        };
+      };
+      lastUpdated: {
         $date: {
           $numberLong: string;
         };
       };
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    };
+    num_mflix_comments: {
+      $numberInt: string;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { title: 'Inception' } },
     {
       $project: {
@@ -83,31 +147,63 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#convert-to-json-string}
  */
 function test2() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    ejson: {
-      _id: {
-        $oid: string;
+  type movies = {
+    _id: {
+      $oid: string;
+    };
+    title: string;
+    year: {
+      $numberInt: string;
+    };
+    runtime: {
+      $numberInt: string;
+    };
+    released: {
+      $date: {
+        $numberLong: string;
       };
-      title: string;
-      year: {
+    };
+    poster: string;
+    plot: string;
+    fullplot: string;
+    lastupdated: string;
+    type: string;
+    directors: Array<string>;
+    imdb: {
+      rating: {
+        $numberDouble: string;
+      };
+      votes: {
         $numberInt: string;
       };
-      runtime: {
+      id: {
         $numberInt: string;
       };
-      released: {
+    };
+    cast: Array<string>;
+    countries: Array<string>;
+    genres: Array<string>;
+    tomatoes: {
+      viewer: {
+        rating: {
+          $numberDouble: string;
+        };
+        numReviews: {
+          $numberInt: string;
+        };
+      };
+      lastUpdated: {
         $date: {
           $numberLong: string;
         };
       };
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    };
+    num_mflix_comments: {
+      $numberInt: string;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { title: 'The Godfather' } },
     {
       $project: {
@@ -123,31 +219,63 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#serialize-specific-fields}
  */
 function test3() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    ejson: {
-      _id: {
-        $oid: string;
+  type movies = {
+    _id: {
+      $oid: string;
+    };
+    title: string;
+    year: {
+      $numberInt: string;
+    };
+    runtime: {
+      $numberInt: string;
+    };
+    released: {
+      $date: {
+        $numberLong: string;
       };
-      title: string;
-      year: {
+    };
+    poster: string;
+    plot: string;
+    fullplot: string;
+    lastupdated: string;
+    type: string;
+    directors: Array<string>;
+    imdb: {
+      rating: {
+        $numberDouble: string;
+      };
+      votes: {
         $numberInt: string;
       };
-      runtime: {
+      id: {
         $numberInt: string;
       };
-      released: {
+    };
+    cast: Array<string>;
+    countries: Array<string>;
+    genres: Array<string>;
+    tomatoes: {
+      viewer: {
+        rating: {
+          $numberDouble: string;
+        };
+        numReviews: {
+          $numberInt: string;
+        };
+      };
+      lastUpdated: {
         $date: {
           $numberLong: string;
         };
       };
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    };
+    num_mflix_comments: {
+      $numberInt: string;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     { $match: { year: { $gte: 2010 } } },
     {
       $project: {
@@ -171,31 +299,63 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/#use-onerror-for-error-handling}
  */
 function test4() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    ejson: {
-      _id: {
-        $oid: string;
+  type movies = {
+    _id: {
+      $oid: string;
+    };
+    title: string;
+    year: {
+      $numberInt: string;
+    };
+    runtime: {
+      $numberInt: string;
+    };
+    released: {
+      $date: {
+        $numberLong: string;
       };
-      title: string;
-      year: {
+    };
+    poster: string;
+    plot: string;
+    fullplot: string;
+    lastupdated: string;
+    type: string;
+    directors: Array<string>;
+    imdb: {
+      rating: {
+        $numberDouble: string;
+      };
+      votes: {
         $numberInt: string;
       };
-      runtime: {
+      id: {
         $numberInt: string;
       };
-      released: {
+    };
+    cast: Array<string>;
+    countries: Array<string>;
+    genres: Array<string>;
+    tomatoes: {
+      viewer: {
+        rating: {
+          $numberDouble: string;
+        };
+        numReviews: {
+          $numberInt: string;
+        };
+      };
+      lastUpdated: {
         $date: {
           $numberLong: string;
         };
       };
-      cast: Array<string>;
-      genres: Array<string>;
-      directors: Array<string>;
+    };
+    num_mflix_comments: {
+      $numberInt: string;
     };
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     {
       $project: {
         title: 1,
