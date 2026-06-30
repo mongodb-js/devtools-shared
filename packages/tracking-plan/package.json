@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/tracking-plan",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Generate a Markdown tracking plan from typed telemetry event definitions.",
   "license": "Apache-2.0",
   "repository": {
