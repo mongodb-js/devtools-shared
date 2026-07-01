@@ -20,7 +20,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "assets"
   ],
   "bin": {
     "mongodb-runner": "bin/runner.js"

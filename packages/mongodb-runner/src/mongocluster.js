@@ -1,14 +1,6 @@
-import type { MongoServerEvents, MongoServerOptions } from './mongoserver';
 import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
-import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
-import type {
-  Document,
-  MongoClientOptions,
-  TagSet,
-  WriteConcernSettings,
-} from 'mongodb';
 import { MongoClient } from 'mongodb';
 import {
   sleep,
@@ -19,216 +11,16 @@ import {
   debugVerbose,
   makeConnectionString,
   safePromiseAll,
-  hasPortArg,
 } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { DockerComposeProject } from './docker-compose';
 import { EventEmitter } from 'events';
 import assert from 'assert';
 import { handleTLSClientKeyOptions } from './tls-helpers';
-
-/**
- * Description of a MongoDB user account that will be created in a test cluster.
- */
-export interface MongoDBUserDoc {
-  /**
-   * SCRAM-SHA-256 username.
-   */
-  username: string;
-  /**
-   * SCRAM-SHA-256 password.
-   */
-  password: string;
-  /**
-   * Additional metadata for a given user.
-   */
-  customData?: Document;
-  /**
-   * Roles to assign to the user.
-   */
-  roles: ({ role: string; db?: string } | string)[];
-  /**
-   * Additional fields may be included as per the `createUser` command.
-   */
-  [key: string]: unknown;
-}
-
-/** Describe the individual members of a replica set */
-export interface RSMemberOptions {
-  /**
-   * Tags to assign to the member, in the format expected by the Node.js driver.
-   */
-  tags?: TagSet;
-  /**
-   * Priority of the member. If none is specified, one member will be given priority 1
-   * and all others priority 0. The mongodb-runner package assumes that the highest priority
-   * member will become primary.
-   */
-  priority?: number;
-  /**
-   * Additional arguments for the member.
-   */
-  args?: string[];
-  /**
-   * Whether the member is an arbiter.
-   */
-  arbiterOnly?: boolean;
-}
-
-/**
- * Shared options for all cluster topologies.
- */
-export interface CommonOptions {
-  /**
-   * Directory where server binaries will be downloaded and stored.
-   */
-  downloadDir?: string;
-  /**
-   * Various options to control the download of MongoDB binaries.
-   */
-  downloadOptions?: DownloadOptions;
-
-  /**
-   * OIDC mock provider command line (e.g. '--port=0' or full path to binary).
-   * If provided, an OIDC mock provider will be started alongside the cluster,
-   * and the necessary parameters to connect to it will be added to the
-   * cluster's mongod/mongos processes.
-   */
-  oidc?: string;
-
-  /**
-   * MongoDB server version to download and use (e.g. '6.0.3', '8.x-enterprise', 'latest-alpha', etc.)
-   */
-  version?: string;
-  /**
-   * A direct URL to a MongoDB tarball to download and use. Takes precedence
-   * over `version`.
-   */
-  downloadUrl?: string;
-  /**
-   * User accounts to create after starting the cluster.
-   */
-  users?: MongoDBUserDoc[];
-
-  /**
-   * Whether to automatically add an additional TLS client certificate key file
-   * to the cluster nodes based on whether TLS configuration was detected.
-   *
-   * Adding this is required in order for authentication to work when TLS is enabled.
-   */
-  tlsAddClientKey?: boolean;
-
-  /**
-   * Whether to require an API version for commands.
-   */
-  requireApiVersion?: number;
-
-  /**
-   * Topology of the cluster.
-   */
-  topology: 'standalone' | 'replset' | 'sharded';
-
-  /**
-   * When set, starts a docker compose project providing a disaggregated storage
-   * backend before spawning any mongod processes, and injects
-   * `--setParameter disaggregatedStorageConfig=...` into each one.
-   */
-  disaggregatedStorage?: DisaggregatedStorageOptions;
-}
-
-/**
- * Options specific to replica set clusters.
- */
-export type RSOptions = {
-  /** Number of arbiters to create (default: 0) */
-  arbiters?: number;
-  /** Number of secondary nodes to create (default: 2) */
-  secondaries?: number;
-  /** Explicitly specify replica set members. If set, `arbiters` and `secondaries` will be ignored. */
-  rsMembers?: RSMemberOptions[];
-};
-
-export type ShardedOptions = {
-  /** Arguments to pass to each mongos instance. */
-  mongosArgs?: string[][];
-  /** Number of shards to create or explicit shard configurations. */
-  shards?: number | Partial<MongoClusterOptions>[];
-};
-
-/** Identifies a shard within a cluster for disaggregated storage setup. */
-export interface ShardDescriptor {
-  /** Zero-based shard index. In a sharded cluster, 0 is the config server. */
-  index: number;
-  /** True only for the dedicated config server replset in a sharded cluster. */
-  isConfigServer: boolean;
-}
-
-/**
- * Options for disaggregated storage support. When provided, mongodb-runner will
- * launch a docker compose project providing the storage backend, then call the
- * supplied hooks before starting mongod processes.
- */
-export interface DisaggregatedStorageOptions {
-  /** Path to the docker-compose.yml file for the storage backend. */
-  composeFile: string;
-
-  /**
-   * Environment variables used for variable interpolation in the compose file
-   * (e.g. image repository/tag and host port mappings). Merged over the
-   * current process environment.
-   */
-  env?: Record<string, string>;
-
-  /**
-   * Value for `--setParameter disaggregatedStorageConfig=...` injected into
-   * every mongod, including the config server. Accepts a per-shard function
-   * to produce different values per shard (e.g. different bucket names).
-   */
-  config:
-    | string
-    | Record<string, unknown>
-    | ((shard: ShardDescriptor) => string | Record<string, unknown>);
-
-  /**
-   * Called once after `docker compose up` returns, before any mongod starts.
-   * Should poll/retry until the storage layer is ready to accept connections.
-   */
-  waitForReady?: () => Promise<void>;
-
-  /**
-   * Called once per shard before that shard's mongod processes start.
-   * Should create any resources (buckets, namespaces, etc.) needed by that shard.
-   * For standalone/replset topologies, called once with index=0, isConfigServer=false.
-   */
-  setupShard?: (shard: ShardDescriptor) => Promise<void>;
-}
-
-export type MongoClusterOptions = Pick<
-  MongoServerOptions,
-  | 'logDir'
-  | 'tmpDir'
-  | 'args'
-  | 'binDir'
-  | 'docker'
-  | 'internalClientOptions'
-  | 'host'
-  | 'detached'
-> &
-  CommonOptions &
-  RSOptions &
-  ShardedOptions;
-
-export type MongoClusterEvents = {
-  [k in keyof MongoServerEvents]: [serverUUID: string, ...MongoServerEvents[k]];
-} & {
-  newListener: [keyof MongoClusterEvents];
-  removeListener: [keyof MongoClusterEvents];
-};
-
-function removePortArg([...args]: string[]): string[] {
+function removePortArg([...args]) {
   let portArgIndex = -1;
   if ((portArgIndex = args.indexOf('--port')) !== -1) {
-    args.splice(portArgIndex, 2);
+    args.splice(portArgIndex + 1, 1);
   } else if (
     (portArgIndex = args.findIndex((arg) => arg.startsWith('--port='))) !== -1
   ) {
@@ -236,29 +28,28 @@ function removePortArg([...args]: string[]): string[] {
   }
   return args;
 }
-
-function processRSMembers(options: MongoClusterOptions): {
-  rsMembers: RSMemberOptions[];
-  replSetName: string;
-} {
+function hasPortArg(args) {
+  if (!args) return false;
+  return (
+    args.includes('--port') || args.some((arg) => arg.startsWith('--port='))
+  );
+}
+function processRSMembers(options) {
   const {
     secondaries = 2,
     arbiters = 0,
     args: [...args] = [],
     rsMembers,
   } = options;
-
-  let replSetName: string;
+  let replSetName;
   if (!args.includes('--replSet')) {
     replSetName = `replSet-${uuid()}`;
     args.push('--replSet', replSetName);
   } else {
     replSetName = args[args.indexOf('--replSet') + 1];
   }
-
-  const primaryArgs: string[] = [...args];
+  const primaryArgs = [...args];
   const secondaryArgs = [...removePortArg(args), '--port', '0'];
-
   if (rsMembers) {
     const primary = rsMembers.find((m) =>
       rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
@@ -278,7 +69,6 @@ function processRSMembers(options: MongoClusterOptions): {
       replSetName,
     };
   }
-
   return {
     rsMembers: [
       { priority: 1, args: primaryArgs },
@@ -292,26 +82,15 @@ function processRSMembers(options: MongoClusterOptions): {
     replSetName,
   };
 }
-
-function buildDisaggregatedArgs(
-  ds: DisaggregatedStorageOptions,
-  shard: ShardDescriptor,
-  baseArgs: string[],
-): string[] {
+function buildDisaggregatedArgs(ds, shard, baseArgs) {
   const raw = typeof ds.config === 'function' ? ds.config(shard) : ds.config;
   const value = typeof raw === 'string' ? raw : JSON.stringify(raw);
   return [...baseArgs, '--setParameter', `disaggregatedStorageConfig=${value}`];
 }
-
-function processShardOptions(options: MongoClusterOptions): {
-  shards: Partial<MongoClusterOptions>[];
-  mongosArgs: string[][];
-} {
-  const shards: Partial<MongoClusterOptions>[] =
+function processShardOptions(options) {
+  const shards =
     typeof options.shards === 'number' || !options.shards
-      ? range((options.shards ?? 3) + 1).map(
-          () => ({}) as Partial<MongoClusterOptions>,
-        )
+      ? range((options.shards ?? 3) + 1).map(() => ({}))
       : options.shards;
   const { mongosArgs = [[]], args: mainArgs = [] } = options;
   return {
@@ -335,19 +114,14 @@ function processShardOptions(options: MongoClusterOptions): {
     ]),
   };
 }
-
-export class MongoCluster extends EventEmitter<MongoClusterEvents> {
-  private topology: MongoClusterOptions['topology'] = 'standalone';
-  private replSetName?: string;
-  private servers: MongoServer[] = []; // mongod/mongos
-  private shards: MongoCluster[] = []; // replsets
-  private oidcMockProviderProcess?: OIDCMockProviderProcess;
-  private dockerComposeProject?: DockerComposeProject;
-  private defaultConnectionOptions: Partial<MongoClientOptions> = {};
-  private users: MongoDBUserDoc[] = [];
-
-  private constructor() {
+export class MongoCluster extends EventEmitter {
+  constructor() {
     super();
+    this.topology = 'standalone';
+    this.servers = []; // mongod/mongos
+    this.shards = []; // replsets
+    this.defaultConnectionOptions = {};
+    this.users = [];
     // NB: This will not retroactively add listeners to new server instances.
     // This should be fine, as we only pass "fully initialized" clusters to
     // callers, with all child clusters and individual servers already in place.
@@ -362,23 +136,15 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     });
     /* see .start() */
   }
-
-  private static downloadMongoDb(
-    tmpdir: string,
-    targetVersionSemverSpecifier?: string | undefined,
-    options?: DownloadOptions | undefined,
-    downloadUrl?: string | undefined,
-  ): Promise<string> {
+  static downloadMongoDb(tmpdir, targetVersionSemverSpecifier, options) {
     return downloadMongoDb({
       directory: tmpdir,
       version: targetVersionSemverSpecifier,
       downloadOptions: options,
       useLockfile: true,
-      downloadUrl,
     });
   }
-
-  serialize(): unknown /* JSON-serializable */ {
+  serialize() {
     return {
       topology: this.topology,
       replSetName: this.replSetName,
@@ -390,25 +156,23 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       users: jsonClone(this.users),
     };
   }
-
-  isClosed(): boolean {
+  isClosed() {
     // Return true if and only if there are no running sub-clusters/servers
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _ of this.children()) return true;
     return true;
   }
-
-  static async deserialize(serialized: any): Promise<MongoCluster> {
+  static async deserialize(serialized) {
     const cluster = new MongoCluster();
     cluster.topology = serialized.topology;
     cluster.replSetName = serialized.replSetName;
     cluster.defaultConnectionOptions = serialized.defaultConnectionOptions;
     cluster.users = serialized.users;
     cluster.servers = await safePromiseAll(
-      serialized.servers.map((srv: any) => MongoServer.deserialize(srv)),
+      serialized.servers.map((srv) => MongoServer.deserialize(srv)),
     );
     cluster.shards = await safePromiseAll(
-      serialized.shards.map((shard: any) => MongoCluster.deserialize(shard)),
+      serialized.shards.map((shard) => MongoCluster.deserialize(shard)),
     );
     cluster.oidcMockProviderProcess = serialized.oidcMockProviderProcess
       ? OIDCMockProviderProcess.deserialize(serialized.oidcMockProviderProcess)
@@ -418,40 +182,30 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       : undefined;
     return cluster;
   }
-
-  get hostport(): string {
+  get hostport() {
     return this.servers.map((srv) => srv.hostport).join(',');
   }
-
-  get connectionString(): string {
+  get connectionString() {
     return makeConnectionString(
       this.hostport,
       this.replSetName,
       this.defaultConnectionOptions,
     );
   }
-
-  get oidcIssuer(): string | undefined {
+  get oidcIssuer() {
     return this.oidcMockProviderProcess?.issuer;
   }
-
-  get connectionStringUrl(): ConnectionString {
+  get connectionStringUrl() {
     return new ConnectionString(this.connectionString);
   }
-
-  get serverVersion(): string {
+  get serverVersion() {
     return this.servers[0].serverVersion;
   }
-
-  get serverVariant(): 'enterprise' | 'community' {
+  get serverVariant() {
     return this.servers[0].serverVariant;
   }
-
-  static async start({
-    ...options
-  }: MongoClusterOptions): Promise<MongoCluster> {
+  static async start({ ...options }) {
     options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
-
     const cluster = new MongoCluster();
     cluster.topology = options.topology;
     cluster.users = options.users ?? [];
@@ -461,10 +215,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         options.downloadDir ?? options.tmpDir,
         options.version,
         options.downloadOptions,
-        options.downloadUrl,
       );
     }
-
     if (options.oidc !== undefined) {
       cluster.oidcMockProviderProcess = await OIDCMockProviderProcess.start(
         options.oidc || '--port=0',
@@ -489,43 +241,18 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         'enableTestCommands=true',
       ];
     }
-
     const disaggregatedStorage = options.disaggregatedStorage;
     if (disaggregatedStorage) {
       delete options.disaggregatedStorage;
       cluster.dockerComposeProject = await DockerComposeProject.start(
         disaggregatedStorage.composeFile,
-        { env: disaggregatedStorage.env },
       );
+      await disaggregatedStorage.waitForReady?.();
+      if (options.secondaries === undefined) options.secondaries = 1;
     }
-
-    try {
-      if (disaggregatedStorage) {
-        await disaggregatedStorage.waitForReady?.();
-        if (options.secondaries === undefined) options.secondaries = 1;
-      }
-      return await this._startServers(cluster, options, disaggregatedStorage);
-    } catch (err) {
-      // Don't leak the compose project if cluster setup fails partway through.
-      if (cluster.dockerComposeProject) {
-        try {
-          await cluster.dockerComposeProject.close();
-        } catch {
-          /* ignore */
-        }
-      }
-      throw err;
-    }
-  }
-
-  private static async _startServers(
-    cluster: MongoCluster,
-    options: MongoClusterOptions,
-    disaggregatedStorage: DisaggregatedStorageOptions | undefined,
-  ): Promise<MongoCluster> {
     if (options.topology === 'standalone') {
       if (disaggregatedStorage) {
-        const descriptor: ShardDescriptor = { index: 0, isConfigServer: false };
+        const descriptor = { index: 0, isConfigServer: false };
         await disaggregatedStorage.setupShard?.(descriptor);
         options.args = buildDisaggregatedArgs(
           disaggregatedStorage,
@@ -541,7 +268,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       );
     } else if (options.topology === 'replset') {
       if (disaggregatedStorage) {
-        const descriptor: ShardDescriptor = { index: 0, isConfigServer: false };
+        const descriptor = { index: 0, isConfigServer: false };
         await disaggregatedStorage.setupShard?.(descriptor);
         options.args = buildDisaggregatedArgs(
           disaggregatedStorage,
@@ -550,7 +277,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         );
       }
       const { rsMembers, replSetName } = processRSMembers(options);
-
       debug('Starting replica set nodes', {
         replSetName,
         secondaries: rsMembers.filter((m) => !m.arbiterOnly).length - 1,
@@ -560,7 +286,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
       );
       assert.notStrictEqual(primaryIndex, -1);
-
       const nodes = await safePromiseAll(
         rsMembers.map(async (member) => {
           return [
@@ -571,12 +296,11 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               binary: 'mongod',
             }),
             member,
-          ] as const;
+          ];
         }),
       );
       cluster.servers.push(...nodes.map(([srv]) => srv));
       const primary = cluster.servers[primaryIndex];
-
       await primary.withClient(async (client) => {
         debug('Running rs.initiate');
         const rsConf = {
@@ -596,14 +320,11 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         await client.db('admin').command({
           replSetInitiate: rsConf,
         });
-
         for (let i = 0; i < 60; i++) {
           const status = await client.db('admin').command({
             replSetGetStatus: 1,
           });
-          if (
-            status.members.some((member: any) => member.stateStr === 'PRIMARY')
-          ) {
+          if (status.members.some((member) => member.stateStr === 'PRIMARY')) {
             debug(
               'rs.status indicated primary for replset',
               status.set,
@@ -622,7 +343,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const allShards = await safePromiseAll(
         shards.map(async (s, i) => {
           const isConfigServer = s.args?.includes('--configsvr') ?? false;
-          const descriptor: ShardDescriptor = { index: i, isConfigServer };
+          const descriptor = { index: i, isConfigServer };
           if (disaggregatedStorage) {
             await disaggregatedStorage.setupShard?.(descriptor);
           }
@@ -642,16 +363,15 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             requireApiVersion: undefined,
             users: isConfigServer ? undefined : options.users,
           });
-          return [shardCluster, isConfigServer] as const;
+          return [shardCluster, isConfigServer];
         }),
       );
-      const configsvr = allShards.find(([, isConfig]) => isConfig)![0];
+      const configsvr = allShards.find(([, isConfig]) => isConfig)[0];
       const shardsvrs = allShards
         .filter(([, isConfig]) => !isConfig)
         .map(([shard]) => shard);
       cluster.shards.push(configsvr, ...shardsvrs);
-
-      const mongosServers: MongoServer[] = await safePromiseAll(
+      const mongosServers = await safePromiseAll(
         mongosArgs.map(async (args) => {
           debug('starting mongos');
           return await MongoServer.start({
@@ -660,7 +380,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             args: [
               ...args,
               '--configdb',
-              `${configsvr.replSetName!}/${configsvr.hostport}`,
+              `${configsvr.replSetName}/${configsvr.hostport}`,
             ],
           });
         }),
@@ -669,7 +389,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const mongos = mongosServers[0];
       await mongos.withClient(async (client) => {
         for (const shard of shardsvrs) {
-          const shardSpec = `${shard.replSetName!}/${shard.hostport}`;
+          const shardSpec = `${shard.replSetName}/${shard.hostport}`;
           debug('adding shard', shardSpec);
           await client.db('admin').command({
             addShard: shardSpec,
@@ -678,7 +398,6 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         debug('added shards');
       });
     }
-
     await cluster.addAuthIfNeeded();
     await cluster.addRequireApiVersionIfNeeded(options);
     try {
@@ -693,28 +412,22 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     }
     return cluster;
   }
-
-  private *children(): Iterable<MongoServer | MongoCluster> {
+  *children() {
     yield* this.servers;
     yield* this.shards;
   }
-
-  private *allServers(): Iterable<MongoServer> {
+  *allServers() {
     for (const child of this.servers) yield child;
     for (const shard of this.shards) yield* shard.allServers();
   }
-
-  async assertAllServersHaveInsertedLocalMetadata(): Promise<void> {
+  async assertAllServersHaveInsertedLocalMetadata() {
     await safePromiseAll(
       [...this.allServers()].map(
         async (server) => await server.assertHasInsertedLocalMetadata(),
       ),
     );
   }
-
-  async addRequireApiVersionIfNeeded({
-    ...options
-  }: MongoClusterOptions): Promise<void> {
+  async addRequireApiVersionIfNeeded({ ...options }) {
     // Set up requireApiVersion if requested.
     if (options.requireApiVersion === undefined) {
       return;
@@ -734,11 +447,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       ),
     );
     await this.updateDefaultConnectionOptions({
-      serverApi: String(options.requireApiVersion) as '1',
+      serverApi: String(options.requireApiVersion),
     });
   }
-
-  async addAuthIfNeeded(): Promise<void> {
+  async addAuthIfNeeded() {
     if (!this.users?.length) return;
     // Sleep to give time for a possible replset election to settle.
     await sleep(1000);
@@ -761,10 +473,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       auth: this.users[0],
     });
   }
-
-  async updateDefaultConnectionOptions(
-    options: Partial<MongoClientOptions>,
-  ): Promise<void> {
+  async updateDefaultConnectionOptions(options) {
     await safePromiseAll(
       [...this.children()].map(async (child) =>
         child.updateDefaultConnectionOptions(options),
@@ -775,8 +484,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       ...options,
     };
   }
-
-  async close(): Promise<void> {
+  async close() {
     await safePromiseAll(
       [...this.children(), this.oidcMockProviderProcess].map((closable) =>
         closable?.close(),
@@ -786,11 +494,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     this.servers = [];
     this.shards = [];
   }
-
-  async withClient<Fn extends (client: MongoClient) => any>(
-    fn: Fn,
-    clientOptions: MongoClientOptions = {},
-  ): Promise<ReturnType<Fn>> {
+  async withClient(fn, clientOptions = {}) {
     const client = await MongoClient.connect(this.connectionString, {
       ...this.getFullWriteConcernOptions(),
       ...this.defaultConnectionOptions,
@@ -802,17 +506,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       await client.close(true);
     }
   }
-
-  ref(): void {
+  ref() {
     for (const child of this.children()) child.ref();
   }
-
-  unref(): void {
+  unref() {
     for (const child of this.children()) child.unref();
   }
-
   // Return maximal write concern options based on topology
-  getFullWriteConcernOptions(): { writeConcern?: WriteConcernSettings } {
+  getFullWriteConcernOptions() {
     switch (this.topology) {
       case 'standalone':
         return {};
@@ -835,9 +536,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           },
         };
       default:
-        throw new Error(
-          `Not implemented for topology ${this.topology as string}`,
-        );
+        throw new Error(`Not implemented for topology ${this.topology}`);
     }
   }
 }

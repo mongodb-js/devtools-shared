@@ -6,8 +6,6 @@ import path from 'path';
 import createDebug from 'debug';
 import * as utilities from './index';
 import { ConnectionString } from 'mongodb-connection-string-url';
-import type { MongoClientOptions } from 'mongodb';
-
 (async function () {
   const defaultRunnerDir = path.join(os.homedir(), '.mongodb', 'runner2');
   const argv = await yargs(hideBin(process.argv))
@@ -17,8 +15,8 @@ import type { MongoClientOptions } from 'mongodb';
     .config()
     .option('topology', {
       alias: 't',
-      choices: ['standalone', 'replset', 'sharded'] as const,
-      default: 'standalone' as const,
+      choices: ['standalone', 'replset', 'sharded'],
+      default: 'standalone',
       describe: 'Select a topology type',
     })
     .option('arbiters', {
@@ -38,11 +36,6 @@ import type { MongoClientOptions } from 'mongodb';
     .option('version', {
       type: 'string',
       describe: 'MongoDB server version to use',
-    })
-    .option('downloadUrl', {
-      type: 'string',
-      describe:
-        'Direct URL to a MongoDB tarball to download (takes precedence over --version)',
     })
     .option('logDir', {
       type: 'string',
@@ -111,12 +104,11 @@ import type { MongoClientOptions } from 'mongodb';
     args.push(...argv.args.map(String));
   }
   if (argv.debug || argv.verbose) {
-    createDebug.enable('mongodb-runner,mongodb-downloader');
+    createDebug.enable('mongodb-runner');
   }
   if (argv.verbose) {
-    createDebug.enable('mongodb-runner*,mongodb-downloader*');
+    createDebug.enable('mongodb-runner:*');
   }
-
   if (argv.oidc && process.platform !== 'linux') {
     console.warn(
       'OIDC authentication is currently only supported on Linux platforms.',
@@ -127,7 +119,6 @@ import type { MongoClientOptions } from 'mongodb';
       'OIDC authentication is currently only supported on Enterprise server versions.',
     );
   }
-
   async function start() {
     const disaggregatedStorage = argv.disaggregatedStorageCompose
       ? {
@@ -150,10 +141,7 @@ import type { MongoClientOptions } from 'mongodb';
     // by a calling process.
     console.error(`Server started and running at ${cs.toString()}`);
     if (cluster.oidcIssuer) {
-      cs.typedSearchParams<MongoClientOptions>().set(
-        'authMechanism',
-        'MONGODB-OIDC',
-      );
+      cs.typedSearchParams().set('authMechanism', 'MONGODB-OIDC');
       console.error(
         `OIDC provider started and running at ${cluster.oidcIssuer}`,
       );
@@ -171,35 +159,29 @@ import type { MongoClientOptions } from 'mongodb';
     console.log(cs.toString());
     cluster.unref();
   }
-
   async function stop() {
     if (!argv.id && !argv.all) {
       throw new Error('Need --id or --all to know which server to stop');
     }
     await utilities.stop(argv);
   }
-
   async function ls() {
     for await (const { id, connectionString } of utilities.instances(argv)) {
       console.log(`${id}: ${connectionString}`);
     }
   }
-
   async function prune() {
     await utilities.prune(argv);
   }
-
   async function exec() {
     await utilities.exec(argv, args);
   }
-
   // eslint-disable-next-line @typescript-eslint/require-await
   async function unknown() {
     throw new Error(
       `Unknown command: ${command}. See '${argv.$0} --help' for more information.`,
     );
   }
-
   await ({ start, stop, exec, ls, prune }[command] ?? unknown)();
 })().catch((err) => {
   process.nextTick(() => {

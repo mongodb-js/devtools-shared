@@ -1,0 +1,699 @@
+syntax = "proto3";
+
+// SLS-769 to sync this file with MMS. (Alternatively, we might break the dependency on SlsBackup
+// in the future.)
+
+package com.xgen.cloud.services.slsbackup.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "SlsBackupProto";
+option java_package = "com.xgen.cloud.services.slsbackup.proto.v1";
+
+service SlsBackupService {
+  // Creates a Clustershot that spans all requested shards.
+  //
+  // This returns the Clustershot in a CREATING state that completes,
+  // i.e. becomes ACTIVE or FAILED, in a background process.
+  //
+  // If a Clustershot already exists with the same id we return it.
+  rpc CreateClustershot(CreateClustershotRequest) returns (CreateClustershotResponse);
+
+  // Fetch a single Clustershot, regardless of status.
+  rpc GetClustershot(GetClustershotRequest) returns (GetClustershotResponse);
+
+  // List up to 50 not-DELETED Clustershots in a Group and (if cluster_unique_id is
+  // provided) Cluster. This is sorted by id such that most recent Clustershots are
+  // returned first and the oldest last.
+  rpc ListClustershots(ListClustershotsRequest) returns (ListClustershotsResponse);
+
+  // Delete a single Clustershot. Returns NOT_FOUND if no not-DELETED
+  // Clustershot is found with the provided id. This is a soft-deletion where
+  // the Clustershot's status is marked as DELETED.
+  rpc DeleteClustershot(DeleteClustershotRequest) returns (DeleteClustershotResponse);
+
+  // Record a Log in SlsBackup. Notably: this does _not_ create the Log in SLS.
+  //
+  // During cluster creation, this informs SlsBackup about a new Log we created.
+  //
+  // During restores, this just tells SlsBackup which Snapshot we intend to
+  // restore to which Log in SLS. We need to tell SlsBackup about a Log prior to
+  // actually restoring it to a mongod so, when we _do_ restore to a mongod, the
+  // ObjectIndexService can respond to GetPageAtLSN requests at the time of the
+  // restore.
+  //
+  // If a Log (by id) already exists, this throws ALREADY_EXISTS.
+  rpc CreateLog(CreateLogRequest) returns (CreateLogResponse);
+
+  // Insert a batch of logs in SlsBackup. Used to keep SlsBackup's view of Logs
+  // in sync with MMS's view of Logs batching requests so the updating is more
+  // efficient than one UpdateLog request per Log.
+  //
+  // Note: this is not atomic. Meaning a subset of submitted Logs can be
+  // created even if the endpoint returns an error.
+  rpc BatchCreateLogs(BatchCreateLogsRequest) returns (BatchCreateLogsResponse);
+
+  // Update a Log in SlsBackup. Used to keep SlsBackup's view of Logs in sync
+  // with MMS's view of Logs.
+  rpc UpdateLog(UpdateLogRequest) returns (UpdateLogResponse);
+
+  // Soft-delete a Log in SlsBackup.
+  rpc DeleteLog(DeleteLogRequest) returns (DeleteLogResponse);
+
+  // Returns a list of ancestors for a given log from a restore.
+  //
+  // For a given logId this returns each ancestor log and
+  // its final (inclusive) oplog+phylog LSNs. For example, for a queried log_id, 2, this
+  // could return: [
+  //   {log_id: 1, oplog_lsn: 10, phylog_lsn: 25} // oplog: (5, 10], phylog: (15, 25]
+  //   {log_id: 0, oplog_lsn: 5, phylog_lsn: 15}, // oplog: (0, 5], phylog: (0, 15]
+  // ]
+  //
+  // The ancestors are ordered such that leaf nodes are first (descendants) and
+  // the root node (the original log) is last. The ancestors list does not
+  // include the log with the log_id provided in the request. For root logs this
+  // returns an empty list of ancestors.
+  rpc ListAncestors(ListAncestorsRequest) returns (ListAncestorsResponse);
+
+  // Returns the metadata for the specified log along with all its descendants.
+  // Used by compaction to find the ancestry of logs.
+  // DEPRECATED: use GetLog + ListLogs instead.
+  rpc ListLogWithDescendants(ListLogWithDescendantsRequest) returns (ListLogWithDescendantsResponse);
+
+  // Returns a single Log
+  rpc GetLog(GetLogRequest) returns (GetLogResponse);
+
+  // Returns a list of Logs matching the provided criteria.
+  rpc ListLogs(ListLogsRequest) returns (ListLogsResponse);
+
+  // Returns a list of live snapshots for a given set of logIds. Used by
+  // compaction to avoid deleting oplog/phylog entries referenced by snapshots.
+  // The results are returned sorted first by logId then by snapshot creation
+  // time.
+  rpc ListLiveEntries(ListLiveEntriesRequest) returns (ListLiveEntriesResponse);
+
+  // Creates a new record for a validation workflow.
+  // Usually called when a Clustershot is scheduled for a validation run.
+  rpc CreateClustershotValidation(CreateClustershotValidationRequest) returns (CreateClustershotValidationResponse);
+
+  // Lists validation workflow records.
+  // Used for polling pending workflows
+  rpc ListClustershotValidations(ListClustershotValidationsRequest) returns (ListClustershotValidationsResponse);
+
+  // Updates the workflow record with shard-level results.
+  // This is the "Callback" used by the validation framework.
+  rpc UpdateClustershotValidation(UpdateClustershotValidationRequest) returns (UpdateClustershotValidationResponse);
+
+  // Returns the history of snapshots for a given set of log_ids. Each log has
+  // its own start_lsn (inclusive lower bound on phylog_lsn). A shared end_lsn
+  // controls the upper bound. Includes snapshots from READY and DELETED
+  // Clustershots. Results are sorted by log_id ascending, then phylog_lsn
+  // ascending. Supports pagination via page_token/next_page_token.
+  rpc SnapshotHistory(SnapshotHistoryRequest) returns (SnapshotHistoryResponse);
+}
+
+message CreateClustershotRequest {
+  // The clustershot to create.
+  Clustershot clustershot = 1;
+}
+
+message CreateClustershotResponse {
+  // The Clustershot that was created in SlsBackup.
+  Clustershot clustershot = 1;
+}
+
+message GetClustershotRequest {
+  // The ID of the Clustershot to get. Must be a valid 24-character ObjectId.
+  string id = 1;
+}
+
+message GetClustershotResponse {
+  // The Clustershot retrieved by ID.
+  Clustershot clustershot = 1;
+}
+
+message ListClustershotsRequest {
+  // The group ID to list Clustershots from. Required. Must be a valid 24-character ObjectId.
+  string group_id = 1;
+
+  // The unique ID of the cluster in MMS. If left empty, all clusters in the
+  // group are returned. Must be a valid 24-character ObjectId if provided.
+  string cluster_unique_id = 2;
+
+  // A continuation page token. Opaque. Can be left empty if requesting the
+  // first page of Clustershots.
+  string page_token = 3;
+}
+
+message ListClustershotsResponse {
+  // Up to 50 Clustershots sorted by id.
+  repeated Clustershot clustershots = 1;
+
+  // A continuation page token. Opaque. If this is empty in a response, there
+  // are no further Clustershots.
+  string next_page_token = 2;
+}
+
+message DeleteClustershotRequest {
+  // The ID of the clustershot to delete. Must be a valid 24-character ObjectId.
+  string id = 1;
+}
+
+// An empty response.
+message DeleteClustershotResponse {}
+
+message CreateLogRequest {
+  // The Log to record. Most fields in Log are required.
+  Log log = 1;
+}
+
+message CreateLogResponse {
+  // The Log that was recorded by SlsBackup.
+  Log log = 1;
+
+  // The newly created log's Ancestry in SlsBackup.
+  Ancestry ancestry = 2;
+}
+
+message BatchCreateLogsRequest {
+  // At least one request is required.
+  repeated CreateLogRequest requests = 1;
+}
+
+message BatchCreateLogsResponse {
+  repeated Log logs = 1;
+}
+
+message UpdateLogRequest {
+  // A Log to update. Required.
+  Log log = 1;
+
+  // A field mask of fields to update. Required.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateLogResponse {
+  // The Log with updated fields.
+  Log log = 1;
+}
+
+message DeleteLogRequest {
+  // The ID of the Log to delete. Must be positive.
+  uint64 id = 1;
+}
+
+message DeleteLogResponse {}
+
+message ListAncestorsRequest {
+  // The id of the log to list ancestors for. Must be positive.
+  uint64 log_id = 1;
+}
+
+message ListAncestorsResponse {
+  // All ancestors for the log.
+  repeated Ancestor ancestors = 1;
+}
+
+message ListLiveEntriesRequest {
+  // DEPRECATED: Use log_id instead.
+  // If both log_ids and log_id are provided, log_id takes precedence.
+  repeated uint64 log_ids = 1 [deprecated = true];
+
+  // A continuation page token. Opaque. Can be left empty if requesting the
+  // first page of live entries.
+  string page_token = 2;
+
+  // The id of the log to get live entries for. Must be positive.
+  // This field takes precedence over log_ids if both are provided.
+  uint64 log_id = 3;
+}
+
+message ListLiveEntriesResponse {
+  // A list of snapshots sorted by logId then creation time. This returns the
+  // up to 500 snapshots per page.
+  repeated Entry entries = 1;
+
+  // A continuation page token. Opaque. If this is empty in a response, there
+  // are no further entries
+  string next_page_token = 2;
+}
+
+message ListLogWithDescendantsRequest {
+  // The id of the log to retrieve descendants for. Must be positive.
+  uint64 log_id = 1;
+}
+
+message ListLogWithDescendantsResponse {
+  // Contains the requested log as the first entry, followed by all of its descendants.
+  repeated Log logs = 1;
+}
+
+message CreateClustershotValidationRequest {
+  // The clustershotValidation record to be created. Required.
+  ClustershotValidation clustershot_validation = 1;
+}
+
+message CreateClustershotValidationResponse {
+  // The clustershotValidation record gets created in slsbackup
+  ClustershotValidation clustershot_validation = 1;
+}
+
+message UpdateClustershotValidationRequest {
+  // The ID of the ClustershotValidation record. Must be a valid 24-character ObjectId.
+  string id = 1;
+
+  // The specific snapshot validation results to update. At least one is required.
+  repeated SnapshotValidation snapshot_validations = 2;
+}
+
+message UpdateClustershotValidationResponse {
+  // Returns the updated record, including the server-calculated aggregate status.
+  ClustershotValidation clustershot_validation = 1;
+}
+
+message ListClustershotValidationsRequest {
+  // Optional: Filter by a specific MMS group. Must be a valid 24-character ObjectId if provided.
+  string group_id = 1;
+
+  // Optional: Filter by a specific cluster. Must be a valid 24-character ObjectId if provided.
+  string cluster_unique_id = 2;
+
+  // Optional: Filter by the current status of the workflow (e.g., PENDING).
+  // This is the primary filter used by the validation orchestrator.
+  ValidationStatus status = 3;
+
+  // Standard pagination fields.
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message ListClustershotValidationsResponse {
+  // The list of validation workflow records matching the filters.
+  repeated ClustershotValidation clustershot_validations = 1;
+
+  // Token to retrieve the next page of results.
+  string next_page_token = 2;
+}
+
+message GetLogRequest {
+  // The id of the log to retrieve. Must be positive.
+  uint64 log_id = 1;
+}
+
+message GetLogResponse {
+  // The requested log.
+  Log log = 1;
+}
+
+message ListLogsRequest {
+  // The id of the log to retrieve children for. Must be positive.
+  uint64 parent_log_id = 1;
+}
+
+message ListLogsResponse {
+  // Contains the requested log children.
+  repeated Log logs = 1;
+}
+
+// A Clustershot is a set of Snapshots, one per Shard.
+message Clustershot {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_CREATING = 1;
+    STATUS_READY = 2;
+    STATUS_FAILED = 3;
+    STATUS_DELETED = 4;
+  }
+
+  // An ObjectId, the identifier of the Clustershot created by SlsBackup.
+  string id = 1;
+
+  // An ObjectId, the unique id of the cluster in MMS.
+  string group_id = 2;
+
+  // An ObjectId, the unique id of the cluster in MMS.
+  string cluster_unique_id = 3;
+
+  // Snapshots are the set of snapshots to take (in a request) or that were
+  // taken (in a response).
+  repeated Snapshot snapshots = 4;
+
+  // Overall status of the Clustershot. CREATING if not all Snapshots have
+  // been materialized yet. READY once all Snapshots have been materialized.
+  // FAILED if a Snapshot failed to materialized within a timeout, or SlsBackup
+  // failed to check the materialization status of a Snapshot. DELETED after
+  // a DeleteClustershot request is issued for the Snapshot.
+  Status status = 5;
+
+  // The time that the user requested a backup, if on-demand, or the time that
+  // their backup schedule requested the creation of a backup, if scheduled.
+  google.protobuf.Timestamp scheduled_time = 6;
+
+  // The time SlsBackup started creating the backup. This is the time of the
+  // Clustershot's creation in its DB, not the time it becomes READY.
+  google.protobuf.Timestamp create_time = 7;
+
+  // The time that SlsBackup completed creating the backup. This time is set
+  // once the Clustershot is marked as READY or FAILED after CREATING.
+  google.protobuf.Timestamp complete_time = 8;
+
+  // A key-value map describing any metadata that might be useful for
+  // observability purposes. We put these key-value pairs into the MDC context
+  // when logging failures in the Clustershot completion process.
+  map<string, string> metadata = 9;
+
+  // If true, this Clustershot was not created via the standard Atlas-based
+  // flow and instead was seeded by a private/admin endpoint for the purposes of
+  // restoring a Checkpoint Completion Marker without a snapshot.
+  bool fake = 10;
+
+  // A list of errors encountered by SlsBackup while getting Checkpoint
+  // Completion Marker LSNs and waiting on OIS to process them. These could
+  // indicate that either calls to SLS are failing, or SLS is not making
+  // progress in uploading and processing entries referenced by a Snapshot.
+  // These are sorted from oldest to newest.
+  repeated string creation_errors = 11;
+}
+
+// A Snapshot is a recording of the Checkpoint Completion Marker of a single
+// shard. These LSNs are guaranteed to be materialized before the Snapshot's
+// Clustershot is marked READY.
+message Snapshot {
+  // An ObjectId, created by SlsBackup, representing the snapshot.
+  string id = 1;
+
+  // The shard_id is the rsId of the shard this snapshot was taken from. E.g.
+  // "atlas-jffqcg-shard-0". These are from ReplicaSetHardware.rsId. This is
+  // provided by MMS.
+  string shard_id = 2;
+
+  // The id of the log to take a snapshot from. Required in the request.
+  uint64 log_id = 3;
+
+  // The stable optime of the Checkpoint Completion Marker.
+  uint64 oplog_lsn = 4;
+
+  // The LSN of the phylog's Checkpoint Completion Marker.
+  uint64 phylog_lsn = 5;
+
+  // The addresses of the SLS SnapshotService that SlsBackup should retrieve the
+  // Checkpoint Completion Marker from. One address per cell that the log was
+  // part of at the time of the snapshot.
+  repeated string sls_snapshot_service_addresses = 6;
+
+  // cloud_provider for snapshot
+  string cloud_provider = 7;
+
+  // region for snapshot
+  string region = 8;
+}
+
+// A ClustershotValidation represents the persistent record of a validation
+// workflow execution for a specific Clustershot.
+message ClustershotValidation {
+  // An ObjectId, unique identifier for this validation record.
+  string id = 1;
+
+  // The ID of the Clustershot being validated.
+  string clustershot_id = 2;
+
+  // The unique ID of the group in MMS (ObjectId).
+  string group_id = 3;
+
+  // The unique ID of the cluster in MMS (ObjectId).
+  string cluster_unique_id = 4;
+
+  // Aggregate status of the entire validation run across all shards.
+  ValidationStatus status = 5;
+
+  // Detailed state for each snapshot being validated.
+  repeated SnapshotValidation snapshot_validations = 6;
+}
+
+message SnapshotValidation {
+  // The execution ID provided by the Atlas validation framework.
+  string run_id = 1;
+  // The ID of the specific snapshot within the Clustershot being validated
+  string snapshot_id = 2;
+  // The status of this specific snapshot's validation.
+  ValidationStatus status = 3;
+}
+
+// A Restore represents a single restore of a Clustershot to a Cluster. It
+// contains one or multiple Logs, one per shard.
+message Restore {
+  // An ObjectId, created by SlsBackup, identifying the Restore.
+  string id = 1;
+
+  // An ObjectId, provided by MMS, for the Group.
+  string group_id = 2;
+
+  // An ObjectId, provided by MMS, for the Cluster.
+  string cluster_unique_id = 3;
+
+  // An ObjectId, provided by MMS, that identifies the Clustershot used for
+  // the restore.
+  string clustershot_id = 4;
+
+  // Logs were created for the Restore.
+  repeated Log logs = 5;
+}
+
+// A Log is a single Log from SLS. Logs are created during Cluster creation and
+// (separately) during restores.
+//
+// MMS creates Logs against SLS, records them to SlsBackup via CreateLog(), then
+// proceeds with restores to the mongods.
+//
+// Logs that are created from Atlas without having been restored from a Snapshot
+// are "Root Logs". Root Logs' source_* fields will be empty, since there was
+// no source Log that they were restored from.
+message Log {
+  // The status of the Log lifecycle.
+  //
+  // Logs transition from CREATING to READY once the restore operation completes
+  // successfully. Logs in CREATING status have a TTL set for automatic cleanup
+  // in case the restore operation fails or is abandoned.
+  //
+  // For backward compatibility, existing logs without a status field are treated
+  // as READY. STATUS_UNSPECIFIED is also treated as READY.
+  enum Status {
+    // Unspecified status. Treated as READY for backward compatibility with
+    // existing logs that don't have a status field.
+    STATUS_UNSPECIFIED = 0;
+    // Log is being created as part of a restore operation. Logs in this status
+    // have a TTL set and will be automatically cleaned up if not transitioned
+    // to READY within the TTL period (7 days).
+    STATUS_CREATING = 1;
+    // Log is ready for use. This is the terminal status for successfully
+    // restored logs. Logs in this status do not have a TTL and persist
+    // indefinitely until explicitly deleted.
+    STATUS_READY = 2;
+  }
+
+  // The id of the log in SLS. Required in CreateLogRequest.
+  uint64 id = 1;
+
+  // group_id is the id of the group that this log's Atlas Cluster belongs to.
+  // Required in CreateLogRequest.
+  string group_id = 2;
+
+  // cluster_unique_id is the unique id of the Atlas cluster this log belongs
+  // to. Required in CreateLogRequest.
+  string cluster_unique_id = 3;
+
+  // The pit window configured for the log. Defines the duration within which we
+  // retain oplog and a PIT restore is possible.
+  google.protobuf.Duration pit_window_duration = 4;
+
+  // source_clustershot_id is the id of the clustershot this log was restored
+  // from. Not present for root logs. Required in CreateLogRequest.
+  string source_clustershot_id = 5;
+
+  // source_snapshot_id is the id of the snapshot this log was restored from.
+  // Not present for root logs. Required in CreateLogRequest.
+  string source_snapshot_id = 6;
+
+  // The LSN of the source snapshot's phylog's Checkpoint Completion Marker.
+  // Not present for root logs.
+  uint64 source_phylog_lsn = 7;
+
+  // The LSN of the oplog end timestamp that this Log was restored from. Not
+  // present for root logs. Optional in CreateLogRequest: if not provided this
+  // is pulled from the source_snapshot.
+  uint64 source_oplog_lsn = 8;
+
+  // The Log is orphaned if it is no longer part of a Cluster. The Atlas cluster
+  // may have been deleted. Or the Atlas cluster's existing Log might have
+  // become orphaned during a Restore (when its log was replaced with another).
+  bool orphaned = 9;
+
+  // This is the oplog LSN of the last Snapshot before the PIT window start
+  // time. This results in preserving the Snapshots from this LSN to NOW.
+  //
+  // NOTE: If this is 0, compaction should not happen for this log.
+  //
+  // NOTE: We can't consider the first Snapshot in the PIT window instead since
+  // it'd prevent us from being able to do a PIT restore to anytime between the
+  // PIT window start time and the first Snapshot's time.
+  uint64 compaction_stop_oplog_lsn = 10;
+
+  // This is the phylog LSN after which all the phylogs should be preserved.
+  // This results in preserving the Checkpoints from this LSN to NOW
+  // which helps having more performant restores VS slower ones that rely on
+  // Snapshots only, since Checkpoints are generated more frequently than
+  // Snapshots.
+  //
+  // NOTE: If this is 0, compaction should not happen for this log.
+  uint64 compaction_stop_phylog_lsn = 11;
+
+  // The status of the Log lifecycle. Required in CreateLogRequest.
+  //
+  // Only CREATING -> READY transitions are allowed via UpdateLog. Attempting
+  // other transitions will result in an INVALID_ARGUMENT error.
+  //
+  // See the Status enum documentation for details on each status value and
+  // backward compatibility behavior.
+  Status status = 12;
+
+  // source_log_id is the id of the log this log was restored from.
+  // Not present for root logs. Required in CreateLogRequest for restored logs.
+  uint64 source_log_id = 13;
+}
+
+// Ancestry describes the ancestors of this Log. It is equivalent to the
+// ListAncestorsResponse but includes a Signature.
+message Ancestry {
+  repeated Ancestor ancestors = 1;
+  Signature signature = 2;
+}
+
+message Ancestor {
+  // The id of the log that is within the ancestry chain.
+  uint64 log_id = 1;
+
+  // oplog_lsn is the final, inclusive LSN for the oplog for this log prior
+  // to backup/restore to a new log.
+  uint64 oplog_lsn = 2;
+
+  // phylog_lsn is the final, inclusive LSN for the phylog for this log prior
+  // to backup/restore to a new log.
+  uint64 phylog_lsn = 3;
+
+  // The extended oplog boundary for point-in-time restore. When set, it MUST be
+  // >= oplog_lsn and represents additional oplog entries beyond oplog_lsn that
+  // are visible to the child log. If unset or equal to oplog_lsn, readers fall
+  // back to oplog_lsn (the two cases are semantically equivalent).
+  optional uint64 pit_oplog_lsn = 4;
+}
+
+// Signature is from SlsBackup attesting to the validity of an Ancestry.
+// This is the Ed25519 signature of the CRC-32c checksum of the comma-separated
+// list of log_id (of the log whose Ancestry this is), then the list of ancestors
+// like $log_id,$ancestors.0.log_id,$ancestors.0.oplog_lsn,$ancestors.0.phylog_lsn[,$ancestors.0.pit_oplog_lsn],...
+// pit_oplog_lsn is only included in the hash when set AND different from oplog_lsn.
+message Signature {
+  // The id of the public key clients should use to verify this signature.
+  string key_id = 1;
+  // The signature itself.
+  bytes signature = 2;
+}
+
+// Each entry represents a living snapshot of the log
+message Entry {
+  // The unique identifier of the log associated with this entry.
+  uint64 log_id = 1;
+
+  // The stable optime of the Checkpoint Completion Marker persisted in snapshot
+  uint64 oplog_stable_timestamp_lsn = 2;
+
+  // The inclusive lsn for the oplog need to be preserved to ensure the shard restored from
+  // the checkpoint can be aligned with other shards.
+  uint64 oplog_end_timestamp_lsn = 3;
+
+  // The LSN of the phylog's Checkpoint Completion Marker.
+  uint64 phylog_completion_marker_lsn = 4;
+
+  // cloud_provider for snapshot
+  string cloud_provider = 7;
+
+  // region for snapshot
+  string region = 8;
+
+  // Whether this snapshot is billable to the customer. Snapshots retained solely for
+  // validation purposes (clustershot has DELETED status) are not billable.
+  bool billable = 9;
+}
+
+message SnapshotHistoryRequest {
+  // Map of log_id to start_lsn. Each entry specifies a log ID and the
+  // inclusive lower bound of the phylog_lsn range for that log.
+  // At least one entry is required. All keys and values must be positive.
+  map<uint64, uint64> log_start_lsns = 1;
+
+  // The end of the LSN range (inclusive). Must be positive.
+  uint64 end_lsn = 2;
+
+  // A continuation page token. Opaque. Can be left empty if requesting the
+  // first page of snapshot history.
+  string page_token = 3;
+
+  // Optional. If set, only return snapshots stored in this cloud provider
+  // (e.g. "AWS", "GCP", "AZURE"). If empty, returns snapshots from all
+  // cloud providers.
+  string cloud_provider = 4;
+
+  // Optional. If set, only return snapshots stored in this region
+  // (e.g. "US_EAST_1"). If empty, returns snapshots from all regions.
+  string region = 5;
+}
+
+message SnapshotHistoryResponse {
+  // Snapshot history entries matching the criteria, sorted by log_id ascending
+  // then phylog_lsn ascending. Includes entries from READY and DELETED
+  // Clustershots.
+  repeated SnapshotHistoryEntry entries = 1;
+
+  // A continuation page token. Opaque. If this is empty in a response, there
+  // are no further entries.
+  string next_page_token = 2;
+}
+
+// A projected view of a Snapshot with Clustershot-level timestamps, returned
+// by the SnapshotHistory API.
+message SnapshotHistoryEntry {
+  // The snapshot's ObjectId.
+  string id = 1;
+
+  // The id of the log this snapshot was taken from.
+  uint64 log_id = 2;
+
+  // The LSN of the phylog's Checkpoint Completion Marker.
+  uint64 phylog_lsn = 3;
+
+  // The stable optime of the Checkpoint Completion Marker.
+  uint64 oplog_lsn = 4;
+
+  // The cloud provider where this snapshot is stored (e.g. "AWS").
+  string cloud_provider = 5;
+
+  // The region where this snapshot is stored (e.g. "US_EAST_1").
+  string region = 6;
+
+  // The time the parent Clustershot was created.
+  google.protobuf.Timestamp create_time = 7;
+
+  // The time the parent Clustershot was deleted. Unset if not yet deleted.
+  google.protobuf.Timestamp delete_time = 8;
+}
+
+enum ValidationStatus {
+  VALIDATION_STATUS_UNSPECIFIED = 0;
+  VALIDATION_STATUS_PENDING = 1;
+  VALIDATION_STATUS_SUCCESS = 2;
+  VALIDATION_STATUS_FAILED = 3;
+  VALIDATION_STATUS_INCONCLUSIVE = 4;
+}
