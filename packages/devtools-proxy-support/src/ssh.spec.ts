@@ -1,4 +1,4 @@
-import { once } from 'events';
+import { EventEmitter, once } from 'events';
 import { HTTPServerProxyTestSetup } from '../test/helpers';
 import { SSHAgent } from './ssh';
 import { createFetch } from './fetch';
@@ -169,6 +169,81 @@ describe('SSHAgent', function () {
     await fetch('http://example.com/hello');
     // A fresh client was created and a new SSH handshake performed
     expect(setup.authHandler).to.have.been.calledTwice;
+  });
+
+  it('serializes concurrent reinit attempts, creating only one new SSH connection', async function () {
+    setup.authHandler = sinon.stub().returns(true);
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    await agent.initialize();
+    const fetch = createFetch(agent);
+    await fetch('http://example.com/hello');
+
+    // Force the current client into a fatal state so every concurrent _connect
+    // call will need to reinitialize.
+    const brokenClient = (agent as any).sshClient;
+    brokenClient.connect = function () {
+      process.nextTick(() =>
+        brokenClient.emit(
+          'error',
+          new Error('Instance unusable after fatal error'),
+        ),
+      );
+    };
+    (agent as any).connected = false;
+
+    // Three requests in flight at the same moment, all requiring a reinit.
+    await Promise.all([
+      fetch('http://example.com/hello'),
+      fetch('http://example.com/hello'),
+      fetch('http://example.com/hello'),
+    ]);
+
+    // Despite three concurrent requests, only one new SSH handshake should occur.
+    expect(setup.authHandler).to.have.been.calledTwice;
+  });
+
+  it('marks itself as closed after too many consecutive reinit failures', async function () {
+    setup.authHandler = sinon.stub().returns(true);
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    await agent.initialize();
+
+    // Stub createSshClient to always return a client that fails to connect,
+    // simulating a bastion that is unreachable after a long hibernate.
+    sinon.stub(agent as any, 'createSshClient').callsFake(() => {
+      const client = new EventEmitter() as any;
+      client.connect = () => {
+        process.nextTick(() =>
+          client.emit('error', new Error('Connection refused')),
+        );
+      };
+      client.end = () => {};
+      return client;
+    });
+    (agent as any).connected = false;
+
+    for (let i = 0; i < 3; i++) {
+      await agent.initialize(true).catch(() => {});
+    }
+
+    expect((agent as any).closed).to.be.true;
+
+    // Further calls must throw 'Disconnected.' without attempting a new connection.
+    const establishingEvents: unknown[] = [];
+    agent.logger.on('ssh:establishing-conection', (e: unknown) =>
+      establishingEvents.push(e),
+    );
+    try {
+      await agent.initialize();
+      expect.fail('missed exception');
+    } catch (err: any) {
+      expect(err.message).to.equal('Disconnected.');
+    }
+    expect(establishingEvents).to.have.length(0);
+    expect(setup.authHandler).to.have.been.calledOnce;
   });
 
   it('reconnects after the underlying connection is destroyed server-side', async function () {
