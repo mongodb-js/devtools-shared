@@ -6,16 +6,16 @@ import * as bson from 'bson';
 
 /**
  * ANN Basic
- * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#ann-examples}
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#examples}
  */
 function test0() {
-  type TestCollection = {
+  type movies = {
+    plot_embedding: Array<bson.Double | number>;
     plot: string;
     title: string;
-    score: number;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     {
       $vectorSearch: {
         index: 'vector_index',
@@ -38,63 +38,14 @@ function test0() {
 
 /**
  * ANN Filter
- * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#ann-examples}
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#examples}
  */
 function test1() {
   type movies = {
-    _id: {
-      $oid: string;
-    };
-    title: string;
-    year: {
-      $numberInt: string;
-    };
-    runtime: {
-      $numberInt: string;
-    };
-    released: {
-      $date: {
-        $numberLong: string;
-      };
-    };
-    poster: string;
+    plot_embedding: Array<bson.Double | number>;
+    year: bson.Int32 | number;
     plot: string;
-    fullplot: string;
-    lastupdated: string;
-    type: string;
-    directors: Array<string>;
-    imdb: {
-      rating: {
-        $numberDouble: string;
-      };
-      votes: {
-        $numberInt: string;
-      };
-      id: {
-        $numberInt: string;
-      };
-    };
-    cast: Array<string>;
-    countries: Array<string>;
-    genres: Array<string>;
-    tomatoes: {
-      viewer: {
-        rating: {
-          $numberDouble: string;
-        };
-        numReviews: {
-          $numberInt: string;
-        };
-      };
-      lastUpdated: {
-        $date: {
-          $numberLong: string;
-        };
-      };
-    };
-    num_mflix_comments: {
-      $numberInt: string;
-    };
+    title: string;
   };
 
   const aggregation: schema.Pipeline<movies> = [
@@ -122,16 +73,16 @@ function test1() {
 
 /**
  * ENN
- * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#enn-example}
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#examples}
  */
 function test2() {
-  type TestCollection = {
+  type movies = {
+    plot_embedding: Array<bson.Double | number>;
     plot: string;
     title: string;
-    score: number;
   };
 
-  const aggregation: schema.Pipeline<TestCollection> = [
+  const aggregation: schema.Pipeline<movies> = [
     {
       $vectorSearch: {
         index: 'vector_index',
@@ -150,4 +101,57 @@ function test2() {
       },
     },
   ];
+}
+
+/**
+ * Stored Source
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#examples}
+ */
+function test3() {
+  type movies = {
+    plot_embedding: Array<bson.Double | number>;
+    year: bson.Int32 | number;
+    genres: Array<string>;
+    plot: string;
+    title: string;
+  };
+
+  const aggregation: schema.Pipeline<movies> = [
+    {
+      $vectorSearch: {
+        index: 'vector_index',
+        path: 'plot_embedding',
+        queryVector: [
+          -0.03994801267981529, -0.016522614285349846, -0.008775344118475914,
+        ],
+        filter: {
+          $and: [
+            { year: { $gt: 1970 } },
+            { year: { $lt: 2020 } },
+            { genres: { $in: ['Action', 'Drama', 'Comedy'] } },
+          ],
+        },
+        limit: 10,
+        numCandidates: 1000,
+        returnStoredSource: true,
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        plot: 1,
+        title: 1,
+        genres: 1,
+        score: { $meta: 'vectorSearchScore' },
+      },
+    },
+  ];
+}
+
+/**
+ * Nested field
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#examples}
+ */
+function test4() {
+  // TODO: no schema found for vectorSearch.Nested field
 }

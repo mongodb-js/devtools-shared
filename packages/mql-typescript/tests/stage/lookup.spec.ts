@@ -9,14 +9,17 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/#perform-a-single-equality-join-with--lookup}
  */
 function test0() {
-  type orders = {
-    _id: number;
-    item: string;
-    price: number;
-    quantity: number;
+  type TestCollection = {
+    title: string;
+    year: number;
+    movie_comments: Array<{
+      name: string;
+      text: string;
+      date: Date;
+    }>;
   };
 
-  const aggregation: schema.Pipeline<orders> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $lookup: {
         from: 'inventory',
@@ -33,14 +36,17 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/#use--lookup-with-an-array}
  */
 function test1() {
-  type classes = {
-    _id: number;
+  type TestCollection = {
     title: string;
-    enrollmentlist: Array<string>;
-    days: Array<string>;
+    year: number;
+    movie_comments: Array<{
+      name: string;
+      text: string;
+      date: Date;
+    }>;
   };
 
-  const aggregation: schema.Pipeline<classes> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $lookup: {
         from: 'members',
@@ -57,14 +63,17 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/#use--lookup-with--mergeobjects}
  */
 function test2() {
-  type orders = {
-    _id: number;
-    item: string;
-    price: number;
-    quantity: number;
+  type TestCollection = {
+    title: string;
+    year: number;
+    movie_comments: Array<{
+      name: string;
+      text: string;
+      date: Date;
+    }>;
   };
 
-  const aggregation: schema.Pipeline<orders> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $lookup: {
         from: 'items',
@@ -97,13 +106,20 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/#perform-an-uncorrelated-subquery-with--lookup}
  */
 function test4() {
-  type absences = {
-    _id: number;
-    student: string;
-    sickdays: Array<Date>;
+  type TestCollection = {
+    title: string;
+    year: number;
+    movie_comments: Array<{
+      name: string;
+      text: string;
+      date: Date;
+    }>;
   };
 
-  const aggregation: schema.Pipeline<absences> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (the lookup sub-pipeline references fields from the joined collection that are not available statically).
+     */
     {
       $lookup: {
         from: 'holidays',
@@ -114,7 +130,7 @@ function test4() {
         ],
         as: 'holidays',
       },
-    },
+    } as any,
   ];
 }
 
@@ -123,14 +139,20 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/#perform-a-concise-correlated-subquery-with--lookup}
  */
 function test5() {
-  type restaurants = {
-    _id: number;
-    name: string;
-    food: Array<string>;
-    beverages: Array<string>;
+  type TestCollection = {
+    title: string;
+    year: number;
+    movie_comments: Array<{
+      name: string;
+      text: string;
+      date: Date;
+    }>;
   };
 
-  const aggregation: schema.Pipeline<restaurants> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' (the lookup sub-pipeline references the variables defined in the `let` field, which are not available statically).
+     */
     {
       $lookup: {
         from: 'restaurants',
@@ -142,6 +164,6 @@ function test5() {
         ],
         as: 'matches',
       },
-    },
+    } as any,
   ];
 }

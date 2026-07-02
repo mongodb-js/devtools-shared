@@ -6,28 +6,31 @@ import { DriverSchemaGenerator } from './driverSchema/driver-schema-generator';
 import type { GeneratorBase } from './generator';
 
 async function main() {
+  const filterOptions = {
+    category: {
+      type: 'string',
+      choices: ['accumulator', 'expression', 'query', 'search', 'stage'],
+      description:
+        'The category of the operator to generate. If not provided, all categories will be used.',
+    },
+    operator: {
+      type: 'string',
+      description:
+        'The operator to generate. If not provided, all operators will be used.',
+    },
+  } as const;
+
   const argv = await yargs(hideBin(process.argv))
     .command('schema', 'Generates schema from the php driver definitions')
     .command(
       'tests',
       'Generates tests from the php driver definitions and the docs examples',
+      filterOptions,
     )
     .command(
       'driver-schema',
       'Updates the php driver definitions with the schema for the tests',
-      {
-        category: {
-          type: 'string',
-          choices: ['accumulator', 'expression', 'query', 'search', 'stage'],
-          description:
-            'The category of the operator to update. If not provided, all categories will be updated.',
-        },
-        operator: {
-          type: 'string',
-          description:
-            'The operator to update the schema for. If not provided, all operators will be updated.',
-        },
-      },
+      filterOptions,
     )
     .demandCommand(1, 'A command must be provided')
     .help().argv;

@@ -87,3 +87,31 @@ function test2() {
     } as any,
   ];
 }
+
+/**
+ * Use Array Index
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/}
+ */
+function test3() {
+  type data = {
+    scores: Array<number>;
+  };
+
+  const aggregation: schema.Pipeline<data> = [
+    /**
+     * This stage is unsupported by the static type system, so we're casting it to 'any' ($map references the variable names defined in the `as` and `arrayIndexAs` fields, which is not available statically).
+     */
+    {
+      $project: {
+        result: {
+          $map: {
+            input: '$scores',
+            as: 'score',
+            arrayIndexAs: 'idx',
+            in: { $add: ['$$score', '$$idx'] },
+          },
+        },
+      },
+    } as any,
+  ];
+}

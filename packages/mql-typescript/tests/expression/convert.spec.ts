@@ -87,3 +87,43 @@ function test0() {
     } as any,
   ];
 }
+
+/**
+ * Convert Hexadecimal String to Integer
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/#base-conversion}
+ */
+function test1() {
+  type data = {
+    _id: number;
+    hexString: string;
+  };
+
+  const aggregation: schema.Pipeline<data> = [
+    {
+      $project: {
+        decimalValue: {
+          $convert: { input: '$hexString', to: 'int', base: 16 },
+        },
+      },
+    },
+  ];
+}
+
+/**
+ * Convert Integer to Binary String
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/#base-conversion}
+ */
+function test2() {
+  type data = {
+    _id: number;
+    value: bson.Int32 | number;
+  };
+
+  const aggregation: schema.Pipeline<data> = [
+    {
+      $project: {
+        binaryString: { $convert: { input: '$value', to: 'string', base: 2 } },
+      },
+    },
+  ];
+}

@@ -14,6 +14,18 @@ export const unsupportedAggregations: {
     },
   },
   expression: {
+    top: {
+      Example: { stage: 0, comment: nestedFieldsExplanation },
+    },
+    topN: {
+      Example: { stage: 0, comment: nestedFieldsExplanation },
+    },
+    bottom: {
+      Example: { stage: 0, comment: nestedFieldsExplanation },
+    },
+    bottomN: {
+      Example: { stage: 0, comment: nestedFieldsExplanation },
+    },
     arrayToObject: {
       ['$objectToArray and $arrayToObject Example']: { stage: 1 },
     },
@@ -48,6 +60,11 @@ export const unsupportedAggregations: {
         stage: 0,
         comment:
           '$map references the variable names defined in the `as` field, which is not available statically',
+      },
+      'Use Array Index': {
+        stage: 0,
+        comment:
+          '$map references the variable names defined in the `as` and `arrayIndexAs` fields, which is not available statically',
       },
     },
     objectToArray: {
@@ -109,6 +126,26 @@ export const unsupportedAggregations: {
     },
   },
   search: {
+    hasRoot: {
+      'Simple Query': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      'Multi-Level Query': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+      'Compound Query': {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
+    hasAncestor: {
+      Example: {
+        stage: 0,
+        comment: nestedFieldsExplanation,
+      },
+    },
     embeddedDocument: {
       'Query for Matching Embedded Documents Only': {
         stage: 2,
@@ -190,6 +227,18 @@ export const unsupportedAggregations: {
         stage: 1,
         comment:
           'the output field of the $bucket stage generates new fields that are not available statically',
+      },
+    },
+    lookup: {
+      'Perform an Uncorrelated Subquery with $lookup': {
+        stage: 0,
+        comment:
+          'the lookup sub-pipeline references fields from the joined collection that are not available statically',
+      },
+      'Perform a Concise Correlated Subquery with $lookup': {
+        stage: 0,
+        comment:
+          'the lookup sub-pipeline references the variables defined in the `let` field, which are not available statically',
       },
     },
     currentOp: {

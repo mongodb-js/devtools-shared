@@ -9,16 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#equality-match}
  */
 function test0() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    author: string;
-    score: number;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    { $match: { author: 'dave' } },
-  ];
+  // TODO: no schema found for match.Equality Match
 }
 
 /**
@@ -26,19 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#perform-a-count}
  */
 function test1() {
-  type TestCollection = {
-    _id: bson.ObjectId;
-    author: string;
-    score: number;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<TestCollection> = [
-    {
-      $match: {
-        $or: [{ score: { $gt: 70, $lt: 90 } }, { views: { $gte: 1000 } }],
-      },
-    },
-    { $group: { _id: null, count: { $sum: 1 } } },
-  ];
+  // TODO: no schema found for match.Perform a Count
 }

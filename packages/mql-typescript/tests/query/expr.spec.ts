@@ -9,46 +9,24 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/#compare-two-fields-from-a-single-document}
  */
 function test0() {
-  type monthlyBudget = {
-    _id: number;
-    category: string;
-    budget: number;
-    spent: number;
+  type TestCollection = {
+    title: string;
+    tomatoes: {
+      viewer: {
+        rating: number;
+      };
+    };
   };
 
-  const aggregation: schema.Pipeline<monthlyBudget> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $match: { $expr: { $gt: ['$spent', '$budget'] } } },
   ];
 }
 
 /**
  * Using $expr With Conditional Statements
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/#use--expr-with-conditional-statements}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/#using--expr-with-conditional-statements}
  */
 function test1() {
-  type supplies = {
-    _id: number;
-    item: string;
-    qty: bson.Int32 | number;
-    price: bson.Decimal128;
-  };
-
-  const aggregation: schema.Pipeline<supplies> = [
-    {
-      $match: {
-        $expr: {
-          $lt: [
-            {
-              $cond: {
-                if: { $gte: ['$qty', 100] },
-                then: { $multiply: ['$price', 0.5] },
-                else: { $multiply: ['$price', 0.75] },
-              },
-            },
-            5,
-          ],
-        },
-      },
-    },
-  ];
+  // TODO: no schema found for expr.Using $expr With Conditional Statements: // TODO: No schema found in docs
 }

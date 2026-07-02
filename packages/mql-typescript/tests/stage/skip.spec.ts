@@ -6,7 +6,7 @@ import * as bson from 'bson';
 
 /**
  * Example
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/#examples}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/#example}
  */
 function test0() {
   type TestCollection = {

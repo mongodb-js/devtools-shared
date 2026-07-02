@@ -9,18 +9,13 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-specific-fields-in-output-documents}
  */
 function test0() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-    };
-    copies: number;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $project: { title: 1, author: 1 } },
   ];
 }
@@ -30,18 +25,13 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#suppress-_id-field-in-the-output-documents}
  */
 function test1() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-    };
-    copies: number;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $project: { _id: 0, title: 1, author: 1 } },
   ];
 }
@@ -51,19 +41,13 @@ function test1() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#exclude-fields-from-output-documents}
  */
 function test2() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-    };
-    copies: number;
-    lastModified: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $project: { lastModified: 0 } },
   ];
 }
@@ -73,19 +57,13 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#exclude-fields-from-embedded-documents}
  */
 function test3() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-    };
-    copies: number;
-    lastModified: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $project: { 'author.first': 0, lastModified: 0 } },
     { $project: { author: { first: 0 }, lastModified: 0 } },
   ];
@@ -96,20 +74,13 @@ function test3() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#conditionally-exclude-fields}
  */
 function test4() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-      middle: string;
-    };
-    copies: number;
-    lastModified: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         title: 1,
@@ -132,23 +103,13 @@ function test4() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-specific-fields-from-embedded-documents}
  */
 function test5() {
-  type bookmarks = {
-    _id: number;
-    user: string;
-    stop:
-      | {
-          title: string;
-          author: string;
-          page: number;
-        }
-      | Array<{
-          title: string;
-          author: string;
-          page: number;
-        }>;
+  type TestCollection = {
+    _id: bson.ObjectId;
+    title: string;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<bookmarks> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     { $project: { 'stop.title': 1 } },
     { $project: { stop: { title: 1 } } },
   ];
@@ -159,18 +120,13 @@ function test5() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#include-computed-fields}
  */
 function test6() {
-  type books = {
-    _id: number;
+  type TestCollection = {
+    _id: bson.ObjectId;
     title: string;
-    isbn: string;
-    author: {
-      last: string;
-      first: string;
-    };
-    copies: number;
+    rated: string;
   };
 
-  const aggregation: schema.Pipeline<books> = [
+  const aggregation: schema.Pipeline<TestCollection> = [
     {
       $project: {
         title: 1,
@@ -195,8 +151,8 @@ function test6() {
 function test7() {
   type TestCollection = {
     _id: bson.ObjectId;
-    x: number;
-    y: number;
+    x: bson.Int32 | number;
+    y: bson.Int32 | number;
   };
 
   const aggregation: schema.Pipeline<TestCollection> = [

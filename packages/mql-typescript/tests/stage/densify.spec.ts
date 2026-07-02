@@ -37,23 +37,8 @@ function test0() {
 
 /**
  * Densifiction with Partitions
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/#densification-with-partitions}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/#densifiction-with-partitions}
  */
 function test1() {
-  type coffee = {
-    altitude: number;
-    variety: string;
-    score: number;
-    price: number;
-  };
-
-  const aggregation: schema.Pipeline<coffee> = [
-    {
-      $densify: {
-        field: 'altitude',
-        partitionByFields: ['variety'],
-        range: { bounds: 'full', step: 200 },
-      },
-    },
-  ];
+  // TODO: no schema found for densify.Densifiction with Partitions: // TODO: No schema found in docs
 }

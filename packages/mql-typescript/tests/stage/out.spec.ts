@@ -18,7 +18,7 @@ function test0() {
 
   const aggregation: schema.Pipeline<books> = [
     { $group: { _id: '$author', books: { $push: '$title' } } },
-    { $out: 'authors' },
+    { $out: { coll: 'authors' } },
   ];
 }
 
@@ -37,5 +37,31 @@ function test1() {
   const aggregation: schema.Pipeline<books> = [
     { $group: { _id: '$author', books: { $push: '$title' } } },
     { $out: { db: 'reporting', coll: 'authors' } },
+  ];
+}
+
+/**
+ * Output to a Time Series Collection
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#output-to-a-time-series-collection}
+ */
+function test2() {
+  type sensors = {
+    timestamp: Date;
+    sensorId: string;
+    temperature: number;
+  };
+
+  const aggregation: schema.Pipeline<sensors> = [
+    {
+      $out: {
+        db: 'reporting',
+        coll: 'sensorData',
+        timeseries: {
+          timeField: 'timestamp',
+          metaField: 'sensorId',
+          granularity: 'hours',
+        },
+      },
+    },
   ];
 }

@@ -24,7 +24,7 @@ function test0() {
 
 /**
  * Regular Expressions
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/#regular-expressions}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/not/#-not-and-regular-expressions}
  */
 function test1() {
   type inventory = {

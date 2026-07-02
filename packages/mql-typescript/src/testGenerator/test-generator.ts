@@ -58,8 +58,12 @@ export class TestGenerator extends GeneratorBase {
         return `undefined`;
       case 'Number':
         return 'number';
+      case 'Array':
+        return 'unknown[]';
+      case 'Document':
+        return 'Record<string, unknown>';
       default:
-        throw new Error(`Unknown BSON type: ${type}`);
+        throw new Error(`Unknown BSON type: ${String(type)}`);
     }
   }
 
@@ -115,7 +119,9 @@ export class TestGenerator extends GeneratorBase {
         }
 
         if (stage instanceof bson.BSONRegExp) {
-          return `new bson.BSONRegExp('${stage.pattern}', '${stage.options}')`;
+          return `new bson.BSONRegExp(${JSON.stringify(
+            stage.pattern,
+          )}, ${JSON.stringify(stage.options)})`;
         }
 
         if ('$code' in stage && typeof stage.$code === 'string') {
@@ -141,14 +147,16 @@ export class TestGenerator extends GeneratorBase {
     operator: string,
     test: TestType,
   ): void {
-    if (!test.pipeline) {
-      this.emit(`// TODO: No pipeline found for ${operator}.${test.name}\n`);
+    if (!('pipeline' in test) || !test.pipeline) {
+      this.emit(
+        `// TODO: No pipeline found for ${operator}.${String(test.name)}\n`,
+      );
       return;
     }
 
     if (!test.schema || typeof test.schema === 'string') {
       this.emit(
-        `// TODO: no schema found for ${operator}.${test.name}${test.schema ? `: ${test.schema}` : ''}\n`,
+        `// TODO: no schema found for ${operator}.${String(test.name)}${test.schema ? `: ${test.schema}` : ''}\n`,
       );
       return;
     }
@@ -168,7 +176,9 @@ export class TestGenerator extends GeneratorBase {
       // Some pipelines project to new types, which is not supported by the static type system.
       // In this case, we typecast to any to suppress the type error.
       const unsupportedStage =
-        unsupportedAggregations[category]?.[operator]?.[test.name];
+        test.name === undefined
+          ? undefined
+          : unsupportedAggregations[category]?.[operator]?.[test.name];
       const isUnsupportedStage =
         unsupportedStage && i >= unsupportedStage.stage;
 
@@ -191,6 +201,14 @@ export class TestGenerator extends GeneratorBase {
 
   protected override async generateImpl(yamlFiles: YamlFiles): Promise<void> {
     for await (const file of yamlFiles) {
+      // Update operators describe `filter`/`update` examples rather than
+      // aggregation pipelines, which the test harness cannot currently render
+      // (there is no associated collection schema to type them against), so we
+      // skip generating spec files for them.
+      if (file.category === 'update') {
+        continue;
+      }
+
       const namespace = `${capitalize(file.category)}Operators`;
 
       const basePath = path.resolve(
