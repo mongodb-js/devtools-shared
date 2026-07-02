@@ -80,6 +80,10 @@ import type { MongoClientOptions } from 'mongodb';
     })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
+    .option('json', {
+      type: 'boolean',
+      describe: 'Output machine-readable JSON ("ls" only)',
+    })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
     .command('prune', 'Clean up metadata for any dead MongoDB instances')
@@ -150,8 +154,18 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function ls() {
-    for await (const { id, connectionString } of utilities.instances(argv)) {
-      console.log(`${id}: ${connectionString}`);
+    if (argv.json) {
+      let first = true;
+      for await (const { serialized, ...rest } of utilities.instances(argv)) {
+        console.log(first ? '[' : ',');
+        first = false;
+        console.log(JSON.stringify({ ...rest, ...serialized }, null, 2));
+      }
+      console.log(']');
+    } else {
+      for await (const { id, connectionString } of utilities.instances(argv)) {
+        console.log(`${id}: ${connectionString}`);
+      }
     }
   }
 
