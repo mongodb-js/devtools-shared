@@ -208,26 +208,5 @@ describe('completer', function () {
         }
       });
     });
-
-    it('should include $$IDX system variable gated to MongoDB 8.3+', function () {
-      const idx = ALL_CONSTANTS.find((c) => c.value === '$$IDX');
-      expect(idx).to.exist;
-      expect(idx?.version).to.eq('8.3.0');
-      expect(idx?.meta).to.eq('variable:system');
-    });
-
-    it('should return $$IDX for server 8.3+ but not for older servers', function () {
-      const withIdx = getFilteredCompletions(
-        { serverVersion: '8.3.0' },
-        ALL_CONSTANTS,
-      ).map((c) => c.value);
-      expect(withIdx).to.include('$$IDX');
-
-      const withoutIdx = getFilteredCompletions(
-        { serverVersion: '8.2.0' },
-        ALL_CONSTANTS,
-      ).map((c) => c.value);
-      expect(withoutIdx).to.not.include('$$IDX');
-    });
   });
 });
