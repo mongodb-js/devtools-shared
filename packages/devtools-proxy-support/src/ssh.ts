@@ -27,6 +27,8 @@ function ssh2(): typeof import('ssh2') {
   return require('ssh2');
 }
 
+const MAX_CONSECUTIVE_REINIT_FAILURES = 3;
+
 // The original version of this code was largely taken from
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
 export class SSHAgent extends AgentBase implements AgentWithInitialize {
@@ -36,6 +38,8 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   private sshClient: SshClient;
   private connected = false;
   private connectingPromise?: Promise<void>;
+  private reinitializingPromise?: Promise<void>;
+  private consecutiveReinitFailures = 0;
   private closed = false;
   private forwardOut!: (
     srcIP: string,
@@ -88,16 +92,20 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     }
 
     if (reinitializeClient) {
-      // The previous ssh2 Client instance is in an unrecoverable state (e.g.
-      // "Instance unusable after fatal error" after the TCP connection was killed
-      // mid-stream during hibernate). End it to release the keepalive timer
-      // and any other internal handles, then create a fresh instance.
-      // ssh2's end() is a no-op when the underlying socket is already dead
-      // (it guards with isWritable()), so this is safe in all cases.
-      this.connectingPromise = undefined;
-      this.connected = false;
-      this.sshClient.end();
-      this.sshClient = this.createSshClient();
+      // Serialize concurrent reinit attempts: if one is already in progress,
+      // wait for it and then use the newly-connected client instead of racing
+      // to create another one. Without this, each concurrent _connect() caller
+      // bypasses connectingPromise deduplication and races through the reinit
+      // path, creating N fresh ssh2 clients (and N server-side sessions) per
+      // driver retry cycle.
+      if (this.reinitializingPromise) {
+        await this.reinitializingPromise;
+        return this.initialize(false);
+      }
+      this.reinitializingPromise = this._doReinit().finally(() => {
+        this.reinitializingPromise = undefined;
+      });
+      return this.reinitializingPromise;
     }
 
     const sshConnectConfig: ConnectConfig = {
@@ -210,6 +218,26 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
         if (retriesLeft > 0) {
           await this.initialize(requiresNewClient);
           return await this._connect(req, connectOpts, retriesLeft - 1);
+        }
+      }
+      throw err;
+    }
+  }
+
+  private async _doReinit(): Promise<void> {
+    this.connectingPromise = undefined;
+    this.connected = false;
+    this.sshClient.end();
+    this.sshClient = this.createSshClient();
+    try {
+      await this.initialize(false);
+      this.consecutiveReinitFailures = 0;
+    } catch (err) {
+      // Only count failures that aren't from an intentional destroy().
+      if (!this.closed) {
+        this.consecutiveReinitFailures++;
+        if (this.consecutiveReinitFailures >= MAX_CONSECUTIVE_REINIT_FAILURES) {
+          this.closed = true;
         }
       }
       throw err;
