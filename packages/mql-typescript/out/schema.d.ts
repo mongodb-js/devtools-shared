@@ -1561,6 +1561,12 @@ export namespace Aggregation.Expression {
       as?: string;
 
       /**
+       * A name for the variable that represents the index of the array element. Available in MongoDB 8.3+.
+       * If not specified, the index is available as $$IDX.
+       */
+      arrayIndexAs?: string;
+
+      /**
        * A number expression that restricts the number of matching array elements that $filter returns. You cannot specify a limit less than 1. The matching array elements are returned in the order they appear in the input array.
        * If the specified limit is greater than the number of matching array elements, $filter returns all matching array elements. If the limit is null, $filter returns all matching array elements.
        */
@@ -2127,6 +2133,12 @@ export namespace Aggregation.Expression {
       as?: ResolvesToString<S>;
 
       /**
+       * A name for the variable that represents the index of the array element. Available in MongoDB 8.3+.
+       * If not specified, the index is available as $$IDX.
+       */
+      arrayIndexAs?: string;
+
+      /**
        * An expression that is applied to each element of the input array. The expression references each element individually with the variable name specified in as.
        */
       in: Expression<S>;
@@ -2526,6 +2538,22 @@ export namespace Aggregation.Expression {
        * The initial cumulative value set before in is applied to the first element of the input array.
        */
       initialValue: Expression<S>;
+
+      /**
+       * A name for the variable that represents each element of the input array. Defaults to $$this. Available in MongoDB 8.3+.
+       */
+      as?: string;
+
+      /**
+       * A name for the variable that represents the cumulative value. Defaults to $$value. Available in MongoDB 8.3+.
+       */
+      valueAs?: string;
+
+      /**
+       * A name for the variable that represents the index of the array element. Available in MongoDB 8.3+.
+       * If not specified, the index is available as $$IDX.
+       */
+      arrayIndexAs?: string;
 
       /**
        * A valid expression that $reduce applies to each element in the input array in left-to-right order. Wrap the input value with $reverseArray to yield the equivalent of applying the combining expression from right-to-left.
