@@ -10,9 +10,15 @@ import * as bson from 'bson';
  */
 function test0() {
   type addressBook = {
-    _id: number;
+    _id: bson.Int32 | number;
     address: string;
-    zipCode: string | number | bson.Long | bson.Int32 | number | Array<string>;
+    zipCode:
+      | string
+      | bson.Int32
+      | number
+      | bson.Double
+      | number
+      | Array<string>;
   };
 
   const aggregation: schema.Pipeline<addressBook> = [
@@ -26,19 +32,10 @@ function test0() {
 
 /**
  * Querying by Multiple Data Type
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-multiple-data-types}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-multiple-data-type}
  */
 function test1() {
-  type grades = {
-    _id: number;
-    name: string;
-    classAverage: string | number | bson.Int32 | number;
-  };
-
-  const aggregation: schema.Pipeline<grades> = [
-    { $match: { classAverage: { $type: [2, 1] } } },
-    { $match: { classAverage: { $type: ['string', 'double'] } } },
-  ];
+  // TODO: no schema found for type.Querying by Multiple Data Type: // TODO: No schema found in docs
 }
 
 /**
@@ -83,12 +80,19 @@ function test2() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/#querying-by-array-type}
  */
 function test3() {
-  type sensorReading = {
-    _id: number;
-    readings: Array<number | Array<string | number>> | number;
+  type addressBook = {
+    _id: bson.Int32 | number;
+    address: string;
+    zipCode:
+      | string
+      | bson.Int32
+      | number
+      | bson.Double
+      | number
+      | Array<string>;
   };
 
-  const aggregation: schema.Pipeline<sensorReading> = [
-    { $match: { readings: { $type: ['array'] } } },
+  const aggregation: schema.Pipeline<addressBook> = [
+    { $match: { zipCode: { $type: ['array'] } } },
   ];
 }

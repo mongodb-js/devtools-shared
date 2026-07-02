@@ -6,19 +6,8 @@ import * as bson from 'bson';
 
 /**
  * Match Document Fields
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/ne/#match-document-fields-that-are-not-equal}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/ne/#match-document-fields}
  */
 function test0() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    carrier: {
-      name: string;
-      fee: number;
-    };
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { quantity: { $ne: 20 } } },
-  ];
+  // TODO: no schema found for ne.Match Document Fields
 }

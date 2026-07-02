@@ -10,8 +10,10 @@ import * as bson from 'bson';
  */
 function test0() {
   type inventory = {
-    item: string;
-    quantity: number;
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
     tags: Array<string>;
   };
 
@@ -26,8 +28,10 @@ function test0() {
  */
 function test1() {
   type inventory = {
-    item: string;
-    quantity: number;
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
     tags: Array<string>;
   };
 

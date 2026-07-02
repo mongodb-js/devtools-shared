@@ -6,17 +6,8 @@ import * as bson from 'bson';
 
 /**
  * Example
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/count/#examples}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/count/#example}
  */
 function test0() {
-  type scores = {
-    _id: number;
-    subject: string;
-    score: number;
-  };
-
-  const aggregation: schema.Pipeline<scores> = [
-    { $match: { score: { $gt: 80 } } },
-    { $count: 'passing_scores' },
-  ];
+  // TODO: no schema found for count.Example
 }

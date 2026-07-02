@@ -102,6 +102,6 @@ function test4() {
   };
 
   const aggregation: schema.Pipeline<scores> = [
-    { $set: { quizAverage: { $avg: '$quiz' } } },
+    { $set: { quizAverage: { $avg: ['$quiz'] } } },
   ];
 }

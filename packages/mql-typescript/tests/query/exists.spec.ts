@@ -39,3 +39,20 @@ function test1() {
     { $match: { qty: { $exists: true } } },
   ];
 }
+
+/**
+ * Missing Field
+ */
+function test2() {
+  type inventory = {
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
+  };
+
+  const aggregation: schema.Pipeline<inventory> = [
+    { $match: { qty: { $exists: false } } },
+  ];
+}

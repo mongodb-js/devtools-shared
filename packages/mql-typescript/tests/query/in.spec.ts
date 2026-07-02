@@ -9,15 +9,7 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/in/#use-the--in-operator-to-match-values}
  */
 function test0() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    { $match: { tags: { $in: ['home', 'school'] } } },
-  ];
+  // TODO: no schema found for in.Use the $in Operator to Match Values in an Array
 }
 
 /**
@@ -25,19 +17,5 @@ function test0() {
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/in/#use-the--in-operator-with-a-regular-expression}
  */
 function test1() {
-  type inventory = {
-    item: string;
-    quantity: number;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<inventory> = [
-    {
-      $match: {
-        tags: {
-          $in: [new bson.BSONRegExp('^be', ''), new bson.BSONRegExp('^st', '')],
-        },
-      },
-    },
-  ];
+  // TODO: no schema found for in.Use the $in Operator with a Regular Expression
 }

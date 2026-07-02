@@ -10,15 +10,14 @@ import * as bson from 'bson';
  */
 function test0() {
   type inventory = {
-    item: string;
-    quantity: number;
-    carrier: {
-      name: string;
-      fee: number;
-    };
+    price: bson.Double | number;
+    qty: bson.Int32 | number | undefined;
+    quantity: bson.Int32 | number | undefined;
+    sale: boolean;
+    tags: Array<string>;
   };
 
   const aggregation: schema.Pipeline<inventory> = [
-    { $match: { quantity: { $lte: 20 } } },
+    { $match: { qty: { $lte: 20 } } },
   ];
 }

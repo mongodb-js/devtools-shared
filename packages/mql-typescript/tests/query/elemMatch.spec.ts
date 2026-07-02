@@ -60,3 +60,17 @@ function test2() {
     { $match: { results: { $elemMatch: { product: { $ne: 'xyz' } } } } },
   ];
 }
+
+/**
+ * Using $or with $elemMatch
+ */
+function test3() {
+  // TODO: no schema found for elemMatch.Using $or with $elemMatch: // TODO: No docs reference found
+}
+
+/**
+ * Single field operator
+ */
+function test4() {
+  // TODO: no schema found for elemMatch.Single field operator: // TODO: No docs reference found
+}

@@ -1,3 +1,4 @@
 .nyc-output
 dist
 mongo-php-library
+mql-specifications

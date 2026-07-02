@@ -6,19 +6,8 @@ import * as bson from 'bson';
 
 /**
  * Example
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortByCount/#examples}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortByCount/#example}
  */
 function test0() {
-  type exhibits = {
-    _id: number;
-    title: string;
-    artist: string;
-    year: number;
-    tags: Array<string>;
-  };
-
-  const aggregation: schema.Pipeline<exhibits> = [
-    { $unwind: { path: '$tags' } },
-    { $sortByCount: '$tags' },
-  ];
+  // TODO: no schema found for sortByCount.Example
 }

@@ -19,7 +19,7 @@ type RecordWithStaticFields<T extends Record<string, any>, TValue> = T & {
 
 // TBD: Nested fields
 type AFieldPath<S, Type> = KeysOfAType<S, Type> & string;
-type FieldExpression<T> = { [k: string]: FieldPath<T> };
+type FieldExpression<T> = { [k: string]: Expression<T> };
 
 type MultiAnalyzerSpec<T> = {
   value: KeysOfAType<T, string>;
@@ -82,6 +82,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns an array of unique expression values for each group. Order of the array elements is undefined.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addToSet/}
      */
     $addToSet: Expression<S>;
@@ -95,6 +96,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns an average of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/}
      */
     $avg: ResolvesToNumber<S>;
@@ -107,7 +109,7 @@ export namespace Aggregation.Accumulator {
   export interface $bottom<S> {
     /**
      * Returns the bottom element within a group according to the specified sort order.
-     * New in MongoDB 5.2: Available in the $group and $setWindowFields stages.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom/}
      */
     $bottom: {
@@ -130,8 +132,8 @@ export namespace Aggregation.Accumulator {
   export interface $bottomN<S> {
     /**
      * Returns an aggregation of the bottom n elements within a group, according to the specified sort order. If the group contains fewer than n elements, $bottomN returns all elements in the group.
-     * New in MongoDB 5.2.
      * Available in the $group and $setWindowFields stages.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN/}
      */
     $bottomN: {
@@ -150,6 +152,25 @@ export namespace Aggregation.Accumulator {
        */
       output: Expression<S>;
     };
+  }
+
+  /**
+   * A type describing the `$concatArrays` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
+   */
+  export interface $concatArrays<S> {
+    /**
+     * Concatenates arrays to return the concatenated array.
+     * New in MongoDB 4.4.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
+     */
+    $concatArrays: [
+      /**
+       * An array of expressions that resolve to an array.
+       * If any argument resolves to a value of null or refers to a field that is missing, `$concatArrays` returns `null`.
+       */
+      ...ResolvesToArray<S>[],
+    ];
   }
 
   /**
@@ -281,6 +302,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns the result of an expression for the first document in a group or window.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/first/}
      */
     $first: Expression<S>;
@@ -295,6 +317,7 @@ export namespace Aggregation.Accumulator {
      * Returns an aggregation of the first n elements within a group.
      * The elements returned are meaningful only if in a specified sort order.
      * If the group contains fewer than n elements, $firstN returns all elements in the group.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/firstN/}
      */
     $firstN: {
@@ -339,6 +362,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns the result of an expression for the last document in a group or window.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/last/}
      */
     $last: Expression<S>;
@@ -353,13 +377,14 @@ export namespace Aggregation.Accumulator {
      * Returns an aggregation of the last n elements within a group.
      * The elements returned are meaningful only if in a specified sort order.
      * If the group contains fewer than n elements, $lastN returns all elements in the group.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/}
      */
     $lastN: {
       /**
        * An expression that resolves to the array from which to return n elements.
        */
-      input: Expression<S>;
+      input: ResolvesToArray<S>;
 
       /**
        * An expression that resolves to a positive integer. The integer specifies the number of array elements that $firstN returns.
@@ -404,6 +429,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns the maximum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/max/}
      */
     $max: Expression<S>;
@@ -416,6 +442,7 @@ export namespace Aggregation.Accumulator {
   export interface $maxN<S> {
     /**
      * Returns the n largest values in an array. Distinct from the $maxN accumulator.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN/}
      */
     $maxN: {
@@ -438,11 +465,11 @@ export namespace Aggregation.Accumulator {
   export interface $median<S> {
     /**
      * Returns an approximation of the median, the 50th percentile, as a scalar value.
-     * New in MongoDB 7.0.
      * This operator is available as an accumulator in these stages:
      * $group
      * $setWindowFields
      * It is also available as an aggregation expression.
+     * New in MongoDB 7.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/median/}
      */
     $median: {
@@ -465,6 +492,7 @@ export namespace Aggregation.Accumulator {
   export interface $mergeObjects<S> {
     /**
      * Combines multiple documents into a single document.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
      */
     $mergeObjects: ResolvesToObject<S>;
@@ -478,9 +506,42 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns the minimum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/}
      */
     $min: Expression<S>;
+  }
+
+  /**
+   * A type describing the `$minMaxScaler` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minMaxScaler/}
+   */
+  export interface $minMaxScaler<S> {
+    /**
+     * Normalizes a numeric expression within a window of values. By default, values can range
+     * between zero and one. The smallest value becomes zero, the largest value becomes one, and
+     * all other values scale proportionally in between. You can also specify a custom minimum
+     * and maximum value for the normalized output range.
+     * Available only in the $setWindowFields stage.
+     * New in MongoDB 8.2.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minMaxScaler/}
+     */
+    $minMaxScaler: {
+      /**
+       * Numeric expression containing the value that you want to normalize.
+       */
+      input: ResolvesToNumber<S>;
+
+      /**
+       * Minimum value that you want in the output. If omitted, defaults to 0.
+       */
+      min?: Number;
+
+      /**
+       * Maximum value that you want in the output. If omitted, defaults to 1.
+       */
+      max?: Number;
+    };
   }
 
   /**
@@ -490,6 +551,7 @@ export namespace Aggregation.Accumulator {
   export interface $minN<S> {
     /**
      * Returns the n smallest values in an array. Distinct from the $minN accumulator.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN/}
      */
     $minN: {
@@ -512,11 +574,11 @@ export namespace Aggregation.Accumulator {
   export interface $percentile<S> {
     /**
      * Returns an array of scalar values that correspond to specified percentile values.
-     * New in MongoDB 7.0.
      * This operator is available as an accumulator in these stages:
      * $group
      * $setWindowFields
      * It is also available as an aggregation expression.
+     * New in MongoDB 7.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/percentile/}
      */
     $percentile: {
@@ -546,6 +608,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns an array of values that result from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/push/}
      */
     $push: Expression<S>;
@@ -562,6 +625,24 @@ export namespace Aggregation.Accumulator {
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rank/}
      */
     $rank: Record<string, never>;
+  }
+
+  /**
+   * A type describing the `$setUnion` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
+   */
+  export interface $setUnion<S> {
+    /**
+     * Takes two or more arrays and returns an array containing the elements that appear in any input array.
+     * New in MongoDB 4.4.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
+     */
+    $setUnion: [
+      /**
+       * An array of expressions that resolve to an array.
+       */
+      ...ResolvesToArray<S>[],
+    ];
   }
 
   /**
@@ -607,6 +688,7 @@ export namespace Aggregation.Accumulator {
      * Calculates the population standard deviation of the input values. Use if the values encompass the entire population of data you want to represent and do not wish to generalize about a larger population. $stdDevPop ignores non-numeric values.
      * If the values represent only a sample of a population of data from which to generalize about the population, use $stdDevSamp instead.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevPop/}
      */
     $stdDevPop: ResolvesToNumber<S>;
@@ -621,6 +703,7 @@ export namespace Aggregation.Accumulator {
      * Calculates the sample standard deviation of the input values. Use if the values encompass a sample of a population of data from which to generalize about the population. $stdDevSamp ignores non-numeric values.
      * If the values represent the entire population of data or you do not wish to generalize about a larger population, use $stdDevPop instead.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevSamp/}
      */
     $stdDevSamp: ResolvesToNumber<S>;
@@ -634,6 +717,7 @@ export namespace Aggregation.Accumulator {
     /**
      * Returns a sum of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/}
      */
     $sum: ResolvesToNumber<S>;
@@ -646,8 +730,8 @@ export namespace Aggregation.Accumulator {
   export interface $top<S> {
     /**
      * Returns the top element within a group according to the specified sort order.
-     * New in MongoDB 5.2.
      * Available in the $group and $setWindowFields stages.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top/}
      */
     $top: {
@@ -670,8 +754,8 @@ export namespace Aggregation.Accumulator {
   export interface $topN<S> {
     /**
      * Returns an aggregation of the top n fields within a group, according to the specified sort order.
-     * New in MongoDB 5.2.
      * Available in the $group and $setWindowFields stages.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN/}
      */
     $topN: {
@@ -700,6 +784,7 @@ export namespace Aggregation.Expression {
   export interface $abs<S> {
     /**
      * Returns the absolute value of a number.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/abs/}
      */
     $abs: ResolvesToNumber<S>;
@@ -712,6 +797,7 @@ export namespace Aggregation.Expression {
   export interface $acos<S> {
     /**
      * Returns the inverse cosine (arc cosine) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acos/}
      */
     $acos: ResolvesToNumber<S>;
@@ -724,6 +810,7 @@ export namespace Aggregation.Expression {
   export interface $acosh<S> {
     /**
      * Returns the inverse hyperbolic cosine (hyperbolic arc cosine) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/acosh/}
      */
     $acosh: ResolvesToNumber<S>;
@@ -736,6 +823,7 @@ export namespace Aggregation.Expression {
   export interface $add<S> {
     /**
      * Adds numbers to return the sum, or adds numbers and a date to return a new date. If adding numbers and a date, treats the numbers as milliseconds. Accepts any number of argument expressions, but at most, one expression can resolve to a date.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/add/}
      */
     $add: [
@@ -753,6 +841,7 @@ export namespace Aggregation.Expression {
   export interface $allElementsTrue<S> {
     /**
      * Returns true if no element of a set evaluates to false, otherwise, returns false. Accepts a single argument expression.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/allElementsTrue/}
      */
     $allElementsTrue: [expression: ResolvesToArray<S>];
@@ -765,6 +854,7 @@ export namespace Aggregation.Expression {
   export interface $and<S> {
     /**
      * Returns true only when all its expressions evaluate to true. Accepts any number of argument expressions.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/and/}
      */
     $and: [
@@ -785,6 +875,7 @@ export namespace Aggregation.Expression {
   export interface $anyElementTrue<S> {
     /**
      * Returns true if any elements of a set evaluate to true; otherwise, returns false. Accepts a single argument expression.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/anyElementTrue/}
      */
     $anyElementTrue: [expression: ResolvesToArray<S>];
@@ -797,6 +888,7 @@ export namespace Aggregation.Expression {
   export interface $arrayElemAt<S> {
     /**
      * Returns the element at the specified array index.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayElemAt/}
      */
     $arrayElemAt: [array: ResolvesToArray<S>, idx: ResolvesToInt<S>];
@@ -809,6 +901,7 @@ export namespace Aggregation.Expression {
   export interface $arrayToObject<S> {
     /**
      * Converts an array of key value pairs to a document.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/arrayToObject/}
      */
     $arrayToObject: [array: ResolvesToArray<S>];
@@ -821,6 +914,7 @@ export namespace Aggregation.Expression {
   export interface $asin<S> {
     /**
      * Returns the inverse sin (arc sine) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asin/}
      */
     $asin: ResolvesToNumber<S>;
@@ -833,6 +927,7 @@ export namespace Aggregation.Expression {
   export interface $asinh<S> {
     /**
      * Returns the inverse hyperbolic sine (hyperbolic arc sine) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/asinh/}
      */
     $asinh: ResolvesToNumber<S>;
@@ -845,6 +940,7 @@ export namespace Aggregation.Expression {
   export interface $atan<S> {
     /**
      * Returns the inverse tangent (arc tangent) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan/}
      */
     $atan: ResolvesToNumber<S>;
@@ -857,6 +953,7 @@ export namespace Aggregation.Expression {
   export interface $atan2<S> {
     /**
      * Returns the inverse tangent (arc tangent) of y / x in radians, where y and x are the first and second values passed to the expression respectively.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atan2/}
      */
     $atan2: [
@@ -877,6 +974,7 @@ export namespace Aggregation.Expression {
   export interface $atanh<S> {
     /**
      * Returns the inverse hyperbolic tangent (hyperbolic arc tangent) of a value in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/atanh/}
      */
     $atanh: ResolvesToNumber<S>;
@@ -890,6 +988,7 @@ export namespace Aggregation.Expression {
     /**
      * Returns an average of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/avg/}
      */
     $avg: [...ResolvesToNumber<S>[]];
@@ -902,6 +1001,7 @@ export namespace Aggregation.Expression {
   export interface $binarySize<S> {
     /**
      * Returns the size of a given string or binary data value's content in bytes.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/binarySize/}
      */
     $binarySize: ResolvesToString<S> | ResolvesToBinData<S> | ResolvesToNull<S>;
@@ -960,12 +1060,75 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$bottom` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom-array-operator/}
+   */
+  export interface $bottom<S> {
+    /**
+     * Returns the bottom element within an array according to the specified sort order.
+     * New in MongoDB 7.0.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottom-array-operator/}
+     */
+    $bottom: {
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the bottom element.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
+   * A type describing the `$bottomN` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN-array-operator/}
+   */
+  export interface $bottomN<S> {
+    /**
+     * Returns an aggregation of the bottom n elements within an array, according to the specified sort order.
+     * If the array contains fewer than n elements, $bottomN returns all elements in the array.
+     * New in MongoDB 7.0.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bottomN-array-operator/}
+     */
+    $bottomN: {
+      /**
+       * An expression that resolves to a positive integer. The integer specifies the number of array elements that $bottomN returns.
+       */
+      n: ResolvesToInt<S>;
+
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the bottom n elements.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
    * A type describing the `$bsonSize` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bsonSize/}
    */
   export interface $bsonSize<S> {
     /**
      * Returns the size in bytes of a given document (i.e. BSON type Object) when encoded as BSON.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bsonSize/}
      */
     $bsonSize: ResolvesToObject<S> | ResolvesToNull<S>;
@@ -978,6 +1141,7 @@ export namespace Aggregation.Expression {
   export interface $case<S> {
     /**
      * Represents a single case in a $switch expression
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
      */
     $case: {
@@ -1000,6 +1164,7 @@ export namespace Aggregation.Expression {
   export interface $ceil<S> {
     /**
      * Returns the smallest integer greater than or equal to the specified number.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ceil/}
      */
     $ceil: ResolvesToNumber<S>;
@@ -1012,6 +1177,7 @@ export namespace Aggregation.Expression {
   export interface $cmp<S> {
     /**
      * Returns 0 if the two values are equivalent, 1 if the first value is greater than the second, and -1 if the first value is less than the second.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cmp/}
      */
     $cmp: [expression1: Expression<S>, expression2: Expression<S>];
@@ -1024,6 +1190,7 @@ export namespace Aggregation.Expression {
   export interface $concat<S> {
     /**
      * Concatenates any number of strings.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concat/}
      */
     $concat: [...ResolvesToString<S>[]];
@@ -1036,6 +1203,7 @@ export namespace Aggregation.Expression {
   export interface $concatArrays<S> {
     /**
      * Concatenates arrays to return the concatenated array.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/concatArrays/}
      */
     $concatArrays: [...ResolvesToArray<S>[]];
@@ -1048,6 +1216,7 @@ export namespace Aggregation.Expression {
   export interface $cond<S> {
     /**
      * A ternary operator that evaluates one expression, and depending on the result, returns the value of one of the other two expressions. Accepts either three expressions in an ordered list or three named parameters.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cond/}
      */
     $cond: { if: ResolvesToBool<S>; then: Expression<S>; else: Expression<S> };
@@ -1059,7 +1228,11 @@ export namespace Aggregation.Expression {
    */
   export interface $convert<S> {
     /**
-     * Converts a value to a specified type.
+     * Converts a value to a specified type. Any type can be converted to string.
+     * If the optional base argument is specified, $convert interprets the input string as a
+     * number in the given base and converts it to a decimal, or converts a numeric value to a
+     * string representation in that base. Supported bases are 2 (binary), 8 (octal), 10
+     * (decimal), and 16 (hexadecimal).
      * New in MongoDB 4.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/convert/}
      */
@@ -1078,6 +1251,17 @@ export namespace Aggregation.Expression {
        * If unspecified, $convert returns null if the input is null or missing.
        */
       onNull?: Expression<S>;
+
+      /**
+       * The numeric base to use when converting between strings and integers. Must be one of
+       * 2 (binary), 8 (octal), 10 (decimal), or 16 (hexadecimal).
+       * When converting a string to a number, $convert interprets the string as a number in
+       * the given base and returns the decimal equivalent.
+       * When converting a number to a string, $convert returns the string representation of
+       * the number in the given base.
+       * If unspecified, $convert uses base 10.
+       */
+      base?: ResolvesToInt<S>;
     };
   }
 
@@ -1088,6 +1272,7 @@ export namespace Aggregation.Expression {
   export interface $cos<S> {
     /**
      * Returns the cosine of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cos/}
      */
     $cos: ResolvesToNumber<S>;
@@ -1100,9 +1285,23 @@ export namespace Aggregation.Expression {
   export interface $cosh<S> {
     /**
      * Returns the hyperbolic cosine of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/cosh/}
      */
     $cosh: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$createObjectId` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/createObjectId/}
+   */
+  export interface $createObjectId<S> {
+    /**
+     * Returns a random object ID
+     * New in MongoDB 4.4.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/createObjectId/}
+     */
+    $createObjectId: Record<string, never>;
   }
 
   /**
@@ -1112,6 +1311,7 @@ export namespace Aggregation.Expression {
   export interface $dateAdd<S> {
     /**
      * Adds a number of time units to a date object.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateAdd/}
      */
     $dateAdd: {
@@ -1143,6 +1343,7 @@ export namespace Aggregation.Expression {
   export interface $dateDiff<S> {
     /**
      * Returns the difference between two dates.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateDiff/}
      */
     $dateDiff: {
@@ -1186,6 +1387,7 @@ export namespace Aggregation.Expression {
   export interface $dateFromParts<S> {
     /**
      * Constructs a BSON Date object given the date's constituent parts.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromParts/}
      */
     $dateFromParts: {
@@ -1253,6 +1455,7 @@ export namespace Aggregation.Expression {
   export interface $dateFromString<S> {
     /**
      * Converts a date/time string to a date object.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateFromString/}
      */
     $dateFromString: {
@@ -1293,6 +1496,7 @@ export namespace Aggregation.Expression {
   export interface $dateSubtract<S> {
     /**
      * Subtracts a number of time units from a date object.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateSubtract/}
      */
     $dateSubtract: {
@@ -1324,6 +1528,7 @@ export namespace Aggregation.Expression {
   export interface $dateToParts<S> {
     /**
      * Returns a document containing the constituent parts of a date.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToParts/}
      */
     $dateToParts: {
@@ -1351,6 +1556,7 @@ export namespace Aggregation.Expression {
   export interface $dateToString<S> {
     /**
      * Returns the date as a formatted string.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateToString/}
      */
     $dateToString: {
@@ -1385,6 +1591,7 @@ export namespace Aggregation.Expression {
   export interface $dateTrunc<S> {
     /**
      * Truncates a date.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dateTrunc/}
      */
     $dateTrunc: {
@@ -1425,6 +1632,7 @@ export namespace Aggregation.Expression {
   export interface $dayOfMonth<S> {
     /**
      * Returns the day of the month for a date as a number between 1 and 31.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfMonth/}
      */
     $dayOfMonth: {
@@ -1447,6 +1655,7 @@ export namespace Aggregation.Expression {
   export interface $dayOfWeek<S> {
     /**
      * Returns the day of the week for a date as a number between 1 (Sunday) and 7 (Saturday).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfWeek/}
      */
     $dayOfWeek: {
@@ -1469,6 +1678,7 @@ export namespace Aggregation.Expression {
   export interface $dayOfYear<S> {
     /**
      * Returns the day of the year for a date as a number between 1 and 366 (leap year).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/dayOfYear/}
      */
     $dayOfYear: {
@@ -1491,9 +1701,37 @@ export namespace Aggregation.Expression {
   export interface $degreesToRadians<S> {
     /**
      * Converts a value from degrees to radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/degreesToRadians/}
      */
     $degreesToRadians: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$deserializeEJSON` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/}
+   */
+  export interface $deserializeEJSON<S> {
+    /**
+     * Converts Extended JSON (EJSON) format to native BSON values. Use this expression to
+     * transform EJSON type wrappers into their corresponding BSON types after parsing a JSON
+     * string with $convert.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/deserializeEJSON/}
+     */
+    $deserializeEJSON: {
+      /**
+       * The Extended JSON value to convert to native BSON format. This should be a BSON
+       * document containing EJSON type wrappers.
+       */
+      input: ResolvesToObject<S>;
+
+      /**
+       * The value to return if the operation encounters an error during conversion.
+       * If unspecified, the operation throws an error and stops.
+       */
+      onError?: Expression<S>;
+    };
   }
 
   /**
@@ -1503,6 +1741,7 @@ export namespace Aggregation.Expression {
   export interface $divide<S> {
     /**
      * Returns the result of dividing the first number by the second. Accepts two argument expressions.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/divide/}
      */
     $divide: [
@@ -1521,6 +1760,7 @@ export namespace Aggregation.Expression {
   export interface $eq<S> {
     /**
      * Returns true if the values are equivalent.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/eq/}
      */
     $eq: [expression1: Expression<S>, expression2: Expression<S>];
@@ -1533,6 +1773,7 @@ export namespace Aggregation.Expression {
   export interface $exp<S> {
     /**
      * Raises e to the specified exponent.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/exp/}
      */
     $exp: ResolvesToNumber<S>;
@@ -1545,6 +1786,7 @@ export namespace Aggregation.Expression {
   export interface $filter<S> {
     /**
      * Selects a subset of the array to return an array with only the elements that match the filter condition.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/filter/}
      */
     $filter: {
@@ -1575,6 +1817,7 @@ export namespace Aggregation.Expression {
   export interface $first<S> {
     /**
      * Returns the result of an expression for the first document in an array.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/first/}
      */
     $first: ResolvesToArray<S>;
@@ -1587,6 +1830,7 @@ export namespace Aggregation.Expression {
   export interface $firstN<S> {
     /**
      * Returns a specified number of elements from the beginning of an array.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/firstN-array-element/}
      */
     $firstN: {
@@ -1609,6 +1853,7 @@ export namespace Aggregation.Expression {
   export interface $floor<S> {
     /**
      * Returns the largest integer less than or equal to the specified number.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/floor/}
      */
     $floor: ResolvesToNumber<S>;
@@ -1671,6 +1916,7 @@ export namespace Aggregation.Expression {
   export interface $gt<S> {
     /**
      * Returns true if the first value is greater than the second.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gt/}
      */
     $gt: [expression1: Expression<S>, expression2: Expression<S>];
@@ -1683,9 +1929,46 @@ export namespace Aggregation.Expression {
   export interface $gte<S> {
     /**
      * Returns true if the first value is greater than or equal to the second.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/gte/}
      */
     $gte: [expression1: Expression<S>, expression2: Expression<S>];
+  }
+
+  /**
+   * A type describing the `$hash` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hash/}
+   */
+  export interface $hash<S> {
+    /**
+     * Generates and returns a binary hash value (BinData) from a UTF-8 string or binary data. Use $hash in an aggregation
+     * pipeline to compute binary hashes for storage, verification, or comparison. To get a hexadecimal string instead of
+     * binary data, use $hexHash.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hash/}
+     */
+    $hash: {
+      input: ResolvesToString<S> | ResolvesToBinData<S> | ResolvesToNull<S>;
+      algorithm: string;
+    };
+  }
+
+  /**
+   * A type describing the `$hexHash` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hexHash/}
+   */
+  export interface $hexHash<S> {
+    /**
+     * Generates and returns an uppercase hexadecimal string representation of a hash value from a UTF-8 string or binary
+     * data. Use $hexHash in an aggregation pipeline to compute hex-encoded hashes for storage, verification, or comparison.
+     * To get binary data instead of a hexadecimal string, use $hash.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hexHash/}
+     */
+    $hexHash: {
+      input: ResolvesToString<S> | ResolvesToBinData<S> | ResolvesToNull<S>;
+      algorithm: string;
+    };
   }
 
   /**
@@ -1695,6 +1978,7 @@ export namespace Aggregation.Expression {
   export interface $hour<S> {
     /**
      * Returns the hour for a date as a number between 0 and 23.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/hour/}
      */
     $hour: {
@@ -1717,6 +2001,7 @@ export namespace Aggregation.Expression {
   export interface $ifNull<S> {
     /**
      * Returns either the non-null result of the first expression or the result of the second expression if the first expression results in a null result. Null result encompasses instances of undefined values or missing fields. Accepts two expressions as arguments. The result of the second expression can be null.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ifNull/}
      */
     $ifNull: [...Expression<S>[]];
@@ -1729,6 +2014,7 @@ export namespace Aggregation.Expression {
   export interface $in<S> {
     /**
      * Returns a boolean indicating whether a specified value is in an array.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/in/}
      */
     $in: [
@@ -1751,6 +2037,7 @@ export namespace Aggregation.Expression {
   export interface $indexOfArray<S> {
     /**
      * Searches an array for an occurrence of a specified value and returns the array index of the first occurrence. Array indexes start at zero.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfArray/}
      */
     $indexOfArray: [
@@ -1783,6 +2070,7 @@ export namespace Aggregation.Expression {
   export interface $indexOfBytes<S> {
     /**
      * Searches a string for an occurrence of a substring and returns the UTF-8 byte index of the first occurrence. If the substring is not found, returns -1.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfBytes/}
      */
     $indexOfBytes: [
@@ -1819,6 +2107,7 @@ export namespace Aggregation.Expression {
   export interface $indexOfCP<S> {
     /**
      * Searches a string for an occurrence of a substring and returns the UTF-8 code point index of the first occurrence. If the substring is not found, returns -1
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexOfCP/}
      */
     $indexOfCP: [
@@ -1855,6 +2144,7 @@ export namespace Aggregation.Expression {
   export interface $isArray<S> {
     /**
      * Determines if the operand is an array. Returns a boolean.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isArray/}
      */
     $isArray: [expression: Expression<S>];
@@ -1881,6 +2171,7 @@ export namespace Aggregation.Expression {
   export interface $isoDayOfWeek<S> {
     /**
      * Returns the weekday number in ISO 8601 format, ranging from 1 (for Monday) to 7 (for Sunday).
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoDayOfWeek/}
      */
     $isoDayOfWeek: {
@@ -1903,6 +2194,7 @@ export namespace Aggregation.Expression {
   export interface $isoWeek<S> {
     /**
      * Returns the week number in ISO 8601 format, ranging from 1 to 53. Week numbers start at 1 with the week (Monday through Sunday) that contains the year's first Thursday.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeek/}
      */
     $isoWeek: {
@@ -1925,6 +2217,7 @@ export namespace Aggregation.Expression {
   export interface $isoWeekYear<S> {
     /**
      * Returns the year number in ISO 8601 format. The year starts with the Monday of week 1 (ISO 8601) and ends with the Sunday of the last week (ISO 8601).
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/isoWeekYear/}
      */
     $isoWeekYear: {
@@ -1947,6 +2240,7 @@ export namespace Aggregation.Expression {
   export interface $last<S> {
     /**
      * Returns the result of an expression for the last document in an array.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/last/}
      */
     $last: ResolvesToArray<S>;
@@ -1959,6 +2253,7 @@ export namespace Aggregation.Expression {
   export interface $lastN<S> {
     /**
      * Returns a specified number of elements from the end of an array.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lastN/#array-operator}
      */
     $lastN: {
@@ -1982,6 +2277,7 @@ export namespace Aggregation.Expression {
     /**
      * Defines variables for use within the scope of a subexpression and returns the result of the subexpression. Accepts named parameters.
      * Accepts any number of argument expressions.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/let/}
      */
     $let: {
@@ -2005,6 +2301,7 @@ export namespace Aggregation.Expression {
   export interface $literal<S> {
     /**
      * Return a value without parsing. Use for values that the aggregation pipeline may interpret as an expression. For example, use a $literal expression to a string that starts with a dollar sign ($) to avoid parsing as a field path.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/literal/}
      */
     $literal: any;
@@ -2018,6 +2315,7 @@ export namespace Aggregation.Expression {
     /**
      * Calculates the natural log of a number.
      * $ln is equivalent to $log: [ <number>, Math.E ] expression, where Math.E is a JavaScript representation for Euler's number e.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ln/}
      */
     $ln: ResolvesToNumber<S>;
@@ -2030,6 +2328,7 @@ export namespace Aggregation.Expression {
   export interface $log<S> {
     /**
      * Calculates the log of a number in the specified base.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log/}
      */
     $log: [
@@ -2052,6 +2351,7 @@ export namespace Aggregation.Expression {
   export interface $log10<S> {
     /**
      * Calculates the log base 10 of a number.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/log10/}
      */
     $log10: ResolvesToNumber<S>;
@@ -2064,6 +2364,7 @@ export namespace Aggregation.Expression {
   export interface $lt<S> {
     /**
      * Returns true if the first value is less than the second.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lt/}
      */
     $lt: [expression1: Expression<S>, expression2: Expression<S>];
@@ -2076,6 +2377,7 @@ export namespace Aggregation.Expression {
   export interface $lte<S> {
     /**
      * Returns true if the first value is less than or equal to the second.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lte/}
      */
     $lte: [expression1: Expression<S>, expression2: Expression<S>];
@@ -2113,6 +2415,7 @@ export namespace Aggregation.Expression {
   export interface $map<S> {
     /**
      * Applies a subexpression to each element of an array and returns the array of resulting values in order. Accepts named parameters.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/map/}
      */
     $map: {
@@ -2124,7 +2427,13 @@ export namespace Aggregation.Expression {
       /**
        * A name for the variable that represents each individual element of the input array. If no name is specified, the variable name defaults to this.
        */
-      as?: ResolvesToString<S>;
+      as?: string;
+
+      /**
+       * A name for the variable that represents the index of the current element in
+       * the input array. If specified, this variable is available within the in expression.
+       */
+      arrayIndexAs?: string;
 
       /**
        * An expression that is applied to each element of the input array. The expression references each element individually with the variable name specified in as.
@@ -2141,6 +2450,7 @@ export namespace Aggregation.Expression {
     /**
      * Returns the maximum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/max/}
      */
     $max: [...Expression<S>[]];
@@ -2153,6 +2463,7 @@ export namespace Aggregation.Expression {
   export interface $maxN<S> {
     /**
      * Returns the n largest values in an array. Distinct from the $maxN accumulator.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/maxN-array-element/}
      */
     $maxN: {
@@ -2175,18 +2486,18 @@ export namespace Aggregation.Expression {
   export interface $median<S> {
     /**
      * Returns an approximation of the median, the 50th percentile, as a scalar value.
-     * New in MongoDB 7.0.
      * This operator is available as an accumulator in these stages:
      * $group
      * $setWindowFields
      * It is also available as an aggregation expression.
+     * New in MongoDB 7.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/median/}
      */
     $median: {
       /**
        * $median calculates the 50th percentile value of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $median calculation ignores it.
        */
-      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
+      input: ResolvesToNumber<S> | unknown[];
 
       /**
        * The method that mongod uses to calculate the 50th percentile value. The method must be 'approximate'.
@@ -2202,6 +2513,7 @@ export namespace Aggregation.Expression {
   export interface $mergeObjects<S> {
     /**
      * Combines multiple documents into a single document.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mergeObjects/}
      */
     $mergeObjects: [
@@ -2219,6 +2531,7 @@ export namespace Aggregation.Expression {
   export interface $meta<S> {
     /**
      * Access available per-document metadata related to the aggregation operation.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/meta/}
      */
     $meta: string;
@@ -2231,6 +2544,7 @@ export namespace Aggregation.Expression {
   export interface $millisecond<S> {
     /**
      * Returns the milliseconds of a date as a number between 0 and 999.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/millisecond/}
      */
     $millisecond: {
@@ -2254,6 +2568,7 @@ export namespace Aggregation.Expression {
     /**
      * Returns the minimum value that results from applying an expression to each document.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/min/}
      */
     $min: [...Expression<S>[]];
@@ -2266,6 +2581,7 @@ export namespace Aggregation.Expression {
   export interface $minN<S> {
     /**
      * Returns the n smallest values in an array. Distinct from the $minN accumulator.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minN-array-element/}
      */
     $minN: {
@@ -2288,6 +2604,7 @@ export namespace Aggregation.Expression {
   export interface $minute<S> {
     /**
      * Returns the minute for a date as a number between 0 and 59.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/minute/}
      */
     $minute: {
@@ -2310,6 +2627,7 @@ export namespace Aggregation.Expression {
   export interface $mod<S> {
     /**
      * Returns the remainder of the first number divided by the second. Accepts two argument expressions.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/mod/}
      */
     $mod: [
@@ -2328,6 +2646,7 @@ export namespace Aggregation.Expression {
   export interface $month<S> {
     /**
      * Returns the month for a date as a number between 1 (January) and 12 (December).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/month/}
      */
     $month: {
@@ -2350,6 +2669,7 @@ export namespace Aggregation.Expression {
   export interface $multiply<S> {
     /**
      * Multiplies numbers to return the product. Accepts any number of argument expressions.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/multiply/}
      */
     $multiply: [
@@ -2368,6 +2688,7 @@ export namespace Aggregation.Expression {
   export interface $ne<S> {
     /**
      * Returns true if the values are not equivalent.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/ne/}
      */
     $ne: [expression1: Expression<S>, expression2: Expression<S>];
@@ -2380,6 +2701,7 @@ export namespace Aggregation.Expression {
   export interface $not<S> {
     /**
      * Returns the boolean value that is the opposite of its argument expression. Accepts a single argument expression.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/not/}
      */
     $not: [expression: Expression<S> | ResolvesToBool<S>];
@@ -2392,6 +2714,7 @@ export namespace Aggregation.Expression {
   export interface $objectToArray<S> {
     /**
      * Converts a document to an array of documents representing key-value pairs.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/objectToArray/}
      */
     $objectToArray: ResolvesToObject<S>;
@@ -2404,6 +2727,7 @@ export namespace Aggregation.Expression {
   export interface $or<S> {
     /**
      * Returns true when any of its expressions evaluates to true. Accepts any number of argument expressions.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/or/}
      */
     $or: [...(Expression<S> | ResolvesToBool<S>)[]];
@@ -2416,18 +2740,18 @@ export namespace Aggregation.Expression {
   export interface $percentile<S> {
     /**
      * Returns an array of scalar values that correspond to specified percentile values.
-     * New in MongoDB 7.0.
      * This operator is available as an accumulator in these stages:
      * $group
      * $setWindowFields
      * It is also available as an aggregation expression.
+     * New in MongoDB 7.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/percentile/}
      */
     $percentile: {
       /**
        * $percentile calculates the percentile values of this data. input must be a field name or an expression that evaluates to a numeric type. If the expression cannot be converted to a numeric type, the $percentile calculation ignores it.
        */
-      input: ResolvesToNumber<S> | ResolvesToNumber<S>[];
+      input: ResolvesToNumber<S> | unknown[];
 
       /**
        * $percentile calculates a percentile value for each element in p. The elements represent percentages and must evaluate to numeric values in the range 0.0 to 1.0, inclusive.
@@ -2449,6 +2773,7 @@ export namespace Aggregation.Expression {
   export interface $pow<S> {
     /**
      * Raises a number to the specified exponent.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/pow/}
      */
     $pow: [number: ResolvesToNumber<S>, exponent: ResolvesToNumber<S>];
@@ -2461,6 +2786,7 @@ export namespace Aggregation.Expression {
   export interface $radiansToDegrees<S> {
     /**
      * Converts a value from radians to degrees.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/radiansToDegrees/}
      */
     $radiansToDegrees: ResolvesToNumber<S>;
@@ -2473,6 +2799,7 @@ export namespace Aggregation.Expression {
   export interface $rand<S> {
     /**
      * Returns a random float between 0 and 1
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rand/}
      */
     $rand: Record<string, never>;
@@ -2485,6 +2812,7 @@ export namespace Aggregation.Expression {
   export interface $range<S> {
     /**
      * Outputs an array containing a sequence of integers according to user-defined inputs.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/range/}
      */
     $range: [
@@ -2512,6 +2840,7 @@ export namespace Aggregation.Expression {
   export interface $reduce<S> {
     /**
      * Applies an expression to each element in an array and combines them into a single value.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reduce/}
      */
     $reduce: {
@@ -2537,12 +2866,12 @@ export namespace Aggregation.Expression {
         | Expression<
             S & {
               /**
-               * The variable that represents the cumulative value of the expression.
+               * The variable that refers to the element being processed.
                */
               $this: any;
 
               /**
-               * The variable that refers to the element being processed.
+               * The variable that represents the cumulative value of the expression.
                */
               $value: any;
             }
@@ -2550,12 +2879,12 @@ export namespace Aggregation.Expression {
         | ExpressionMap<
             S & {
               /**
-               * The variable that represents the cumulative value of the expression.
+               * The variable that refers to the element being processed.
                */
               $this: any;
 
               /**
-               * The variable that refers to the element being processed.
+               * The variable that represents the cumulative value of the expression.
                */
               $value: any;
             }
@@ -2655,7 +2984,7 @@ export namespace Aggregation.Expression {
       /**
        * The string to search for within the given input. Can be any valid expression that resolves to a string or a null. If find refers to a field that is missing, $replaceAll returns null.
        */
-      find: ResolvesToString<S> | ResolvesToNull<S>;
+      find: ResolvesToString<S> | ResolvesToNull<S> | ResolvesToRegex<S>;
 
       /**
        * The string to use to replace all matched instances of find in input. Can be any valid expression that resolves to a string or a null.
@@ -2676,17 +3005,17 @@ export namespace Aggregation.Expression {
      */
     $replaceOne: {
       /**
-       * The string on which you wish to apply the find. Can be any valid expression that resolves to a string or a null. If input refers to a field that is missing, $replaceAll returns null.
+       * The string on which you wish to apply the find. Can be any valid expression that resolves to a string or a null. If input refers to a field that is missing, $replaceOne returns null.
        */
       input: ResolvesToString<S> | ResolvesToNull<S>;
 
       /**
-       * The string to search for within the given input. Can be any valid expression that resolves to a string or a null. If find refers to a field that is missing, $replaceAll returns null.
+       * The string or regex to search for within the given input. Can be any valid expression that resolves to a string, a regex, or a null. If find refers to a field that is missing, $replaceOne returns null.
        */
-      find: ResolvesToString<S> | ResolvesToNull<S>;
+      find: ResolvesToString<S> | ResolvesToNull<S> | ResolvesToRegex<S>;
 
       /**
-       * The string to use to replace all matched instances of find in input. Can be any valid expression that resolves to a string or a null.
+       * The string to use to replace the first matched instance of find in input. Can be any valid expression that resolves to a string or a null.
        */
       replacement: ResolvesToString<S> | ResolvesToNull<S>;
     };
@@ -2699,6 +3028,7 @@ export namespace Aggregation.Expression {
   export interface $reverseArray<S> {
     /**
      * Returns an array with the elements in reverse order.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/reverseArray/}
      */
     $reverseArray: ResolvesToArray<S>;
@@ -2711,6 +3041,7 @@ export namespace Aggregation.Expression {
   export interface $round<S> {
     /**
      * Rounds a number to a whole integer or to a specified decimal place.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/round/}
      */
     $round: [
@@ -2734,6 +3065,7 @@ export namespace Aggregation.Expression {
   export interface $rtrim<S> {
     /**
      * Removes whitespace characters, including null, or the specified characters from the end of a string.
+     * New in MongoDB 4.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rtrim/}
      */
     $rtrim: {
@@ -2758,6 +3090,7 @@ export namespace Aggregation.Expression {
   export interface $second<S> {
     /**
      * Returns the seconds for a date as a number between 0 and 60 (leap seconds).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/second/}
      */
     $second: {
@@ -2774,12 +3107,47 @@ export namespace Aggregation.Expression {
   }
 
   /**
+   * A type describing the `$serializeEJSON` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/}
+   */
+  export interface $serializeEJSON<S> {
+    /**
+     * Converts BSON values to Extended JSON (EJSON) format. The result is a
+     * BSON document with EJSON type wrappers that can then be converted to
+     * a JSON string using $toString.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/serializeEJSON/}
+     */
+    $serializeEJSON: {
+      /**
+       * The BSON value to convert to Extended JSON format.
+       */
+      input: Expression<S>;
+
+      /**
+       * Specifies whether to use Relaxed Extended JSON format. If true, numeric types
+       * (Int32, Int64, Double) are represented as native JSON numbers for better readability.
+       * If false or unspecified, uses Canonical Extended JSON format which preserves type
+       * information for all BSON types. Defaults to false.
+       */
+      relaxed?: ResolvesToBool<S>;
+
+      /**
+       * The value to return if the operation encounters an error during conversion.
+       * If unspecified, the operation throws an error and stops.
+       */
+      onError?: Expression<S>;
+    };
+  }
+
+  /**
    * A type describing the `$setDifference` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setDifference/}
    */
   export interface $setDifference<S> {
     /**
      * Returns a set with elements that appear in the first set but not in the second set; i.e. performs a relative complement of the second set relative to the first. Accepts exactly two argument expressions.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setDifference/}
      */
     $setDifference: [
@@ -2802,6 +3170,7 @@ export namespace Aggregation.Expression {
   export interface $setEquals<S> {
     /**
      * Returns true if the input sets have the same distinct elements. Accepts two or more argument expressions.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setEquals/}
      */
     $setEquals: [...ResolvesToArray<S>[]];
@@ -2843,6 +3212,7 @@ export namespace Aggregation.Expression {
   export interface $setIntersection<S> {
     /**
      * Returns a set with elements that appear in all of the input sets. Accepts any number of argument expressions.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIntersection/}
      */
     $setIntersection: [...ResolvesToArray<S>[]];
@@ -2855,6 +3225,7 @@ export namespace Aggregation.Expression {
   export interface $setIsSubset<S> {
     /**
      * Returns true if all elements of the first set appear in the second set, including when the first set equals the second set; i.e. not a strict subset. Accepts exactly two argument expressions.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setIsSubset/}
      */
     $setIsSubset: [
@@ -2870,9 +3241,98 @@ export namespace Aggregation.Expression {
   export interface $setUnion<S> {
     /**
      * Returns a set with elements that appear in any of the input sets.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/setUnion/}
      */
     $setUnion: [...ResolvesToArray<S>[]];
+  }
+
+  /**
+   * A type describing the `$sigmoid` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sigmoid/}
+   */
+  export interface $sigmoid<S> {
+    /**
+     * Returns the sigmoid of a value, defined as 1 / (1 + e^(-x)). The result is a value between 0 and 1.
+     * New in MongoDB 8.1.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sigmoid/}
+     */
+    $sigmoid: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$similarityCosine` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityCosine/}
+   */
+  export interface $similarityCosine<S> {
+    /**
+     * Returns the cosine similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityCosine/}
+     */
+    $similarityCosine: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
+  }
+
+  /**
+   * A type describing the `$similarityDotProduct` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityDotProduct/}
+   */
+  export interface $similarityDotProduct<S> {
+    /**
+     * Returns the dot product similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityDotProduct/}
+     */
+    $similarityDotProduct: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
+  }
+
+  /**
+   * A type describing the `$similarityEuclidean` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityEuclidean/}
+   */
+  export interface $similarityEuclidean<S> {
+    /**
+     * Returns the Euclidean similarity between two vectors. If the score argument is true, the result
+     * is normalized to a value between 0 and 1 for use as a vector search score.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/similarityEuclidean/}
+     */
+    $similarityEuclidean: {
+      /**
+       * An array of exactly two expressions that each resolve to an array of numbers.
+       * Both arrays must have the same length.
+       */
+      vectors: ResolvesToArray<S>;
+
+      /**
+       * If true, normalizes the result to a value between 0 and 1 for use as a vector search score. Defaults to false.
+       */
+      score?: boolean;
+    };
   }
 
   /**
@@ -2882,6 +3342,7 @@ export namespace Aggregation.Expression {
   export interface $sin<S> {
     /**
      * Returns the sine of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sin/}
      */
     $sin: ResolvesToNumber<S>;
@@ -2894,6 +3355,7 @@ export namespace Aggregation.Expression {
   export interface $sinh<S> {
     /**
      * Returns the hyperbolic sine of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sinh/}
      */
     $sinh: ResolvesToNumber<S>;
@@ -2906,6 +3368,7 @@ export namespace Aggregation.Expression {
   export interface $size<S> {
     /**
      * Returns the number of elements in the array. Accepts a single expression as argument.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/size/}
      */
     $size: ResolvesToArray<S>;
@@ -2918,6 +3381,7 @@ export namespace Aggregation.Expression {
   export interface $slice<S> {
     /**
      * Returns a subset of an array.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/slice/}
      */
     $slice:
@@ -2963,6 +3427,7 @@ export namespace Aggregation.Expression {
   export interface $sortArray<S> {
     /**
      * Sorts the elements of an array.
+     * New in MongoDB 5.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortArray/}
      */
     $sortArray: {
@@ -2987,6 +3452,7 @@ export namespace Aggregation.Expression {
   export interface $split<S> {
     /**
      * Splits a string into substrings based on a delimiter. Returns an array of substrings. If the delimiter is not found within the string, returns an array containing the original string.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/split/}
      */
     $split: [
@@ -2996,9 +3462,9 @@ export namespace Aggregation.Expression {
       string: ResolvesToString<S>,
 
       /**
-       * The delimiter to use when splitting the string expression. delimiter can be any valid expression as long as it resolves to a string.
+       * The delimiter to use when splitting the string expression. delimiter can be any valid expression as long as it resolves to a string or a regular expression.
        */
-      delimiter: ResolvesToString<S>,
+      delimiter: ResolvesToString<S> | ResolvesToRegex<S>,
     ];
   }
 
@@ -3009,6 +3475,7 @@ export namespace Aggregation.Expression {
   export interface $sqrt<S> {
     /**
      * Calculates the square root.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sqrt/}
      */
     $sqrt: ResolvesToNumber<S>;
@@ -3023,6 +3490,7 @@ export namespace Aggregation.Expression {
      * Calculates the population standard deviation of the input values. Use if the values encompass the entire population of data you want to represent and do not wish to generalize about a larger population. $stdDevPop ignores non-numeric values.
      * If the values represent only a sample of a population of data from which to generalize about the population, use $stdDevSamp instead.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevPop/}
      */
     $stdDevPop: [...ResolvesToNumber<S>[]];
@@ -3036,6 +3504,7 @@ export namespace Aggregation.Expression {
     /**
      * Calculates the sample standard deviation of the input values. Use if the values encompass a sample of a population of data from which to generalize about the population. $stdDevSamp ignores non-numeric values.
      * If the values represent the entire population of data or you do not wish to generalize about a larger population, use $stdDevPop instead.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/stdDevSamp/}
      */
     $stdDevSamp: [...ResolvesToNumber<S>[]];
@@ -3048,6 +3517,7 @@ export namespace Aggregation.Expression {
   export interface $strLenBytes<S> {
     /**
      * Returns the number of UTF-8 encoded bytes in a string.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenBytes/}
      */
     $strLenBytes: ResolvesToString<S>;
@@ -3060,6 +3530,7 @@ export namespace Aggregation.Expression {
   export interface $strLenCP<S> {
     /**
      * Returns the number of UTF-8 code points in a string.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strLenCP/}
      */
     $strLenCP: ResolvesToString<S>;
@@ -3072,6 +3543,7 @@ export namespace Aggregation.Expression {
   export interface $strcasecmp<S> {
     /**
      * Performs case-insensitive string comparison and returns: 0 if two strings are equivalent, 1 if the first string is greater than the second, and -1 if the first string is less than the second.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/strcasecmp/}
      */
     $strcasecmp: [
@@ -3087,6 +3559,7 @@ export namespace Aggregation.Expression {
   export interface $substr<S> {
     /**
      * Deprecated. Use $substrBytes or $substrCP.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substr/}
      */
     $substr: [
@@ -3111,6 +3584,7 @@ export namespace Aggregation.Expression {
   export interface $substrBytes<S> {
     /**
      * Returns the substring of a string. Starts with the character at the specified UTF-8 byte index (zero-based) in the string and continues for the specified number of bytes.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrBytes/}
      */
     $substrBytes: [
@@ -3135,6 +3609,7 @@ export namespace Aggregation.Expression {
   export interface $substrCP<S> {
     /**
      * Returns the substring of a string. Starts with the character at the specified UTF-8 code point (CP) index (zero-based) in the string and continues for the number of code points specified.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/substrCP/}
      */
     $substrCP: [
@@ -3159,12 +3634,27 @@ export namespace Aggregation.Expression {
   export interface $subtract<S> {
     /**
      * Returns the result of subtracting the second value from the first. If the two values are numbers, return the difference. If the two values are dates, return the difference in milliseconds. If the two values are a date and a number in milliseconds, return the resulting date. Accepts two argument expressions. If the two values are a date and a number, specify the date argument first as it is not meaningful to subtract a date from a number.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtract/}
      */
     $subtract: [
       expression1: ResolvesToNumber<S> | ResolvesToDate<S>,
       expression2: ResolvesToNumber<S> | ResolvesToDate<S>,
     ];
+  }
+
+  /**
+   * A type describing the `$subtype` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtype/}
+   */
+  export interface $subtype<S> {
+    /**
+     * Returns the subtype of a given value as an integer. In MongoDB 8.3, the only expression
+     * that contains a subtype is a BinData expression.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/subtype/}
+     */
+    $subtype: ResolvesToBinData<S>;
   }
 
   /**
@@ -3175,6 +3665,7 @@ export namespace Aggregation.Expression {
     /**
      * Returns a sum of numerical values. Ignores non-numeric values.
      * Changed in MongoDB 5.0: Available in the $setWindowFields stage.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sum/}
      */
     $sum: [...(ResolvesToNumber<S> | ResolvesToArray<S>)[]];
@@ -3187,6 +3678,7 @@ export namespace Aggregation.Expression {
   export interface $switch<S> {
     /**
      * Evaluates a series of case expressions. When it finds an expression which evaluates to true, $switch executes a specified expression and breaks out of the control flow.
+     * New in MongoDB 4.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/switch/}
      */
     $switch: {
@@ -3213,6 +3705,7 @@ export namespace Aggregation.Expression {
   export interface $tan<S> {
     /**
      * Returns the tangent of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tan/}
      */
     $tan: ResolvesToNumber<S>;
@@ -3225,9 +3718,24 @@ export namespace Aggregation.Expression {
   export interface $tanh<S> {
     /**
      * Returns the hyperbolic tangent of a value that is measured in radians.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/tanh/}
      */
     $tanh: ResolvesToNumber<S>;
+  }
+
+  /**
+   * A type describing the `$toArray` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toArray/}
+   */
+  export interface $toArray<S> {
+    /**
+     * Converts a value to an array. If the value cannot be converted, $toArray errors.
+     * If the value is null or missing, $toArray returns null.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toArray/}
+     */
+    $toArray: Expression<S>;
   }
 
   /**
@@ -3289,6 +3797,7 @@ export namespace Aggregation.Expression {
   export interface $toHashedIndexKey<S> {
     /**
      * Computes and returns the hash value of the input expression using the same hash function that MongoDB uses to create a hashed index. A hash function maps a key or string to a fixed-size numeric value.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toHashedIndexKey/}
      */
     $toHashedIndexKey: Expression<S>;
@@ -3327,9 +3836,24 @@ export namespace Aggregation.Expression {
   export interface $toLower<S> {
     /**
      * Converts a string to lowercase. Accepts a single argument expression.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toLower/}
      */
     $toLower: ResolvesToString<S>;
+  }
+
+  /**
+   * A type describing the `$toObject` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObject/}
+   */
+  export interface $toObject<S> {
+    /**
+     * Converts a string to an object. If the value cannot be converted, $toObject errors.
+     * If the value is null or missing, $toObject returns null.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toObject/}
+     */
+    $toObject: Expression<S>;
   }
 
   /**
@@ -3365,9 +3889,72 @@ export namespace Aggregation.Expression {
   export interface $toUpper<S> {
     /**
      * Converts a string to uppercase. Accepts a single argument expression.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/toUpper/}
      */
     $toUpper: ResolvesToString<S>;
+  }
+
+  /**
+   * A type describing the `$top` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top-array-operator/}
+   */
+  export interface $top<S> {
+    /**
+     * Returns the top element within an array according to the specified sort order.
+     * New in MongoDB 7.0.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/top-array-operator/}
+     */
+    $top: {
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the top element.
+       */
+      input: ResolvesToArray<S>;
+    };
+  }
+
+  /**
+   * A type describing the `$topN` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN-array-operator/}
+   */
+  export interface $topN<S> {
+    /**
+     * Returns an aggregation of the top n elements within an array, according to the specified sort order.
+     * If the array contains fewer than n elements, $topN returns all elements in the array.
+     * New in MongoDB 7.0.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/topN-array-operator/}
+     */
+    $topN: {
+      /**
+       * An expression that resolves to a positive integer. The integer specifies the number of array elements that $topN returns.
+       */
+      n: ResolvesToInt<S>;
+
+      /**
+       * Specifies the order of results, with syntax similar to $sort.
+       */
+      sortBy: SortBy;
+
+      /**
+       * Represents the output for each element in the input array and can be any expression.
+       */
+      output: Expression<S>;
+
+      /**
+       * An expression that resolves to the array from which to return the top n elements.
+       */
+      input: ResolvesToArray<S>;
+    };
   }
 
   /**
@@ -3402,6 +3989,7 @@ export namespace Aggregation.Expression {
   export interface $trunc<S> {
     /**
      * Truncates a number to a whole integer or to a specified decimal place.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/trunc/}
      */
     $trunc: [
@@ -3451,6 +4039,7 @@ export namespace Aggregation.Expression {
   export interface $type<S> {
     /**
      * Return the BSON data type of the field.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/type/}
      */
     $type: Expression<S>;
@@ -3464,6 +4053,7 @@ export namespace Aggregation.Expression {
     /**
      * You can use $unsetField to remove fields with names that contain periods (.) or that start with dollar signs ($).
      * $unsetField is an alias for $setField using $$REMOVE to remove fields.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unsetField/}
      */
     $unsetField: {
@@ -3486,6 +4076,7 @@ export namespace Aggregation.Expression {
   export interface $week<S> {
     /**
      * Returns the week number for a date as a number between 0 (the partial week that precedes the first Sunday of the year) and 53 (leap year).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/week/}
      */
     $week: {
@@ -3508,6 +4099,7 @@ export namespace Aggregation.Expression {
   export interface $year<S> {
     /**
      * Returns the year for a date as a number (e.g. 2014).
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/year/}
      */
     $year: {
@@ -3530,6 +4122,7 @@ export namespace Aggregation.Expression {
   export interface $zip<S> {
     /**
      * Merge two arrays together.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/zip/}
      */
     $zip: {
@@ -3563,6 +4156,7 @@ export namespace Aggregation.Query {
   export interface $all<S> {
     /**
      * Matches arrays that contain all elements specified in the query.
+     * New in MongoDB 2.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/all/}
      */
     $all: [...FieldQuery<S>[]];
@@ -3587,9 +4181,10 @@ export namespace Aggregation.Query {
   export interface $bitsAllClear<S> {
     /**
      * Matches numeric or binary values in which a set of bit positions all have a value of 0.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllClear/}
      */
-    $bitsAllClear: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAllClear: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3599,9 +4194,10 @@ export namespace Aggregation.Query {
   export interface $bitsAllSet<S> {
     /**
      * Matches numeric or binary values in which a set of bit positions all have a value of 1.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAllSet/}
      */
-    $bitsAllSet: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAllSet: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3611,9 +4207,10 @@ export namespace Aggregation.Query {
   export interface $bitsAnyClear<S> {
     /**
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 0.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnyClear/}
      */
-    $bitsAnyClear: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAnyClear: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3623,9 +4220,10 @@ export namespace Aggregation.Query {
   export interface $bitsAnySet<S> {
     /**
      * Matches numeric or binary values in which any bit from a set of bit positions has a value of 1.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/bitsAnySet/}
      */
-    $bitsAnySet: (Int | bson.Binary) | (Int | bson.Binary)[];
+    $bitsAnySet: (Int | bson.Binary) | unknown[];
   }
 
   /**
@@ -3635,6 +4233,7 @@ export namespace Aggregation.Query {
   export interface $box<S> {
     /**
      * Specifies a rectangular box using legacy coordinate pairs for $geoWithin queries. The 2d index supports $box.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/box/}
      */
     $box: unknown[];
@@ -3647,6 +4246,7 @@ export namespace Aggregation.Query {
   export interface $center<S> {
     /**
      * Specifies a circle using legacy coordinate pairs to $geoWithin queries when using planar geometry. The 2d index supports $center.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/center/}
      */
     $center: unknown[];
@@ -3659,9 +4259,23 @@ export namespace Aggregation.Query {
   export interface $centerSphere<S> {
     /**
      * Specifies a circle using either legacy coordinate pairs or GeoJSON format for $geoWithin queries when using spherical geometry. The 2dsphere and 2d indexes support $centerSphere.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/}
      */
     $centerSphere: unknown[];
+  }
+
+  /**
+   * A type describing the `$comment` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
+   */
+  export interface $comment<S> {
+    /**
+     * Adds a comment to a query predicate.
+     * New in MongoDB 2.6.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/comment/}
+     */
+    $comment: string;
   }
 
   /**
@@ -3671,6 +4285,7 @@ export namespace Aggregation.Query {
   export interface $elemMatch<S> {
     /**
      * The $elemMatch operator matches documents that contain an array field with at least one element that matches all the specified query criteria.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/elemMatch/}
      */
     $elemMatch: Query<S> | FieldQuery<S>;
@@ -3683,9 +4298,10 @@ export namespace Aggregation.Query {
   export interface $eq<S> {
     /**
      * Matches values that are equal to a specified value.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/eq/}
      */
-    $eq: Expression<S>;
+    $eq: any;
   }
 
   /**
@@ -3707,6 +4323,7 @@ export namespace Aggregation.Query {
   export interface $expr<S> {
     /**
      * Allows use of aggregation expressions within the query language.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/expr/}
      */
     $expr: Expression<S>;
@@ -3719,6 +4336,7 @@ export namespace Aggregation.Query {
   export interface $geoIntersects<S> {
     /**
      * Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports $geoIntersects.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoIntersects/}
      */
     $geoIntersects: Geometry<S> & {};
@@ -3731,6 +4349,7 @@ export namespace Aggregation.Query {
   export interface $geoWithin<S> {
     /**
      * Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support $geoWithin.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/}
      */
     $geoWithin: Geometry<S> & {};
@@ -3743,6 +4362,7 @@ export namespace Aggregation.Query {
   export interface $geometry<S> {
     /**
      * Specifies a geometry in GeoJSON format to geospatial query operators.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/geometry/}
      */
     $geometry: {
@@ -3795,6 +4415,7 @@ export namespace Aggregation.Query {
   export interface $jsonSchema<S> {
     /**
      * Validate documents against the given JSON Schema.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/jsonSchema/}
      */
     $jsonSchema: Record<string, unknown>;
@@ -3831,6 +4452,7 @@ export namespace Aggregation.Query {
   export interface $maxDistance<S> {
     /**
      * Specifies a maximum distance to limit the results of $near and $nearSphere queries. The 2dsphere and 2d indexes support $maxDistance.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/maxDistance/}
      */
     $maxDistance: Number;
@@ -3843,6 +4465,7 @@ export namespace Aggregation.Query {
   export interface $minDistance<S> {
     /**
      * Specifies a minimum distance to limit the results of $near and $nearSphere queries. For use with 2dsphere index only.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/minDistance/}
      */
     $minDistance: Int | Double;
@@ -3879,6 +4502,7 @@ export namespace Aggregation.Query {
   export interface $near<S> {
     /**
      * Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support $near.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/near/}
      */
     $near: Geometry<S> & {
@@ -3901,6 +4525,7 @@ export namespace Aggregation.Query {
   export interface $nearSphere<S> {
     /**
      * Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support $nearSphere.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/nearSphere/}
      */
     $nearSphere: Geometry<S> & {
@@ -3971,6 +4596,7 @@ export namespace Aggregation.Query {
   export interface $polygon<S> {
     /**
      * Specifies a polygon to using legacy coordinate pairs for $geoWithin queries. The 2d index supports $center.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/polygon/}
      */
     $polygon: unknown[];
@@ -3983,6 +4609,7 @@ export namespace Aggregation.Query {
   export interface $rand<S> {
     /**
      * Generates a random float between 0 and 1.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/rand/}
      */
     $rand: Record<string, never>;
@@ -4007,6 +4634,7 @@ export namespace Aggregation.Query {
   export interface $sampleRate<S> {
     /**
      * Randomly select documents at a given rate. Although the exact number of documents selected varies on each run, the quantity chosen approximates the sample rate expressed as a percentage of the total number of documents.
+     * New in MongoDB 5.3.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sampleRate/}
      */
     $sampleRate: ResolvesToDouble<S>;
@@ -4031,6 +4659,7 @@ export namespace Aggregation.Query {
   export interface $text<S> {
     /**
      * Performs text search.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/}
      */
     $text: {
@@ -4065,6 +4694,7 @@ export namespace Aggregation.Query {
   export interface $type<S> {
     /**
      * Selects documents if a field is of the specified type.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/type/}
      */
     $type: [...(Int | string)[]];
@@ -4093,6 +4723,7 @@ export namespace Aggregation.Search {
      * contains a sequence of characters from an incomplete input string. The
      * fields that you intend to query with the autocomplete operator must be
      * indexed with the autocomplete data type in the collection's index definition.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/autocomplete/}
      */
     autocomplete: {
@@ -4113,15 +4744,17 @@ export namespace Aggregation.Search {
      * The compound operator combines two or more operators into a single query.
      * Each element of a compound query is called a clause, and each clause
      * consists of one or more sub-queries.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/compound/}
      */
     compound: {
-      must?: SearchOperator<S> | SearchOperator<S>[];
-      mustNot?: SearchOperator<S> | SearchOperator<S>[];
-      should?: SearchOperator<S> | SearchOperator<S>[];
-      filter?: SearchOperator<S> | SearchOperator<S>[];
+      must?: SearchOperator<S> | unknown[];
+      mustNot?: SearchOperator<S> | unknown[];
+      should?: SearchOperator<S> | unknown[];
+      filter?: SearchOperator<S> | unknown[];
       minimumShouldMatch?: Int;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4135,6 +4768,7 @@ export namespace Aggregation.Search {
      * It constrains multiple query predicates to be satisfied from a single
      * element of an array of embedded documents. embeddedDocument can be used only
      * for queries over fields of the embeddedDocuments
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/embedded-document/}
      */
     embeddedDocument: {
@@ -4151,6 +4785,7 @@ export namespace Aggregation.Search {
   export interface Equals<S> {
     /**
      * The equals operator checks whether a field matches a value you specify.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/equals/}
      */
     equals: {
@@ -4164,6 +4799,7 @@ export namespace Aggregation.Search {
         | Number
         | string;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4174,6 +4810,7 @@ export namespace Aggregation.Search {
   export interface Exists<S> {
     /**
      * The exists operator tests if a path to a specified indexed field name exists in a document.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/exists/}
      */
     exists: { path: SearchPath<S>; score?: SearchScore };
@@ -4187,6 +4824,7 @@ export namespace Aggregation.Search {
     /**
      * The facet collector groups results by values or ranges in the specified
      * faceted fields and returns the count for each of those groups.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/facet/}
      */
     facet: { facets: Record<string, unknown>; operator?: SearchOperator<S> };
@@ -4200,6 +4838,7 @@ export namespace Aggregation.Search {
     /**
      * The geoShape operator supports querying shapes with a relation to a given
      * geometry if indexShapes is set to true in the index definition.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoShape/}
      */
     geoShape: {
@@ -4219,6 +4858,7 @@ export namespace Aggregation.Search {
      * The geoWithin operator supports querying geographic points within a given
      * geometry. Only points are returned, even if indexShapes value is true in
      * the index definition.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/geoWithin/}
      */
     geoWithin: {
@@ -4231,15 +4871,47 @@ export namespace Aggregation.Search {
   }
 
   /**
+   * A type describing the `hasAncestor` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasancestor/}
+   */
+  export interface HasAncestor<S> {
+    /**
+     * The `hasAncestor` operator queries an `embeddedDocuments` type field specified in the `ancestorPath`. The `ancestorPath` is a parent of the field specified in the `returnScope`.
+     * New in MongoDB 8.2.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasancestor/}
+     */
+    hasAncestor: { ancestorPath: SearchPath<S>; operator: SearchOperator<S> };
+  }
+
+  /**
+   * A type describing the `hasRoot` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasroot/}
+   */
+  export interface HasRoot<S> {
+    /**
+     * The `hasRoot` operator can be used to query root-level fields when you specify the `returnScope` and `returnStoredSource` options.
+     * New in MongoDB 8.2.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/operators-collectors/hasroot/}
+     */
+    hasRoot: { operator: SearchOperator<S> };
+  }
+
+  /**
    * A type describing the `in` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
    */
   export interface In<S> {
     /**
      * The in operator performs a search for an array of BSON values in a field.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/in/}
      */
-    in: { path: SearchPath<S>; value: any | any[]; score?: SearchScore };
+    in: {
+      path: SearchPath<S>;
+      value: any | unknown[];
+      score?: SearchScore;
+      doesNotAffect?: string | unknown[];
+    };
   }
 
   /**
@@ -4251,10 +4923,11 @@ export namespace Aggregation.Search {
      * The moreLikeThis operator returns documents similar to input documents.
      * The moreLikeThis operator allows you to build features for your applications
      * that display similar or alternative results based on one or more given documents.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/moreLikeThis/}
      */
     moreLikeThis: {
-      like: Record<string, unknown> | Record<string, unknown>[];
+      like: Record<string, unknown> | unknown[];
       score?: SearchScore;
     };
   }
@@ -4266,6 +4939,7 @@ export namespace Aggregation.Search {
   export interface Near<S> {
     /**
      * The near operator supports querying and scoring numeric, date, and GeoJSON point values.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/near/}
      */
     near: {
@@ -4283,11 +4957,12 @@ export namespace Aggregation.Search {
   export interface Phrase<S> {
     /**
      * The phrase operator performs search for documents containing an ordered sequence of terms using the analyzer specified in the index configuration.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/phrase/}
      */
     phrase: {
       path: SearchPath<S>;
-      query: string | string[];
+      query: string | unknown[];
       slop?: Int;
       synonyms?: string;
       score?: SearchScore;
@@ -4310,6 +4985,7 @@ export namespace Aggregation.Search {
     /**
      * The range operator supports querying and scoring numeric, date, and string values.
      * You can use this operator to find results that are within a given numeric, date, objectId, or letter (from the English alphabet) range.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/range/}
      */
     range: {
@@ -4319,6 +4995,7 @@ export namespace Aggregation.Search {
       lt?: Date | Number | string | bson.ObjectId;
       lte?: Date | Number | string | bson.ObjectId;
       score?: SearchScore;
+      doesNotAffect?: string | unknown[];
     };
   }
 
@@ -4330,6 +5007,7 @@ export namespace Aggregation.Search {
     /**
      * regex interprets the query field as a regular expression.
      * regex is a term-level operator, meaning that the query field isn't analyzed.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/regex/}
      */
     regex: {
@@ -4348,6 +5026,7 @@ export namespace Aggregation.Search {
     /**
      * The text operator performs a full-text search using the analyzer that you specify in the index configuration.
      * If you omit an analyzer, the text operator uses the default standard analyzer.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/text/}
      */
     text: {
@@ -4361,12 +5040,68 @@ export namespace Aggregation.Search {
   }
 
   /**
+   * A type describing the `vectorSearch` operator.
+   * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/vector-search/}
+   */
+  export interface VectorSearch<S> {
+    /**
+     * The vectorSearch operator performs an ANN or ENN search on a vector field. It can only be
+     * used as a top-level operator in a $search or $searchMeta query, not nested under compound
+     * or other operators.
+     * New in MongoDB 6.0.
+     * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/vector-search/}
+     */
+    vectorSearch: {
+      /**
+       * The indexed vector field to search.
+       */
+      path: SearchPath<S>;
+
+      /**
+       * Array of numbers or a BinData value that represents the query vector. The number type
+       * must match the indexed field value type.
+       */
+      queryVector: bson.Binary | unknown[];
+
+      /**
+       * The integer number of documents to return in the results. This value cannot exceed
+       * numCandidates if numCandidates is specified.
+       */
+      limit: Int;
+
+      /**
+       * If false, runs an ANN search. If true, runs an ENN search. Defaults to false.
+       * This parameter is required if numCandidates is omitted.
+       */
+      exact?: boolean;
+
+      /**
+       * The number of nearest neighbors to use during the search. Value must be less than or
+       * equal to 10000 and cannot be less than limit. This field is required if exact is false
+       * or omitted.
+       */
+      numCandidates?: Int;
+
+      /**
+       * Any Atlas Search operator to filter documents based on metadata or specific search criteria.
+       */
+      filter?: SearchOperator<S>;
+
+      /**
+       * Score assigned to matching search results.
+       */
+      score?: SearchScore;
+    };
+  }
+
+  /**
    * A type describing the `wildcard` operator.
    * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/wildcard/}
    */
   export interface Wildcard<S> {
     /**
      * The wildcard operator enables queries which use special characters in the search string that can match any character.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/wildcard/}
      */
     wildcard: {
@@ -4385,6 +5120,7 @@ export namespace Aggregation.Stage {
   export interface $addFields<S> {
     /**
      * Adds new fields to documents. Outputs documents that contain all existing fields from the input documents and newly added fields.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/addFields/}
      */
     $addFields: {
@@ -4401,6 +5137,7 @@ export namespace Aggregation.Stage {
   export interface $bucket<S> {
     /**
      * Categorizes incoming documents into groups, called buckets, based on a specified expression and bucket boundaries.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/}
      */
     $bucket: {
@@ -4440,6 +5177,7 @@ export namespace Aggregation.Stage {
   export interface $bucketAuto<S> {
     /**
      * Categorizes incoming documents into a specific number of groups, called buckets, based on a specified expression. Bucket boundaries are automatically determined in an attempt to evenly distribute the documents into the specified number of buckets.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucketAuto/}
      */
     $bucketAuto: {
@@ -4474,6 +5212,7 @@ export namespace Aggregation.Stage {
   export interface $changeStream<S> {
     /**
      * Returns a Change Stream cursor for the collection or database. This stage can only occur once in an aggregation pipeline and it must occur as the first stage.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStream/}
      */
     $changeStream: {
@@ -4499,7 +5238,6 @@ export namespace Aggregation.Stage {
 
       /**
        * Specifies whether to include additional change events, such as such as DDL and index operations.
-       * New in MongoDB 6.0.
        */
       showExpandedEvents?: boolean;
 
@@ -4523,6 +5261,7 @@ export namespace Aggregation.Stage {
     /**
      * Splits large change stream events that exceed 16 MB into smaller fragments returned in a change stream cursor.
      * You can only use $changeStreamSplitLargeEvent in a $changeStream pipeline and it must be the final stage in the pipeline.
+     * New in MongoDB 6.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/changeStreamSplitLargeEvent/}
      */
     $changeStreamSplitLargeEvent: Record<string, never>;
@@ -4535,6 +5274,7 @@ export namespace Aggregation.Stage {
   export interface $collStats<S> {
     /**
      * Returns statistics regarding a collection or view.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/}
      */
     $collStats: {
@@ -4553,6 +5293,7 @@ export namespace Aggregation.Stage {
     /**
      * Returns a count of the number of documents at this stage of the aggregation pipeline.
      * Distinct from the $count aggregation accumulator.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/count/}
      */
     $count: string;
@@ -4565,6 +5306,7 @@ export namespace Aggregation.Stage {
   export interface $currentOp<S> {
     /**
      * Returns information on active and/or dormant operations for the MongoDB deployment. To run, use the db.aggregate() method.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/currentOp/}
      */
     $currentOp: {
@@ -4583,6 +5325,7 @@ export namespace Aggregation.Stage {
   export interface $densify<S> {
     /**
      * Creates new documents in a sequence of documents where certain values in a field are missing.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/densify/}
      */
     $densify: {
@@ -4612,6 +5355,7 @@ export namespace Aggregation.Stage {
   export interface $documents<S> {
     /**
      * Returns literal documents from input values.
+     * New in MongoDB 5.1.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/documents/}
      */
     $documents: ResolvesToArray<S>;
@@ -4624,6 +5368,7 @@ export namespace Aggregation.Stage {
   export interface $facet<S> {
     /**
      * Processes multiple aggregation pipelines within a single stage on the same set of input documents. Enables the creation of multi-faceted aggregations capable of characterizing data across multiple dimensions, or facets, in a single stage.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/facet/}
      */
     $facet: {} & { [facet: string]: Pipeline<S> };
@@ -4636,6 +5381,7 @@ export namespace Aggregation.Stage {
   export interface $fill<S> {
     /**
      * Populates null and missing field values within documents.
+     * New in MongoDB 5.3.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/}
      */
     $fill: {
@@ -4673,6 +5419,7 @@ export namespace Aggregation.Stage {
   export interface $geoNear<S> {
     /**
      * Returns an ordered stream of documents based on the proximity to a geospatial point. Incorporates the functionality of $match, $sort, and $limit for geospatial data. The output documents include an additional distance field and can include a location identifier field.
+     * New in MongoDB 2.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/geoNear/}
      */
     $geoNear: {
@@ -4736,6 +5483,7 @@ export namespace Aggregation.Stage {
   export interface $graphLookup<S> {
     /**
      * Performs a recursive search on a collection. To each output document, adds a new array field that contains the traversal results of the recursive search for that document.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/graphLookup/}
      */
     $graphLookup: {
@@ -4748,7 +5496,7 @@ export namespace Aggregation.Stage {
       /**
        * Expression that specifies the value of the connectFromField with which to start the recursive search. Optionally, startWith may be array of values, each of which is individually followed through the traversal process.
        */
-      startWith: Expression<S> | Expression<S>[];
+      startWith: Expression<S> | unknown[];
 
       /**
        * Field name whose value $graphLookup uses to recursively match against the connectToField of other documents in the collection. If the value is an array, each element is individually followed through the traversal process.
@@ -4789,6 +5537,7 @@ export namespace Aggregation.Stage {
   export interface $group<S> {
     /**
      * Groups input documents by a specified identifier expression and applies the accumulator expression(s), if specified, to each group. Consumes all input documents and outputs one document per each distinct group. The output documents only contain the identifier field and, if specified, accumulated fields.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/}
      */
     $group: RecordWithStaticFields<
@@ -4796,7 +5545,7 @@ export namespace Aggregation.Stage {
         /**
          * The _id expression specifies the group key. If you specify an _id value of null, or any other constant value, the $group stage returns a single document that aggregates values across all of the input documents.
          */
-        _id: Expression<S> | ExpressionMap<S>;
+        _id: Expression<S>;
       },
       /**
        * Computed using the accumulator operators.
@@ -4812,6 +5561,7 @@ export namespace Aggregation.Stage {
   export interface $indexStats<S> {
     /**
      * Returns statistics regarding the use of each index for the collection.
+     * New in MongoDB 3.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexStats/}
      */
     $indexStats: Record<string, never>;
@@ -4824,6 +5574,7 @@ export namespace Aggregation.Stage {
   export interface $limit<S> {
     /**
      * Passes the first n documents unmodified to the pipeline where n is the specified limit. For each input document, outputs either one document (for the first n documents) or zero documents (after the first n documents).
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/}
      */
     $limit: Int;
@@ -4836,6 +5587,7 @@ export namespace Aggregation.Stage {
   export interface $listLocalSessions<S> {
     /**
      * Lists all active sessions recently in use on the currently connected mongos or mongod instance. These sessions may have not yet propagated to the system.sessions collection.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listLocalSessions/}
      */
     $listLocalSessions: {
@@ -4858,6 +5610,7 @@ export namespace Aggregation.Stage {
   export interface $listSampledQueries<S> {
     /**
      * Lists sampled queries for all collections or a specific collection.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSampledQueries/}
      */
     $listSampledQueries: { namespace?: string };
@@ -4870,6 +5623,7 @@ export namespace Aggregation.Stage {
   export interface $listSearchIndexes<S> {
     /**
      * Returns information about existing Atlas Search indexes on a specified collection.
+     * New in MongoDB 7.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSearchIndexes/}
      */
     $listSearchIndexes: {
@@ -4892,6 +5646,7 @@ export namespace Aggregation.Stage {
   export interface $listSessions<S> {
     /**
      * Lists all sessions that have been active long enough to propagate to the system.sessions collection.
+     * New in MongoDB 3.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/listSessions/}
      */
     $listSessions: {
@@ -4914,6 +5669,7 @@ export namespace Aggregation.Stage {
   export interface $lookup<S> {
     /**
      * Performs a left outer join to another collection in the same database to filter in documents from the "joined" collection for processing.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/}
      */
     $lookup: {
@@ -4944,7 +5700,7 @@ export namespace Aggregation.Stage {
        * The pipeline cannot include the $out stage or the $merge stage. Starting in v6.0, the pipeline can contain the Atlas Search $search stage as the first stage inside the pipeline.
        * The pipeline cannot directly access the joined document fields. Instead, define variables for the joined document fields using the let option and then reference the variables in the pipeline stages.
        */
-      pipeline?: UntypedPipeline;
+      pipeline?: Pipeline<S>;
 
       /**
        * Specifies the name of the new array field to add to the input documents. The new array field contains the matching documents from the from collection. If the specified name already exists in the input document, the existing field is overwritten.
@@ -4960,6 +5716,7 @@ export namespace Aggregation.Stage {
   export interface $match<S> {
     /**
      * Filters the document stream to allow only matching documents to pass unmodified into the next pipeline stage. $match uses standard MongoDB queries. For each input document, outputs either one document (a match) or zero documents (no match).
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/}
      */
     $match: Query<S>;
@@ -4984,7 +5741,7 @@ export namespace Aggregation.Stage {
       /**
        * Field or fields that act as a unique identifier for a document. The identifier determines if a results document matches an existing document in the output collection.
        */
-      on?: string | string[];
+      on?: string | unknown[];
 
       /**
        * Specifies variables for use in the whenMatched pipeline.
@@ -4994,7 +5751,7 @@ export namespace Aggregation.Stage {
       /**
        * The behavior of $merge if a result document and an existing document in the collection have the same value for the specified on field(s).
        */
-      whenMatched?: WhenMatched | UntypedPipeline;
+      whenMatched?: WhenMatched | UpdatePipeline<S>;
 
       /**
        * The behavior of $merge if a result document does not match an existing document in the out collection.
@@ -5010,9 +5767,51 @@ export namespace Aggregation.Stage {
   export interface $out<S> {
     /**
      * Writes the resulting documents of the aggregation pipeline to a collection. To use the $out stage, it must be the last stage in the pipeline.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/}
      */
-    $out: string | OutCollection;
+    $out: {
+      /**
+       * The output collection name.
+       */
+      coll: string;
+
+      /**
+       * The output database name. If omitted, defaults to the current database.
+       */
+      db?: string;
+
+      /**
+       * Specifies the configuration to use when writing to a time series collection.
+       * The timeField is required. All other fields are optional.
+       */
+      timeseries?: {
+        /**
+         * The name of the field which contains the date in each time series document.
+         */
+        timeField: string;
+
+        /**
+         * The name of the field which contains metadata in each time series document.
+         */
+        metaField?: string;
+
+        /**
+         * The granularity of time measurements. Value can be seconds, minutes, or hours.
+         */
+        granularity?: TimeGranularity;
+
+        /**
+         * The maximum time span between measurements in a bucket.
+         */
+        bucketMaxSpanSeconds?: Int;
+
+        /**
+         * The interval that determines the starting timestamp for a new bucket.
+         */
+        bucketRoundingSeconds?: Int;
+      };
+    };
   }
 
   /**
@@ -5022,6 +5821,7 @@ export namespace Aggregation.Stage {
   export interface $planCacheStats<S> {
     /**
      * Returns plan cache information for a collection.
+     * New in MongoDB 4.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/planCacheStats/}
      */
     $planCacheStats: Record<string, never>;
@@ -5034,10 +5834,47 @@ export namespace Aggregation.Stage {
   export interface $project<S> {
     /**
      * Reshapes each document in the stream, such as by adding new fields or removing existing fields. For each input document, outputs one document.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/}
      */
-    $project: {} & {
-      [specification: string]: Expression<S> | ExpressionMap<S>;
+    $project: {} & { [specification: string]: Expression<S> };
+  }
+
+  /**
+   * A type describing the `$rankFusion` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rankFusion/}
+   */
+  export interface $rankFusion<S> {
+    /**
+     * Combines multiple pipelines using rank-based fusion to create hybrid search results.
+     * New in MongoDB 8.1.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/rankFusion/}
+     */
+    $rankFusion: {
+      /**
+       * An object that specifies the pipelines to combine with rank fusion.
+       */
+      input: {
+        /**
+         * Map from name to ranked input pipeline. Each pipeline must operate on the same collection.
+         */
+        pipelines: Pipeline<S>;
+      };
+
+      /**
+       * An object that specifies how to combine the ranked results.
+       */
+      combination?: {
+        /**
+         * Map from pipeline name to weight (non-negative number). If unspecified, default weight is 1 for each pipeline.
+         */
+        weights?: Number;
+      };
+
+      /**
+       * Set to true to include detailed scoring information.
+       */
+      scoreDetails?: boolean;
     };
   }
 
@@ -5048,6 +5885,7 @@ export namespace Aggregation.Stage {
   export interface $redact<S> {
     /**
      * Reshapes each document in the stream by restricting the content for each document based on information stored in the documents themselves. Incorporates the functionality of $project and $match. Can be used to implement field level redaction. For each input document, outputs either one or zero documents.
+     * New in MongoDB 2.6.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/redact/}
      */
     $redact: Expression<S>;
@@ -5060,6 +5898,7 @@ export namespace Aggregation.Stage {
   export interface $replaceRoot<S> {
     /**
      * Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the _id field. Specify a document embedded in the input document to promote the embedded document to the top level.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/}
      */
     $replaceRoot: { newRoot: ResolvesToObject<S> };
@@ -5073,9 +5912,48 @@ export namespace Aggregation.Stage {
     /**
      * Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the _id field. Specify a document embedded in the input document to promote the embedded document to the top level.
      * Alias for $replaceRoot.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/}
      */
     $replaceWith: ResolvesToObject<S>;
+  }
+
+  /**
+   * A type describing the `$rerank` operator.
+   * @see {@link https://www.mongodb.com/docs/vector-search/query/aggregation-stages/rerank/}
+   */
+  export interface $rerank<S> {
+    /**
+     * Reranks documents using a Voyage AI reranking model to improve relevance scoring.
+     * New in MongoDB 8.3.
+     * @see {@link https://www.mongodb.com/docs/vector-search/query/aggregation-stages/rerank/}
+     */
+    $rerank: {
+      /**
+       * Name of the Voyage AI reranking model to use (e.g. rerank-2.5, rerank-2.5-lite).
+       */
+      model: string;
+
+      /**
+       * Query object for reranking.
+       */
+      query: {
+        /**
+         * Query text used to score document relevance.
+         */
+        text: string;
+      };
+
+      /**
+       * Field path or array of field paths to use for reranking.
+       */
+      path: string | unknown[];
+
+      /**
+       * Maximum number of documents to send to Voyage AI for reranking. Value must be between 1 and 1000.
+       */
+      numDocsToRerank: Int;
+    };
   }
 
   /**
@@ -5085,6 +5963,7 @@ export namespace Aggregation.Stage {
   export interface $sample<S> {
     /**
      * Randomly selects the specified number of documents from its input.
+     * New in MongoDB 3.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/}
      */
     $sample: {
@@ -5096,6 +5975,98 @@ export namespace Aggregation.Stage {
   }
 
   /**
+   * A type describing the `$score` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/score/}
+   */
+  export interface $score<S> {
+    /**
+     * Computes and returns a new score as metadata. It also optionally normalizes the input
+     * scores, by default to a range between zero and one.
+     * New in MongoDB 8.2.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/score/}
+     */
+    $score: {
+      /**
+       * Computes a new value from the input scores and stores the value in the $meta keyword
+       * score. Returns an error for non-numeric inputs.
+       */
+      score: Expression<S>;
+
+      /**
+       * Normalizes the score to the range of 0 to 1. Value can be:
+       * - none: Doesn't normalize. If omitted, defaults to none.
+       * - sigmoid: Applies the sigmoid expression: 1 / (1 + e^-x).
+       * - minMaxScaler: Applies the $minMaxScaler window function.
+       */
+      normalization?: ScoreNormalization;
+
+      /**
+       * Number to multiply the score expression by after normalization.
+       */
+      weight?: Expression<S>;
+
+      /**
+       * Specifies if $score computes and populates the $scoreDetails metadata field for each
+       * output document.
+       */
+      scoreDetails?: boolean;
+    };
+  }
+
+  /**
+   * A type describing the `$scoreFusion` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/scoreFusion/}
+   */
+  export interface $scoreFusion<S> {
+    /**
+     * Combines multiple pipelines using relative score fusion to create hybrid search results.
+     * New in MongoDB 8.0.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/scoreFusion/}
+     */
+    $scoreFusion: {
+      /**
+       * An object that specifies the pipelines to combine with score fusion.
+       */
+      input: {
+        /**
+         * Map from name to input pipeline. Each pipeline must be operating on the same collection.
+         */
+        pipelines: Pipeline<S>;
+
+        /**
+         * Normalizes the score to the range 0 to 1 before combining the results. Value can be none, sigmoid or minMaxScaler.
+         */
+        normalization: string;
+      };
+
+      /**
+       * An object that specifies how to combine the scores.
+       */
+      combination?: {
+        /**
+         * Map from pipeline name to weight (non-negative number). If unspecified, default weight is 1 for each pipeline.
+         */
+        weights?: Number;
+
+        /**
+         * Specifies method for combining scores. Value can be avg or expression. Default is avg.
+         */
+        method?: string;
+
+        /**
+         * Custom expression used when combination.method is set to expression.
+         */
+        expression?: Expression<S>;
+      };
+
+      /**
+       * Set to true to include detailed scoring information.
+       */
+      scoreDetails?: boolean;
+    };
+  }
+
+  /**
    * A type describing the `$search` operator.
    * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/search/}
    */
@@ -5103,6 +6074,7 @@ export namespace Aggregation.Stage {
     /**
      * Performs a full-text search of the field or fields in an Atlas collection.
      * NOTE: $search is only available for MongoDB Atlas clusters, and is not available for self-managed deployments.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/search/}
      */
     $search: SearchOperator<S> & {
@@ -5114,7 +6086,7 @@ export namespace Aggregation.Stage {
       /**
        * Specifies the highlighting options for displaying search terms in their original context.
        */
-      highlight?: SearchHighlight<S>;
+      highlight?: Record<string, unknown>;
 
       /**
        * Parallelize search across segments on dedicated search nodes.
@@ -5149,6 +6121,11 @@ export namespace Aggregation.Stage {
       sort?: Record<string, unknown>;
 
       /**
+       * Object that sets the context of the query to the specified embedded document field. You must also specify `returnStoredSource` and set it to `true`.
+       */
+      returnScope?: Record<string, unknown>;
+
+      /**
        * Flag that specifies whether to perform a full document lookup on the backend database or return only stored source fields directly from Atlas Search.
        */
       returnStoredSource?: boolean;
@@ -5168,6 +6145,7 @@ export namespace Aggregation.Stage {
     /**
      * Returns different types of metadata result documents for the Atlas Search query against an Atlas collection.
      * NOTE: $searchMeta is only available for MongoDB Atlas clusters running MongoDB v4.4.9 or higher, and is not available for self-managed deployments.
+     * New in MongoDB 5.0.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/searchMeta/}
      */
     $searchMeta: SearchOperator<S> & {
@@ -5180,6 +6158,16 @@ export namespace Aggregation.Stage {
        * Document that specifies the count options for retrieving a count of the results.
        */
       count?: Record<string, unknown>;
+
+      /**
+       * Object that sets the context of the query to the specified embedded document field. You must also specify `returnStoredSource` and set it to `true` if your cluster MongoDB version is less than 8.2.
+       */
+      returnScope?: Record<string, unknown>;
+
+      /**
+       * Flag that specifies whether to perform a full document lookup on the backend database or return only stored source fields directly from Atlas Search.
+       */
+      returnStoredSource?: boolean;
     };
   }
 
@@ -5191,6 +6179,7 @@ export namespace Aggregation.Stage {
     /**
      * Adds new fields to documents. Outputs documents that contain all existing fields from the input documents and newly added fields.
      * Alias for $addFields.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/}
      */
     $set: {} & { [field: string]: Expression<S> };
@@ -5245,6 +6234,7 @@ export namespace Aggregation.Stage {
   export interface $skip<S> {
     /**
      * Skips the first n documents where n is the specified skip number and passes the remaining documents unmodified to the pipeline. For each input document, outputs either zero documents (for the first n documents) or one document (if after the first n documents).
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/}
      */
     $skip: Int;
@@ -5257,6 +6247,7 @@ export namespace Aggregation.Stage {
   export interface $sort<S> {
     /**
      * Reorders the document stream by a specified sort key. Only the order changes; the documents remain unmodified. For each input document, outputs one document.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/}
      */
     $sort: {} & { [sort: string]: Expression<S> | SortSpec };
@@ -5269,6 +6260,7 @@ export namespace Aggregation.Stage {
   export interface $sortByCount<S> {
     /**
      * Groups incoming documents based on the value of a specified expression, then computes the count of documents in each distinct group.
+     * New in MongoDB 3.4.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/sortByCount/}
      */
     $sortByCount: Expression<S>;
@@ -5294,7 +6286,7 @@ export namespace Aggregation.Stage {
        * An aggregation pipeline to apply to the specified coll.
        * The pipeline cannot include the $out and $merge stages. Starting in v6.0, the pipeline can contain the Atlas Search $search stage as the first stage inside the pipeline.
        */
-      pipeline?: UntypedPipeline;
+      pipeline?: Pipeline<S>;
     };
   }
 
@@ -5306,6 +6298,7 @@ export namespace Aggregation.Stage {
     /**
      * Removes or excludes fields from documents.
      * Alias for $project stage that removes or excludes fields.
+     * New in MongoDB 4.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/}
      */
     $unset: [...UnprefixedFieldPath<S>[]];
@@ -5318,6 +6311,7 @@ export namespace Aggregation.Stage {
   export interface $unwind<S> {
     /**
      * Deconstructs an array field from the input documents to output a document for each element. Each output document replaces the array with an element value. For each input document, outputs n documents where n is the number of array elements and can be zero for an empty array.
+     * New in MongoDB 2.2.
      * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind/}
      */
     $unwind: {
@@ -5347,6 +6341,7 @@ export namespace Aggregation.Stage {
   export interface $vectorSearch<S> {
     /**
      * The $vectorSearch stage performs an ANN or ENN search on a vector in the specified field.
+     * New in MongoDB 6.0.
      * @see {@link https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/}
      */
     $vectorSearch: {
@@ -5366,9 +6361,10 @@ export namespace Aggregation.Stage {
       path: string;
 
       /**
-       * Array of numbers that represent the query vector. The number type must match the indexed field value type.
+       * Array of numbers or a BinData value that represent the query vector. The number type
+       * must match the indexed field value type.
        */
-      queryVector: unknown[];
+      queryVector: bson.Binary | unknown[];
 
       /**
        * This is required if numCandidates is omitted. false to run ANN search. true to run ENN search.
@@ -5376,7 +6372,7 @@ export namespace Aggregation.Stage {
       exact?: boolean;
 
       /**
-       * Any match query that compares an indexed field with a boolean, date, objectId, number (not decimals), string, or UUID to use as a pre-filter.
+       * Any match query that compares an indexed field with a boolean, date, objectId, number, string, or UUID to use as a pre-filter.
        */
       filter?: Query<S>;
 
@@ -5385,15 +6381,230 @@ export namespace Aggregation.Stage {
        * Number of nearest neighbors to use during the search. Value must be less than or equal to (<=) 10000. You can't specify a number less than the number of documents to return (limit).
        */
       numCandidates?: Int;
+
+      /**
+       * If true, the search returns only the stored source fields configured on the index directly from the index and skips a full document lookup. If omitted, the default value is false.
+       */
+      returnStoredSource?: boolean;
+
+      /**
+       * Configure how MongoDB Vector Search scores documents that contain nested arrays.
+       */
+      nestedOptions?: {
+        /**
+         * Specifies how to score documents that contain nested arrays. Value can be avg or max.
+         */
+        scoreMode?: string;
+      };
+
+      /**
+       * Any match query that compares an indexed top-level field with a boolean, date, objectId, number, string, or UUID to use as a pre-filter. Only valid if `nestedRoot` is specified in the index definition.
+       */
+      parentFilter?: Query<S>;
     };
   }
 }
+export namespace Aggregation.Update {
+  /**
+   * A type describing the `$addToSet` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/}
+   */
+  export interface $addToSet<S> {
+    /**
+     * Adds a value to an array unless the value is already present.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/}
+     */
+    $addToSet: {} & { [field: string]: any };
+  }
 
-export type Int = number | bson.Int32;
-export type Double = number | bson.Double;
-export type Decimal = bson.Decimal128;
-export type Regex = RegExp | bson.BSONRegExp;
-export type Long = bigint | bson.Long;
+  /**
+   * A type describing the `$bit` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/bit/}
+   */
+  export interface $bit<S> {
+    /**
+     * Performs bitwise updates of integer values.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/bit/}
+     */
+    $bit: {
+      /**
+       * Each field maps to an object containing exactly one bitwise operation:
+       * and, or, or xor.
+       */
+    } & { [field: string]: BitwiseOperation };
+  }
+
+  /**
+   * A type describing the `$currentDate` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/currentDate/}
+   */
+  export interface $currentDate<S> {
+    /**
+     * Sets the value of a field to the current date as either a Date or Timestamp.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/currentDate/}
+     */
+    $currentDate: {
+      /**
+       * The value for each field can be either:
+       * - true, to set the field to the current date.
+       * - a document with $type set to "date" or "timestamp".
+       */
+    } & { [field: string]: boolean | Record<string, unknown> };
+  }
+
+  /**
+   * A type describing the `$inc` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/inc/}
+   */
+  export interface $inc<S> {
+    /**
+     * Increments a field by the specified numeric amount.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/inc/}
+     */
+    $inc: {} & { [field: string]: Number };
+  }
+
+  /**
+   * A type describing the `$max` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/max/}
+   */
+  export interface $max<S> {
+    /**
+     * Updates a field only if the specified value is greater than the current field value.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/max/}
+     */
+    $max: {} & { [field: string]: any };
+  }
+
+  /**
+   * A type describing the `$min` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/min/}
+   */
+  export interface $min<S> {
+    /**
+     * Updates a field only if the specified value is less than the current field value.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/min/}
+     */
+    $min: {} & { [field: string]: any };
+  }
+
+  /**
+   * A type describing the `$mul` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/mul/}
+   */
+  export interface $mul<S> {
+    /**
+     * Multiplies the value of a field by the specified number.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/mul/}
+     */
+    $mul: {} & { [field: string]: Number };
+  }
+
+  /**
+   * A type describing the `$pop` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pop/}
+   */
+  export interface $pop<S> {
+    /**
+     * Removes the first or last element of an array.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pop/}
+     */
+    $pop: {} & { [field: string]: Int };
+  }
+
+  /**
+   * A type describing the `$pull` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pull/}
+   */
+  export interface $pull<S> {
+    /**
+     * Removes all array elements that match a specified value or condition.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pull/}
+     */
+    $pull: {} & { [field: string]: FieldQuery<S> };
+  }
+
+  /**
+   * A type describing the `$pullAll` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pullAll/}
+   */
+  export interface $pullAll<S> {
+    /**
+     * Removes all matching values from an array.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/pullAll/}
+     */
+    $pullAll: {} & { [field: string]: unknown[] };
+  }
+
+  /**
+   * A type describing the `$push` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/push/}
+   */
+  export interface $push<S> {
+    /**
+     * Appends a specified value to an array, with optional modifiers.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/push/}
+     */
+    $push: {} & { [field: string]: any };
+  }
+
+  /**
+   * A type describing the `$rename` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/rename/}
+   */
+  export interface $rename<S> {
+    /**
+     * Renames a field.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/rename/}
+     */
+    $rename: {} & { [field: string]: string };
+  }
+
+  /**
+   * A type describing the `$set` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/set/}
+   */
+  export interface $set<S> {
+    /**
+     * Sets the value of a field.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/set/}
+     */
+    $set: {} & { [field: string]: any };
+  }
+
+  /**
+   * A type describing the `$setOnInsert` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/setOnInsert/}
+   */
+  export interface $setOnInsert<S> {
+    /**
+     * Sets the value of a field if an update with upsert creates a new document.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/setOnInsert/}
+     */
+    $setOnInsert: {} & { [field: string]: any };
+  }
+
+  /**
+   * A type describing the `$unset` operator.
+   * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/unset/}
+   */
+  export interface $unset<S> {
+    /**
+     * Removes the specified field from a document.
+     * @see {@link https://www.mongodb.com/docs/manual/reference/operator/update/unset/}
+     */
+    $unset: {} & { [field: string]: any };
+  }
+}
+
+export type Int = number | bson.Int32 | { $numberInt: string };
+export type Double = number | bson.Double | { $numberDouble: string };
+export type Decimal = bson.Decimal128 | { $numberDecimal: string };
+export type Regex =
+  | RegExp
+  | bson.BSONRegExp
+  | { pattern: string; options?: string };
+export type Long = bigint | bson.Long | { $numberLong: string };
 export type Javascript = bson.Code | Function | string;
 export type Geometry<S> =
   | { type: 'Point'; coordinates: number[] }
@@ -5423,8 +6634,14 @@ export type SearchPath<S> =
   | UnprefixedFieldPath<S>
   | UnprefixedFieldPath<S>[]
   | { wildcard: string };
+export type BitwiseOperation =
+  | { and: Int | Long }
+  | { or: Int | Long }
+  | { xor: Int | Long };
 export type SearchScore = unknown;
 export type Granularity = string;
+export type TimeGranularity = 'seconds' | 'minutes' | 'hours';
+export type ScoreNormalization = 'none' | 'sigmoid' | 'minMaxScaler';
 export type FullDocument = string;
 export type FullDocumentBeforeChange = string;
 export type AccumulatorPercentile = string;
@@ -5459,36 +6676,27 @@ export type Stage<S> =
   | Aggregation.Stage.$addFields<S>
   | Aggregation.Stage.$bucket<S>
   | Aggregation.Stage.$bucketAuto<S>
-  | Aggregation.Stage.$changeStream<S>
-  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
-  | Aggregation.Stage.$collStats<S>
   | Aggregation.Stage.$count<S>
-  | Aggregation.Stage.$currentOp<S>
   | Aggregation.Stage.$densify<S>
-  | Aggregation.Stage.$documents<S>
   | Aggregation.Stage.$facet<S>
   | Aggregation.Stage.$fill<S>
-  | Aggregation.Stage.$geoNear<S>
   | Aggregation.Stage.$graphLookup<S>
   | Aggregation.Stage.$group<S>
-  | Aggregation.Stage.$indexStats<S>
   | Aggregation.Stage.$limit<S>
-  | Aggregation.Stage.$listLocalSessions<S>
   | Aggregation.Stage.$listSampledQueries<S>
   | Aggregation.Stage.$listSearchIndexes<S>
-  | Aggregation.Stage.$listSessions<S>
   | Aggregation.Stage.$lookup<S>
   | Aggregation.Stage.$match<S>
-  | Aggregation.Stage.$merge<S>
-  | Aggregation.Stage.$out<S>
   | Aggregation.Stage.$planCacheStats<S>
   | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$rankFusion<S>
   | Aggregation.Stage.$redact<S>
   | Aggregation.Stage.$replaceRoot<S>
   | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$rerank<S>
   | Aggregation.Stage.$sample<S>
-  | Aggregation.Stage.$search<S>
-  | Aggregation.Stage.$searchMeta<S>
+  | Aggregation.Stage.$score<S>
+  | Aggregation.Stage.$scoreFusion<S>
   | Aggregation.Stage.$set<S>
   | Aggregation.Stage.$setWindowFields<S>
   | Aggregation.Stage.$shardedDataDistribution<S>
@@ -5497,14 +6705,15 @@ export type Stage<S> =
   | Aggregation.Stage.$sortByCount<S>
   | Aggregation.Stage.$unionWith<S>
   | Aggregation.Stage.$unset<S>
-  | Aggregation.Stage.$unwind<S>
-  | Aggregation.Stage.$vectorSearch<S>;
+  | Aggregation.Stage.$unwind<S>;
 export type Pipeline<S> = Stage<S>[];
+export type UpdatePipeline<S> = UpdateStage<S>[];
 export type UntypedPipeline = Pipeline<any>;
 export type Query<S> =
   | QueryOperator<S>
   | Partial<{ [k in keyof S]: Condition<S[k]> }>
   | Aggregation.Query.$and<S>
+  | Aggregation.Query.$comment<S>
   | Aggregation.Query.$expr<S>
   | Aggregation.Query.$jsonSchema<S>
   | Aggregation.Query.$nor<S>
@@ -5518,6 +6727,7 @@ export type Accumulator<S> =
   | Aggregation.Accumulator.$avg<S>
   | Aggregation.Accumulator.$bottom<S>
   | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$concatArrays<S>
   | Aggregation.Accumulator.$count<S>
   | Aggregation.Accumulator.$first<S>
   | Aggregation.Accumulator.$firstN<S>
@@ -5531,6 +6741,7 @@ export type Accumulator<S> =
   | Aggregation.Accumulator.$minN<S>
   | Aggregation.Accumulator.$percentile<S>
   | Aggregation.Accumulator.$push<S>
+  | Aggregation.Accumulator.$setUnion<S>
   | Aggregation.Accumulator.$stdDevPop<S>
   | Aggregation.Accumulator.$stdDevSamp<S>
   | Aggregation.Accumulator.$sum<S>
@@ -5602,6 +6813,10 @@ export type ResolvesToDouble<S> =
   | Aggregation.Expression.$radiansToDegrees<S>
   | Aggregation.Expression.$rand<S>
   | Aggregation.Expression.$round<S>
+  | Aggregation.Expression.$sigmoid<S>
+  | Aggregation.Expression.$similarityCosine<S>
+  | Aggregation.Expression.$similarityDotProduct<S>
+  | Aggregation.Expression.$similarityEuclidean<S>
   | Aggregation.Expression.$sin<S>
   | Aggregation.Expression.$sinh<S>
   | Aggregation.Expression.$sqrt<S>
@@ -5618,6 +6833,7 @@ export type ResolvesToString<S> =
   | string
   | Aggregation.Expression.$concat<S>
   | Aggregation.Expression.$dateToString<S>
+  | Aggregation.Expression.$hexHash<S>
   | Aggregation.Expression.$ltrim<S>
   | Aggregation.Expression.$replaceAll<S>
   | Aggregation.Expression.$replaceOne<S>
@@ -5638,14 +6854,20 @@ export type ResolvesToObject<S> =
   | Record<string, unknown>
   | Aggregation.Expression.$arrayToObject<S>
   | Aggregation.Expression.$dateToParts<S>
+  | Aggregation.Expression.$deserializeEJSON<S>
   | Aggregation.Expression.$mergeObjects<S>
   | Aggregation.Expression.$regexFind<S>
+  | Aggregation.Expression.$serializeEJSON<S>
   | Aggregation.Expression.$setField<S>
+  | Aggregation.Expression.$toObject<S>
   | Aggregation.Expression.$unsetField<S>;
 export type ResolvesToArray<S> =
   | ResolvesToAny<S>
   | ArrayFieldPath<S>
   | unknown[]
+  | Aggregation.Accumulator.$concatArrays<S>
+  | Aggregation.Accumulator.$setUnion<S>
+  | Aggregation.Expression.$bottomN<S>
   | Aggregation.Expression.$concatArrays<S>
   | Aggregation.Expression.$filter<S>
   | Aggregation.Expression.$firstN<S>
@@ -5664,15 +6886,19 @@ export type ResolvesToArray<S> =
   | Aggregation.Expression.$slice<S>
   | Aggregation.Expression.$sortArray<S>
   | Aggregation.Expression.$split<S>
+  | Aggregation.Expression.$toArray<S>
+  | Aggregation.Expression.$topN<S>
   | Aggregation.Expression.$zip<S>;
 export type ResolvesToBinData<S> =
   | ResolvesToAny<S>
   | BinDataFieldPath<S>
-  | bson.Binary;
+  | bson.Binary
+  | Aggregation.Expression.$hash<S>;
 export type ResolvesToObjectId<S> =
   | ResolvesToAny<S>
   | ObjectIdFieldPath<S>
   | bson.ObjectId
+  | Aggregation.Expression.$createObjectId<S>
   | Aggregation.Expression.$toObjectId<S>;
 export type ResolvesToBool<S> =
   | ResolvesToAny<S>
@@ -5751,6 +6977,7 @@ export type ResolvesToInt<S> =
   | Aggregation.Expression.$strLenCP<S>
   | Aggregation.Expression.$strcasecmp<S>
   | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$subtype<S>
   | Aggregation.Expression.$toInt<S>
   | Aggregation.Expression.$week<S>
   | Aggregation.Expression.$year<S>;
@@ -5804,6 +7031,7 @@ export type AccumulatorOperator<S> =
   | Aggregation.Accumulator.$avg<S>
   | Aggregation.Accumulator.$bottom<S>
   | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$concatArrays<S>
   | Aggregation.Accumulator.$count<S>
   | Aggregation.Accumulator.$covariancePop<S>
   | Aggregation.Accumulator.$covarianceSamp<S>
@@ -5823,10 +7051,12 @@ export type AccumulatorOperator<S> =
   | Aggregation.Accumulator.$median<S>
   | Aggregation.Accumulator.$mergeObjects<S>
   | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minMaxScaler<S>
   | Aggregation.Accumulator.$minN<S>
   | Aggregation.Accumulator.$percentile<S>
   | Aggregation.Accumulator.$push<S>
   | Aggregation.Accumulator.$rank<S>
+  | Aggregation.Accumulator.$setUnion<S>
   | Aggregation.Accumulator.$shift<S>
   | Aggregation.Accumulator.$stdDevPop<S>
   | Aggregation.Accumulator.$stdDevSamp<S>
@@ -5838,6 +7068,7 @@ export type Window<S> =
   | Aggregation.Accumulator.$avg<S>
   | Aggregation.Accumulator.$bottom<S>
   | Aggregation.Accumulator.$bottomN<S>
+  | Aggregation.Accumulator.$concatArrays<S>
   | Aggregation.Accumulator.$count<S>
   | Aggregation.Accumulator.$covariancePop<S>
   | Aggregation.Accumulator.$covarianceSamp<S>
@@ -5856,10 +7087,12 @@ export type Window<S> =
   | Aggregation.Accumulator.$maxN<S>
   | Aggregation.Accumulator.$median<S>
   | Aggregation.Accumulator.$min<S>
+  | Aggregation.Accumulator.$minMaxScaler<S>
   | Aggregation.Accumulator.$minN<S>
   | Aggregation.Accumulator.$percentile<S>
   | Aggregation.Accumulator.$push<S>
   | Aggregation.Accumulator.$rank<S>
+  | Aggregation.Accumulator.$setUnion<S>
   | Aggregation.Accumulator.$shift<S>
   | Aggregation.Accumulator.$stdDevPop<S>
   | Aggregation.Accumulator.$stdDevSamp<S>
@@ -5885,6 +7118,8 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$bitNot<S>
   | Aggregation.Expression.$bitOr<S>
   | Aggregation.Expression.$bitXor<S>
+  | Aggregation.Expression.$bottom<S>
+  | Aggregation.Expression.$bottomN<S>
   | Aggregation.Expression.$bsonSize<S>
   | Aggregation.Expression.$case<S>
   | Aggregation.Expression.$ceil<S>
@@ -5895,6 +7130,7 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$convert<S>
   | Aggregation.Expression.$cos<S>
   | Aggregation.Expression.$cosh<S>
+  | Aggregation.Expression.$createObjectId<S>
   | Aggregation.Expression.$dateAdd<S>
   | Aggregation.Expression.$dateDiff<S>
   | Aggregation.Expression.$dateFromParts<S>
@@ -5907,6 +7143,7 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$dayOfWeek<S>
   | Aggregation.Expression.$dayOfYear<S>
   | Aggregation.Expression.$degreesToRadians<S>
+  | Aggregation.Expression.$deserializeEJSON<S>
   | Aggregation.Expression.$divide<S>
   | Aggregation.Expression.$eq<S>
   | Aggregation.Expression.$exp<S>
@@ -5918,6 +7155,8 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$getField<S>
   | Aggregation.Expression.$gt<S>
   | Aggregation.Expression.$gte<S>
+  | Aggregation.Expression.$hash<S>
+  | Aggregation.Expression.$hexHash<S>
   | Aggregation.Expression.$hour<S>
   | Aggregation.Expression.$ifNull<S>
   | Aggregation.Expression.$in<S>
@@ -5971,12 +7210,17 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$round<S>
   | Aggregation.Expression.$rtrim<S>
   | Aggregation.Expression.$second<S>
+  | Aggregation.Expression.$serializeEJSON<S>
   | Aggregation.Expression.$setDifference<S>
   | Aggregation.Expression.$setEquals<S>
   | Aggregation.Expression.$setField<S>
   | Aggregation.Expression.$setIntersection<S>
   | Aggregation.Expression.$setIsSubset<S>
   | Aggregation.Expression.$setUnion<S>
+  | Aggregation.Expression.$sigmoid<S>
+  | Aggregation.Expression.$similarityCosine<S>
+  | Aggregation.Expression.$similarityDotProduct<S>
+  | Aggregation.Expression.$similarityEuclidean<S>
   | Aggregation.Expression.$sin<S>
   | Aggregation.Expression.$sinh<S>
   | Aggregation.Expression.$size<S>
@@ -5993,10 +7237,12 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$substrBytes<S>
   | Aggregation.Expression.$substrCP<S>
   | Aggregation.Expression.$subtract<S>
+  | Aggregation.Expression.$subtype<S>
   | Aggregation.Expression.$sum<S>
   | Aggregation.Expression.$switch<S>
   | Aggregation.Expression.$tan<S>
   | Aggregation.Expression.$tanh<S>
+  | Aggregation.Expression.$toArray<S>
   | Aggregation.Expression.$toBool<S>
   | Aggregation.Expression.$toDate<S>
   | Aggregation.Expression.$toDecimal<S>
@@ -6005,9 +7251,12 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$toInt<S>
   | Aggregation.Expression.$toLong<S>
   | Aggregation.Expression.$toLower<S>
+  | Aggregation.Expression.$toObject<S>
   | Aggregation.Expression.$toObjectId<S>
   | Aggregation.Expression.$toString<S>
   | Aggregation.Expression.$toUpper<S>
+  | Aggregation.Expression.$top<S>
+  | Aggregation.Expression.$topN<S>
   | Aggregation.Expression.$trim<S>
   | Aggregation.Expression.$trunc<S>
   | Aggregation.Expression.$tsIncrement<S>
@@ -6019,6 +7268,7 @@ export type ExpressionOperator<S> =
   | Aggregation.Expression.$zip<S>;
 export type ResolvesToAny<S> =
   | Aggregation.Expression.$arrayElemAt<S>
+  | Aggregation.Expression.$bottom<S>
   | Aggregation.Expression.$cond<S>
   | Aggregation.Expression.$convert<S>
   | Aggregation.Expression.$first<S>
@@ -6032,7 +7282,8 @@ export type ResolvesToAny<S> =
   | Aggregation.Expression.$meta<S>
   | Aggregation.Expression.$min<S>
   | Aggregation.Expression.$reduce<S>
-  | Aggregation.Expression.$switch<S>;
+  | Aggregation.Expression.$switch<S>
+  | Aggregation.Expression.$top<S>;
 export type SwitchBranch<S> = Aggregation.Expression.$case<S>;
 export type FieldQuery<S> =
   | Aggregation.Query.$all<S>
@@ -6071,6 +7322,7 @@ export type QueryOperator<S> =
   | Aggregation.Query.$box<S>
   | Aggregation.Query.$center<S>
   | Aggregation.Query.$centerSphere<S>
+  | Aggregation.Query.$comment<S>
   | Aggregation.Query.$elemMatch<S>
   | Aggregation.Query.$eq<S>
   | Aggregation.Query.$exists<S>
@@ -6111,6 +7363,8 @@ export type SearchOperator<S> =
   | Aggregation.Search.Facet<S>
   | Aggregation.Search.GeoShape<S>
   | Aggregation.Search.GeoWithin<S>
+  | Aggregation.Search.HasAncestor<S>
+  | Aggregation.Search.HasRoot<S>
   | Aggregation.Search.In<S>
   | Aggregation.Search.MoreLikeThis<S>
   | Aggregation.Search.Near<S>
@@ -6119,7 +7373,15 @@ export type SearchOperator<S> =
   | Aggregation.Search.Range<S>
   | Aggregation.Search.Regex<S>
   | Aggregation.Search.Text<S>
+  | Aggregation.Search.VectorSearch<S>
   | Aggregation.Search.Wildcard<S>;
+export type UpdateStage<S> =
+  | Aggregation.Stage.$addFields<S>
+  | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$replaceRoot<S>
+  | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$set<S>
+  | Aggregation.Stage.$unset<S>;
 export type StageOperator<S> =
   | Aggregation.Stage.$addFields<S>
   | Aggregation.Stage.$bucket<S>
@@ -6148,10 +7410,14 @@ export type StageOperator<S> =
   | Aggregation.Stage.$out<S>
   | Aggregation.Stage.$planCacheStats<S>
   | Aggregation.Stage.$project<S>
+  | Aggregation.Stage.$rankFusion<S>
   | Aggregation.Stage.$redact<S>
   | Aggregation.Stage.$replaceRoot<S>
   | Aggregation.Stage.$replaceWith<S>
+  | Aggregation.Stage.$rerank<S>
   | Aggregation.Stage.$sample<S>
+  | Aggregation.Stage.$score<S>
+  | Aggregation.Stage.$scoreFusion<S>
   | Aggregation.Stage.$search<S>
   | Aggregation.Stage.$searchMeta<S>
   | Aggregation.Stage.$set<S>
@@ -6164,3 +7430,51 @@ export type StageOperator<S> =
   | Aggregation.Stage.$unset<S>
   | Aggregation.Stage.$unwind<S>
   | Aggregation.Stage.$vectorSearch<S>;
+export type InputStage<S> =
+  | Aggregation.Stage.$changeStream<S>
+  | Aggregation.Stage.$collStats<S>
+  | Aggregation.Stage.$currentOp<S>
+  | Aggregation.Stage.$documents<S>
+  | Aggregation.Stage.$geoNear<S>
+  | Aggregation.Stage.$indexStats<S>
+  | Aggregation.Stage.$listLocalSessions<S>
+  | Aggregation.Stage.$listSessions<S>
+  | Aggregation.Stage.$search<S>
+  | Aggregation.Stage.$searchMeta<S>
+  | Aggregation.Stage.$vectorSearch<S>;
+export type OutputStage<S> =
+  | Aggregation.Stage.$changeStreamSplitLargeEvent<S>
+  | Aggregation.Stage.$merge<S>
+  | Aggregation.Stage.$out<S>;
+export type Update<S> =
+  | Aggregation.Update.$addToSet<S>
+  | Aggregation.Update.$bit<S>
+  | Aggregation.Update.$currentDate<S>
+  | Aggregation.Update.$inc<S>
+  | Aggregation.Update.$max<S>
+  | Aggregation.Update.$min<S>
+  | Aggregation.Update.$mul<S>
+  | Aggregation.Update.$pop<S>
+  | Aggregation.Update.$pull<S>
+  | Aggregation.Update.$pullAll<S>
+  | Aggregation.Update.$push<S>
+  | Aggregation.Update.$rename<S>
+  | Aggregation.Update.$set<S>
+  | Aggregation.Update.$setOnInsert<S>
+  | Aggregation.Update.$unset<S>;
+export type UpdateOperator<S> =
+  | Aggregation.Update.$addToSet<S>
+  | Aggregation.Update.$bit<S>
+  | Aggregation.Update.$currentDate<S>
+  | Aggregation.Update.$inc<S>
+  | Aggregation.Update.$max<S>
+  | Aggregation.Update.$min<S>
+  | Aggregation.Update.$mul<S>
+  | Aggregation.Update.$pop<S>
+  | Aggregation.Update.$pull<S>
+  | Aggregation.Update.$pullAll<S>
+  | Aggregation.Update.$push<S>
+  | Aggregation.Update.$rename<S>
+  | Aggregation.Update.$set<S>
+  | Aggregation.Update.$setOnInsert<S>
+  | Aggregation.Update.$unset<S>;

@@ -6,110 +6,56 @@ import * as bson from 'bson';
 
 /**
  * Search for a Single Word
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#-text-with-a-single-word}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-for-a-single-word}
  */
 function test0() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'coffee' } } },
-  ];
+  // TODO: no schema found for text.Search for a Single Word
 }
 
 /**
- * Query a Different Language
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#query-a-different-language}
+ * Match Any of the Search Terms
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-for-a-single-word}
  */
 function test1() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
+  // TODO: no schema found for text.Match Any of the Search Terms
+}
 
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'leche', $language: 'es' } } },
-  ];
+/**
+ * Search a Different Language
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#search-a-different-language}
+ */
+function test2() {
+  // TODO: no schema found for text.Search a Different Language
 }
 
 /**
  * Case and Diacritic Insensitive Search
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#case-and-diacritic-insensitivity}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#case-and-diacritic-insensitive-search}
  */
-function test2() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'сы́рники CAFÉS' } } },
-  ];
+function test3() {
+  // TODO: no schema found for text.Case and Diacritic Insensitive Search
 }
 
 /**
  * Perform Case Sensitive Search
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#case-sensitivity}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
-function test3() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'Coffee', $caseSensitive: true } } },
-    {
-      $match: {
-        $text: { $search: '\\"Café Con Leche\\"', $caseSensitive: true },
-      },
-    },
-  ];
+function test4() {
+  // TODO: no schema found for text.Perform Case Sensitive Search
 }
 
 /**
  * Diacritic Sensitive Search
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#diacritic-sensitivity}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
-function test4() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'CAFÉ', $diacriticSensitive: true } } },
-  ];
+function test5() {
+  // TODO: no schema found for text.Diacritic Sensitive Search
 }
 
 /**
  * Text Search Score Examples
- * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#relevance-score-examples}
+ * @see {@link https://www.mongodb.com/docs/manual/reference/operator/query/text/#perform-case-sensitive-search}
  */
-function test5() {
-  type articles = {
-    _id: number;
-    subject: string;
-    author: string;
-    views: number;
-  };
-
-  const aggregation: schema.Pipeline<articles> = [
-    { $match: { $text: { $search: 'CAFÉ', $diacriticSensitive: true } } },
-    { $project: { score: { $meta: 'textScore' } } },
-    { $sort: { score: { $meta: 'textScore' } } },
-    { $limit: 5 },
-  ];
+function test6() {
+  // TODO: no schema found for text.Text Search Score Examples
 }

@@ -6,7 +6,7 @@ import * as bson from 'bson';
 
 /**
  * Example
- * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#aggregation-variable}
+ * @see {@link https://www.mongodb.com/docs/atlas/atlas-search/query-syntax/#aggregation-variable}
  */
 function test0() {
   type movies = {

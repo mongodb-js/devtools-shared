@@ -9,13 +9,5 @@ import * as bson from 'bson';
  * @see {@link https://www.mongodb.com/docs/manual/reference/operator/aggregation/indexStats/#example}
  */
 function test0() {
-  type orders = {
-    _id: number;
-    item: string;
-    price: number;
-    quantity: number;
-    type: string;
-  };
-
-  const aggregation: schema.Pipeline<orders> = [{ $indexStats: {} }];
+  // TODO: no schema found for indexStats.Example
 }
