@@ -18,7 +18,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/saslprep",
-  "version": "1.4.11",
+  "version": "1.4.12",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -70,7 +70,7 @@
     "@mongodb-js/tsconfig-devtools": "^1.1.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^22.15.30",
+    "@types/node": "^25.5.2",
     "@types/sinon-chai": "^4.0.0",
     "@types/sparse-bitfield": "^3.0.4",
     "chai": "^4.5.0",

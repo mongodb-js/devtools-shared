@@ -16,7 +16,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.10.17",
+  "version": "0.10.18",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -62,7 +62,7 @@
     "@types/chai": "^4.2.21",
     "@types/lodash": "^4.14.194",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^22.15.30",
+    "@types/node": "^25.5.2",
     "@types/node-fetch": "^2.6.13",
     "@types/sinon-chai": "^4.0.0",
     "@types/spdx-satisfies": "^0.1.0",
