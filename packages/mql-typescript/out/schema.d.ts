@@ -1793,11 +1793,6 @@ export namespace Aggregation.Expression {
       input: ResolvesToArray<S>;
 
       /**
-       * An expression that resolves to a boolean value used to determine if an element should be included in the output array. The expression references each element of the input array individually with the variable name specified in as.
-       */
-      cond: ResolvesToBool<S>;
-
-      /**
        * A name for the variable that represents each individual element of the input array. If no name is specified, the variable name defaults to this.
        */
       as?: string;
@@ -1807,6 +1802,11 @@ export namespace Aggregation.Expression {
        * the input array. If specified, this variable is available within the cond expression.
        */
       arrayIndexAs?: string;
+
+      /**
+       * An expression that resolves to a boolean value used to determine if an element should be included in the output array. The expression references each element of the input array individually with the variable name specified in as, and the element index with the variable name specified in arrayIndexAs (MongoDB 8.3+).
+       */
+      cond: ResolvesToBool<S>;
 
       /**
        * A number expression that restricts the number of matching array elements that $filter returns. You cannot specify a limit less than 1. The matching array elements are returned in the order they appear in the input array.
@@ -2863,6 +2863,40 @@ export namespace Aggregation.Expression {
       initialValue: Expression<S>;
 
       /**
+       * A valid expression that $reduce applies to each element in the input array in left-to-right order. Wrap the input value with $reverseArray to yield the equivalent of applying the combining expression from right-to-left.
+       * During evaluation of the in expression, two variables will be available:
+       * - value is the variable that represents the cumulative value of the expression. Use valueAs (MongoDB 8.3+) to specify a custom name.
+       * - this is the variable that refers to the element being processed. Use as (MongoDB 8.3+) to specify a custom name.
+       */
+      in:
+        | Expression<
+            S & {
+              /**
+               * The variable that refers to the element being processed. Renamed via the as argument (MongoDB 8.3+).
+               */
+              $this: any;
+
+              /**
+               * The variable that represents the cumulative value of the expression. Renamed via the valueAs argument (MongoDB 8.3+).
+               */
+              $value: any;
+            }
+          >
+        | ExpressionMap<
+            S & {
+              /**
+               * The variable that refers to the element being processed. Renamed via the as argument (MongoDB 8.3+).
+               */
+              $this: any;
+
+              /**
+               * The variable that represents the cumulative value of the expression. Renamed via the valueAs argument (MongoDB 8.3+).
+               */
+              $value: any;
+            }
+          >;
+
+      /**
        * A name for the variable that represents each individual element of the input array.
        * If no name is specified, the variable name defaults to this.
        */
@@ -2879,40 +2913,6 @@ export namespace Aggregation.Expression {
        * the input array. If specified, this variable is available within the in expression.
        */
       arrayIndexAs?: string;
-
-      /**
-       * A valid expression that $reduce applies to each element in the input array in left-to-right order. Wrap the input value with $reverseArray to yield the equivalent of applying the combining expression from right-to-left.
-       * During evaluation of the in expression, two variables will be available:
-       * - value is the variable that represents the cumulative value of the expression.
-       * - this is the variable that refers to the element being processed.
-       */
-      in:
-        | Expression<
-            S & {
-              /**
-               * The variable that refers to the element being processed.
-               */
-              $this: any;
-
-              /**
-               * The variable that represents the cumulative value of the expression.
-               */
-              $value: any;
-            }
-          >
-        | ExpressionMap<
-            S & {
-              /**
-               * The variable that refers to the element being processed.
-               */
-              $this: any;
-
-              /**
-               * The variable that represents the cumulative value of the expression.
-               */
-              $value: any;
-            }
-          >;
     };
   }
 
