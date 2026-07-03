@@ -1260,7 +1260,7 @@ const STAGE_OPERATORS = [
     namespaces: [...ANY_NAMESPACE],
     description: 'Perform a union with a pipeline on another collection.',
     comment: `/**
- * db: Optional. The target database name (MongoDB 9.0+).
+ * db: Optional. The target database name (MongoDB 9.1+).
  * coll: The collection name.
  * pipeline: The pipeline on the other collection.
  */
