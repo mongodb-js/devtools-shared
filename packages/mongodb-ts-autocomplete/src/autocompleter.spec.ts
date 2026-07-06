@@ -321,6 +321,26 @@ service host, so typescript wouldn't load all the dependencies.
     }
   });
 
+  it('suggests arrayIndexAs inside $filter, $map, $reduce operators', async function () {
+    // $filter narrows its type precisely — 'arrayIn' is needed to avoid
+    // JavaScript built-ins (Array, ArrayBuffer) shadowing the suggestion.
+    // $map and $reduce resolve via Expression<S> and work with 'array'.
+    const cases: [string, string][] = [
+      ['$filter', 'arrayIn'],
+      ['$map', 'array'],
+      ['$reduce', 'array'],
+    ];
+    for (const [op, prefix] of cases) {
+      const completions = await autocompleter.autocomplete(
+        `db.foo.aggregate([{ $project: { result: { ${op}: { ${prefix}`,
+      );
+      const names = completions.map((c) => c.name);
+      expect(names, `${op} should suggest arrayIndexAs`).to.include(
+        'arrayIndexAs',
+      );
+    }
+  });
+
   describe('getConnectionSchemaCode', function () {
     it('generates code for a connection', async function () {
       const docs = [
