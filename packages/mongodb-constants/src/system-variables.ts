@@ -90,6 +90,15 @@ const SYSTEM_VARIABLES = [
     description:
       'A variable that stores the role names of the authenticated user running the command.',
   },
+  {
+    name: '$$IDX',
+    value: '$$IDX',
+    score: 1,
+    meta: 'variable:system',
+    version: '8.3.0',
+    description:
+      'A variable that references the index of the current array element in $map, $filter, and $reduce expressions. Use arrayIndexAs to specify a custom name instead.',
+  },
 ] as const;
 
 export { SYSTEM_VARIABLES };
