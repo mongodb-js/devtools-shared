@@ -6,7 +6,7 @@ import type {
   TaskRef,
   ExecutionRef,
 } from './types';
-import { isFullSha, resolveVersion } from './resolve';
+import { isFullSha, resolveVersion, resolveArtifact } from './resolve';
 
 // eslint-disable-next-line mocha/no-exports
 export class FakeEvergreen implements EvergreenApi {
@@ -124,5 +124,145 @@ describe('resolveVersion', function () {
     expect(err!.message, 'error names the project and constructed version id')
       .to.match(/mongodb-mongo-master/)
       .and.to.match(new RegExp(`mongodb_mongo_master_${FULL_SHA}`));
+  });
+});
+
+// eslint-disable-next-line mocha/max-top-level-suites
+describe('resolveArtifact', function () {
+  const pinned = { versionId: 'v_1', revision: 'abc' };
+
+  function apiWithGraph(): FakeEvergreen {
+    const api = new FakeEvergreen();
+    api.builds = [
+      { buildId: 'b_other', buildVariant: 'other' },
+      { buildId: 'b_target', buildVariant: 'ent-rhel80-x64' },
+    ];
+    api.tasks = [
+      { taskId: 't_unit', name: 'unit' },
+      { taskId: 't_compile', name: 'compile' },
+    ];
+    api.executions = [
+      {
+        execution: 1,
+        status: 'success',
+        artifacts: [{ name: 'Binaries', url: 'https://ev/good.tgz' }],
+      },
+      {
+        execution: 0,
+        status: 'failed',
+        artifacts: [{ name: 'Binaries', url: 'https://ev/bad.tgz' }],
+      },
+    ];
+    return api;
+  }
+
+  it('walks build → task → successful execution → named artifact', async function () {
+    const api = apiWithGraph();
+    const artifact = await resolveArtifact(
+      api,
+      pinned,
+      'ent-rhel80-x64',
+      'compile',
+      'Binaries',
+    );
+    expect(
+      artifact.url,
+      'the named artifact of the matching graph is returned',
+    ).to.equal('https://ev/good.tgz');
+  });
+
+  it('picks the lowest-numbered successful execution', async function () {
+    const api = apiWithGraph();
+    api.executions = [
+      {
+        execution: 2,
+        status: 'success',
+        artifacts: [{ name: 'Binaries', url: 'https://ev/exec2.tgz' }],
+      },
+      {
+        execution: 0,
+        status: 'failed',
+        artifacts: [{ name: 'Binaries', url: 'https://ev/exec0.tgz' }],
+      },
+      {
+        execution: 1,
+        status: 'success',
+        artifacts: [{ name: 'Binaries', url: 'https://ev/exec1.tgz' }],
+      },
+    ];
+    const artifact = await resolveArtifact(
+      api,
+      pinned,
+      'ent-rhel80-x64',
+      'compile',
+      'Binaries',
+    );
+    expect(
+      artifact.url,
+      'earliest successful execution wins after sorting',
+    ).to.equal('https://ev/exec1.tgz');
+  });
+
+  it('errors when the build variant is missing', async function () {
+    const api = apiWithGraph();
+    let err: Error | undefined;
+    try {
+      await resolveArtifact(api, pinned, 'no-such', 'compile', 'Binaries');
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err!.message, 'a missing variant fails loudly').to.match(/variant/);
+  });
+
+  it('errors when no execution succeeded', async function () {
+    const api = apiWithGraph();
+    api.executions = [
+      {
+        execution: 0,
+        status: 'failed',
+        artifacts: [{ name: 'Binaries', url: 'u' }],
+      },
+    ];
+    let err: Error | undefined;
+    try {
+      await resolveArtifact(
+        api,
+        pinned,
+        'ent-rhel80-x64',
+        'compile',
+        'Binaries',
+      );
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err!.message, 'no successful execution fails loudly').to.match(
+      /successful/,
+    );
+  });
+
+  it('errors when the named artifact is absent', async function () {
+    const api = apiWithGraph();
+    api.executions = [
+      {
+        execution: 0,
+        status: 'success',
+        artifacts: [{ name: 'Other', url: 'u' }],
+      },
+    ];
+    let err: Error | undefined;
+    try {
+      await resolveArtifact(
+        api,
+        pinned,
+        'ent-rhel80-x64',
+        'compile',
+        'Binaries',
+      );
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err!.message, 'a missing artifact name fails loudly').to.match(
+      /artifact/,
+    );
   });
 });

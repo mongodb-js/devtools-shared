@@ -1,4 +1,4 @@
-import type { EvergreenApi, PinnedVersion } from './types';
+import type { EvergreenApi, PinnedVersion, ArtifactRef } from './types';
 
 /** A full git SHA: exactly 40 lowercase hex digits. */
 export function isFullSha(s: string): boolean {
@@ -31,4 +31,50 @@ export async function resolveVersion(
     );
   }
   return { versionId: version.versionId, revision: version.revision };
+}
+
+const STATUS_SUCCESS = 'success';
+
+/**
+ * From a pinned version, walk build-variant → named task → lowest-numbered
+ * successful execution → named artifact. Each hop errors clearly if unsatisfied.
+ */
+export async function resolveArtifact(
+  api: EvergreenApi,
+  pinned: PinnedVersion,
+  buildVariant: string,
+  compileTask: string,
+  artifactName: string,
+): Promise<ArtifactRef> {
+  const builds = await api.buildsForVersion(pinned.versionId);
+  const build = builds.find((b) => b.buildVariant === buildVariant);
+  if (!build) {
+    throw new Error(
+      `version ${pinned.versionId} has no build for variant '${buildVariant}'`,
+    );
+  }
+
+  const tasks = await api.tasksForBuild(build.buildId);
+  const task = tasks.find((t) => t.name === compileTask);
+  if (!task) {
+    throw new Error(
+      `build '${buildVariant}' has no task named '${compileTask}'`,
+    );
+  }
+
+  const executions = [...(await api.taskExecutions(task.taskId))].sort(
+    (a, b) => a.execution - b.execution,
+  );
+  const success = executions.find((e) => e.status === STATUS_SUCCESS);
+  if (!success) {
+    throw new Error(`task '${compileTask}' has no successful execution`);
+  }
+
+  const artifact = success.artifacts.find((a) => a.name === artifactName);
+  if (!artifact) {
+    throw new Error(
+      `successful '${compileTask}' has no artifact named '${artifactName}'`,
+    );
+  }
+  return artifact;
 }
