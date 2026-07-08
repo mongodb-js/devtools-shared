@@ -4,7 +4,7 @@ import * as tar from 'tar';
 import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
-import decompress from 'decompress';
+import decompress from '@xhmikosr/decompress';
 import { pipeline } from 'stream';
 import getDownloadURL from 'mongodb-download-url';
 import type {
