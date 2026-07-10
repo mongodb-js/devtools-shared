@@ -1,6 +1,9 @@
 import { BSON } from 'mongodb';
 import path from 'path';
-import type { MongoClusterOptions } from './mongocluster';
+import type {
+  MongoClusterOptions,
+  SerializedClusterProperties,
+} from './mongocluster';
 import { MongoCluster } from './mongocluster';
 import { parallelForEach } from './util';
 import * as fs from 'fs/promises';
@@ -10,7 +13,7 @@ import { once } from 'events';
 interface StoredInstance {
   id: string;
   filepath: string;
-  serialized: string;
+  serialized: SerializedClusterProperties;
   connectionString: string;
 }
 
@@ -31,7 +34,7 @@ export async function start(
     ...argv,
     args,
   });
-  const serialized = await cluster.serialize();
+  const serialized = cluster.serialize();
   const { connectionString } = cluster;
 
   await fs.writeFile(
