@@ -19,6 +19,7 @@ import {
   debugVerbose,
   makeConnectionString,
   safePromiseAll,
+  hasPortArg,
 } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { EventEmitter } from 'events';
@@ -166,20 +167,13 @@ export type MongoClusterEvents = {
 function removePortArg([...args]: string[]): string[] {
   let portArgIndex = -1;
   if ((portArgIndex = args.indexOf('--port')) !== -1) {
-    args.splice(portArgIndex + 1, 1);
+    args.splice(portArgIndex, 2);
   } else if (
     (portArgIndex = args.findIndex((arg) => arg.startsWith('--port='))) !== -1
   ) {
     args.splice(portArgIndex, 1);
   }
   return args;
-}
-
-function hasPortArg(args: string[] | undefined): boolean {
-  if (!args) return false;
-  return (
-    args.includes('--port') || args.some((arg) => arg.startsWith('--port='))
-  );
 }
 
 function processRSMembers(options: MongoClusterOptions): {

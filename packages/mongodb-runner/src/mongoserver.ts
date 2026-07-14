@@ -22,6 +22,7 @@ import {
   makeConnectionString,
   sleep,
   eventually,
+  hasPortArg,
 } from './util';
 
 /**
@@ -187,7 +188,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   }
 
   static async start({ ...options }: MongoServerOptions): Promise<MongoServer> {
-    if (options.binary === 'mongos' && !options.args?.includes('--port')) {
+    if (options.binary === 'mongos' && !hasPortArg(options.args)) {
       // SERVER-78384: mongos before 7.1.0 does not understand `--port 0` ...
       // Just pick a random port in [1024, 49152), try to listen, and continue until
       // we find a free one.
@@ -265,7 +266,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     }
 
     commandline.push(...(options.args ?? []));
-    if (!options.args?.includes('--port')) commandline.push('--port', '0');
+    if (!hasPortArg(options.args)) commandline.push('--port', '0');
     if (!options.args?.includes('--dbpath') && options.binary === 'mongod')
       commandline.push('--dbpath', options.docker ? '/tmp' : srv.dbPath!);
     if (

@@ -10,6 +10,11 @@ export const sleep = (ms: number): Promise<void> =>
   new Promise((r) => setTimeout(r, ms));
 export const range = (n: number): number[] => [...Array(n).keys()];
 
+export function hasPortArg(args: string[] | undefined): boolean {
+  if (!args) return false;
+  return args.some((arg) => arg === '--port' || arg.startsWith('--port='));
+}
+
 /**
  * This function iterates `iterable` and applies `fn` to each item that
  * `iterable` produces.  `fn` is not awaited on each iteration of `iterable`.
