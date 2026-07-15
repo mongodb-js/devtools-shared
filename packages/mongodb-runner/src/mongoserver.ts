@@ -81,7 +81,7 @@ interface SerializedServerProperties {
   isArbiter?: boolean;
   isMongos?: boolean;
   isConfigSvr?: boolean;
-  isDisagg?: boolean;
+  isDSC?: boolean;
   keyFileContents?: string;
 }
 
@@ -113,9 +113,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   public isArbiter = false;
   public isMongos = false;
   private isConfigSvr = false;
-  // Whether this server uses disaggregated storage. Disagg servers do not
+  // Whether this server uses DSC. DSC servers do not
   // allow writes to the `local` database, so metadata tracking is skipped.
-  private isDisagg = false;
+  private isDSC = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
 
@@ -141,7 +141,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       isArbiter: this.isArbiter,
       isMongos: this.isMongos,
       isConfigSvr: this.isConfigSvr,
-      isDisagg: this.isDisagg,
+      isDSC: this.isDSC,
       keyFileContents: this.keyFileContents,
     };
   }
@@ -157,8 +157,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     }
     srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
     // Set before _populateBuildInfo so the restore check skips the
-    // local-database metadata access for disagg servers.
-    srv.isDisagg = !!serialized.isDisagg;
+    // local-database metadata access for DSC servers.
+    srv.isDSC = !!serialized.isDSC;
     srv.closing = !!(await srv._populateBuildInfo('restore-check'));
     srv.isArbiter = !!serialized.isArbiter;
     srv.isMongos = !!serialized.isMongos;
@@ -236,7 +236,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!options.isArbiter;
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
-    srv.isDisagg = !!options.args?.includes('disaggregatedStorageEnabled=true');
+    srv.isDSC = !!options.args?.includes('disaggregatedStorageEnabled=true');
     if (options.host && !srv.isConfigSvr) {
       srv.host = options.host;
     }
@@ -448,10 +448,10 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     mode: 'insert-new' | 'restore-check',
     retryOptions?: { intervalMs?: number; timeoutMs?: number },
   ): Promise<void> {
-    if (this.isDisagg) {
-      // Disaggregated storage servers do not allow writes to the `local`
+    if (this.isDSC) {
+      // DSC servers do not allow writes to the `local`
       // database, so metadata tracking is not possible there.
-      debug('skipping metadata check for disaggregated storage server');
+      debug('skipping metadata check for DSC server');
       return;
     }
     let hello = await client.db('admin').command({ hello: 1 });
@@ -629,8 +629,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (!this.hasInsertedMetadataCollEntry) {
       debug('populating metadata collection entry after initial setup');
       const err = await this._populateBuildInfo('insert-new');
-      if (err && !this.isMongos && !this.isConfigSvr && !this.isDisagg)
-        throw err;
+      if (err && !this.isMongos && !this.isConfigSvr && !this.isDSC) throw err;
     }
     if (!this.buildInfo) {
       throw new Error(
@@ -642,7 +641,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       !this.isArbiter &&
       !this.isMongos &&
       !this.isConfigSvr &&
-      !this.isDisagg
+      !this.isDSC
     ) {
       throw new Error(
         `Server has not inserted metadata collection entry ${JSON.stringify(this.serialize())}`,

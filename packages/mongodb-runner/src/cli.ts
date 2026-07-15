@@ -86,7 +86,7 @@ import type { MongoClientOptions } from 'mongodb';
     .option('slsCompose', {
       type: 'string',
       describe:
-        'Path to an SLS multi-cell docker-compose.yml; launches the SLS disaggregated storage project and configures mongod to use it (requires a disagg-capable mongod via --binDir or --downloadUrl)',
+        'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
     })
     .option('slsImageTag', {
       type: 'string',
@@ -95,8 +95,7 @@ import type { MongoClientOptions } from 'mongodb';
     })
     .option('disaggregatedStorageCompose', {
       type: 'string',
-      describe:
-        'Path to docker-compose.yml for the disaggregated storage backend',
+      describe: 'Path to docker-compose.yml for the DSC backend',
     })
     .option('disaggregatedStorageConfig', {
       type: 'string',
