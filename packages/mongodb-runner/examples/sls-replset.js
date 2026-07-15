@@ -8,91 +8,19 @@
 // Usage:
 //   SLS_IMAGE_TAG=<pinned_sls_commit> MONGOD_BIN_DIR=/path/to/mongod/dir \
 //     node examples/sls-replset.js
+//
+// This is equivalent to:
+//   mongodb-runner start -t replset --sls --slsImageTag=<tag> --binDir=...
 
 // Enable mongodb-runner debug output (compose progress, server startup, ...)
 // unless the user already configured DEBUG themselves.
 process.env.DEBUG = process.env.DEBUG || 'mongodb-runner,mongodb-downloader';
 
-const { execFileSync } = require('child_process');
 const os = require('os');
 const {
   MongoCluster,
-  createSLSMultiCellEnvironment,
+  createSLSDisaggregatedStorageOptions,
 } = require('../dist/index.js');
-
-const PROJECT_NAME = 'mongodb-runner-sls';
-
-function waitForTestdriverReady(timeoutSecs = 300) {
-  const start = Date.now();
-  const deadline = start + timeoutSecs * 1000;
-  const container = `${PROJECT_NAME}-testdriver-1`;
-  console.log(`waiting for SLS storage layer (container: ${container})...`);
-  while (Date.now() < deadline) {
-    try {
-      execFileSync('docker', ['exec', container, 'test', '-f', '/ready'], {
-        stdio: 'ignore',
-      });
-      console.log('SLS storage layer is ready');
-      return;
-    } catch {
-      const elapsed = Math.round((Date.now() - start) / 1000);
-      console.log(`still waiting for SLS storage layer... (${elapsed}s)`);
-    }
-    execFileSync('sleep', ['2']);
-  }
-  throw new Error(`SLS storage layer not ready after ${timeoutSecs}s`);
-}
-
-function startLog(logId) {
-  const container = `${PROJECT_NAME}-testdriver-1`;
-  const grpcurl = (service, method, payload) =>
-    JSON.parse(
-      execFileSync(
-        'docker',
-        [
-          'exec',
-          container,
-          '/grpcurl',
-          '-plaintext',
-          '-d',
-          JSON.stringify(payload),
-          service,
-          method,
-        ],
-        { encoding: 'utf8' },
-      ) || '{}',
-    );
-
-  const cells = [
-    { cell: 'cell1', zone: 'zone1' },
-    { cell: 'cell2', zone: 'zone2' },
-    { cell: 'cell3', zone: 'zone3' },
-  ];
-  const res = grpcurl(
-    'crs-cell1-0:27996',
-    'schedulerservice.v1.SchedulerService/GetLogServers',
-    { cells },
-  );
-  const serverIds = res.server_ids || res.serverIds || [];
-  if (!serverIds.length) throw new Error('GetLogServers returned no servers');
-
-  try {
-    return grpcurl(
-      'crs-cell1-0:27996',
-      'schedulerservice.v1.ControlPlaneService/StartLog',
-      { log_id: logId, server_ids: serverIds, ancestry: { ancestors: [] } },
-    );
-  } catch (err) {
-    // The storage layer persists across runs (and the compose project is
-    // reused when the project name matches), so the log may already exist.
-    const output = `${err.stderr || ''}${err.stdout || ''}`;
-    if (output.includes('already exists')) {
-      console.log(`log ${logId} already exists, reusing it`);
-      return {};
-    }
-    throw err;
-  }
-}
 
 async function main() {
   if (!process.env.MONGOD_BIN_DIR && !process.env.MONGOD_DOWNLOAD_URL) {
@@ -105,11 +33,14 @@ async function main() {
     );
   }
 
-  const sls = await createSLSMultiCellEnvironment({
+  // Sets up everything the bundled SLS compose project needs: env vars with
+  // allocated service ports, readiness polling, per-shard log creation, and
+  // the mongod disaggregatedStorageConfig server parameter.
+  const disaggregatedStorage = await createSLSDisaggregatedStorageOptions({
     imageTag: process.env.SLS_IMAGE_TAG,
   });
 
-  console.log('SLS service ports:', sls.ports);
+  console.log('SLS service ports:', disaggregatedStorage.sls.ports);
   console.log(
     'starting docker compose project (this pulls all SLS images on first ' +
       'run, which can take several minutes)...',
@@ -121,26 +52,7 @@ async function main() {
     tmpDir: os.tmpdir(),
     binDir: process.env.MONGOD_BIN_DIR,
     downloadUrl: process.env.MONGOD_DOWNLOAD_URL,
-    disaggregatedStorage: {
-      composeFile: sls.composeFile,
-      env: { ...sls.env, COMPOSE_PROJECT_NAME: PROJECT_NAME },
-      waitForReady: async () => waitForTestdriverReady(),
-      setupShard: async ({ index }) => {
-        // Log ID 9999 is reserved by the cell metadata service (see the
-        // cms_config/crs_config log_ids entries in the compose file), so
-        // start counting from 1.
-        const logId = 1 + index;
-        console.log(`starting SLS log ${logId} for shard ${index}`);
-        startLog(logId);
-      },
-      // TODO: fill in with the config shape your mongod expects -- see what
-      // the sls_fixture-based jstests pass to mongod. The SLS service URIs
-      // are available in sls.services, e.g.:
-      config: {
-        crsUri: sls.services['crs-cell1-0'].uri,
-        cmsUri: sls.services['cms-cell1-0'].uri,
-      },
-    },
+    disaggregatedStorage,
   });
 
   console.log('Replica set running at:', cluster.connectionString);

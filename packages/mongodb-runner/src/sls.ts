@@ -1,8 +1,13 @@
-import { once } from 'events';
-import { createServer } from 'net';
-import type { AddressInfo } from 'net';
 import path from 'path';
-import { debug } from './util';
+import { execFile as execFileCb } from 'child_process';
+import { promisify } from 'util';
+import { debug, allocatePort, sleep, uuid } from './util';
+import type {
+  DisaggregatedStorageOptions,
+  ShardDescriptor,
+} from './mongocluster';
+
+const execFile = promisify(execFileCb);
 
 /**
  * Helpers for the SLS (disaggregated storage) multi-cell docker compose
@@ -116,15 +121,6 @@ export interface SLSMultiCellEnvironment {
   services: Record<string, { addr: string; uri: string }>;
 }
 
-async function allocatePort(): Promise<number> {
-  const server = createServer();
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const { port } = server.address() as AddressInfo;
-  await new Promise((resolve) => server.close(resolve));
-  return port;
-}
-
 /**
  * Allocate host ports and build the environment variables expected by the
  * bundled SLS multi-cell compose file.
@@ -164,4 +160,182 @@ export async function createSLSMultiCellEnvironment(
 
   debug('created SLS multi-cell environment', { ports });
   return { composeFile: SLS_MULTICELL_COMPOSE_FILE, env, ports, services };
+}
+
+export interface SLSDisaggregatedStorageConfigOptions {
+  /** SLS log ID for this shard (must match the log started via StartLog). */
+  logId: number;
+  /** Cell metadata service to use (default: 'cms-cell1-0'). */
+  cellMetadataService?: string;
+  /** Zone the mongod nodes report themselves in (default: cell1's zone). */
+  zoneName?: string;
+  /** Path to an encryption key file, if encryption is used. */
+  encryptionKeyFilePath?: string;
+}
+
+/**
+ * Build the value for mongod's `disaggregatedStorageConfig` server parameter
+ * for one shard, based on the SLS environment and the shard's pre-allocated
+ * member ports. Pass this as the `config` callback of the cluster's
+ * `disaggregatedStorage` options:
+ *
+ * ```
+ * config: (shard) =>
+ *   createSLSDisaggregatedStorageConfig(sls, shard, { logId: 1 + shard.index }),
+ * ```
+ */
+export function createSLSDisaggregatedStorageConfig(
+  sls: SLSMultiCellEnvironment,
+  shard: ShardDescriptor,
+  options: SLSDisaggregatedStorageConfigOptions,
+): Record<string, unknown> {
+  const cellMetadataService = options.cellMetadataService ?? 'cms-cell1-0';
+  const cmsService = sls.services[cellMetadataService];
+  if (!cmsService) {
+    throw new Error(`Unknown cell metadata service: ${cellMetadataService}`);
+  }
+  return {
+    logID: options.logId,
+    myZoneName: options.zoneName ?? SLS_CELL1.zone,
+    zones: [],
+    cellMetadataServer: cmsService.uri,
+    ...(options.encryptionKeyFilePath
+      ? { encryptionKeyFilePath: options.encryptionKeyFilePath }
+      : {}),
+    ...(shard.replSetName
+      ? {
+          replSetConfig: {
+            _id: shard.replSetName,
+            version: 1,
+            term: 1,
+            members: shard.members.map((member, i) => ({
+              _id: i,
+              host: `${member.host}:${member.port}`,
+              priority: member.priority,
+            })),
+          },
+        }
+      : {}),
+  };
+}
+
+export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnvironmentOptions {
+  /** Compose project name (default: a generated unique name). */
+  projectName?: string;
+  /** How long to wait for the storage layer to become ready (default: 300s). */
+  readyTimeoutSecs?: number;
+  /**
+   * SLS log ID assigned to the first shard; subsequent shards get consecutive
+   * IDs (default: 1). Log ID 9999 is reserved by the cell metadata services.
+   */
+  firstLogId?: number;
+}
+
+/**
+ * Create fully-populated `disaggregatedStorage` options for the bundled SLS
+ * multi-cell compose project: environment variables, readiness polling
+ * (waiting for the testdriver container's /ready marker), per-shard log
+ * creation (StartLog via grpcurl in the testdriver container), and the
+ * mongod `disaggregatedStorageConfig` server parameter.
+ *
+ * ```
+ * const disaggregatedStorage = await createSLSDisaggregatedStorageOptions({
+ *   imageTag: '<pinned_sls_commit>',
+ * });
+ * const cluster = await MongoCluster.start({
+ *   topology: 'replset',
+ *   disaggregatedStorage,
+ *   // ...
+ * });
+ * ```
+ */
+export async function createSLSDisaggregatedStorageOptions(
+  options: SLSDisaggregatedStorageSetupOptions = {},
+): Promise<DisaggregatedStorageOptions & { sls: SLSMultiCellEnvironment }> {
+  const sls = await createSLSMultiCellEnvironment(options);
+  const projectName = options.projectName ?? `mongodb-runner-sls-${uuid()}`;
+  const testdriverContainer = `${projectName}-testdriver-1`;
+  const firstLogId = options.firstLogId ?? 1;
+
+  const grpcurl = async (
+    service: string,
+    method: string,
+    payload: unknown,
+  ): Promise<any> => {
+    const { stdout } = await execFile('docker', [
+      'exec',
+      testdriverContainer,
+      '/grpcurl',
+      '-plaintext',
+      '-d',
+      JSON.stringify(payload),
+      service,
+      method,
+    ]);
+    return stdout.trim() ? JSON.parse(stdout) : {};
+  };
+
+  return {
+    sls,
+    composeFile: sls.composeFile,
+    env: { ...sls.env, COMPOSE_PROJECT_NAME: projectName },
+    waitForReady: async () => {
+      const timeoutSecs = options.readyTimeoutSecs ?? 300;
+      const deadline = Date.now() + timeoutSecs * 1000;
+      debug('waiting for SLS storage layer', { testdriverContainer });
+      while (Date.now() < deadline) {
+        try {
+          await execFile('docker', [
+            'exec',
+            testdriverContainer,
+            'test',
+            '-f',
+            '/ready',
+          ]);
+          debug('SLS storage layer is ready');
+          return;
+        } catch {
+          await sleep(2000);
+        }
+      }
+      throw new Error(`SLS storage layer not ready after ${timeoutSecs}s`);
+    },
+    setupShard: async ({ index }) => {
+      const logId = firstLogId + index;
+      debug('starting SLS log for shard', { index, logId });
+      const res = await grpcurl(
+        'crs-cell1-0:27996',
+        'schedulerservice.v1.SchedulerService/GetLogServers',
+        { cells: [SLS_CELL1, SLS_CELL2, SLS_CELL3] },
+      );
+      const serverIds = res.server_ids ?? res.serverIds ?? [];
+      if (!serverIds.length) {
+        throw new Error('SLS GetLogServers returned no servers');
+      }
+      try {
+        await grpcurl(
+          'crs-cell1-0:27996',
+          'schedulerservice.v1.ControlPlaneService/StartLog',
+          { log_id: logId, server_ids: serverIds, ancestry: { ancestors: [] } },
+        );
+      } catch (err) {
+        // The storage layer's state persists while the compose project is
+        // running, so the log may already exist from a previous run.
+        const { stderr = '', stdout = '' } = (err ?? {}) as {
+          stderr?: string;
+          stdout?: string;
+        };
+        const output = `${stderr}${stdout}`;
+        if (output.includes('already exists')) {
+          debug('SLS log already exists, reusing it', { logId });
+          return;
+        }
+        throw err;
+      }
+    },
+    config: (shard) =>
+      createSLSDisaggregatedStorageConfig(sls, shard, {
+        logId: firstLogId + shard.index,
+      }),
+  };
 }
