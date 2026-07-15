@@ -670,24 +670,29 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const primary = cluster.servers[primaryIndex];
 
       await primary.withClient(async (client) => {
-        debug('Running rs.initiate');
-        const rsConf = {
-          _id: replSetName,
-          configsvr: rsMembers.some((m) => m.args?.includes('--configsvr')),
-          members: nodes.map(([srv, member], i) => {
-            return {
-              _id: i,
-              host: srv.hostport,
-              arbiterOnly: member.arbiterOnly ?? false,
-              priority: member.priority ?? (i === primaryIndex ? 1 : 0),
-              tags: member.tags || {},
-            };
-          }),
-        };
-        debugVerbose('replSetInitiate:', rsConf);
-        await client.db('admin').command({
-          replSetInitiate: rsConf,
-        });
+        // With disaggregated storage, the replica set config is provided to
+        // the servers at startup (disaggregatedStorageConfig.replSetConfig)
+        // and replSetInitiate is not supported.
+        if (!disaggregatedStorage) {
+          debug('Running rs.initiate');
+          const rsConf = {
+            _id: replSetName,
+            configsvr: rsMembers.some((m) => m.args?.includes('--configsvr')),
+            members: nodes.map(([srv, member], i) => {
+              return {
+                _id: i,
+                host: srv.hostport,
+                arbiterOnly: member.arbiterOnly ?? false,
+                priority: member.priority ?? (i === primaryIndex ? 1 : 0),
+                tags: member.tags || {},
+              };
+            }),
+          };
+          debugVerbose('replSetInitiate:', rsConf);
+          await client.db('admin').command({
+            replSetInitiate: rsConf,
+          });
+        }
 
         for (let i = 0; i < 60; i++) {
           const status = await client.db('admin').command({

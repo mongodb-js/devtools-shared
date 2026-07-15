@@ -83,15 +83,15 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
-    .option('sls', {
-      type: 'boolean',
+    .option('slsCompose', {
+      type: 'string',
       describe:
-        'Launch the bundled SLS disaggregated storage compose project and configure mongod to use it (requires a disagg-capable mongod via --binDir or --downloadUrl)',
+        'Path to an SLS multi-cell docker-compose.yml; launches the SLS disaggregated storage project and configures mongod to use it (requires a disagg-capable mongod via --binDir or --downloadUrl)',
     })
     .option('slsImageTag', {
       type: 'string',
       describe:
-        'SLS docker image tag to use with --sls (e.g. the pinned_sls_commit from the server repo manifest)',
+        'SLS docker image tag to use with --slsCompose (e.g. the pinned_sls_commit from the server repo manifest)',
     })
     .option('disaggregatedStorageCompose', {
       type: 'string',
@@ -139,9 +139,13 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function start() {
-    const disaggregatedStorage = argv.sls
+    if (argv.slsCompose && !argv.slsImageTag) {
+      throw new Error('--slsCompose requires --slsImageTag');
+    }
+    const disaggregatedStorage = argv.slsCompose
       ? await utilities.createSLSDisaggregatedStorageOptions({
-          imageTag: argv.slsImageTag,
+          composeFile: argv.slsCompose,
+          imageTag: argv.slsImageTag!,
         })
       : argv.disaggregatedStorageCompose
         ? {
@@ -155,6 +159,14 @@ import type { MongoClientOptions } from 'mongodb';
             })(),
           }
         : undefined;
+    if (disaggregatedStorage && 'sls' in disaggregatedStorage) {
+      console.error('Allocated SLS service ports:');
+      for (const [serviceName, { addr }] of Object.entries(
+        disaggregatedStorage.sls.services,
+      )) {
+        console.error(`  ${serviceName}: ${addr}`);
+      }
+    }
     const { cluster, id } = await utilities.start(
       { ...argv, disaggregatedStorage },
       args,
