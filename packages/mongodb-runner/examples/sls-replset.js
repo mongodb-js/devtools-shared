@@ -59,7 +59,7 @@ async function main() {
 
   const cluster = await MongoCluster.start({
     topology: 'replset',
-    secondaries: 1, // 2 nodes total (this is also the disagg default)
+    secondaries: 1, // 2 nodes total (this is also the DSC default)
     tmpDir: os.tmpdir(),
     binDir: process.env.MONGOD_BIN_DIR,
     downloadUrl: process.env.MONGOD_DOWNLOAD_URL,

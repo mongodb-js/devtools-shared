@@ -12,7 +12,7 @@ import type {
 const execFile = promisify(execFileCb);
 
 /**
- * Helpers for the SLS (disaggregated storage) multi-cell docker compose
+ * Helpers for the SLS (DSC) multi-cell docker compose
  * project shipped in the mongodb server repository
  * (buildscripts/modules/atlas/sls-multicell-docker-compose.yml).
  * Replicates the environment-variable setup performed by the
@@ -245,7 +245,7 @@ export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnviron
    */
   firstLogId?: number;
   /**
-   * Path to the encryption key file to use for disaggregated storage
+   * Path to the encryption key file to use for DSC
    * encryption. If not provided, a key file with a well-known test key is
    * created in the OS temp directory (matching the server's jstest setup).
    */

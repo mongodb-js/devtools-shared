@@ -130,7 +130,7 @@ export interface CommonOptions {
   topology: 'standalone' | 'replset' | 'sharded';
 
   /**
-   * When set, starts a docker compose project providing a disaggregated storage
+   * When set, starts a docker compose project providing a DSC
    * backend before spawning any mongod processes, and injects
    * `--setParameter disaggregatedStorageConfig=...` into each one.
    */
@@ -163,7 +163,7 @@ export interface ShardMemberDescriptor {
   priority: number;
 }
 
-/** Identifies a shard within a cluster for disaggregated storage setup. */
+/** Identifies a shard within a cluster for DSC setup. */
 export interface ShardDescriptor {
   /** Zero-based shard index. In a sharded cluster, 0 is the config server. */
   index: number;
@@ -173,14 +173,14 @@ export interface ShardDescriptor {
   replSetName?: string;
   /**
    * The members of this shard with their pre-allocated ports. With
-   * disaggregated storage, ports are allocated before the servers start so
+   * DSC, ports are allocated before the servers start so
    * that the storage configuration can reference them.
    */
   members: ShardMemberDescriptor[];
 }
 
 /**
- * Options for disaggregated storage support. When provided, mongodb-runner will
+ * Options for DSC support. When provided, mongodb-runner will
  * launch a docker compose project providing the storage backend, then call the
  * supplied hooks before starting mongod processes.
  */
@@ -487,7 +487,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     { ...options }: MongoClusterOptions,
     // Internal parameter used when starting the shards of a sharded cluster:
     // the parent cluster owns the docker compose project, and the shards
-    // inherit the disaggregated storage context from it.
+    // inherit the DSC context from it.
     _internal?: {
       disaggregatedStorage: DisaggregatedStorageOptions;
       shardContext: { index: number; isConfigServer: boolean };
@@ -670,7 +670,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const primary = cluster.servers[primaryIndex];
 
       await primary.withClient(async (client) => {
-        // With disaggregated storage, the replica set config is provided to
+        // With DSC, the replica set config is provided to
         // the servers at startup (disaggregatedStorageConfig.replSetConfig)
         // and replSetInitiate is not supported.
         if (!disaggregatedStorage) {
@@ -719,7 +719,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const allShards = await safePromiseAll(
         shards.map(async (s, i) => {
           const isConfigServer = s.args?.includes('--configsvr') ?? false;
-          // The per-shard disaggregated storage setup (setupShard, config
+          // The per-shard DSC setup (setupShard, config
           // injection) happens inside the recursive replset start, where the
           // member ports are known.
           const shardCluster = await MongoCluster.start(
