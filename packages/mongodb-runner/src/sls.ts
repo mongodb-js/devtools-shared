@@ -1,3 +1,5 @@
+import { promises as fs } from 'fs';
+import os from 'os';
 import path from 'path';
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
@@ -11,20 +13,14 @@ const execFile = promisify(execFileCb);
 
 /**
  * Helpers for the SLS (disaggregated storage) multi-cell docker compose
- * project bundled with this package. Replicates the environment-variable
- * setup performed by the SLSMultiCellFixture in the mongodb server codebase.
+ * project shipped in the mongodb server repository
+ * (buildscripts/modules/atlas/sls-multicell-docker-compose.yml).
+ * Replicates the environment-variable setup performed by the
+ * SLSMultiCellFixture in that codebase.
  */
 
 /** Hostname through which SLS services are reachable from the host. */
 export const SLS_HOSTNAME = 'local.sls.mmscloudteam.com';
-
-/** Path to the bundled SLS multi-cell compose file. */
-export const SLS_MULTICELL_COMPOSE_FILE = path.resolve(
-  __dirname,
-  '..',
-  'assets',
-  'sls-multicell-docker-compose.yml',
-);
 
 const DEFAULT_SLS_IMAGE_REPO =
   '664315256653.dkr.ecr.us-east-1.amazonaws.com/disagg-storage/';
@@ -36,48 +32,41 @@ export interface SLSServiceInfo {
   internalPort: number;
 }
 
-/** All host-exposed services in the SLS multi-cell compose file. */
-export const SLS_MULTICELL_SERVICES: Record<string, SLSServiceInfo> =
-  Object.assign(Object.create(null), {
-    'logd-cell1-0': { portVar: 'LOGD_CELL1_0_PORT', internalPort: 27998 },
-    'logd-cell2-0': { portVar: 'LOGD_CELL2_0_PORT', internalPort: 27998 },
-    'logd-cell3-0': { portVar: 'LOGD_CELL3_0_PORT', internalPort: 27998 },
-    'paged-cell1-0': { portVar: 'PAGED_CELL1_0_PORT', internalPort: 27999 },
-    'paged-cell1-1': { portVar: 'PAGED_CELL1_1_PORT', internalPort: 27999 },
-    'paged-cell1-2': { portVar: 'PAGED_CELL1_2_PORT', internalPort: 27999 },
-    'paged-cell2-0': { portVar: 'PAGED_CELL2_0_PORT', internalPort: 27999 },
-    'paged-cell2-1': { portVar: 'PAGED_CELL2_1_PORT', internalPort: 27999 },
-    'paged-cell2-2': { portVar: 'PAGED_CELL2_2_PORT', internalPort: 27999 },
-    'paged-cell3-0': { portVar: 'PAGED_CELL3_0_PORT', internalPort: 27999 },
-    'paged-cell3-1': { portVar: 'PAGED_CELL3_1_PORT', internalPort: 27999 },
-    'paged-cell3-2': { portVar: 'PAGED_CELL3_2_PORT', internalPort: 27999 },
-    'pagematd-cell1-0': {
-      portVar: 'PAGEMATD_CELL1_0_PORT',
-      internalPort: 30000,
-    },
-    'pagematd-cell2-0': {
-      portVar: 'PAGEMATD_CELL2_0_PORT',
-      internalPort: 30000,
-    },
-    'pagematd-cell3-0': {
-      portVar: 'PAGEMATD_CELL3_0_PORT',
-      internalPort: 30000,
-    },
-    'cms-cell1-0': { portVar: 'CMS_CELL1_0_PORT', internalPort: 27995 },
-    'cms-cell2-0': { portVar: 'CMS_CELL2_0_PORT', internalPort: 27995 },
-    'cms-cell3-0': { portVar: 'CMS_CELL3_0_PORT', internalPort: 27995 },
-    'crs-cell1-0': { portVar: 'CRS_CELL1_0_PORT', internalPort: 27996 },
-    'crs-cell2-0': { portVar: 'CRS_CELL2_0_PORT', internalPort: 27996 },
-    'crs-cell3-0': { portVar: 'CRS_CELL3_0_PORT', internalPort: 27996 },
-    objectindexd: { portVar: 'OBJECTINDEXD_PORT', internalPort: 30003 },
-    objectreadproxyd: { portVar: 'OBJECTREADPROXYD_PORT', internalPort: 30006 },
-    'infra.localstack': {
-      portVar: 'INFRA_LOCALSTACK_PORT',
-      internalPort: 4566,
-    },
-    backupmock: { portVar: 'MOCKBACKUP_PORT', internalPort: 4770 },
-    'backupmock-stub': { portVar: 'MOCKBACKUP_STUB_PORT', internalPort: 4771 },
-  });
+/**
+ * Extract the host-exposed services and their port environment variables from
+ * an SLS docker compose file. Matches `ports:` entries of the form
+ * `"${SOME_PORT:-30001}:27998"`.
+ */
+export function parseSLSComposeServices(
+  composeFileContents: string,
+): Record<string, SLSServiceInfo[]> {
+  const services: Record<string, SLSServiceInfo[]> = Object.create(null);
+  let topLevelKey: string | undefined;
+  let currentService: string | undefined;
+  for (const line of composeFileContents.split('\n')) {
+    let match;
+    if ((match = /^(\w[\w.-]*):/.exec(line))) {
+      topLevelKey = match[1];
+      currentService = undefined;
+    } else if (
+      topLevelKey === 'services' &&
+      (match = /^ {2}([\w.-]+):\s*$/.exec(line))
+    ) {
+      currentService = match[1];
+    } else if (
+      currentService &&
+      (match = /\$\{([A-Z0-9_]+)(?::-\d+)?\}:(\d+)/.exec(line)) &&
+      // Only 'ports:' list entries, not e.g. SERVER_URI environment values
+      /^\s+-\s/.exec(line)
+    ) {
+      (services[currentService] ??= []).push({
+        portVar: match[1],
+        internalPort: +match[2],
+      });
+    }
+  }
+  return services;
+}
 
 export interface SLSCell {
   cell: string;
@@ -98,12 +87,22 @@ export const SLS_CELL3: SLSCell = Object.freeze({
 });
 
 export interface SLSMultiCellEnvironmentOptions {
+  /**
+   * Path to the SLS multi-cell docker-compose.yml (typically
+   * buildscripts/modules/atlas/sls-multicell-docker-compose.yml in a mongodb
+   * server checkout). Files it references (slsbackup.proto,
+   * flags-state.json) are resolved relative to it.
+   */
+  composeFile: string;
+  /**
+   * Image tag for the SLS images (typically the `pinned_sls_commit` from the
+   * server repository's buildscripts/modules/atlas/manifest.json).
+   */
+  imageTag: string;
   /** Docker image repository for SLS images. */
   imageRepo?: string;
   /** Docker image repository for third-party images (default: imageRepo with 'disagg-storage' replaced by 'thirdparty'). */
   thirdPartyImageRepo?: string;
-  /** Image tag for the SLS images. */
-  imageTag?: string;
   /** Test run identifier, applied as a `testdata_id` label on all containers. */
   testDataId?: string;
   /** Host IP reachable from inside containers (compose default: 172.17.0.1). */
@@ -111,7 +110,7 @@ export interface SLSMultiCellEnvironmentOptions {
 }
 
 export interface SLSMultiCellEnvironment {
-  /** Path to the bundled compose file. */
+  /** Path to the compose file in use. */
   composeFile: string;
   /** Environment variables to pass to the docker compose project. */
   env: Record<string, string>;
@@ -122,17 +121,29 @@ export interface SLSMultiCellEnvironment {
 }
 
 /**
- * Allocate host ports and build the environment variables expected by the
- * bundled SLS multi-cell compose file.
+ * Allocate host ports and build the environment variables expected by an SLS
+ * multi-cell compose file. The services and their port variables are parsed
+ * from the compose file itself, so this stays compatible with whatever
+ * version of the file is provided.
  */
 export async function createSLSMultiCellEnvironment(
-  options: SLSMultiCellEnvironmentOptions = {},
+  options: SLSMultiCellEnvironmentOptions,
 ): Promise<SLSMultiCellEnvironment> {
+  const { composeFile, imageTag } = options;
+
+  const serviceInfo = parseSLSComposeServices(
+    await fs.readFile(composeFile, 'utf8'),
+  );
+  if (!Object.keys(serviceInfo).length) {
+    throw new Error(
+      `Could not find any services with host port mappings in ${composeFile}`,
+    );
+  }
+
   const imageRepo = options.imageRepo ?? DEFAULT_SLS_IMAGE_REPO;
   const thirdPartyImageRepo =
     options.thirdPartyImageRepo ??
     imageRepo.replace('disagg-storage', 'thirdparty');
-  const imageTag = options.imageTag ?? 'latest';
 
   const ports: Record<string, number> = Object.create(null);
   const env: Record<string, string> = Object.assign(Object.create(null), {
@@ -145,21 +156,23 @@ export async function createSLSMultiCellEnvironment(
     env.HOST_INTERNAL_IP = options.hostInternalIP;
   }
 
-  for (const [serviceName, info] of Object.entries(SLS_MULTICELL_SERVICES)) {
-    const port = await allocatePort();
-    ports[serviceName] = port;
-    env[info.portVar] = String(port);
-  }
-
   const services: Record<string, { addr: string; uri: string }> =
     Object.create(null);
-  for (const serviceName of Object.keys(SLS_MULTICELL_SERVICES)) {
-    const addr = `${SLS_HOSTNAME}:${ports[serviceName]}`;
-    services[serviceName] = { addr, uri: `http://${addr}` };
+  for (const [serviceName, infos] of Object.entries(serviceInfo)) {
+    for (const [i, info] of infos.entries()) {
+      const port = await allocatePort();
+      env[info.portVar] = String(port);
+      // The first host-exposed port is the service's main address.
+      if (i === 0) {
+        ports[serviceName] = port;
+        const addr = `${SLS_HOSTNAME}:${port}`;
+        services[serviceName] = { addr, uri: `http://${addr}` };
+      }
+    }
   }
 
-  debug('created SLS multi-cell environment', { ports });
-  return { composeFile: SLS_MULTICELL_COMPOSE_FILE, env, ports, services };
+  debug('created SLS multi-cell environment', { composeFile, ports });
+  return { composeFile, env, ports, services };
 }
 
 export interface SLSDisaggregatedStorageConfigOptions {
@@ -195,7 +208,9 @@ export function createSLSDisaggregatedStorageConfig(
     throw new Error(`Unknown cell metadata service: ${cellMetadataService}`);
   }
   return {
-    logID: options.logId,
+    // The server expects a BSON long here; the extended JSON wrapper survives
+    // JSON.stringify, unlike a BSON.Long instance.
+    logID: { $numberLong: String(options.logId) },
     myZoneName: options.zoneName ?? SLS_CELL1.zone,
     zones: [],
     cellMetadataServer: cmsService.uri,
@@ -229,17 +244,38 @@ export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnviron
    * IDs (default: 1). Log ID 9999 is reserved by the cell metadata services.
    */
   firstLogId?: number;
+  /**
+   * Path to the encryption key file to use for disaggregated storage
+   * encryption. If not provided, a key file with a well-known test key is
+   * created in the OS temp directory (matching the server's jstest setup).
+   */
+  encryptionKeyFilePath?: string;
+}
+
+// Well-known test encryption key, matching createKeyFile() in the server
+// repository's disagg_storage jstest library.
+const TEST_ENCRYPTION_KEY = '3zKkqoh8BGyC5BnyMZOEXsuTCHTD286SeNXEXeMuMxM=';
+
+async function createTestEncryptionKeyFile(): Promise<string> {
+  const fileName = path.join(
+    os.tmpdir(),
+    `mongodb-runner-sls-decrypt-key-${uuid()}`,
+  );
+  await fs.writeFile(fileName, TEST_ENCRYPTION_KEY, { mode: 0o600 });
+  return fileName;
 }
 
 /**
- * Create fully-populated `disaggregatedStorage` options for the bundled SLS
- * multi-cell compose project: environment variables, readiness polling
- * (waiting for the testdriver container's /ready marker), per-shard log
- * creation (StartLog via grpcurl in the testdriver container), and the
- * mongod `disaggregatedStorageConfig` server parameter.
+ * Create fully-populated `disaggregatedStorage` options for the SLS
+ * multi-cell compose project from a mongodb server repository checkout:
+ * environment variables, readiness polling (waiting for the testdriver
+ * container's /ready marker), per-shard log creation (StartLog via grpcurl
+ * in the testdriver container), and the mongod `disaggregatedStorageConfig`
+ * server parameter.
  *
  * ```
  * const disaggregatedStorage = await createSLSDisaggregatedStorageOptions({
+ *   composeFile: '/path/to/sls-multicell-docker-compose.yml',
  *   imageTag: '<pinned_sls_commit>',
  * });
  * const cluster = await MongoCluster.start({
@@ -250,12 +286,14 @@ export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnviron
  * ```
  */
 export async function createSLSDisaggregatedStorageOptions(
-  options: SLSDisaggregatedStorageSetupOptions = {},
+  options: SLSDisaggregatedStorageSetupOptions,
 ): Promise<DisaggregatedStorageOptions & { sls: SLSMultiCellEnvironment }> {
   const sls = await createSLSMultiCellEnvironment(options);
   const projectName = options.projectName ?? `mongodb-runner-sls-${uuid()}`;
   const testdriverContainer = `${projectName}-testdriver-1`;
   const firstLogId = options.firstLogId ?? 1;
+  const encryptionKeyFilePath =
+    options.encryptionKeyFilePath ?? (await createTestEncryptionKeyFile());
 
   const grpcurl = async (
     service: string,
@@ -336,6 +374,7 @@ export async function createSLSDisaggregatedStorageOptions(
     config: (shard) =>
       createSLSDisaggregatedStorageConfig(sls, shard, {
         logId: firstLogId + shard.index,
+        encryptionKeyFilePath,
       }),
   };
 }

@@ -6,11 +6,14 @@
 // storage compose project.
 //
 // Usage:
-//   SLS_IMAGE_TAG=<pinned_sls_commit> MONGOD_BIN_DIR=/path/to/mongod/dir \
+//   SLS_COMPOSE_FILE=/path/to/sls-multicell-docker-compose.yml \
+//   SLS_IMAGE_TAG=<pinned_sls_commit> \
+//   MONGOD_BIN_DIR=/path/to/mongod/dir \
 //     node examples/sls-replset.js
 //
 // This is equivalent to:
-//   mongodb-runner start -t replset --sls --slsImageTag=<tag> --binDir=...
+//   mongodb-runner start -t replset \
+//     --slsCompose=<path> --slsImageTag=<tag> --binDir=...
 
 // Enable mongodb-runner debug output (compose progress, server startup, ...)
 // unless the user already configured DEBUG themselves.
@@ -32,11 +35,19 @@ async function main() {
         'which will fail with "Unknown --setParameter".)',
     );
   }
+  if (!process.env.SLS_COMPOSE_FILE || !process.env.SLS_IMAGE_TAG) {
+    throw new Error(
+      'Set SLS_COMPOSE_FILE to the path of an SLS multi-cell ' +
+        'docker-compose.yml and SLS_IMAGE_TAG to the SLS image tag to use ' +
+        '(e.g. the pinned_sls_commit from the server repo manifest).',
+    );
+  }
 
-  // Sets up everything the bundled SLS compose project needs: env vars with
+  // Sets up everything the SLS compose project needs: env vars with
   // allocated service ports, readiness polling, per-shard log creation, and
   // the mongod disaggregatedStorageConfig server parameter.
   const disaggregatedStorage = await createSLSDisaggregatedStorageOptions({
+    composeFile: process.env.SLS_COMPOSE_FILE,
     imageTag: process.env.SLS_IMAGE_TAG,
   });
 
