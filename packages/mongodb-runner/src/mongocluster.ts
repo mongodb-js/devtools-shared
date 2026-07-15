@@ -20,6 +20,7 @@ import {
   makeConnectionString,
   safePromiseAll,
   hasPortArg,
+  allocatePort,
 } from './util';
 import { OIDCMockProviderProcess } from './oidc';
 import { DockerComposeProject } from './docker-compose';
@@ -155,12 +156,27 @@ export type ShardedOptions = {
   shards?: number | Partial<MongoClusterOptions>[];
 };
 
+/** A replica set member of a shard, with its pre-allocated port. */
+export interface ShardMemberDescriptor {
+  host: string;
+  port: number;
+  priority: number;
+}
+
 /** Identifies a shard within a cluster for disaggregated storage setup. */
 export interface ShardDescriptor {
   /** Zero-based shard index. In a sharded cluster, 0 is the config server. */
   index: number;
   /** True only for the dedicated config server replset in a sharded cluster. */
   isConfigServer: boolean;
+  /** The replica set name (absent for standalone topologies). */
+  replSetName?: string;
+  /**
+   * The members of this shard with their pre-allocated ports. With
+   * disaggregated storage, ports are allocated before the servers start so
+   * that the storage configuration can reference them.
+   */
+  members: ShardMemberDescriptor[];
 }
 
 /**
@@ -300,7 +316,27 @@ function buildDisaggregatedArgs(
 ): string[] {
   const raw = typeof ds.config === 'function' ? ds.config(shard) : ds.config;
   const value = typeof raw === 'string' ? raw : JSON.stringify(raw);
-  return [...baseArgs, '--setParameter', `disaggregatedStorageConfig=${value}`];
+  return [
+    ...baseArgs,
+    '--setParameter',
+    `disaggregatedStorageConfig=${value}`,
+    '--setParameter',
+    'disaggregatedStorageEnabled=true',
+  ];
+}
+
+/** Remove any `--port <n>` / `--port=<n>` argument, flag included. */
+function stripPortArg(args: string[]): string[] {
+  return removePortArg(args).filter((arg) => arg !== '--port');
+}
+
+/** Return the value of a `--port <n>` / `--port=<n>` argument, if any. */
+function getPortArg(args: string[] | undefined): number | undefined {
+  if (!args) return undefined;
+  const splitArgIndex = args.indexOf('--port');
+  if (splitArgIndex !== -1) return +args[splitArgIndex + 1] || undefined;
+  const arg = args.find((a) => a.startsWith('--port='));
+  return arg ? +arg.split('=')[1] || undefined : undefined;
 }
 
 function processShardOptions(options: MongoClusterOptions): {
@@ -447,9 +483,16 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     return this.servers[0].serverVariant;
   }
 
-  static async start({
-    ...options
-  }: MongoClusterOptions): Promise<MongoCluster> {
+  static async start(
+    { ...options }: MongoClusterOptions,
+    // Internal parameter used when starting the shards of a sharded cluster:
+    // the parent cluster owns the docker compose project, and the shards
+    // inherit the disaggregated storage context from it.
+    _internal?: {
+      disaggregatedStorage: DisaggregatedStorageOptions;
+      shardContext: { index: number; isConfigServer: boolean };
+    },
+  ): Promise<MongoCluster> {
     options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
 
     const cluster = new MongoCluster();
@@ -490,8 +533,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       ];
     }
 
-    const disaggregatedStorage = options.disaggregatedStorage;
-    if (disaggregatedStorage) {
+    let disaggregatedStorage = _internal?.disaggregatedStorage;
+    if (!disaggregatedStorage && options.disaggregatedStorage) {
+      disaggregatedStorage = options.disaggregatedStorage;
       delete options.disaggregatedStorage;
       cluster.dockerComposeProject = await DockerComposeProject.start(
         disaggregatedStorage.composeFile,
@@ -501,10 +545,18 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
     try {
       if (disaggregatedStorage) {
-        await disaggregatedStorage.waitForReady?.();
+        if (cluster.dockerComposeProject) {
+          // Only the compose-owning (top-level) cluster waits for readiness.
+          await disaggregatedStorage.waitForReady?.();
+        }
         if (options.secondaries === undefined) options.secondaries = 1;
       }
-      return await this._startServers(cluster, options, disaggregatedStorage);
+      return await this._startServers(
+        cluster,
+        options,
+        disaggregatedStorage,
+        _internal?.shardContext ?? { index: 0, isConfigServer: false },
+      );
     } catch (err) {
       // Don't leak the compose project if cluster setup fails partway through.
       if (cluster.dockerComposeProject) {
@@ -522,10 +574,24 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster: MongoCluster,
     options: MongoClusterOptions,
     disaggregatedStorage: DisaggregatedStorageOptions | undefined,
+    shardContext: { index: number; isConfigServer: boolean },
   ): Promise<MongoCluster> {
     if (options.topology === 'standalone') {
       if (disaggregatedStorage) {
-        const descriptor: ShardDescriptor = { index: 0, isConfigServer: false };
+        // Pre-allocate the port so the storage configuration can reference it.
+        let port = getPortArg(options.args);
+        if (!port) {
+          port = await allocatePort();
+          options.args = [
+            ...stripPortArg(options.args ?? []),
+            '--port',
+            String(port),
+          ];
+        }
+        const descriptor: ShardDescriptor = {
+          ...shardContext,
+          members: [{ host: options.host ?? '127.0.0.1', port, priority: 1 }],
+        };
         await disaggregatedStorage.setupShard?.(descriptor);
         options.args = buildDisaggregatedArgs(
           disaggregatedStorage,
@@ -540,16 +606,42 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }),
       );
     } else if (options.topology === 'replset') {
-      if (disaggregatedStorage) {
-        const descriptor: ShardDescriptor = { index: 0, isConfigServer: false };
-        await disaggregatedStorage.setupShard?.(descriptor);
-        options.args = buildDisaggregatedArgs(
-          disaggregatedStorage,
-          descriptor,
-          options.args ?? [],
-        );
-      }
       const { rsMembers, replSetName } = processRSMembers(options);
+      if (disaggregatedStorage) {
+        // Pre-allocate member ports so the storage configuration (which
+        // embeds the replica set config, including member host:ports) can be
+        // computed before the servers start.
+        const members: ShardMemberDescriptor[] = [];
+        for (const member of rsMembers) {
+          let port = getPortArg(member.args);
+          if (!port) {
+            port = await allocatePort();
+            member.args = [
+              ...stripPortArg(member.args ?? []),
+              '--port',
+              String(port),
+            ];
+          }
+          members.push({
+            host: options.host ?? '127.0.0.1',
+            port,
+            priority: member.priority ?? 0,
+          });
+        }
+        const descriptor: ShardDescriptor = {
+          ...shardContext,
+          replSetName,
+          members,
+        };
+        await disaggregatedStorage.setupShard?.(descriptor);
+        for (const member of rsMembers) {
+          member.args = buildDisaggregatedArgs(
+            disaggregatedStorage,
+            descriptor,
+            member.args ?? [],
+          );
+        }
+      }
 
       debug('Starting replica set nodes', {
         replSetName,
@@ -622,26 +714,24 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const allShards = await safePromiseAll(
         shards.map(async (s, i) => {
           const isConfigServer = s.args?.includes('--configsvr') ?? false;
-          const descriptor: ShardDescriptor = { index: i, isConfigServer };
-          if (disaggregatedStorage) {
-            await disaggregatedStorage.setupShard?.(descriptor);
-          }
-          const shardCluster = await MongoCluster.start({
-            ...options,
-            ...s,
-            ...(disaggregatedStorage
+          // The per-shard disaggregated storage setup (setupShard, config
+          // injection) happens inside the recursive replset start, where the
+          // member ports are known.
+          const shardCluster = await MongoCluster.start(
+            {
+              ...options,
+              ...s,
+              topology: 'replset',
+              requireApiVersion: undefined,
+              users: isConfigServer ? undefined : options.users,
+            },
+            disaggregatedStorage
               ? {
-                  args: buildDisaggregatedArgs(
-                    disaggregatedStorage,
-                    descriptor,
-                    s.args ?? [],
-                  ),
+                  disaggregatedStorage,
+                  shardContext: { index: i, isConfigServer },
                 }
-              : {}),
-            topology: 'replset',
-            requireApiVersion: undefined,
-            users: isConfigServer ? undefined : options.users,
-          });
+              : undefined,
+          );
           return [shardCluster, isConfigServer] as const;
         }),
       );

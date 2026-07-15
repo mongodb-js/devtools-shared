@@ -83,6 +83,16 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
+    .option('sls', {
+      type: 'boolean',
+      describe:
+        'Launch the bundled SLS disaggregated storage compose project and configure mongod to use it (requires a disagg-capable mongod via --binDir or --downloadUrl)',
+    })
+    .option('slsImageTag', {
+      type: 'string',
+      describe:
+        'SLS docker image tag to use with --sls (e.g. the pinned_sls_commit from the server repo manifest)',
+    })
     .option('disaggregatedStorageCompose', {
       type: 'string',
       describe:
@@ -129,18 +139,22 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function start() {
-    const disaggregatedStorage = argv.disaggregatedStorageCompose
-      ? {
-          composeFile: argv.disaggregatedStorageCompose,
-          config: (() => {
-            try {
-              return JSON.parse(argv.disaggregatedStorageConfig ?? '');
-            } catch {
-              return argv.disaggregatedStorageConfig ?? '';
-            }
-          })(),
-        }
-      : undefined;
+    const disaggregatedStorage = argv.sls
+      ? await utilities.createSLSDisaggregatedStorageOptions({
+          imageTag: argv.slsImageTag,
+        })
+      : argv.disaggregatedStorageCompose
+        ? {
+            composeFile: argv.disaggregatedStorageCompose,
+            config: (() => {
+              try {
+                return JSON.parse(argv.disaggregatedStorageConfig ?? '');
+              } catch {
+                return argv.disaggregatedStorageConfig ?? '';
+              }
+            })(),
+          }
+        : undefined;
     const { cluster, id } = await utilities.start(
       { ...argv, disaggregatedStorage },
       args,

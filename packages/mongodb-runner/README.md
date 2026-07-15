@@ -99,6 +99,13 @@ You can specify a config file for the CLI using `--config`:
 $ npx mongodb-runner start --config <path/to/config.json>
 ```
 
+## Disaggregated storage clusters
+
+mongodb-runner can launch clusters backed by a disaggregated storage layer
+(SLS), managing the storage backend's docker compose project alongside the
+mongod processes. See
+[docs/disaggregated-storage.md](./docs/disaggregated-storage.md).
+
 ## License
 
 Apache 2.0

@@ -17,6 +17,10 @@ export {
 } from './mongocluster';
 export {
   createSLSMultiCellEnvironment,
+  createSLSDisaggregatedStorageConfig,
+  createSLSDisaggregatedStorageOptions,
+  type SLSDisaggregatedStorageConfigOptions,
+  type SLSDisaggregatedStorageSetupOptions,
   SLS_MULTICELL_COMPOSE_FILE,
   SLS_MULTICELL_SERVICES,
   SLS_HOSTNAME,
