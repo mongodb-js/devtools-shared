@@ -161,6 +161,7 @@ export interface ShardMemberDescriptor {
   host: string;
   port: number;
   priority: number;
+  arbiterOnly: boolean;
 }
 
 /** Identifies a shard within a cluster for DSC setup. */
@@ -430,7 +431,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   isClosed(): boolean {
     // Return true if and only if there are no running sub-clusters/servers
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const _ of this.children()) return true;
+    for (const _ of this.children()) return false;
     return true;
   }
 
@@ -590,7 +591,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }
         const descriptor: ShardDescriptor = {
           ...shardContext,
-          members: [{ host: options.host ?? '127.0.0.1', port, priority: 1 }],
+          members: [
+            {
+              host: options.host ?? '127.0.0.1',
+              port,
+              priority: 1,
+              arbiterOnly: false,
+            },
+          ],
         };
         await disaggregatedStorage.setupShard?.(descriptor);
         options.args = buildDisaggregatedArgs(
@@ -626,6 +634,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
             host: options.host ?? '127.0.0.1',
             port,
             priority: member.priority ?? 0,
+            arbiterOnly: member.arbiterOnly ?? false,
           });
         }
         const descriptor: ShardDescriptor = {

@@ -227,6 +227,7 @@ export function createSLSDisaggregatedStorageConfig(
               _id: i,
               host: `${member.host}:${member.port}`,
               priority: member.priority,
+              arbiterOnly: member.arbiterOnly,
             })),
           },
         }
