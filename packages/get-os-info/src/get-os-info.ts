@@ -1,18 +1,18 @@
 import os from 'os';
 import { promises as fs } from 'fs';
 
-type LinuxInfo = {
+export type LinuxInfo = {
   os_linux_dist: string;
   os_linux_release: string;
 };
 
-type DarwinInfo = {
+export type DarwinInfo = {
   os_darwin_product_name: string;
   os_darwin_product_version: string;
   os_darwin_product_build_version: string;
 };
 
-type OsInfo = {
+export type OsInfo = {
   os_type: string;
   os_version: string;
   os_arch: string;
