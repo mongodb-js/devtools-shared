@@ -17,6 +17,8 @@ import { withLock } from './with-lock';
 
 const debug = createDebug('mongodb-downloader');
 
+const BYTES_PER_MB = 1024 * 1024;
+
 export type { DownloadOptions };
 
 export type DownloadResult = DownloadArtifactInfo & {
@@ -53,6 +55,15 @@ export type MongoDBDownloaderOptions = {
 };
 
 export class MongoDBDownloader {
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions & { downloadUrl: string },
+  ): Promise<DownloadUrlResult>;
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions & { downloadUrl?: undefined },
+  ): Promise<DownloadResult>;
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions,
+  ): Promise<DownloadResult | DownloadUrlResult>;
   async downloadMongoDbWithVersionInfo({
     downloadOptions = {},
     version = '*',
@@ -176,7 +187,7 @@ export class MongoDBDownloader {
       );
     }
     const totalBytes = +(response.headers.get('content-length') ?? '');
-    const totalMB = totalBytes ? (totalBytes / 1048576).toFixed(1) : null;
+    const totalMB = totalBytes ? (totalBytes / BYTES_PER_MB).toFixed(1) : null;
     debug(`Download started`, { url, totalMB });
     let downloadedBytes = 0;
     let lastProgressLog = Date.now();
@@ -185,7 +196,7 @@ export class MongoDBDownloader {
         downloadedBytes += chunk.length;
         if (Date.now() - lastProgressLog >= 3000) {
           lastProgressLog = Date.now();
-          const downloadedMB = (downloadedBytes / 1048576).toFixed(1);
+          const downloadedMB = (downloadedBytes / BYTES_PER_MB).toFixed(1);
           debug(
             `Downloading: ${downloadedMB}MB${totalMB ? ` / ${totalMB}MB` : ''}`,
           );
@@ -292,6 +303,9 @@ export function downloadMongoDbWithVersionInfo(
 export function downloadMongoDbWithVersionInfo(
   options: MongoDBDownloaderOptions & { downloadUrl?: undefined },
 ): Promise<DownloadResult>;
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions,
+): Promise<DownloadResult | DownloadUrlResult>;
 export async function downloadMongoDbWithVersionInfo(
   options: MongoDBDownloaderOptions,
 ): Promise<DownloadResult | DownloadUrlResult> {

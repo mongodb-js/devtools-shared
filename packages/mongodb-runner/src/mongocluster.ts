@@ -497,7 +497,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   // clusters, for which it is accurate.
   private static async _start(
     { ...options }: MongoClusterOptions,
-    internal:
+    parentClusterContext:
       | {
           disaggregatedStorage?: DisaggregatedStorageOptions;
           shardContext: { index: number; isConfigServer: boolean };
@@ -546,7 +546,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       ];
     }
 
-    let disaggregatedStorage = internal?.disaggregatedStorage;
+    let disaggregatedStorage = parentClusterContext?.disaggregatedStorage;
     if (!disaggregatedStorage && options.disaggregatedStorage) {
       disaggregatedStorage = options.disaggregatedStorage;
       delete options.disaggregatedStorage;
@@ -568,7 +568,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         cluster,
         options,
         disaggregatedStorage,
-        internal?.shardContext ?? { index: 0, isConfigServer: false },
+        parentClusterContext?.shardContext ?? {
+          index: 0,
+          isConfigServer: false,
+        },
       );
     } catch (err) {
       // Don't leak the compose project if cluster setup fails partway through.
