@@ -58,7 +58,7 @@ export async function safePromiseAll<T>(
   if (rejected.length) {
     if (rejected.length === 1) throw rejected[0].reason;
     throw new AggregateError(
-      [rejected.map((r) => r.reason)],
+      rejected.map((r) => r.reason),
       `${rejected.length} errors: ${rejected.map((r) => r.reason).join(', ')}`,
     );
   }
