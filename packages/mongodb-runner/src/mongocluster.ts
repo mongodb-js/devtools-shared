@@ -486,15 +486,23 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     return this.servers[0].serverVariant;
   }
 
-  static async start(
+  static async start(options: MongoClusterOptions): Promise<MongoCluster> {
+    return await MongoCluster._start(options, undefined);
+  }
+
+  // Also used when starting the shards of a sharded cluster: shardContext
+  // identifies the shard being started, and, if the parent cluster owns a
+  // DSC docker compose project, the shards inherit the DSC context from it.
+  // The shardContext default below is only applied to top-level (non-shard)
+  // clusters, for which it is accurate.
+  private static async _start(
     { ...options }: MongoClusterOptions,
-    // Internal parameter used when starting the shards of a sharded cluster:
-    // the parent cluster owns the docker compose project, and the shards
-    // inherit the DSC context from it.
-    _internal?: {
-      disaggregatedStorage: DisaggregatedStorageOptions;
-      shardContext: { index: number; isConfigServer: boolean };
-    },
+    internal:
+      | {
+          disaggregatedStorage?: DisaggregatedStorageOptions;
+          shardContext: { index: number; isConfigServer: boolean };
+        }
+      | undefined,
   ): Promise<MongoCluster> {
     options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
 
@@ -538,7 +546,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       ];
     }
 
-    let disaggregatedStorage = _internal?.disaggregatedStorage;
+    let disaggregatedStorage = internal?.disaggregatedStorage;
     if (!disaggregatedStorage && options.disaggregatedStorage) {
       disaggregatedStorage = options.disaggregatedStorage;
       delete options.disaggregatedStorage;
@@ -560,7 +568,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         cluster,
         options,
         disaggregatedStorage,
-        _internal?.shardContext ?? { index: 0, isConfigServer: false },
+        internal?.shardContext ?? { index: 0, isConfigServer: false },
       );
     } catch (err) {
       // Don't leak the compose project if cluster setup fails partway through.
@@ -735,7 +743,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           // The per-shard DSC setup (setupShard, config
           // injection) happens inside the recursive replset start, where the
           // member ports are known.
-          const shardCluster = await MongoCluster.start(
+          const shardCluster = await MongoCluster._start(
             {
               ...options,
               ...s,
@@ -743,12 +751,10 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               requireApiVersion: undefined,
               users: isConfigServer ? undefined : options.users,
             },
-            disaggregatedStorage
-              ? {
-                  disaggregatedStorage,
-                  shardContext: { index: i, isConfigServer },
-                }
-              : undefined,
+            {
+              disaggregatedStorage,
+              shardContext: { index: i, isConfigServer },
+            },
           );
           return [shardCluster, isConfigServer] as const;
         }),

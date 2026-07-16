@@ -231,20 +231,8 @@ mongodb-runner start -t replset \
   --slsImageTag=<tag> --binDir=...
 ```
 
-For a **custom** storage backend with its own compose file, use the low-level
-flags — a static compose project and an explicit config value:
-
-```bash
-mongodb-runner start -t replset \
-  --downloadUrl https://.../dsc-mongod.tgz \
-  --disaggregatedStorageCompose ./path/to/docker-compose.yml \
-  --disaggregatedStorageConfig '{"...": "..."}'
-```
-
-`--disaggregatedStorageConfig` takes the JSON (or plain string) value for the
-`disaggregatedStorageConfig` server parameter. Custom compose environment
-variables, readiness polling, and per-shard setup steps require the
-programmatic API.
+Custom (non-SLS) storage backends are only supported through the programmatic
+API, since they require readiness polling and per-shard setup hooks.
 
 `mongodb-runner stop --id=...` restores the cluster metadata and tears down
 the compose project along with the mongod processes, even from a different

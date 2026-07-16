@@ -87,20 +87,12 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe:
         'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
+      implies: 'slsImageTag',
     })
     .option('slsImageTag', {
       type: 'string',
       describe:
         'SLS docker image tag to use with --slsCompose (e.g. the pinned_sls_commit from the server repo manifest)',
-    })
-    .option('disaggregatedStorageCompose', {
-      type: 'string',
-      describe: 'Path to docker-compose.yml for the DSC backend',
-    })
-    .option('disaggregatedStorageConfig', {
-      type: 'string',
-      describe:
-        'JSON value for the disaggregatedStorageConfig setParameter on each mongod',
     })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
@@ -138,26 +130,12 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function start() {
-    if (argv.slsCompose && !argv.slsImageTag) {
-      throw new Error('--slsCompose requires --slsImageTag');
-    }
     const disaggregatedStorage = argv.slsCompose
       ? await utilities.createSLSDisaggregatedStorageOptions({
           composeFile: argv.slsCompose,
           imageTag: argv.slsImageTag!,
         })
-      : argv.disaggregatedStorageCompose
-        ? {
-            composeFile: argv.disaggregatedStorageCompose,
-            config: (() => {
-              try {
-                return JSON.parse(argv.disaggregatedStorageConfig ?? '');
-              } catch {
-                return argv.disaggregatedStorageConfig ?? '';
-              }
-            })(),
-          }
-        : undefined;
+      : undefined;
     if (disaggregatedStorage && 'sls' in disaggregatedStorage) {
       console.error('Allocated SLS service ports:');
       for (const [serviceName, { addr }] of Object.entries(

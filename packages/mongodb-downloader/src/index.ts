@@ -23,6 +23,16 @@ export type DownloadResult = DownloadArtifactInfo & {
   downloadedBinDir: string;
 };
 
+/**
+ * Result of a download from a direct URL (`downloadUrl`). Since no download
+ * URL lookup is performed, only the URL itself is known; the other artifact
+ * metadata fields are unavailable.
+ */
+export type DownloadUrlResult = Partial<DownloadArtifactInfo> & {
+  url: string;
+  downloadedBinDir: string;
+};
+
 export type MongoDBDownloaderOptions = {
   /** The directory to download the artifacts to. */
   directory: string;
@@ -33,8 +43,11 @@ export type MongoDBDownloaderOptions = {
   /** The options to pass to the download URL lookup. */
   downloadOptions?: DownloadOptions;
   /**
-   * A direct URL to a MongoDB tarball to download. If set, `version` and
-   * `downloadOptions` are ignored and no download URL lookup is performed.
+   * A direct URL to a MongoDB tarball to download. If set, no download URL
+   * lookup is performed: `version` is ignored, and of `downloadOptions`,
+   * only `platform` and `crypt_shared` are consulted (they determine the
+   * archive extraction layout). The result contains no artifact metadata
+   * beyond the URL itself (see `DownloadUrlResult`).
    */
   downloadUrl?: string;
 };
@@ -46,7 +59,7 @@ export class MongoDBDownloader {
     directory,
     useLockfile,
     downloadUrl,
-  }: MongoDBDownloaderOptions): Promise<DownloadResult> {
+  }: MongoDBDownloaderOptions): Promise<DownloadResult | DownloadUrlResult> {
     await fs.mkdir(directory, { recursive: true });
     const isWindows = ['win32', 'windows'].includes(
       downloadOptions.platform ?? process.platform,
@@ -114,13 +127,14 @@ export class MongoDBDownloader {
           }
 
           await fs.mkdir(downloadTarget, { recursive: true });
-          const artifactInfo = downloadUrl
-            ? ({ url: downloadUrl } as DownloadArtifactInfo)
-            : await this.lookupDownloadUrl({
-                targetVersion: version,
-                enterprise: isEnterprise,
-                options: downloadOptions,
-              });
+          const artifactInfo: DownloadArtifactInfo | { url: string } =
+            downloadUrl
+              ? { url: downloadUrl }
+              : await this.lookupDownloadUrl({
+                  targetVersion: version,
+                  enterprise: isEnterprise,
+                  options: downloadOptions,
+                });
           const { url } = artifactInfo;
           debug(`Downloading ${url} into ${downloadTarget}...`);
 
@@ -248,7 +262,7 @@ export class MongoDBDownloader {
   }: {
     bindir: string;
     artifactInfoFile: string;
-  }): Promise<DownloadResult | undefined> {
+  }): Promise<DownloadResult | DownloadUrlResult | undefined> {
     try {
       await fs.stat(artifactInfoFile);
       return {
@@ -272,9 +286,15 @@ async function withoutLock<T>(
 const downloader = new MongoDBDownloader();
 
 /** Download mongod + mongos with version info and return version info and the path to a directory containing them. */
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions & { downloadUrl: string },
+): Promise<DownloadUrlResult>;
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions & { downloadUrl?: undefined },
+): Promise<DownloadResult>;
 export async function downloadMongoDbWithVersionInfo(
   options: MongoDBDownloaderOptions,
-): Promise<DownloadResult> {
+): Promise<DownloadResult | DownloadUrlResult> {
   return await downloader.downloadMongoDbWithVersionInfo(options);
 }
 /** Download mongod + mongos and return the path to a directory containing them. */
