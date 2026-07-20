@@ -139,7 +139,8 @@ export const ATLAS_VECTOR_SEARCH_AUTO_EMBED_TEMPLATE: SearchTemplate = {
     "type": "autoEmbed",
     "modality": "text",
     "path": "\${1:<field name to index>}",
-    "model": "voyage-4"
+    "model": "voyage-4",
+    "quantization": "\${2:<float | scalar | binary | binaryNoRescore>}"
   }]
 }`,
   version: '4.4.0',
