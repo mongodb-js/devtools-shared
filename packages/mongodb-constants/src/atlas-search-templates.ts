@@ -125,7 +125,7 @@ export const ATLAS_VECTOR_SEARCH_TEMPLATE: SearchTemplate = {
   "fields": [{
     "type": "vector",
     "path": "\${1:<field name to index>}",
-    "numDimensions": \${2:<number of dimensions>},
+    "numDimensions": "\${2:<number of dimensions>}",
     "similarity": "\${3:<euclidean | cosine | dotProduct>}"
   }]
 }`,
