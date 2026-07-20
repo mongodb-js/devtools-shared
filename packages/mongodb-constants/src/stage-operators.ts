@@ -1387,13 +1387,14 @@ const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
 `,
   snippet: `{
   // query: {"text": \${1:query string}},
-  // queryVector: [\${2:dimension1}, \${3:dimension2}, ...],
-  path: \${4:string},
-  numCandidates: \${5:numCandidates},
-  index: \${6:string},
-  limit: \${7:limit},
-  filter: {\${8:expression}},
-  exact: \${9:boolean}
+  // model: \${2:string},
+  // queryVector: [\${3:dimension1}, \${4:dimension2}, ...],
+  path: \${5:string},
+  numCandidates: \${6:numCandidates},
+  index: \${7:string},
+  limit: \${8:limit},
+  filter: {\${9:expression}},
+  exact: \${10:boolean}
 }`,
 };
 
