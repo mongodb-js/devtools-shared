@@ -25,9 +25,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        # Tests are split across hosts into groups by package (see
+        # compute-test-group.mjs). When changing the group count, keep
+        # TOTAL_GROUPS below in sync with the number of list entries here.
+        group: [1, 2, 3, 4]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
+
+    env:
+      TOTAL_GROUPS: 4
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -90,14 +97,21 @@ jobs:
           npx lerna@${LERNA_VERSION} ls --all --since ${SINCE_REF}
         shell: bash
 
+      # Checks are not split into groups; run them once per OS on the first group.
       - name: Run Checks
+        if: ${{ matrix.group == 1 }}
         run: npm run check-ci -- --stream
         shell: bash
 
       - name: Run Tests
-        run: npm run test-ci -- --stream
+        run: |
+          scopes=$(node .github/workflows/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
+          echo "Testing group ${{ matrix.group }}/${TOTAL_GROUPS} with: ${scopes}"
+          npm run test-ci -- --stream ${scopes}
         shell: bash
 
+      # Each group uploads coverage for the packages it tested; the parallel
+      # build is finalized once by the separate coverage-finalize job below.
       - name: Report Coverage
         if: ${{ runner.os == 'Linux' }}
         run: |
@@ -108,7 +122,22 @@ jobs:
             flag_name=$(sed -E 's/packages\/([^\/]*)\/coverage\/lcov.info/\1/g' <<<$report)
             coveralls report --base-path . --job-flag=$flag_name $report --parallel --no-logo
           done
+        env:
+          COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+          COVERALLS_REPO_TOKEN: ${{ github.token }}
+          COVERALLS_GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
+  # Signals to Coveralls that all parallel coverage uploads from the grouped
+  # check-and-test jobs are complete.
+  coverage-finalize:
+    name: Finalize Coverage
+    needs: check-and-test
+    if: ${{ always() && needs.check-and-test.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Finalize Coveralls parallel build
+        run: |
+          curl -L https://coveralls.io/coveralls-linux.tar.gz | tar -xz -C /usr/local/bin
           coveralls done
         env:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
