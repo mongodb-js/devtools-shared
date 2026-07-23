@@ -39,7 +39,7 @@
     "test-changed": "lerna run test --stream --concurrency 1 --since origin/HEAD",
     "test-ci": "lerna run test-ci --concurrency 1",
     "test": "lerna run test --concurrency 1 --stream",
-    "where": "node ./scripts/src/where.js",
+    "where": "node packages/monorepo-tools/dist/where.js",
     "request-npm-token": "request-npm-token"
   },
   "dependencies": {
