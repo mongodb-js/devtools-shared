@@ -70,7 +70,7 @@
     "lru-cache": "^11.3.5",
     "node-fetch": "^3.3.2",
     "pac-proxy-agent": "^7.0.2",
-    "http-proxy-agent": "^7.0.2",
+    "http-proxy-agent": "^9.0.0",
     "https-proxy-agent": "^7.0.5",
     "socks-proxy-agent": "^8.0.4",
     "ssh2": "^1.17.0",
