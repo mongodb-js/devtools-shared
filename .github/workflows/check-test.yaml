@@ -25,15 +25,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        # Tests are sharded across hosts by package (see compute-test-shard.mjs).
-        # When changing the shard count, update every list entry below.
-        shard: [1, 2, 3, 4]
+        # Tests are split across hosts into groups by package (see
+        # compute-test-group.mjs). When changing the group count, keep
+        # TOTAL_GROUPS below in sync with the number of list entries here.
+        group: [1, 2, 3, 4]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
     env:
-      TOTAL_SHARDS: 4
+      TOTAL_GROUPS: 4
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -96,20 +97,20 @@ jobs:
           npx lerna@${LERNA_VERSION} ls --all --since ${SINCE_REF}
         shell: bash
 
-      # Checks are not sharded; run them once per OS on the first shard.
+      # Checks are not split into groups; run them once per OS on the first group.
       - name: Run Checks
-        if: ${{ matrix.shard == 1 }}
+        if: ${{ matrix.group == 1 }}
         run: npm run check-ci -- --stream
         shell: bash
 
       - name: Run Tests
         run: |
-          scopes=$(node .github/workflows/compute-test-shard.mjs "${{ matrix.shard }}" "${TOTAL_SHARDS}")
-          echo "Testing shard ${{ matrix.shard }}/${TOTAL_SHARDS} with: ${scopes}"
+          scopes=$(node .github/workflows/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
+          echo "Testing group ${{ matrix.group }}/${TOTAL_GROUPS} with: ${scopes}"
           npm run test-ci -- --stream ${scopes}
         shell: bash
 
-      # Each shard uploads coverage for the packages it tested; the parallel
+      # Each group uploads coverage for the packages it tested; the parallel
       # build is finalized once by the separate coverage-finalize job below.
       - name: Report Coverage
         if: ${{ runner.os == 'Linux' }}
@@ -126,7 +127,7 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ github.token }}
           COVERALLS_GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
-  # Signals to Coveralls that all parallel coverage uploads from the sharded
+  # Signals to Coveralls that all parallel coverage uploads from the grouped
   # check-and-test jobs are complete.
   coverage-finalize:
     name: Finalize Coverage

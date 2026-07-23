@@ -1,29 +1,29 @@
 #! /usr/bin/env node
 // Prints the `lerna run` filter flags (`--scope <name> ...`) for the packages
-// that belong to a given test shard. Packages are distributed round-robin over
-// the shards after sorting by name, so the assignment is stable across runs and
-// every package with a `test-ci` script lands in exactly one shard.
+// that belong to a given test group. Packages are distributed round-robin over
+// the groups after sorting by name, so the assignment is stable across runs and
+// every package with a `test-ci` script lands in exactly one group.
 //
-// Usage: node compute-test-shard.mjs <shardIndex> <totalShards>
-//   shardIndex is 1-based.
+// Usage: node compute-test-group.mjs <groupIndex> <totalGroups>
+//   groupIndex is 1-based.
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const shardIndex = Number.parseInt(process.argv[2], 10);
-const totalShards = Number.parseInt(process.argv[3], 10);
+const groupIndex = Number.parseInt(process.argv[2], 10);
+const totalGroups = Number.parseInt(process.argv[3], 10);
 
 if (
-  !Number.isInteger(shardIndex) ||
-  !Number.isInteger(totalShards) ||
-  shardIndex < 1 ||
-  totalShards < 1 ||
-  shardIndex > totalShards
+  !Number.isInteger(groupIndex) ||
+  !Number.isInteger(totalGroups) ||
+  groupIndex < 1 ||
+  totalGroups < 1 ||
+  groupIndex > totalGroups
 ) {
   throw new Error(
-    `Invalid shard arguments: shardIndex=${process.argv[2]} totalShards=${process.argv[3]} ` +
-      `(expected 1 <= shardIndex <= totalShards)`,
+    `Invalid group arguments: groupIndex=${process.argv[2]} totalGroups=${process.argv[3]} ` +
+      `(expected 1 <= groupIndex <= totalGroups)`,
   );
 }
 
@@ -53,14 +53,14 @@ const testablePackages = packageDirs
   .map((manifest) => manifest.name)
   .sort();
 
-const shardPackages = testablePackages.filter(
-  (_name, index) => index % totalShards === shardIndex - 1,
+const groupPackages = testablePackages.filter(
+  (_name, index) => index % totalGroups === groupIndex - 1,
 );
 
-if (shardPackages.length === 0) {
+if (groupPackages.length === 0) {
   // Emit a filter that matches nothing so `lerna run` becomes a no-op rather
   // than falling back to running every package.
-  process.stdout.write('--scope __no_packages_in_this_shard__');
+  process.stdout.write('--scope __no_packages_in_this_group__');
 } else {
-  process.stdout.write(shardPackages.map((name) => `--scope ${name}`).join(' '));
+  process.stdout.write(groupPackages.map((name) => `--scope ${name}`).join(' '));
 }
