@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/prettier-config-devtools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Shared Devtools prettier configuration",
   "license": "SSPL",
   "main": "index.json",

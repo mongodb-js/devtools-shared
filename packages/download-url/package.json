@@ -1,6 +1,6 @@
 {
   "name": "mongodb-download-url",
-  "version": "1.8.14",
+  "version": "1.8.15",
   "description": "Lookup download URLs for MongoDB versions.",
   "scripts": {
     "bootstrap": "npm run compile",
@@ -51,10 +51,10 @@
     "semver": "^7.7.4"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.7",
-    "@mongodb-js/mocha-config-devtools": "^1.1.2",
-    "@mongodb-js/prettier-config-devtools": "^1.0.3",
-    "@mongodb-js/tsconfig-devtools": "^1.1.2",
+    "@mongodb-js/eslint-config-devtools": "^0.11.8",
+    "@mongodb-js/mocha-config-devtools": "^1.1.3",
+    "@mongodb-js/prettier-config-devtools": "^1.0.4",
+    "@mongodb-js/tsconfig-devtools": "^1.1.3",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/node": "^25.5.2",
