@@ -13,7 +13,7 @@
   "version": "1.5.7",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "license": "SSPL",
   "files": [
@@ -23,12 +23,12 @@
   ],
   "main": "dist/index.js",
   "bin": {
-    "precommit": "./bin/precommit.js",
-    "depalign": "./bin/depalign.js",
-    "monorepo-where": "./bin/where.js",
-    "bump-monorepo-packages": "./bin/bump-packages.js",
-    "request-npm-token": "./bin/request-npm-token.js",
-    "check-transitive-deps": "./bin/check-transitive-deps.js"
+    "precommit": "bin/precommit.js",
+    "depalign": "bin/depalign.js",
+    "monorepo-where": "bin/where.js",
+    "bump-monorepo-packages": "bin/bump-packages.js",
+    "request-npm-token": "bin/request-npm-token.js",
+    "check-transitive-deps": "bin/check-transitive-deps.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",

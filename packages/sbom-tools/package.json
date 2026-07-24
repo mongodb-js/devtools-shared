@@ -9,7 +9,7 @@
     "access": "public"
   },
   "bin": {
-    "mongodb-sbom-tools": "./bin/mongodb-sbom-tools.js"
+    "mongodb-sbom-tools": "bin/mongodb-sbom-tools.js"
   },
   "bugs": {
     "url": "https://jira.mongodb.org/projects/COMPASS/issues",
@@ -19,7 +19,7 @@
   "version": "0.10.18",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
     "dist"

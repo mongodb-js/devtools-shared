@@ -16,7 +16,7 @@
   "version": "1.2.12",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
     "dist"
@@ -51,14 +51,13 @@
     "test-ci": "npm run test-cov",
     "reformat": "npm run prettier -- --write ."
   },
-  "dependencies": {},
   "devDependencies": {
+    "@leafygreen-ui/emotion": "^5.2.0",
     "@mongodb-js/compass-components": "^1.6.0",
     "@mongodb-js/eslint-config-devtools": "^0.11.7",
     "@mongodb-js/mocha-config-devtools": "^1.1.2",
     "@mongodb-js/prettier-config-devtools": "^1.0.3",
     "@mongodb-js/tsconfig-devtools": "^1.1.2",
-    "@leafygreen-ui/emotion": "^5.2.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.1.1",
     "@types/react": "^17.0.53",
