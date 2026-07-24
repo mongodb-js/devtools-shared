@@ -105,7 +105,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          scopes=$(node .github/workflows/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
+          scopes=$(node .github/scripts/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
           echo "Testing group ${{ matrix.group }}/${TOTAL_GROUPS} with: ${scopes}"
           npm run test-ci -- --stream ${scopes}
         shell: bash
@@ -143,3 +143,21 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
           COVERALLS_REPO_TOKEN: ${{ github.token }}
           COVERALLS_GIT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.21.1
+
+      - name: Run Lint
+        run: node .github/scripts/lint-pkg.mjs

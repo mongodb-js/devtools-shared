@@ -5,7 +5,7 @@
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "publishConfig": {
     "access": "public"

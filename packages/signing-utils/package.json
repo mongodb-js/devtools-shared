@@ -16,7 +16,7 @@
   "version": "0.5.12",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
     "dist",
@@ -72,8 +72,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@types/ssh2": "^1.11.19",
     "debug": "^4.4.0",
-    "ssh2": "^1.17.0",
-    "@types/ssh2": "^1.11.19"
+    "ssh2": "^1.17.0"
   }
 }

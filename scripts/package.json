@@ -14,7 +14,7 @@
   "version": "0.4.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "license": "SSPL",
   "scripts": {
@@ -28,8 +28,8 @@
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.7",
-    "@mongodb-js/prettier-config-devtools": "^1.0.3",
     "@mongodb-js/monorepo-tools": "^1.5.7",
+    "@mongodb-js/prettier-config-devtools": "^1.0.3",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
     "prettier": "^3.8.1"

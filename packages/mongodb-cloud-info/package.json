@@ -16,7 +16,7 @@
   "homepage": "https://github.com/mongodb-js/devtools-shared",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mongodb-js/devtools-shared.git"
+    "url": "git+https://github.com/mongodb-js/devtools-shared.git"
   },
   "files": [
     "dist"
