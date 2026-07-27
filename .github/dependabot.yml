@@ -3,16 +3,26 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
-      eslint:
-        patterns:
-          - "eslint*"
-          - "@eslint/*"
-          - "@typescript-eslint/*"
-      babel:
-        patterns:
-          - "@babel/*"
+      npm-production-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      npm-development-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      npm-production-major:
+        dependency-type: production
+        update-types:
+          - major
+      npm-development-major:
+        dependency-type: development
+        update-types:
+          - major
     cooldown:
       default-days: 7
     versioning-strategy: increase
@@ -27,7 +37,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
     labels:
