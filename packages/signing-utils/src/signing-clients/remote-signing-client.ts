@@ -46,9 +46,7 @@ export class RemoteSigningClient implements SigningClient {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `export garasign_password=${env.garasign_password}`,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export artifactory_username=${env.artifactory_username}`,
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `export artifactory_password=${env.artifactory_password}`,
+      `export ecr_login_password=${env.ecr_login_password}`,
       `export method=${this.options.signingMethod}`,
       `./garasign.sh '${file}'`,
     ];

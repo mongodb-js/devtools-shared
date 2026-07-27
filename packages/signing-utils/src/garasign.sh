@@ -9,25 +9,24 @@ fi
 
 if [ -z ${garasign_username+omitted} ]; then echo "garasign_username is unset" && exit 1; fi
 if [ -z ${garasign_password+omitted} ]; then echo "garasign_password is unset" && exit 1; fi
-if [ -z ${artifactory_username+omitted} ]; then echo "artifactory_username is unset" && exit 1; fi
-if [ -z ${artifactory_password+omitted} ]; then echo "artifactory_password is unset" && exit 1; fi
+if [ -z ${ecr_login_password+omitted} ]; then echo "ecr_login_password is unset" && exit 1; fi
 if [ -z ${method+omitted} ]; then echo "method must either be gpg, rpm_gpg or jsign" && exit 1; fi
 
-ARTIFACTORY_HOST="artifactory.corp.mongodb.com"
+ECR_HOST="901841024863.dkr.ecr.us-east-1.amazonaws.com"
 ENV_FILE="signing-envfile"
 
 echo "GRS_CONFIG_USER1_USERNAME=${garasign_username}" >> "${ENV_FILE}"
 echo "GRS_CONFIG_USER1_PASSWORD=${garasign_password}" >> "${ENV_FILE}"
 
 cleanup() {
-  docker logout "${ARTIFACTORY_HOST}" > /dev/null 2>&1
+  docker logout "${ECR_HOST}" > /dev/null 2>&1
   rm -r "${ENV_FILE}" || true
-  echo "Logged out from artifactory"
+  echo "Logged out from ECR"
 }
 trap cleanup EXIT
 
-echo "Logging into docker artifactory"
-echo "${artifactory_password}" | docker login --password-stdin --username ${artifactory_username} ${ARTIFACTORY_HOST} > /dev/null 2>&1
+echo "Logging into docker ECR"
+echo "${ecr_login_password}" | docker login --password-stdin --username AWS ${ECR_HOST} > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
   echo "Docker login failed" >&2
@@ -46,7 +45,7 @@ gpg_sign() {
     --rm \
     -v $directory:$directory \
     -w $directory \
-    ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
+    ${ECR_HOST}/release-infrastructure/garasign-gpg \
     /bin/bash -c "gpgloader && gpg --yes -v --armor -o '$file.sig' --detach-sign '$file'"
 }
 
@@ -56,7 +55,7 @@ jsign_sign() {
     --rm \
     -v $directory:$directory \
     -w $directory \
-    ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-jsign \
+    ${ECR_HOST}/release-infrastructure/garasign-jsign \
     /bin/bash -c "jsign --verbose --debug -t 'http://timestamp.digicert.com' -a 'mongo-authenticode-2024' '$file'"
 }
 
@@ -70,7 +69,7 @@ rpm_gpg_sign() {
     --rm \
     -v $directory:$directory \
     -w $directory \
-    ${ARTIFACTORY_HOST}/release-tools-container-registry-local/garasign-gpg \
+    ${ECR_HOST}/release-infrastructure/garasign-gpg \
     /bin/bash -c "gpgloader \
       && apt update -y && apt install -y rpm \
       && keyId=\$(gpg --list-keys --keyid-format=long --with-colons  | awk -F: 'NR==2 {print \$5}') \
