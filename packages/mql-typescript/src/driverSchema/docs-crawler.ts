@@ -1,6 +1,6 @@
 import { removeNewlines, removeTrailingComments } from '../utils';
-import { getSimplifiedSchema } from 'mongodb-schema';
-import type { SimplifiedSchema } from 'mongodb-schema';
+import { getSimplifiedSchema } from '@mongodb-js/mongodb-schema';
+import type { SimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import parse, { ParseMode } from '@mongodb-js/shell-bson-parser';
 

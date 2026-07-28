@@ -7,8 +7,8 @@ import autocompleteTypes from './types/autocomplete-types';
 import { api as ShellApiText } from '@mongosh/shell-api/api';
 import { replaceImports } from './utils';
 
-import type { JSONSchema } from 'mongodb-schema';
-import { toTypescriptTypeDefinition } from 'mongodb-schema';
+import type { JSONSchema } from '@mongodb-js/mongodb-schema';
+import { toTypescriptTypeDefinition } from '@mongodb-js/mongodb-schema';
 
 import {
   inferCollectionNameFromFunctionCall,

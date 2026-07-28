@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
 
-import type { JSONSchema } from 'mongodb-schema';
+import type { JSONSchema } from '@mongodb-js/mongodb-schema';
 
 type CacheOptions = {
   databaseCollectionsTTL: number;
