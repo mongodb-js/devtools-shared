@@ -53,11 +53,11 @@
     "extract-types": "ts-node scripts/extract-types.ts"
   },
   "dependencies": {
+    "@mongodb-js/mongodb-schema": "^0.1.0",
     "@mongodb-js/ts-autocomplete": "^0.5.13",
     "@mongosh/shell-api": "^5.1.6",
     "debug": "^4.4.0",
     "lodash": "^4.17.21",
-    "mongodb-schema": "^12.6.2",
     "node-cache": "^5.1.2",
     "typescript": "^5.9.3"
   },

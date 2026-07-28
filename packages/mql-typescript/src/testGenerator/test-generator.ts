@@ -8,7 +8,7 @@ import type {
   SimplifiedSchema,
   SimplifiedSchemaType,
   SimplifiedSchemaBaseType,
-} from 'mongodb-schema';
+} from '@mongodb-js/mongodb-schema';
 import { unsupportedAggregations } from './unsupported-aggregations';
 import * as bson from 'bson';
 

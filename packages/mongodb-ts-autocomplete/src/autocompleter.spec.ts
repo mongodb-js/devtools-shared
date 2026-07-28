@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import { MongoDBAutocompleter } from './index';
 import type { AutocompletionContext } from './autocompletion-context';
-import { analyzeDocuments } from 'mongodb-schema';
+import { analyzeDocuments } from '@mongodb-js/mongodb-schema';
 import { expect } from 'chai';
 import { relativeNodePath } from '@mongodb-js/ts-autocomplete';
 
