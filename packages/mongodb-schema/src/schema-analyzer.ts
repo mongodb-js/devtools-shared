@@ -256,7 +256,10 @@ function fieldComparator(
     return 1;
   }
   // Otherwise sort case-insensitively.
-  return aName.toLowerCase() < bName.toLowerCase() ? -1 : 1;
+  const aLower = aName.toLowerCase();
+  const bLower = bName.toLowerCase();
+
+  return aLower < bLower ? -1 : aLower > bLower ? 1 : 0;
 }
 
 /**
