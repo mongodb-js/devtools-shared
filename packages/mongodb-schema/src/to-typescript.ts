@@ -108,6 +108,10 @@ function arrayType(types: string[]) {
   return `(${types.join(' | ')})[]`;
 }
 
+function propertyKey(name: string): string {
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : JSON.stringify(name);
+}
+
 function toTypescriptType(
   properties: Record<string, JSONSchema>,
   indent: number,
@@ -117,20 +121,22 @@ function toTypescriptType(
       switch (getBSONType(schema)) {
         case 'array':
           assertIsDefined(schema.items, 'schema.items must be defined');
-          return `${indentSpaces(indent)}${propertyName}?: ${arrayType([
-            ...uniqueTypes(schema.items),
-          ])}`;
+          return `${indentSpaces(indent)}${propertyKey(
+            propertyName,
+          )}?: ${arrayType([...uniqueTypes(schema.items)])}`;
         case 'object':
           assertIsDefined(
             schema.properties,
             'schema.properties must be defined',
           );
-          return `${indentSpaces(indent)}${propertyName}?: ${toTypescriptType(
+          return `${indentSpaces(indent)}${propertyKey(
+            propertyName,
+          )}?: ${toTypescriptType(
             schema.properties as Record<string, JSONSchema>,
             indent + 1,
           )}`;
         default:
-          return `${indentSpaces(indent)}${propertyName}?: ${[
+          return `${indentSpaces(indent)}${propertyKey(propertyName)}?: ${[
             ...uniqueTypes(schema),
           ].join(' | ')}`;
       }

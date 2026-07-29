@@ -294,4 +294,40 @@ describe('toTypescriptTypeDefinition', function () {
 }`,
     );
   });
+
+  it('quotes field names that are not valid identifiers', async function () {
+    const docs = [
+      {
+        // Field names the analyzer already supports elsewhere, see
+        // test/nested-document-path.test.ts and test/basic.test.ts.
+        'bar.with.dot': 'foo',
+        'name[]': 'Annabeth Frankie',
+        'has space': 1,
+        '2leading': 'foo',
+        'quote"inside': 'foo',
+        valid_one: 'foo',
+        nested: {
+          'a.b': [1, 2, 3],
+        },
+      },
+    ];
+
+    const analyzedDocuments = await analyzeDocuments(docs);
+    const schema = await analyzedDocuments.getMongoDBJsonSchema();
+
+    convertAndCompare(
+      schema,
+      `{
+  "2leading"?: string;
+  "bar.with.dot"?: string;
+  "has space"?: bson.Double | number;
+  "name[]"?: string;
+  nested?: {
+    "a.b"?: (bson.Double | number)[];
+  };
+  "quote\\"inside"?: string;
+  valid_one?: string;
+}`,
+    );
+  });
 });
