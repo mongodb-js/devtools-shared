@@ -77,7 +77,7 @@
     "@types/mocha": "^9.1.1",
     "@types/semver": "^7.7.1",
     "@types/sinon-chai": "^4.0.0",
-    "acorn": "^8.17.0",
+    "acorn": "^8.18.0",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^8.57.1",
