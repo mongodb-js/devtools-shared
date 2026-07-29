@@ -2,6 +2,7 @@ import assert from 'assert';
 import { Binary, Code } from 'bson';
 
 import type { PrimitiveSchemaType } from '../src/schema-analyzer';
+import { SchemaAnalyzer } from '../src/schema-analyzer';
 import getSchema from '../src';
 
 function generateRandomString(length: number) {
@@ -137,6 +138,47 @@ describe('bloated documents', function () {
       } catch (error) {
         assert.fail('Analysis aborted unexpectedly');
       }
+    });
+  });
+
+  describe('abort signal', function () {
+    // `analyzeDoc` is exercised directly here: `getCompletedSchemaAnalyzer`
+    // checks the signal in between documents, which would hide whether the
+    // signal is honoured *during* the analysis of a single document.
+    const document = {
+      field1: {
+        field2: 'abc',
+      },
+      field3: 'bca',
+    };
+
+    it('aborts during the analysis of a document with the signal reason', async function () {
+      const controller = new AbortController();
+      const reason = new Error('Analysis no longer needed');
+      controller.abort(reason);
+
+      const analyzer = new SchemaAnalyzer({ signal: controller.signal });
+      await assert.rejects(analyzer.analyzeDoc(document), reason);
+    });
+
+    it("aborts during the analysis of a document with the signal's default reason", async function () {
+      const controller = new AbortController();
+      controller.abort();
+
+      const analyzer = new SchemaAnalyzer({ signal: controller.signal });
+      await assert.rejects(analyzer.analyzeDoc(document), {
+        name: 'AbortError',
+      });
+    });
+
+    it('does not abort while the signal is not aborted', async function () {
+      const controller = new AbortController();
+
+      const analyzer = new SchemaAnalyzer({ signal: controller.signal });
+      await analyzer.analyzeDoc(document);
+
+      const fieldNames = analyzer.getResult().fields.map((v) => v.name);
+      assert.deepStrictEqual(fieldNames, ['field1', 'field3']);
     });
   });
 });
