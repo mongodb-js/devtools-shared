@@ -54,8 +54,8 @@
     "socks": "^2.8.9"
   },
   "peerDependencies": {
-    "@mongodb-js/oidc-plugin": "^2.0.8",
-    "mongodb": "^6.9.0 || ^7.0.0",
+    "@mongodb-js/oidc-plugin": "^2.2.0",
+    "mongodb": "^7.5.0",
     "mongodb-log-writer": "^2.5.14"
   },
   "devDependencies": {
@@ -92,6 +92,6 @@
     "kerberos": "^7.0.0",
     "mongodb-client-encryption": "^7.2.0",
     "os-dns-native": "^2.0.1",
-    "resolve-mongodb-srv": "^1.1.1"
+    "resolve-mongodb-srv": "^1.1.7"
   }
 }

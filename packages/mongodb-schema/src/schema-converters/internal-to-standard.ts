@@ -9,8 +9,7 @@ import type { StandardJSONSchema } from '../types';
 import { allowAbort } from '../util';
 
 type StandardTypeDefinition =
-  | { type: JSONSchema4TypeName; $ref?: never }
-  | { $ref: string; type?: never };
+  { type: JSONSchema4TypeName; $ref?: never } | { $ref: string; type?: never };
 
 type TypeToDefinitionMap = Record<
   SchemaType['name'] | 'Double' | 'BSONSymbol',

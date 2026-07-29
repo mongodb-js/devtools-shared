@@ -1319,9 +1319,7 @@ export namespace Aggregation.Expression {
        * The beginning date, in UTC, for the addition operation. The startDate can be any expression that resolves to a Date, a Timestamp, or an ObjectID.
        */
       startDate:
-        | ResolvesToDate<S>
-        | ResolvesToTimestamp<S>
-        | ResolvesToObjectId<S>;
+        ResolvesToDate<S> | ResolvesToTimestamp<S> | ResolvesToObjectId<S>;
 
       /**
        * The unit used to measure the amount of time added to the startDate.
@@ -1351,17 +1349,13 @@ export namespace Aggregation.Expression {
        * The start of the time period. The startDate can be any expression that resolves to a Date, a Timestamp, or an ObjectID.
        */
       startDate:
-        | ResolvesToDate<S>
-        | ResolvesToTimestamp<S>
-        | ResolvesToObjectId<S>;
+        ResolvesToDate<S> | ResolvesToTimestamp<S> | ResolvesToObjectId<S>;
 
       /**
        * The end of the time period. The endDate can be any expression that resolves to a Date, a Timestamp, or an ObjectID.
        */
       endDate:
-        | ResolvesToDate<S>
-        | ResolvesToTimestamp<S>
-        | ResolvesToObjectId<S>;
+        ResolvesToDate<S> | ResolvesToTimestamp<S> | ResolvesToObjectId<S>;
 
       /**
        * The time measurement unit between the startDate and endDate
@@ -1504,9 +1498,7 @@ export namespace Aggregation.Expression {
        * The beginning date, in UTC, for the addition operation. The startDate can be any expression that resolves to a Date, a Timestamp, or an ObjectID.
        */
       startDate:
-        | ResolvesToDate<S>
-        | ResolvesToTimestamp<S>
-        | ResolvesToObjectId<S>;
+        ResolvesToDate<S> | ResolvesToTimestamp<S> | ResolvesToObjectId<S>;
 
       /**
        * The unit used to measure the amount of time added to the startDate.
@@ -4815,13 +4807,7 @@ export namespace Aggregation.Search {
     equals: {
       path: SearchPath<S>;
       value:
-        | bson.Binary
-        | boolean
-        | Date
-        | bson.ObjectId
-        | null
-        | Number
-        | string;
+        bson.Binary | boolean | Date | bson.ObjectId | null | Number | string;
       score?: SearchScore;
       doesNotAffect?: string | unknown[];
     };
@@ -6625,9 +6611,7 @@ export type Int = number | bson.Int32 | { $numberInt: string };
 export type Double = number | bson.Double | { $numberDouble: string };
 export type Decimal = bson.Decimal128 | { $numberDecimal: string };
 export type Regex =
-  | RegExp
-  | bson.BSONRegExp
-  | { pattern: string; options?: string };
+  RegExp | bson.BSONRegExp | { pattern: string; options?: string };
 export type Long = bigint | bson.Long | { $numberLong: string };
 export type Javascript = bson.Code | Function | string;
 export type Geometry<S> =
@@ -6655,13 +6639,9 @@ export type BsonPrimitive =
   | Javascript
   | bson.Timestamp;
 export type SearchPath<S> =
-  | UnprefixedFieldPath<S>
-  | UnprefixedFieldPath<S>[]
-  | { wildcard: string };
+  UnprefixedFieldPath<S> | UnprefixedFieldPath<S>[] | { wildcard: string };
 export type BitwiseOperation =
-  | { and: Int | Long }
-  | { or: Int | Long }
-  | { xor: Int | Long };
+  { and: Int | Long } | { or: Int | Long } | { xor: Int | Long };
 export type SearchScore = unknown;
 export type Granularity = string;
 export type TimeGranularity = 'seconds' | 'minutes' | 'hours';
@@ -6962,9 +6942,7 @@ export type ResolvesToDate<S> =
 export type ResolvesToNull<S> = ResolvesToAny<S> | NullFieldPath<S> | null;
 export type ResolvesToRegex<S> = ResolvesToAny<S> | RegexFieldPath<S> | Regex;
 export type ResolvesToJavascript<S> =
-  | ResolvesToAny<S>
-  | JavascriptFieldPath<S>
-  | Javascript;
+  ResolvesToAny<S> | JavascriptFieldPath<S> | Javascript;
 export type ResolvesToInt<S> =
   | ResolvesToAny<S>
   | IntFieldPath<S>
@@ -7006,10 +6984,7 @@ export type ResolvesToInt<S> =
   | Aggregation.Expression.$week<S>
   | Aggregation.Expression.$year<S>;
 export type ResolvesToTimestamp<S> =
-  | ResolvesToAny<S>
-  | TimestampFieldPath<S>
-  | bson.Timestamp
-  | '$clusterTime';
+  ResolvesToAny<S> | TimestampFieldPath<S> | bson.Timestamp | '$clusterTime';
 export type ResolvesToLong<S> =
   | ResolvesToAny<S>
   | LongFieldPath<S>

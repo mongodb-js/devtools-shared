@@ -173,8 +173,7 @@ export class MongoDBAutocompleter {
   private readonly connectionSchemas: Record<string, ConnectionSchema>;
   private readonly autocompleter: Autocompleter;
   private previousConnectionDB:
-    | { databaseName: string; connectionId: string }
-    | undefined;
+    { databaseName: string; connectionId: string } | undefined;
   private previousCollectionName: string | undefined;
 
   constructor({ context, fallbackServiceHost }: MongoDBAutocompleterOptions) {

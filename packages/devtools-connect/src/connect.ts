@@ -528,9 +528,7 @@ async function connectMongoClientImpl({
     cleanupOnClientClose.push(() => proxyAgent?.destroy());
 
     let oidcProxyOptions:
-      | AgentWithInitialize
-      | DevtoolsProxyOptions
-      | undefined;
+      AgentWithInitialize | DevtoolsProxyOptions | undefined;
     if (clientOptions.applyProxyToOIDC === true) {
       oidcProxyOptions = proxyAgent;
     } else if (clientOptions.applyProxyToOIDC) {
