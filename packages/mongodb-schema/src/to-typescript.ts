@@ -105,7 +105,7 @@ function arrayType(types: string[]) {
   if (types.length === 1) {
     return `${types[0]}[]`;
   }
-  return `${types.join(' | ')})[]`;
+  return `(${types.join(' | ')})[]`;
 }
 
 function toTypescriptType(

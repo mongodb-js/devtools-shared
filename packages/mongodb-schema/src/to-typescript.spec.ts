@@ -22,6 +22,7 @@ import {
 } from 'bson';
 
 import { inspect } from 'util';
+import * as ts from 'typescript';
 
 function convertAndCompare(schema: MongoDBJSONSchema, expected: string) {
   const code = toTypescriptTypeDefinition(schema);
@@ -42,6 +43,21 @@ function convertAndCompare(schema: MongoDBJSONSchema, expected: string) {
 
     throw err;
   }
+
+  // Comparing strings cannot tell us whether the generated code is actually
+  // valid TypeScript, so parse it as well. This is a syntax-only check, which
+  // means unresolved names like `bson.Double` are not reported.
+  const { diagnostics } = ts.transpileModule(`type Generated = ${code};`, {
+    reportDiagnostics: true,
+    compilerOptions: {},
+  });
+  assert.deepEqual(
+    (diagnostics ?? []).map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '),
+    ),
+    [],
+    'generated type definition is not valid TypeScript',
+  );
 }
 
 describe('toTypescriptTypeDefinition', function () {
@@ -104,7 +120,7 @@ describe('toTypescriptTypeDefinition', function () {
       schema,
       `{
   _id?: bson.ObjectId;
-  array?: bson.Double | number)[];
+  array?: (bson.Double | number)[];
   binaries?: {
     binaryOld?: bson.Binary;
     compressedTimeSeries?: bson.Binary;
