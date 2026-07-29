@@ -59,7 +59,7 @@ async function parseType(
   };
 
   if (type.bsonType === 'Array') {
-    const items = await parseTypes((type as ArraySchemaType).types);
+    const items = await parseTypes((type as ArraySchemaType).types, signal);
     // Don't include empty bson type arrays (it's invalid).
     if (!items.bsonType || items.bsonType?.length > 0) {
       schema.items = items;
