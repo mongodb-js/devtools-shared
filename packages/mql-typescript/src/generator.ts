@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import type { WriteStream } from 'fs';
 import { createWriteStream } from 'fs';
 import { StringWriter } from './utils';
