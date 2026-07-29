@@ -603,7 +603,7 @@ export class SchemaAnalyzer {
   allowAbortDuringAnalysis(): Promise<void> {
     // Allow aborting the analysis.
     if (this.fieldAndTypeAnalysisCounter++ % ALLOW_ABORT_INTERVAL_COUNT === 0) {
-      void allowAbort();
+      return allowAbort(this.options.signal);
     }
     return Promise.resolve();
   }
