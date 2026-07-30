@@ -182,16 +182,6 @@ export class DownloadCenter {
   private s3: S3Client;
   private s3BucketName: string;
 
-  private async s3Upload(put: PutObjectCommandInput) {
-    const command = new PutObjectCommand({ ...put, Bucket: this.s3BucketName });
-    return await this.s3.send(command);
-  }
-
-  private async s3GetObject(get: GetObjectCommandInput) {
-    const command = new GetObjectCommand({ ...get, Bucket: this.s3BucketName });
-    return await this.s3.send(command);
-  }
-
   constructor(bucketConfig: S3BucketConfig) {
     this.s3 = new S3Client({ region: 'us-east-1', ...bucketConfig });
     this.s3BucketName = bucketConfig.bucket;
@@ -212,10 +202,11 @@ export class DownloadCenter {
       throw new Error('s3ObjectKey is required');
     }
 
-    const object = await this.s3GetObject({
+    const command = new GetObjectCommand({
       Key: s3ObjectKey,
       Bucket: this.s3BucketName,
     });
+    const object = await this.s3.send(command);
 
     return object.Body;
   }
@@ -249,13 +240,15 @@ export class DownloadCenter {
 
     const acl = options.acl ?? ACL_PUBLIC_READ;
 
-    await this.s3Upload({
+    const command = new PutObjectCommand({
       ACL: acl,
       Bucket: this.s3BucketName,
       Key: s3ObjectKey,
       Body: content,
       ContentType: options.contentType,
     });
+
+    await this.s3.send(command);
   }
 
   /**
