@@ -34,4 +34,19 @@ describe('order of fields', function () {
       ['a', 'b', 'Ca', 'cb', 'cC'],
     );
   });
+  it('should keep keys that only differ in case in the order they appear in', async function () {
+    // The comparator treats these as equal, so the sort - being stable - has to
+    // leave them in the order the documents introduced them in.
+    const upperFirst = await getSchema([{ cb: 1, Ca: 1, ca: 1, a: 1 }]);
+    assert.deepEqual(
+      upperFirst.fields.map((v) => v.name),
+      ['a', 'Ca', 'ca', 'cb'],
+    );
+
+    const lowerFirst = await getSchema([{ cb: 1, ca: 1, Ca: 1, a: 1 }]);
+    assert.deepEqual(
+      lowerFirst.fields.map((v) => v.name),
+      ['a', 'ca', 'Ca', 'cb'],
+    );
+  });
 });

@@ -256,7 +256,10 @@ function fieldComparator(
     return 1;
   }
   // Otherwise sort case-insensitively.
-  return aName.toLowerCase() < bName.toLowerCase() ? -1 : 1;
+  const aLower = aName.toLowerCase();
+  const bLower = bName.toLowerCase();
+
+  return aLower < bLower ? -1 : aLower > bLower ? 1 : 0;
 }
 
 /**
@@ -603,7 +606,7 @@ export class SchemaAnalyzer {
   allowAbortDuringAnalysis(): Promise<void> {
     // Allow aborting the analysis.
     if (this.fieldAndTypeAnalysisCounter++ % ALLOW_ABORT_INTERVAL_COUNT === 0) {
-      void allowAbort();
+      return allowAbort(this.options.signal);
     }
     return Promise.resolve();
   }
