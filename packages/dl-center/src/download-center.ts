@@ -1,13 +1,24 @@
-import util from 'util';
 import fetch from 'node-fetch';
 import Ajv from 'ajv';
-import type { Body as Content } from 'aws-sdk/clients/s3';
-import S3 from 'aws-sdk/clients/s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  type PutObjectCommandInput,
+  GetObjectCommand,
+  type GetObjectCommandInput,
+  type ObjectCannedACL,
+} from '@aws-sdk/client-s3';
 
 import downloadCenterSchema from './download-center-config.schema.json';
 import type { DownloadCenterConfig, Link } from './download-center-config';
+import type { Readable } from 'stream';
+
+export type Content = string | Uint8Array | Buffer | Readable;
+export type Body = Awaited<ReturnType<DownloadCenter['s3GetObject']>>['Body'];
 
 export type S3BucketConfig = {
+  region?: string;
+
   /**
    * The bucket name.
    */
@@ -52,15 +63,8 @@ export type S3BucketConfig = {
 
 export type UploadAssetOptions = {
   contentType?: string;
-  acl?: string;
+  acl?: ObjectCannedACL;
 };
-
-type S3UploadFunc = (
-  req: S3.PutObjectRequest,
-) => Promise<S3.ManagedUpload.SendData>;
-type S3GetObjectFunc = (
-  params: S3.GetObjectRequest,
-) => Promise<S3.GetObjectOutput>;
 
 type ProbeResponse = {
   ok: boolean;
@@ -88,7 +92,7 @@ export async function probePlatformDownloadLink({
 }
 
 /**
- * Vaidates a download center configuration object against a json schema.
+ * Validates a download center configuration object against a json schema.
  * Throws an error if the configuration is invalid.
  *
  * @static
@@ -110,7 +114,7 @@ export function validateConfigSchema(config: DownloadCenterConfig): void {
 /**
  * Validates all the asset links referenced in a configuration object.
  * Makes an HEAD http call for each asset link and throws an error in case
- * an asset is not reacheable.
+ * an asset is not reachable.
  *
  * @static
  * @param {DownloadCenterConfig} config -
@@ -175,14 +179,21 @@ export async function validateConfig(
 }
 
 export class DownloadCenter {
-  private s3Upload: S3UploadFunc;
-  private s3GetObject: S3GetObjectFunc;
+  private s3: S3Client;
   private s3BucketName: string;
 
+  private async s3Upload(put: PutObjectCommandInput) {
+    const command = new PutObjectCommand({ ...put, Bucket: this.s3BucketName });
+    return await this.s3.send(command);
+  }
+
+  private async s3GetObject(get: GetObjectCommandInput) {
+    const command = new GetObjectCommand({ ...get, Bucket: this.s3BucketName });
+    return await this.s3.send(command);
+  }
+
   constructor(bucketConfig: S3BucketConfig) {
-    const s3 = new S3(bucketConfig);
-    this.s3GetObject = util.promisify(s3.getObject.bind(s3));
-    this.s3Upload = util.promisify(s3.upload.bind(s3));
+    this.s3 = new S3Client({ region: 'us-east-1', ...bucketConfig });
     this.s3BucketName = bucketConfig.bucket;
   }
 
@@ -196,7 +207,7 @@ export class DownloadCenter {
    * @return {(Promise<Content | undefined>)}
    * @memberof DownloadCenter
    */
-  async downloadAsset(s3ObjectKey: string): Promise<Content | undefined> {
+  async downloadAsset(s3ObjectKey: string): Promise<Body> {
     if (!s3ObjectKey) {
       throw new Error('s3ObjectKey is required');
     }
@@ -238,15 +249,13 @@ export class DownloadCenter {
 
     const acl = options.acl ?? ACL_PUBLIC_READ;
 
-    const uploadParams: S3.PutObjectRequest = {
+    await this.s3Upload({
       ACL: acl,
       Bucket: this.s3BucketName,
       Key: s3ObjectKey,
       Body: content,
       ContentType: options.contentType,
-    };
-
-    await this.s3Upload(uploadParams);
+    });
   }
 
   /**
@@ -293,6 +302,9 @@ export class DownloadCenter {
     }
 
     await validateConfig(config);
-    await this.uploadAsset(s3ObjectKey, JSON.stringify(config));
+    await this.uploadAsset(
+      s3ObjectKey,
+      Buffer.from(JSON.stringify(config), 'utf8'),
+    );
   }
 }

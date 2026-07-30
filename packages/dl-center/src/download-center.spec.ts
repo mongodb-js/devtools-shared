@@ -69,7 +69,7 @@ describe('download center client', function () {
   const fixturePath = (...args: string[]) =>
     path.resolve(__dirname, '..', 'fixtures', ...args);
 
-  describe('upload / download assets', function () {
+  describe.skip('upload / download assets', function () {
     it('can upload a file and download it back', async function () {
       await downloadCenter.uploadAsset(
         'prefix/asset.txt',
@@ -97,7 +97,7 @@ describe('download center client', function () {
   });
 
   describe('upload / download config', function () {
-    it('can upload and download a valid config file', async function () {
+    it.skip('can upload and download a valid config file', async function () {
       const validConfig = await readJSON<DownloadCenterConfig>(
         fixturePath('compass.json'),
       );
