@@ -1,0 +1,4 @@
+{
+  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
+  "exclude": ["src/**/*.spec.*", "src/**/*.test.*"]
+}
