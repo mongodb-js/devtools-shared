@@ -226,7 +226,7 @@ export class DownloadCenter {
       return;
     }
 
-    return JSON.parse(body.toString());
+    return JSON.parse(await body.transformToString());
   }
 
   /**
