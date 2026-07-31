@@ -54,7 +54,7 @@ describe('Documents -> Generate schema -> Validate Documents against the schema'
 });
 
 describe('With a MongoDB Cluster', function () {
-  this.timeout(30_000);
+  this.timeout(120_000);
 
   let client: MongoClient;
   let db: Db;
@@ -69,6 +69,7 @@ describe('With a MongoDB Cluster', function () {
   });
 
   after(async function () {
+    this.timeout(60_000);
     await client?.close();
   });
 
