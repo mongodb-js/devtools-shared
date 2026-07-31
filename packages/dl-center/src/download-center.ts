@@ -15,6 +15,7 @@ import type { Readable } from 'stream';
 
 export type Content = string | Uint8Array | Buffer | Readable;
 export type Body = GetObjectCommandOutput['Body'];
+export type S3BucketConfig = S3ClientConfig & { bucket: string };
 
 export type UploadAssetOptions = {
   contentType?: string;
@@ -136,7 +137,7 @@ export class DownloadCenter {
   private s3: S3Client;
   private s3BucketName: string;
 
-  constructor(bucketConfig: S3ClientConfig & { bucket: string }) {
+  constructor(bucketConfig: S3BucketConfig) {
     const { bucket, ...config } = bucketConfig;
     this.s3 = new S3Client({ region: 'us-east-1', ...config });
     this.s3BucketName = bucket;

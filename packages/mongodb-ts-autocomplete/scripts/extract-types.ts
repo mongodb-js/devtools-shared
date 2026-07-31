@@ -160,27 +160,6 @@ const deps: Readonly<Record<string, string[]>> = {
     'zlib.d.ts',
     'zlib/iter.d.ts',
   ],
-  assert: [
-    'package.json',
-    'assert.js', // exists only
-  ],
-  buffer: ['package.json', 'index.d.ts'],
-  events: [
-    'package.json',
-    'events.js', // exists only (also only on windows)
-  ],
-  punycode: [
-    'package.json',
-    'punycode.js', // exists only
-  ],
-  querystring: [
-    'package.json',
-    'index.js', // exists only
-  ],
-  string_decoder: [
-    'package.json',
-    'lib/string_decoder.js', // exists only
-  ],
   typescript: [
     'package.json',
     'lib/es2023.ts',
@@ -233,14 +212,6 @@ const deps: Readonly<Record<string, string[]>> = {
     'lib/lib.esnext.float16.d.ts',
   ],
   'undici-types': ['package.json', 'index.d.ts'],
-  url: [
-    'package.json',
-    'url.js', // exists only
-  ],
-  util: [
-    'package.json',
-    'util.js', // exists only
-  ],
 };
 
 async function run() {
