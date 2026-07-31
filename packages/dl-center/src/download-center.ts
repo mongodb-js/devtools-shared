@@ -3,10 +3,10 @@ import Ajv from 'ajv';
 import {
   S3Client,
   PutObjectCommand,
-  type PutObjectCommandInput,
   GetObjectCommand,
-  type GetObjectCommandInput,
+  type GetObjectCommandOutput,
   type ObjectCannedACL,
+  type S3ClientConfig,
 } from '@aws-sdk/client-s3';
 
 import downloadCenterSchema from './download-center-config.schema.json';
@@ -14,52 +14,7 @@ import type { DownloadCenterConfig, Link } from './download-center-config';
 import type { Readable } from 'stream';
 
 export type Content = string | Uint8Array | Buffer | Readable;
-export type Body = Awaited<ReturnType<DownloadCenter['s3GetObject']>>['Body'];
-
-export type S3BucketConfig = {
-  region?: string;
-
-  /**
-   * The bucket name.
-   */
-  bucket: string;
-
-  /**
-   * The AWS access key id.
-   */
-  accessKeyId: string;
-
-  /**
-   * The AWS secret access key.
-   */
-  secretAccessKey: string;
-
-  /**
-   * The AWS session token
-   */
-  sessionToken?: string;
-
-  /**
-   * S3 service endpoint. Set this to connect to a local test server.
-   */
-  endpoint?: string;
-
-  /**
-   * Whether to force path style URLs for S3 objects..
-   *
-   * The default is false. Set this to `true`
-   * to connect to a local test server using an arbitrary endpoint.
-   */
-  s3ForcePathStyle?: boolean;
-
-  /**
-   * Whether or not TLS should be enabled.
-   *
-   * The default is `true`. Set this to `false`
-   * to connect to a local test server.
-   */
-  sslEnabled?: boolean;
-};
+export type Body = GetObjectCommandOutput['Body'];
 
 export type UploadAssetOptions = {
   contentType?: string;
@@ -140,12 +95,11 @@ export async function validateDownloadLinks(
     }
   }
 
-  const probes = links.map((link) => {
-    return probePlatformDownloadLink(link).then((probe) => {
-      if (!probe.ok) {
-        errors[link.download_link] = probe.status;
-      }
-    });
+  const probes = links.map(async (link) => {
+    const probe = await probePlatformDownloadLink(link);
+    if (!probe.ok) {
+      errors[link.download_link] = probe.status;
+    }
   });
 
   await Promise.all(probes);
@@ -182,9 +136,10 @@ export class DownloadCenter {
   private s3: S3Client;
   private s3BucketName: string;
 
-  constructor(bucketConfig: S3BucketConfig) {
-    this.s3 = new S3Client({ region: 'us-east-1', ...bucketConfig });
-    this.s3BucketName = bucketConfig.bucket;
+  constructor(bucketConfig: S3ClientConfig & { bucket: string }) {
+    const { bucket, ...config } = bucketConfig;
+    this.s3 = new S3Client({ region: 'us-east-1', ...config });
+    this.s3BucketName = bucket;
   }
 
   /**
