@@ -54,8 +54,6 @@ describe('Documents -> Generate schema -> Validate Documents against the schema'
 });
 
 describe('With a MongoDB Cluster', function () {
-  this.timeout(30_000);
-
   let client: MongoClient;
   let db: Db;
   const cluster = mochaTestServer();
