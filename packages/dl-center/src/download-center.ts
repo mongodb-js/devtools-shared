@@ -7,14 +7,12 @@ import {
   type GetObjectCommandOutput,
   type ObjectCannedACL,
   type S3ClientConfig,
+  type PutObjectCommandInput,
 } from '@aws-sdk/client-s3';
 
 import downloadCenterSchema from './download-center-config.schema.json';
 import type { DownloadCenterConfig, Link } from './download-center-config';
-import type { Readable } from 'stream';
 
-export type Content = string | Uint8Array | Buffer | Readable;
-export type Body = GetObjectCommandOutput['Body'];
 export type S3BucketConfig = S3ClientConfig & { bucket: string };
 
 export type UploadAssetOptions = {
@@ -153,7 +151,9 @@ export class DownloadCenter {
    * @return {(Promise<Content | undefined>)}
    * @memberof DownloadCenter
    */
-  async downloadAsset(s3ObjectKey: string): Promise<Body> {
+  async downloadAsset(
+    s3ObjectKey: string,
+  ): Promise<GetObjectCommandOutput['Body']> {
     if (!s3ObjectKey) {
       throw new Error('s3ObjectKey is required');
     }
@@ -187,7 +187,7 @@ export class DownloadCenter {
    */
   async uploadAsset(
     s3ObjectKey: string,
-    content: Content,
+    content: PutObjectCommandInput['Body'],
     options: UploadAssetOptions = {},
   ): Promise<void> {
     if (!s3ObjectKey) {
