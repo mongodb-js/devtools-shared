@@ -251,9 +251,6 @@ export class DownloadCenter {
     }
 
     await validateConfig(config);
-    await this.uploadAsset(
-      s3ObjectKey,
-      Buffer.from(JSON.stringify(config), 'utf8'),
-    );
+    await this.uploadAsset(s3ObjectKey, JSON.stringify(config));
   }
 }
