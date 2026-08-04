@@ -48,10 +48,11 @@ function getTypeDescriptorForValue(value: BSONValue) {
 
 const BSON_TO_JS_STRING = {
   Code: function (v: Code) {
+    const code = JSON.stringify(v.code);
     if (v.scope) {
-      return `Code('${v.code}',${JSON.stringify(v.scope)})`;
+      return `Code(${code},${JSON.stringify(v.scope)})`;
     }
-    return `Code('${v.code}')`;
+    return `Code(${code})`;
   },
   ObjectID: function (v: ObjectId) {
     return `ObjectId('${v.toString('hex')}')`;
