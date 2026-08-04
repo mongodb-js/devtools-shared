@@ -426,6 +426,24 @@ e  s`,
         "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}",
       );
     });
+
+    it('escapes quotes, backslashes and newlines in Code', function () {
+      const code = `a "b" 'c' \\d\ne`;
+      const jsString = toJSString({ a: new bson.Code(code) }) as string;
+      assert.deepEqual(parseFilter(jsString), {
+        a: new bson.Code(code),
+      });
+    });
+
+    it('escapes Code with a scope', function () {
+      const code = `');process.exit(1);('`;
+      const jsString = toJSString({
+        a: new bson.Code(code, { b: 1 }),
+      }) as string;
+      assert.deepEqual(parseFilter(jsString), {
+        a: new bson.Code(code, { b: 1 }),
+      });
+    });
   });
 
   describe('stringify', function () {
