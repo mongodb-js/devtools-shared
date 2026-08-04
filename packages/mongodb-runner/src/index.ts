@@ -2,6 +2,7 @@ export {
   MongoServer,
   type MongoServerEvents,
   MongoServerOptions,
+  SerializedServerProperties as MongoServerSerializedProperties,
 } from './mongoserver';
 export {
   MongoCluster,
@@ -12,6 +13,7 @@ export {
   RSOptions as MongoClusterRSOptions,
   CommonOptions as MongoClusterCommonOptions,
   ShardedOptions as MongoClusterShardedOptions,
+  SerializedClusterProperties as MongoClusterSerializedProperties,
 } from './mongocluster';
 export type { LogEntry } from './mongologreader';
 export type { ConnectionString } from 'mongodb-connection-string-url';

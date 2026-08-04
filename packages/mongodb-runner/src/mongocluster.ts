@@ -1,4 +1,8 @@
-import type { MongoServerEvents, MongoServerOptions } from './mongoserver';
+import type {
+  MongoServerEvents,
+  MongoServerOptions,
+  SerializedServerProperties,
+} from './mongoserver';
 import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
@@ -164,6 +168,17 @@ export type MongoClusterEvents = {
   removeListener: [keyof MongoClusterEvents];
 };
 
+export interface SerializedClusterProperties {
+  topology: MongoClusterOptions['topology'];
+  replSetName?: string;
+  servers: SerializedServerProperties[];
+  shards: SerializedClusterProperties[];
+  oidcMockProviderProcess?: ReturnType<OIDCMockProviderProcess['serialize']>;
+  defaultConnectionOptions: Partial<MongoClientOptions>;
+  users: MongoDBUserDoc[];
+  options?: MongoClusterOptions;
+}
+
 function removePortArg([...args]: string[]): string[] {
   let portArgIndex = -1;
   if ((portArgIndex = args.indexOf('--port')) !== -1) {
@@ -273,6 +288,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private oidcMockProviderProcess?: OIDCMockProviderProcess;
   private defaultConnectionOptions: Partial<MongoClientOptions> = {};
   private users: MongoDBUserDoc[] = [];
+  private originalOptions?: MongoClusterOptions;
 
   private constructor() {
     super();
@@ -304,7 +320,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     });
   }
 
-  serialize(): unknown /* JSON-serializable */ {
+  serialize(): SerializedClusterProperties {
     return {
       topology: this.topology,
       replSetName: this.replSetName,
@@ -313,6 +329,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       oidcMockProviderProcess: this.oidcMockProviderProcess?.serialize(),
       defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
       users: jsonClone(this.users),
+      options: jsonClone(this.originalOptions),
     };
   }
 
@@ -323,7 +340,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     return true;
   }
 
-  static async deserialize(serialized: any): Promise<MongoCluster> {
+  static async deserialize(
+    serialized: SerializedClusterProperties,
+  ): Promise<MongoCluster> {
     const cluster = new MongoCluster();
     cluster.topology = serialized.topology;
     cluster.replSetName = serialized.replSetName;
@@ -338,6 +357,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster.oidcMockProviderProcess = serialized.oidcMockProviderProcess
       ? OIDCMockProviderProcess.deserialize(serialized.oidcMockProviderProcess)
       : undefined;
+    cluster.originalOptions = serialized.options;
     return cluster;
   }
 
@@ -375,6 +395,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
 
     const cluster = new MongoCluster();
+    cluster.originalOptions = options;
     cluster.topology = options.topology;
     cluster.users = options.users ?? [];
     cluster.defaultConnectionOptions = { ...options.internalClientOptions };
