@@ -173,10 +173,6 @@ const deps: Readonly<Record<string, string[]>> = {
     'package.json',
     'punycode.js', // exists only
   ],
-  querystring: [
-    'package.json',
-    'index.js', // exists only
-  ],
   string_decoder: [
     'package.json',
     'lib/string_decoder.js', // exists only
@@ -233,10 +229,6 @@ const deps: Readonly<Record<string, string[]>> = {
     'lib/lib.esnext.float16.d.ts',
   ],
   'undici-types': ['package.json', 'index.d.ts'],
-  url: [
-    'package.json',
-    'url.js', // exists only
-  ],
   util: [
     'package.json',
     'util.js', // exists only

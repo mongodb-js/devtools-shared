@@ -44,11 +44,13 @@ describe('download center client', function () {
 
     bucketConfig = {
       bucket: 'test',
-      accessKeyId: 'S3RVER',
-      secretAccessKey: 'S3RVER',
+      credentials: {
+        accessKeyId: 'S3RVER',
+        secretAccessKey: 'S3RVER',
+      },
       endpoint: `http://${addressInfo.address}:${addressInfo.port}`,
-      sslEnabled: false,
-      s3ForcePathStyle: true,
+      tls: false,
+      forcePathStyle: true,
     };
   });
 
@@ -77,7 +79,7 @@ describe('download center client', function () {
       );
 
       const content = await downloadCenter.downloadAsset('prefix/asset.txt');
-      expect(content?.toString()).to.contain('content');
+      expect(await content?.transformToString()).to.contain('content');
     });
 
     it('can upload a file with private acls and download it back', async function () {
@@ -92,7 +94,7 @@ describe('download center client', function () {
       const content = await downloadCenter.downloadAsset(
         'prefix-private/asset.txt',
       );
-      expect(content?.toString()).to.contain('content');
+      expect(await content?.transformToString()).to.contain('content');
     });
   });
 
@@ -367,9 +369,6 @@ describe('download center client', function () {
 
         it('returns the result of the probe', async function () {
           const probe1 = await probePlatformDownloadLink({
-            arch: 'x64',
-            os: 'linux',
-            name: 'Linux 64-bit',
             download_link: links.linux,
           });
 
@@ -377,9 +376,6 @@ describe('download center client', function () {
           expect(probe1.status).to.equal(200);
 
           const probe2 = await probePlatformDownloadLink({
-            arch: 'x64',
-            os: 'debian',
-            name: 'Debian 64-bit',
             download_link: links.debian,
           });
 
