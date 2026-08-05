@@ -50,7 +50,9 @@ const NS: NSConstructor = function (this: NS, ns: string | NS): NS {
   }
 
   // https://www.mongodb.com/docs/atlas/reference/internal-database/#internal-databases
-  this.internal = /^__mdb_internal_\w/.test(this.database);
+  // `__mdb_internal_search` is exempt so UIs filtering on `internal` stop hiding
+  // it (COMPASS-10948). It stays `special` below — keep both changes together.
+  this.internal = /^__mdb_internal_(?!search$)\w/.test(this.database);
 
   this.system = /^(?:system(?!\.profile$).*|enxcol_)\./.test(this.collection);
 
@@ -63,7 +65,8 @@ const NS: NSConstructor = function (this: NS, ns: string | NS): NS {
     this.command ||
     this.system ||
     this.database === 'config' ||
-    this.internal;
+    this.internal ||
+    this.database === '__mdb_internal_search';
 
   this.specialish =
     this.special || ['local', 'admin'].indexOf(this.database) > -1;

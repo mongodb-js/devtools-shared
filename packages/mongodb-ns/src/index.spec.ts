@@ -69,6 +69,16 @@ describe('ns', function () {
     it('should acccept `__mdb_internal_suffix`', function () {
       assert(ns('__mdb_internal_suffix').special);
     });
+    // COMPASS-10948: special via its own clause, not via `internal`.
+    it('should acccept `__mdb_internal_search`', function () {
+      assert(ns('__mdb_internal_search').special);
+    });
+  });
+
+  describe('should identify specialish namespaces', function () {
+    it('should acccept `__mdb_internal_search`', function () {
+      assert(ns('__mdb_internal_search').specialish);
+    });
   });
 
   describe('should identify system namespaces', function () {
@@ -103,6 +113,14 @@ describe('ns', function () {
     assert.equal(ns('__mdb_internal').isInternal(), false);
     assert(ns('__mdb_internal_bla').internal);
     assert(ns('__mdb_internal_foo_bar').isInternal());
+    // COMPASS-10948: only the exact database name is exempt.
+    assert.equal(ns('__mdb_internal_search').internal, false);
+    assert.equal(ns('__mdb_internal_search.someColl').isInternal(), false);
+    assert(ns('__mdb_internal_search_foo').internal);
+    assert(ns('__mdb_internal_searchfoo').internal);
+    assert(ns('__mdb_internal_searchX').internal);
+    assert(ns('__mdb_internal_Search').internal);
+    assert.equal(ns('__mdb_internal_').isInternal(), false);
   });
 
   describe('database name validation', function () {
