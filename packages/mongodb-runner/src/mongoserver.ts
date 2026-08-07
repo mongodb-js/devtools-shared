@@ -81,6 +81,7 @@ interface SerializedServerProperties {
   isArbiter?: boolean;
   isMongos?: boolean;
   isConfigSvr?: boolean;
+  isDSC?: boolean;
   keyFileContents?: string;
 }
 
@@ -112,6 +113,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   public isArbiter = false;
   public isMongos = false;
   private isConfigSvr = false;
+  // Whether this server uses DSC. DSC servers do not
+  // allow writes to the `local` database, so metadata tracking is skipped.
+  private isDSC = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
 
@@ -137,6 +141,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       isArbiter: this.isArbiter,
       isMongos: this.isMongos,
       isConfigSvr: this.isConfigSvr,
+      isDSC: this.isDSC,
       keyFileContents: this.keyFileContents,
     };
   }
@@ -151,6 +156,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       srv.host = serialized.host;
     }
     srv.defaultConnectionOptions = serialized.defaultConnectionOptions;
+    // Set before _populateBuildInfo so the restore check skips the
+    // local-database metadata access for DSC servers.
+    srv.isDSC = !!serialized.isDSC;
     srv.closing = !!(await srv._populateBuildInfo('restore-check'));
     srv.isArbiter = !!serialized.isArbiter;
     srv.isMongos = !!serialized.isMongos;
@@ -228,6 +236,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!options.isArbiter;
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
+    srv.isDSC = !!options.args?.includes('disaggregatedStorageEnabled=true');
     if (options.host && !srv.isConfigSvr) {
       srv.host = options.host;
     }
@@ -439,6 +448,12 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     mode: 'insert-new' | 'restore-check',
     retryOptions?: { intervalMs?: number; timeoutMs?: number },
   ): Promise<void> {
+    if (this.isDSC) {
+      // DSC servers do not allow writes to the `local`
+      // database, so metadata tracking is not possible there.
+      debug('skipping metadata check for DSC server');
+      return;
+    }
     let hello = await client.db('admin').command({ hello: 1 });
     if (this.isArbiter) {
       // RS convergence: hello.arbiterOnly may lag behind the RS config while the
@@ -614,7 +629,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (!this.hasInsertedMetadataCollEntry) {
       debug('populating metadata collection entry after initial setup');
       const err = await this._populateBuildInfo('insert-new');
-      if (err && !this.isMongos && !this.isConfigSvr) throw err;
+      if (err && !this.isMongos && !this.isConfigSvr && !this.isDSC) throw err;
     }
     if (!this.buildInfo) {
       throw new Error(
@@ -625,7 +640,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       !this.hasInsertedMetadataCollEntry &&
       !this.isArbiter &&
       !this.isMongos &&
-      !this.isConfigSvr
+      !this.isConfigSvr &&
+      !this.isDSC
     ) {
       throw new Error(
         `Server has not inserted metadata collection entry ${JSON.stringify(this.serialize())}`,

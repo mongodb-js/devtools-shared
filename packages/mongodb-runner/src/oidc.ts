@@ -1,11 +1,12 @@
 import { spawn } from 'child_process';
 import { once } from 'events';
+import { randomUUID } from 'crypto';
 import { parseCLIArgs, OIDCMockProvider } from '@mongodb-js/oidc-mock-provider';
 import { debug } from './util';
 
 if (process.env.RUN_OIDC_MOCK_PROVIDER !== undefined) {
   (async function main() {
-    const uuid = crypto.randomUUID();
+    const uuid = randomUUID();
     debug('starting OIDC mock provider with UUID', uuid);
     const config = parseCLIArgs(process.env.RUN_OIDC_MOCK_PROVIDER);
     const sampleTokenConfig = await config.getTokenPayload({
@@ -119,7 +120,7 @@ export class OIDCMockProviderProcess {
     }
 
     if (!this.issuer || !this.uuid) return;
-    await fetch(new URL(this.issuer, `/shutdown/${this.uuid}`));
+    await fetch(new URL(`/shutdown/${this.uuid}`, this.issuer));
     this.uuid = undefined;
   }
 }

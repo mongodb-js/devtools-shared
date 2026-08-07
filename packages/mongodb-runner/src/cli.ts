@@ -39,6 +39,11 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'MongoDB server version to use',
     })
+    .option('downloadUrl', {
+      type: 'string',
+      describe:
+        'Direct URL to a MongoDB tarball to download (takes precedence over --version)',
+    })
     .option('logDir', {
       type: 'string',
       describe: 'Directory to store server log files in',
@@ -78,6 +83,25 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
+    .option('slsCompose', {
+      type: 'string',
+      describe:
+        'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
+    })
+    .option('slsImageTag', {
+      type: 'string',
+      describe:
+        'SLS docker image tag to use with --slsCompose (e.g. the pinned_sls_commit from the server repo manifest)',
+    })
+    .option('disaggregatedStorageCompose', {
+      type: 'string',
+      describe: 'Path to docker-compose.yml for the DSC backend',
+    })
+    .option('disaggregatedStorageConfig', {
+      type: 'string',
+      describe:
+        'JSON value for the disaggregatedStorageConfig setParameter on each mongod',
+    })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
     .command('start', 'Start a MongoDB instance')
@@ -96,10 +120,10 @@ import type { MongoClientOptions } from 'mongodb';
     args.push(...argv.args.map(String));
   }
   if (argv.debug || argv.verbose) {
-    createDebug.enable('mongodb-runner');
+    createDebug.enable('mongodb-runner,mongodb-downloader');
   }
   if (argv.verbose) {
-    createDebug.enable('mongodb-runner:*');
+    createDebug.enable('mongodb-runner*,mongodb-downloader*');
   }
 
   if (argv.oidc && process.platform !== 'linux') {
@@ -114,7 +138,38 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function start() {
-    const { cluster, id } = await utilities.start(argv, args);
+    if (argv.slsCompose && !argv.slsImageTag) {
+      throw new Error('--slsCompose requires --slsImageTag');
+    }
+    const disaggregatedStorage = argv.slsCompose
+      ? await utilities.createSLSDisaggregatedStorageOptions({
+          composeFile: argv.slsCompose,
+          imageTag: argv.slsImageTag!,
+        })
+      : argv.disaggregatedStorageCompose
+        ? {
+            composeFile: argv.disaggregatedStorageCompose,
+            config: (() => {
+              try {
+                return JSON.parse(argv.disaggregatedStorageConfig ?? '');
+              } catch {
+                return argv.disaggregatedStorageConfig ?? '';
+              }
+            })(),
+          }
+        : undefined;
+    if (disaggregatedStorage && 'sls' in disaggregatedStorage) {
+      console.error('Allocated SLS service ports:');
+      for (const [serviceName, { addr }] of Object.entries(
+        disaggregatedStorage.sls.services,
+      )) {
+        console.error(`  ${serviceName}: ${addr}`);
+      }
+    }
+    const { cluster, id } = await utilities.start(
+      { ...argv, disaggregatedStorage },
+      args,
+    );
     const cs = new ConnectionString(cluster.connectionString);
     // Only the connection string should print to stdout so it can be captured
     // by a calling process.
