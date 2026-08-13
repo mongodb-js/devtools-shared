@@ -54,8 +54,21 @@ describe('Documents -> Generate schema -> Validate Documents against the schema'
 });
 
 describe('With a MongoDB Cluster', function () {
+  if (process.platform === 'win32') {
+    // Shutting down mongod and removing its data files is much slower on
+    // Windows CI than the default mocha timeout allows for.
+    this.timeout(120_000);
+  }
+
   let client: MongoClient;
   let db: Db;
+
+  // We need to register this before mochaTestServer() so that mocha runs it first and the
+  // client is closed before the cluster it is connected to goes away.
+  after(async function () {
+    await client?.close();
+  });
+
   const cluster = mochaTestServer();
 
   before(async function () {
@@ -64,10 +77,6 @@ describe('With a MongoDB Cluster', function () {
     client = new MongoClient(connectionString);
     await client.connect();
     db = client.db('test');
-  });
-
-  after(async function () {
-    await client?.close();
   });
 
   describe('Documents -> Generate basic schema -> Use schema in validation rule in MongoDB -> Validate documents against the schema', function () {
