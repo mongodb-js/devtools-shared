@@ -63,8 +63,8 @@ describe('With a MongoDB Cluster', function () {
   let client: MongoClient;
   let db: Db;
 
-  // We need to register this before mochaTestServer() so that mocha runs it first and the
-  // client is closed before the cluster it is connected to goes away.
+  // We register this before mochaTestServer() so that mocha runs it first and the
+  // client is closed before closing the cluster.
   after(async function () {
     await client?.close();
   });
