@@ -114,7 +114,7 @@ jobs:
       - name: Compute cache week
         if: ${{ runner.os == 'Windows' }}
         id: cache-week
-        run: echo "week=$(date -u +%G-%V)" >> $GITHUB_OUTPUT
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Cache MongoDB binaries
