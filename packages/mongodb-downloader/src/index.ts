@@ -4,7 +4,7 @@ import * as tar from 'tar';
 import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
-import decompress from 'decompress';
+import { extractZip } from './decompress';
 import { pipeline } from 'stream';
 import getDownloadURL from 'mongodb-download-url';
 import type {
@@ -156,9 +156,10 @@ export class MongoDBDownloader {
         createWriteStream(filename, { highWaterMark: MongoDBDownloader.HWM }),
       );
       debug(`Written file ${url} to ${filename}, extracting...`);
-      await decompress(filename, downloadTarget, {
+      await extractZip(filename, downloadTarget, {
         strip: isCryptLibrary ? 0 : 1,
-        filter: (file) => path.extname(file.path) !== '.pdb', // Windows .pdb files are huge and useless
+        filter: (entryPath) => path.extname(entryPath) !== '.pdb', // Windows .pdb files are huge and useless
+        highWaterMark: MongoDBDownloader.HWM,
       });
     }
 
