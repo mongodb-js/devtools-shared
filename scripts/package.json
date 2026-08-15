@@ -31,11 +31,11 @@
     "@mongodb-js/monorepo-tools": "^1.5.8",
     "@mongodb-js/prettier-config-devtools": "^1.0.4",
     "depcheck": "^1.4.7",
-    "eslint": "^7.25.0 || ^8.0.0",
-    "prettier": "^3.8.1"
+    "eslint": "^8.57.1",
+    "prettier": "^3.9.6"
   },
   "dependencies": {
-    "pacote": "^21.3.1",
+    "pacote": "^21.5.1",
     "prompts": "^2.4.2"
   }
 }

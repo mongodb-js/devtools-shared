@@ -4,5 +4,8 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ # Not imported directly; declared so Lerna builds the mongodb-query-parser
+ # workspace before this package (compass-components pulls it in transitively).
+ - 'mongodb-query-parser'
 ignore-patterns:
  - 'dist'

@@ -43,13 +43,13 @@
     "request-npm-token": "request-npm-token"
   },
   "dependencies": {
-    "@mongodb-js/monorepo-tools": "^1.2.3"
+    "@mongodb-js/monorepo-tools": "^1.5.8"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
-    "@babel/parser": "^7.22.7",
+    "@babel/core": "^7.29.7",
+    "@babel/parser": "^7.29.8",
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
-    "lerna": "^9.0.7"
+    "lerna": "^10.0.0"
   }
 }

@@ -4,10 +4,41 @@ import Ajv2020 from 'ajv/dist/2020';
 import assert from 'assert';
 import { Double, Int32, ObjectId, EJSON } from 'bson';
 import { MongoClient, type Db } from 'mongodb';
-import { mochaTestServer } from '@mongodb-js/compass-test-server';
+import { MongoCluster } from 'mongodb-runner';
+import path from 'path';
+import { tmpdir } from 'os';
 
 import { allValidBSONTypesWithEdgeCasesDoc } from '../all-bson-types-fixture';
 import { analyzeDocuments } from '../../src';
+
+// Starts a standalone server for the enclosing suite and tears it down
+// afterwards. The returned accessor is only valid inside the suite's tests.
+function mochaTestServer(): () => MongoCluster {
+  let cluster: MongoCluster | undefined;
+
+  // The hooks are not top-level: they are registered when this function is
+  // called from inside a suite.
+  // eslint-disable-next-line mocha/no-top-level-hooks
+  before(async function () {
+    // Downloading the server binaries can take a long time in CI.
+    this.timeout(500_000);
+    cluster = await MongoCluster.start({
+      topology: 'standalone',
+      tmpDir: path.join(tmpdir(), 'mongodb-schema-tests'),
+    });
+  });
+
+  // eslint-disable-next-line mocha/no-top-level-hooks
+  after(async function () {
+    await cluster?.close();
+    cluster = undefined;
+  });
+
+  return () => {
+    if (!cluster) throw new Error('before() hook not ran yet');
+    return cluster;
+  };
+}
 
 const bsonDocuments = [
   {

@@ -88,7 +88,7 @@ export class DriverSchemaGenerator extends GeneratorBase {
         }
 
         let updatedYaml = yaml.dump(operatorYaml, {
-          schema: GeneratorBase.loadOptions.schema,
+          schema: GeneratorBase.dumpOptions.schema,
           indent: 4,
           lineWidth: -1,
         });
