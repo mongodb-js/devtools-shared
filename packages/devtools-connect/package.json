@@ -89,7 +89,7 @@
   },
   "optionalDependencies": {
     "kerberos": "^7.0.0",
-    "mongodb-client-encryption": "^7.2.0",
+    "mongodb-client-encryption": "^7.2.1",
     "os-dns-native": "^2.0.1",
     "resolve-mongodb-srv": "^1.1.7"
   }

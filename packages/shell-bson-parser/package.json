@@ -67,7 +67,7 @@
     "@types/mocha": "^9.1.1",
     "@types/sinon-chai": "^4.0.0",
     "benchmark": "^2.1.4",
-    "bson": "^7.3.1",
+    "bson": "^7.3.2",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^8.57.1",

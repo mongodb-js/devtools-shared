@@ -55,7 +55,7 @@
   "dependencies": {
     "@mongodb-js/mongodb-schema": "^12.7.4",
     "@mongodb-js/ts-autocomplete": "^0.5.13",
-    "@mongosh/shell-api": "^5.3.4",
+    "@mongosh/shell-api": "^5.5.0",
     "debug": "^4.4.3",
     "lodash": "^4.18.1",
     "node-cache": "^5.1.2",
@@ -71,7 +71,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^25.9.5",
     "@types/sinon-chai": "^4.0.0",
-    "bson": "^7.3.1",
+    "bson": "^7.3.2",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^8.57.1",
