@@ -68,7 +68,7 @@
     "@types/react": "^17.0.93",
     "@types/react-dom": "^17.0.26",
     "@types/sinon-chai": "^4.0.0",
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "depcheck": "^1.4.7",
     "eslint": "^8.57.1",
     "gen-esm-wrapper": "^1.1.3",

@@ -30,7 +30,7 @@
     "react": "^17.0.2"
   },
   "dependencies": {
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "chai-dom": "^1.12.1",
     "global-jsdom": "^24.0.0",
     "identity-obj-proxy": "^3.0.0",
