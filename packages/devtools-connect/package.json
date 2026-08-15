@@ -78,7 +78,6 @@
     "mongodb": "^7.5.0",
     "mongodb-log-writer": "^2.5.14",
     "mongodb-runner": "^6.8.5",
-    "mongodb6": "npm:mongodb@^6.21.0",
     "nyc": "^15.1.0",
     "os-dns-native": "^2.0.1",
     "prettier": "^3.9.6",
