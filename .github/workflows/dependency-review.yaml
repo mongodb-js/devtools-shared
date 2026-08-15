@@ -19,4 +19,5 @@ jobs:
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
         with:
           # GHSA-mh99-v99m-4gvg - brace-expansion DoS via unbounded expansion tolerable for the usage in this repo.
-          allow-ghsas: "GHSA-mh99-v99m-4gvg"
+          # GHSA-r292-9mhp-454m - Uncontrolled recursion in mapHas/filesFilter tolerable for the usage in this repo.
+          allow-ghsas: "GHSA-mh99-v99m-4gvg,GHSA-r292-9mhp-454m"
