@@ -29,168 +29,178 @@ class BsonDate extends Date {
   }
 }
 
+// The !!timestamp tag would represent BsonDate using the Date representation
+// because it's a subclass of Date. We replace it with a tag that only identifies
+// Date instances that are not BsonDate.
+const timestampTag: yaml.ScalarTagDefinition<Date> = {
+  ...yaml.timestampTag,
+  identify(data: unknown) {
+    return data instanceof Date && !(data instanceof BsonDate);
+  },
+};
+
+const bsonTags: yaml.TagDefinition[] = [
+  yaml.defineScalarTag('!bson_utcdatetime', {
+    resolve(data: string) {
+      return new BsonDate(data);
+    },
+    identify(data: unknown) {
+      return data instanceof BsonDate;
+    },
+    represent(data: unknown) {
+      if (data instanceof BsonDate) {
+        return data.toString();
+      }
+      throw new Error(
+        `Expected Date, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_objectId', {
+    resolve(data: string) {
+      return bson.ObjectId.createFromHexString(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.ObjectId;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.ObjectId) {
+        return data.toHexString();
+      }
+
+      throw new Error(
+        `Expected bson.ObjectId, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_uuid', {
+    resolve(data: string) {
+      return bson.UUID.createFromHexString(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.UUID;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.UUID) {
+        return data.toHexString();
+      }
+
+      throw new Error(
+        `Expected bson.UUID, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_regex', {
+    resolve(data: string) {
+      return new bson.BSONRegExp(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.BSONRegExp && !data.options;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.BSONRegExp) {
+        return data.pattern;
+      }
+
+      throw new Error(
+        `Expected bson.BSONRegExp, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineSequenceTag<string[], bson.BSONRegExp>('!bson_regex', {
+    create() {
+      return [];
+    },
+    addItem(carrier, item) {
+      carrier.push(item as string);
+    },
+    finalize([data, flags]) {
+      return new bson.BSONRegExp(data, flags);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.BSONRegExp && !!data.options;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.BSONRegExp) {
+        return [data.pattern, data.options];
+      }
+
+      throw new Error(
+        `Expected bson.BSONRegExp, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_binary', {
+    resolve(data: string) {
+      return bson.Binary.createFromBase64(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.Binary;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.Binary) {
+        return data.toString('base64');
+      }
+
+      throw new Error(
+        `Expected bson.Binary, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_decimal128', {
+    resolve(data: string) {
+      return bson.Decimal128.fromString(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.Decimal128;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.Decimal128) {
+        return data.toString();
+      }
+
+      throw new Error(
+        `Expected bson.Decimal128, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+  yaml.defineScalarTag('!bson_int64', {
+    resolve(data: string) {
+      return bson.Long.fromString(data);
+    },
+    identify(data: unknown) {
+      return data instanceof bson.Long;
+    },
+    represent(data: unknown) {
+      if (data instanceof bson.Long) {
+        return data.toString();
+      }
+
+      throw new Error(
+        `Expected bson.Long, but got ${(data as object).constructor.name}`,
+      );
+    },
+  }),
+];
+
 export abstract class GeneratorBase {
   private outputBuffer: StringWriter | undefined;
   private outputStream?: WriteStream;
 
-  constructor() {
-    // The default YAML schema will represent BsonDate using the Date representation because
-    // it's a subclass of Date. We find the implicit type for Date and modify it to use predicate
-    // instead of instanceOf, so it will only match Date instances that are not BsonDate.
-    if ('implicit' in yaml.DEFAULT_SCHEMA) {
-      const implicit = yaml.DEFAULT_SCHEMA.implicit as yaml.Type[];
-      const timestamp = implicit.find((type) => type.instanceOf === Date);
-      if (timestamp) {
-        timestamp.instanceOf = null;
-        timestamp.predicate = (data) => {
-          return data instanceof Date && !(data instanceof BsonDate);
-        };
-      }
-    }
-  }
-
+  // js-yaml 4 loaded with its DEFAULT_SCHEMA: the core schema plus !!timestamp
+  // and !!merge, which is what these specifications rely on.
   public static loadOptions: yaml.LoadOptions = {
-    schema: yaml.DEFAULT_SCHEMA.extend([
-      new yaml.Type('!bson_utcdatetime', {
-        kind: 'scalar',
-        construct(data: string) {
-          return new BsonDate(data);
-        },
-        instanceOf: BsonDate,
-        represent(data) {
-          if (data instanceof BsonDate) {
-            return data.toString();
-          }
-          throw new Error(`Expected Date, but got ${data.constructor.name}`);
-        },
-      }),
-      new yaml.Type('!bson_objectId', {
-        kind: 'scalar',
-        construct(data: string) {
-          return bson.ObjectId.createFromHexString(data);
-        },
-        predicate(data) {
-          return data instanceof bson.ObjectId;
-        },
-        represent(data) {
-          if (data instanceof bson.ObjectId) {
-            return data.toHexString();
-          }
+    schema: yaml.CORE_SCHEMA.withTags(timestampTag, yaml.mergeTag, bsonTags),
+  };
 
-          throw new Error(
-            `Expected bson.ObjectId, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_uuid', {
-        kind: 'scalar',
-        construct(data: string) {
-          return bson.UUID.createFromHexString(data);
-        },
-        predicate(data) {
-          return data instanceof bson.UUID;
-        },
-        represent(data) {
-          if (data instanceof bson.UUID) {
-            return data.toHexString();
-          }
-
-          throw new Error(
-            `Expected bson.UUID, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_regex', {
-        kind: 'scalar',
-        construct(data: string) {
-          return new bson.BSONRegExp(data);
-        },
-        predicate(data) {
-          return data instanceof bson.BSONRegExp && !data.options;
-        },
-        represent(data) {
-          if (data instanceof bson.BSONRegExp) {
-            return data.pattern;
-          }
-
-          throw new Error(
-            `Expected bson.BSONRegExp, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_regex', {
-        kind: 'sequence',
-        construct([data, flags]: [string, string]) {
-          return new bson.BSONRegExp(data, flags);
-        },
-        predicate(data) {
-          return data instanceof bson.BSONRegExp && !!data.options;
-        },
-        represent(data) {
-          if (data instanceof bson.BSONRegExp) {
-            return [data.pattern, data.options];
-          }
-
-          throw new Error(
-            `Expected bson.BSONRegExp, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_binary', {
-        kind: 'scalar',
-        construct(data: string) {
-          return bson.Binary.createFromBase64(data);
-        },
-        predicate(data) {
-          return data instanceof bson.Binary;
-        },
-        represent(data) {
-          if (data instanceof bson.Binary) {
-            return data.toString('base64');
-          }
-
-          throw new Error(
-            `Expected bson.Binary, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_decimal128', {
-        kind: 'scalar',
-        construct(data: string) {
-          return bson.Decimal128.fromString(data);
-        },
-        predicate(data) {
-          return data instanceof bson.Decimal128;
-        },
-        represent(data) {
-          if (data instanceof bson.Decimal128) {
-            return data.toString();
-          }
-
-          throw new Error(
-            `Expected bson.Decimal128, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-      new yaml.Type('!bson_int64', {
-        kind: 'scalar',
-        construct(data: string) {
-          return bson.Long.fromString(data);
-        },
-        predicate(data) {
-          return data instanceof bson.Long;
-        },
-        represent(data) {
-          if (data instanceof bson.Long) {
-            return data.toString();
-          }
-
-          throw new Error(
-            `Expected bson.Long, but got ${data.constructor.name}`,
-          );
-        },
-      }),
-    ]),
+  // js-yaml quotes scalars that any YAML version could misread when dumping with
+  // DUMP_SCHEMA, matching the js-yaml 4 dumper's default compatibility mode.
+  public static dumpOptions: Omit<yaml.DumpOptions, 'schema'> & {
+    schema: yaml.Schema;
+  } = {
+    schema: yaml.DUMP_SCHEMA.withTags(timestampTag, bsonTags),
+    // js-yaml 4 always started a nested collection on the line after `-`.
+    seqInlineFirst: false,
   };
 
   protected configDir = path.join(
