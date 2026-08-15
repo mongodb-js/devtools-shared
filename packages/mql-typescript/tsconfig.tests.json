@@ -1,0 +1,12 @@
+{
+  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // These files only exercise the generated schema, so no ambient test
+    // globals - @types/chai in particular augments Object.prototype with a
+    // `should` property that collides with the Atlas Search `compound`
+    // operator.
+    "types": ["node"]
+  },
+  "include": ["tests/**/*"]
+}
