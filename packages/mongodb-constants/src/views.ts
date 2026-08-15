@@ -18,13 +18,11 @@ const isPipelineSearchQueryable = (pipeline: Document[]): boolean => {
     const stageKey = Object.keys(stage)[0];
 
     // Check if the stage is $addFields, $set, or $match
-    if (
-      !(
-        stageKey === '$addFields' ||
-        stageKey === '$set' ||
-        stageKey === '$match'
-      )
-    ) {
+    if (!(
+      stageKey === '$addFields' ||
+      stageKey === '$set' ||
+      stageKey === '$match'
+    )) {
       return false;
     }
 

@@ -7,8 +7,7 @@ import { rootCertificates } from 'tls';
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
 
 let systemCertsCachePromise:
-  | Promise<{ certs: string[]; asyncFallbackError?: Error }>
-  | undefined;
+  Promise<{ certs: string[]; asyncFallbackError?: Error }> | undefined;
 
 export function resetSystemCACache(systemCAOpts: SystemCAOptions = {}): void {
   systemCertsCachePromise = undefined;
