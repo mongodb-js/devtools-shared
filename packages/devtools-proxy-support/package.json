@@ -64,7 +64,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "@mongodb-js/socksv5": "^0.0.10",
+    "@mongodb-js/socksv5": "^0.0.11",
     "agent-base": "^7.1.1",
     "debug": "^4.4.0",
     "http-proxy-agent": "^7.0.2",
