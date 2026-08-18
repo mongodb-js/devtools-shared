@@ -80,11 +80,13 @@ const BSON_TO_JS_STRING = {
     return `BinData(${subType.toString(10)}, '${v.toString('base64')}')`;
   },
   DBRef: function (v: DBRef) {
+    // `toJSString` only returns undefined for values that stringify to
+    // nothing, which for an oid can only be `undefined` itself.
+    const oid = toJSString(v.oid, 0) ?? 'undefined';
     if (v.db) {
-      return `DBRef('${v.collection}', '${v.oid.toString()}', '${v.db}')`;
+      return `DBRef(${JSON.stringify(v.collection)}, ${oid}, ${JSON.stringify(v.db)})`;
     }
-
-    return `DBRef('${v.collection}', '${v.oid.toString()}')`;
+    return `DBRef(${JSON.stringify(v.collection)}, ${oid})`;
   },
   Timestamp: function (v: Timestamp) {
     return `Timestamp({ t: ${v.high}, i: ${v.low} })`;

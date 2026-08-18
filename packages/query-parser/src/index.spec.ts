@@ -444,6 +444,66 @@ e  s`,
         a: new bson.Code(code, { b: 1 }),
       });
     });
+
+    describe('DBRef', function () {
+      // The bson types say `oid` is an ObjectId, but a DBRef oid can hold any
+      // BSON value in practice, which is what we want to cover here.
+      const dbRef = (collection: string, oid: unknown, db?: string) =>
+        new bson.DBRef(collection, oid as bson.ObjectId, db);
+
+      it('preserves the oid type rather than flattening it to a string', function () {
+        assert.equal(
+          toJSString({ a: dbRef('col', 1) }, 0),
+          '{a:DBRef("col", 1)}',
+        );
+        assert.equal(
+          toJSString({ a: dbRef('col', 'abc') }, 0),
+          '{a:DBRef("col", \'abc\')}',
+        );
+        assert.equal(
+          toJSString(
+            { a: dbRef('col', new bson.ObjectId('507f191e810c19729de860ea')) },
+            0,
+          ),
+          '{a:DBRef("col", ObjectId(\'507f191e810c19729de860ea\'))}',
+        );
+      });
+
+      it('includes the db when present', function () {
+        assert.equal(
+          toJSString({ a: dbRef('col', 1, 'db') }, 0),
+          '{a:DBRef("col", 1, "db")}',
+        );
+      });
+
+      it('escapes quotes in the collection and db', function () {
+        assert.equal(
+          toJSString({ a: dbRef("co'l", 1, 'd"b') }, 0),
+          '{a:DBRef("co\'l", 1, "d\\"b")}',
+        );
+      });
+
+      const roundTrips: [string, bson.DBRef][] = [
+        ['numeric oid', dbRef('col', 1)],
+        ['string oid', dbRef('col', 'abc')],
+        [
+          'ObjectId oid',
+          dbRef('col', new bson.ObjectId('507f191e810c19729de860ea')),
+        ],
+        ['db', dbRef('col', 1, 'db')],
+        ['quotes', dbRef("co'l", 1, 'd"b')],
+        ['double spaces', dbRef('a  b', 1)],
+        ['newline', dbRef('a\nb', 1)],
+        ['nested DBRef oid', dbRef('col', dbRef('inner', 1), 'db')],
+      ];
+
+      for (const [name, dbref] of roundTrips) {
+        it(`round-trips a DBRef with ${name}`, function () {
+          const jsString = toJSString({ a: dbref }, 0) as string;
+          assert.deepEqual(parseFilter(jsString), { a: dbref });
+        });
+      }
+    });
   });
 
   describe('stringify', function () {
@@ -566,7 +626,7 @@ e  s`,
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('col', 1)}");
         const stringified = stringify(res);
-        assert.equal(stringified, "{dbref: DBRef('col', '1')}");
+        assert.equal(stringified, '{dbref: DBRef("col", 1)}');
       });
     });
 
@@ -574,7 +634,7 @@ e  s`,
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('db.col', 1)}");
         const stringified = stringify(res);
-        assert.equal(stringified, "{dbref: DBRef('col', '1', 'db')}");
+        assert.equal(stringified, '{dbref: DBRef("col", 1, "db")}');
       });
     });
 
@@ -582,7 +642,7 @@ e  s`,
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('col', 1, 'db')}");
         const stringified = stringify(res);
-        assert.equal(stringified, "{dbref: DBRef('col', '1', 'db')}");
+        assert.equal(stringified, '{dbref: DBRef("col", 1, "db")}');
       });
     });
 
