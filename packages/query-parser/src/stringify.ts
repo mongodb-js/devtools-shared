@@ -178,15 +178,3 @@ export function toJSString(
     ind,
   );
 }
-
-/**
- * @public
- * @deprecated
- * This function is deprecated and not recommended as it replaces
- * double spaces, newline values, and indents with only one space.
- **/
-export function stringify(obj: unknown): string | undefined {
-  return toJSString(obj, 1)
-    ?.replace(/ ?\n ? ?/g, '')
-    .replace(/ {2,}/g, ' ');
-}

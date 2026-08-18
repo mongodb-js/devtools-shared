@@ -16,7 +16,6 @@ import {
   parseFilter,
   parseProject,
   parseSort,
-  stringify,
   toJSString,
   DEFAULT_LIMIT,
   DEFAULT_MAX_TIME_MS,
@@ -553,66 +552,74 @@ e  s`,
     });
   });
 
-  describe('stringify', function () {
+  describe('toJSString with indent 0', function () {
+    const compactStringify = (obj: unknown) => toJSString(obj, 0);
+
     it('should work', function () {
       const res = parseFilter('{_id: ObjectId("58c33a794d08b991e3648fd2")}');
-      const stringified = stringify(res);
-      assert.equal(stringified, "{_id: ObjectId('58c33a794d08b991e3648fd2')}");
+      assert.equal(
+        compactStringify(res),
+        "{_id:ObjectId('58c33a794d08b991e3648fd2')}",
+      );
     });
-    it('should not added extra space when nesting', function () {
-      assert.equal(stringify({ a: { $exists: true } }), '{a: {$exists: true}}');
+    it('should not add extra space when nesting', function () {
+      assert.equal(
+        compactStringify({ a: { $exists: true } }),
+        '{a:{$exists:true}}',
+      );
     });
 
-    // stringify is now deprecated as a result of this.
-    it('changes multi-space values', function () {
+    it('preserves multi-space and newline values', function () {
       assert.equal(
-        stringify({
+        compactStringify({
           a: {
             name: `multi-line with s  p    a   c
         
 e  s`,
           },
         }),
-        "{a: {name: 'multi-line with s p a c\\n \\ne s'}}",
+        "{a:{name:'multi-line with s  p    a   c\\n        \\ne  s'}}",
       );
     });
 
     context('when providing a long', function () {
       it('correctly converts to NumberLong', function () {
-        const stringified = stringify({ test: bson.Long.fromNumber(5) });
-        assert.equal(stringified, "{test: NumberLong('5')}");
+        assert.equal(
+          compactStringify({ test: bson.Long.fromNumber(5) }),
+          "{test:NumberLong('5')}",
+        );
 
         assert.equal(
-          stringify({ test: new bson.Long('123456789123456789') }),
-          "{test: NumberLong('123456789123456789')}",
+          compactStringify({ test: new bson.Long('123456789123456789') }),
+          "{test:NumberLong('123456789123456789')}",
         );
       });
     });
 
     context('when providing a decimal128', function () {
       it('correctly converts to NumberDecimal', function () {
-        const stringified = stringify({
-          test: bson.Decimal128.fromString('5.5'),
-        });
-        assert.equal(stringified, "{test: NumberDecimal('5.5')}");
+        assert.equal(
+          compactStringify({ test: bson.Decimal128.fromString('5.5') }),
+          "{test:NumberDecimal('5.5')}",
+        );
       });
     });
 
     context('when providing an int32', function () {
       it('correctly converts to Int32', function () {
-        const stringified = stringify({
-          test: new bson.Int32(123),
-        });
-        assert.equal(stringified, "{test: NumberInt('123')}");
+        assert.equal(
+          compactStringify({ test: new bson.Int32(123) }),
+          "{test:NumberInt('123')}",
+        );
       });
     });
 
     context('when providing a Double', function () {
       it('correctly converts to Double', function () {
-        const stringified = stringify({
-          test: new bson.Double(0.8),
-        });
-        assert.equal(stringified, "{test: Double('0.8')}");
+        assert.equal(
+          compactStringify({ test: new bson.Double(0.8) }),
+          "{test:Double('0.8')}",
+        );
       });
     });
 
@@ -625,11 +632,10 @@ e  s`,
         },
       };
 
-      it('correctly replaces nested tabs with single spaces', function () {
-        const stringified = stringify(query);
+      it('does not add any whitespace', function () {
         assert.equal(
-          stringified,
-          '{coordinates: {$geoWithin: { $centerSphere: [ [ -79, 28 ], 0.04 ]}}}',
+          compactStringify(query),
+          '{coordinates:{$geoWithin:{$centerSphere:[[-79,28],0.04]}}}',
         );
       });
     });
@@ -637,27 +643,24 @@ e  s`,
     context('when providing a Date', function () {
       it('correctly converts to an ISODate', function () {
         const res = parseFilter("{test: new Date('2017-01-01T12:35:31.000Z')}");
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{test: ISODate('2017-01-01T12:35:31.000Z')}",
+          compactStringify(res),
+          "{test:ISODate('2017-01-01T12:35:31.000Z')}",
         );
       });
 
       it('falls back to an invalid ISODate if the provided Date is invalid', function () {
         const res = parseFilter("{test: new Date('invalid')}");
-        const stringified = stringify(res);
-        assert.equal(stringified, "{test: ISODate('Invalid Date')}");
+        assert.equal(compactStringify(res), "{test:ISODate('Invalid Date')}");
       });
     });
 
     context('when providing an ISODate', function () {
       it('correctly converts to an ISODate', function () {
         const res = parseFilter("{test: ISODate('2017-01-01T12:35:31.000Z')}");
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{test: ISODate('2017-01-01T12:35:31.000Z')}",
+          compactStringify(res),
+          "{test:ISODate('2017-01-01T12:35:31.000Z')}",
         );
       });
 
@@ -672,48 +675,42 @@ e  s`,
     context('when providing a DBRef with (collection, oid)', function () {
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('col', 1)}");
-        const stringified = stringify(res);
-        assert.equal(stringified, '{dbref: DBRef("col", 1)}');
+        assert.equal(compactStringify(res), '{dbref:DBRef("col", 1)}');
       });
     });
 
     context('when providing a DBRef with (db.collection, oid)', function () {
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('db.col', 1)}");
-        const stringified = stringify(res);
-        assert.equal(stringified, '{dbref: DBRef("col", 1, "db")}');
+        assert.equal(compactStringify(res), '{dbref:DBRef("col", 1, "db")}');
       });
     });
 
     context('when providing a DBRef with (collection, oid, db)', function () {
       it('correctly converts to a DBRef', function () {
         const res = parseFilter("{dbref: DBRef('col', 1, 'db')}");
-        const stringified = stringify(res);
-        assert.equal(stringified, '{dbref: DBRef("col", 1, "db")}');
+        assert.equal(compactStringify(res), '{dbref:DBRef("col", 1, "db")}');
       });
     });
 
     context('when provided a RegExp', function () {
       it('correctly formats the options', function () {
         const res = parseFilter('{name: /foo/i}');
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("foo", \'i\')}');
+        assert.equal(compactStringify(res), '{name:RegExp("foo", \'i\')}');
       });
 
       it('escapes quotes', function () {
         const res = parseFilter("{name: /'/}");
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("\'")}');
+        assert.equal(compactStringify(res), '{name:RegExp("\'")}');
       });
 
       it('handles $regex object format (keeps format)', function () {
         const res = parseFilter(
           '{"name": {"$regex": "pineapple", "$options": "i"}}',
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{name: {$regex: 'pineapple',$options: 'i'}}",
+          compactStringify(res),
+          "{name:{$regex:'pineapple',$options:'i'}}",
         );
       });
 
@@ -721,8 +718,7 @@ e  s`,
         const res = {
           name: /pineapple/,
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("pineapple")}');
+        assert.equal(compactStringify(res), '{name:RegExp("pineapple")}');
       });
     });
 
@@ -731,24 +727,24 @@ e  s`,
         const res = {
           name: new bson.BSONRegExp('pineapple', 'i'),
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("pineapple", \'i\')}');
+        assert.equal(
+          compactStringify(res),
+          '{name:RegExp("pineapple", \'i\')}',
+        );
       });
 
       it('stringifies correctly with quotes', function () {
         const res = {
           name: new bson.BSONRegExp('"\'', 'i'),
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("\\"\'", \'i\')}');
+        assert.equal(compactStringify(res), '{name:RegExp("\\"\'", \'i\')}');
       });
 
       it('stringifies correctly without options', function () {
         const res = {
           name: new bson.BSONRegExp('pineapple'),
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: RegExp("pineapple")}');
+        assert.equal(compactStringify(res), '{name:RegExp("pineapple")}');
       });
 
       it('stringifies into BSONRegExp when js RegExp cannot handle an option', function () {
@@ -758,8 +754,10 @@ e  s`,
             'x' /* x flag is not valid in js but valid in BSONRegExp*/,
           ),
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: BSONRegExp("pineapple", \'x\')}');
+        assert.equal(
+          compactStringify(res),
+          '{name:BSONRegExp("pineapple", \'x\')}',
+        );
       });
 
       it('stringifies into BSONRegExp when js RegExp cannot handle the regex', function () {
@@ -771,8 +769,10 @@ e  s`,
             'i',
           ),
         };
-        const stringified = stringify(res);
-        assert.equal(stringified, '{name: BSONRegExp("(?i)a(?-i)cme", \'i\')}');
+        assert.equal(
+          compactStringify(res),
+          '{name:BSONRegExp("(?i)a(?-i)cme", \'i\')}',
+        );
       });
     });
 
@@ -781,10 +781,9 @@ e  s`,
         const res = parseFilter(
           `{name: new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")}`,
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, 'OyQRAeK7QlWMr0E2xWapYg==')}`,
+          compactStringify(res),
+          `{name:BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, 'OyQRAeK7QlWMr0E2xWapYg==')}`,
         );
       });
 
@@ -792,43 +791,39 @@ e  s`,
         const res = parseFilter(
           '{name: UUID("3b241101-e2bb-4255-8caf-4136c566a962")}',
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{name: UUID('3b241101-e2bb-4255-8caf-4136c566a962')}",
+          compactStringify(res),
+          "{name:UUID('3b241101-e2bb-4255-8caf-4136c566a962')}",
         );
       });
 
-      it('does not stringify LegacyJavaUUID', function () {
+      it('does not convert LegacyJavaUUID to UUID', function () {
         const res = parseFilter(
           '{name: LegacyJavaUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{name: BinData(3, 'd2ZVRDMiEQD/7t3Mu6qZiA==')}",
+          compactStringify(res),
+          "{name:BinData(3, 'd2ZVRDMiEQD/7t3Mu6qZiA==')}",
         );
       });
 
-      it('does not stringify LegacyCSharpUUID', function () {
+      it('does not convert LegacyCSharpUUID to UUID', function () {
         const res = parseFilter(
           '{name: LegacyCSharpUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{name: BinData(3, 'MyIRAFVEd2aImaq7zN3u/w==')}",
+          compactStringify(res),
+          "{name:BinData(3, 'MyIRAFVEd2aImaq7zN3u/w==')}",
         );
       });
 
-      it('does not stringify LegacyPythonUUID', function () {
+      it('does not convert LegacyPythonUUID to UUID', function () {
         const res = parseFilter(
           '{name: LegacyPythonUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          "{name: BinData(3, 'ABEiM0RVZneImaq7zN3u/w==')}",
+          compactStringify(res),
+          "{name:BinData(3, 'ABEiM0RVZneImaq7zN3u/w==')}",
         );
       });
 
@@ -837,10 +832,9 @@ e  s`,
         const res = parseFilter(
           `{name: Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
+          compactStringify(res),
+          `{name:BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
         );
       });
 
@@ -849,10 +843,9 @@ e  s`,
         const res = parseFilter(
           `{name: Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
-        const stringified = stringify(res);
         assert.equal(
-          stringified,
-          `{name: BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
+          compactStringify(res),
+          `{name:BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, '3q2+7w==')}`,
         );
       });
     });

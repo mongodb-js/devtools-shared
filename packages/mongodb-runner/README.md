@@ -70,6 +70,16 @@ try {
 }
 ```
 
+## Environment variables
+
+Any CLI option can also be set through a `MONGODB_RUNNER_`-prefixed environment
+variable, e.g. `MONGODB_RUNNER_DOWNLOAD_DIR` for `--downloadDir`. Explicitly
+passed options take precedence.
+
+`MONGODB_RUNNER_DOWNLOAD_DIR` is additionally honored when using `MongoCluster`
+programmatically, which is useful for caching server binaries in CI without
+having to change each call site.
+
 ## Config file
 
 You can specify a config file for the CLI using `--config`:
