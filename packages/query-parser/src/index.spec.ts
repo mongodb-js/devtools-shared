@@ -448,8 +448,12 @@ e  s`,
     describe('DBRef', function () {
       // The bson types say `oid` is an ObjectId, but a DBRef oid can hold any
       // BSON value in practice, which is what we want to cover here.
-      const dbRef = (collection: string, oid: unknown, db?: string) =>
-        new bson.DBRef(collection, oid as bson.ObjectId, db);
+      const dbRef = (
+        collection: string,
+        oid: unknown,
+        db?: string,
+        fields?: Record<string, unknown>,
+      ) => new bson.DBRef(collection, oid as bson.ObjectId, db, fields);
 
       it('preserves the oid type rather than flattening it to a string', function () {
         assert.equal(
@@ -476,6 +480,41 @@ e  s`,
         );
       });
 
+      it('includes the fields when present', function () {
+        assert.equal(
+          toJSString({ a: dbRef('col', 1, 'db', { b: 1 }) }, 0),
+          '{a:DBRef("col", 1, "db", {b:1})}',
+        );
+      });
+
+      it('passes an undefined db when fields are present without one', function () {
+        assert.equal(
+          toJSString({ a: dbRef('col', 1, undefined, { b: 1 }) }, 0),
+          '{a:DBRef("col", 1, undefined, {b:1})}',
+        );
+      });
+
+      it('omits empty fields', function () {
+        assert.equal(
+          toJSString({ a: dbRef('col', 1, undefined, {}) }, 0),
+          '{a:DBRef("col", 1)}',
+        );
+      });
+
+      it('preserves BSON types inside fields', function () {
+        assert.equal(
+          toJSString(
+            {
+              a: dbRef('col', 1, 'db', {
+                b: new bson.ObjectId('507f191e810c19729de860ea'),
+              }),
+            },
+            0,
+          ),
+          '{a:DBRef("col", 1, "db", {b:ObjectId(\'507f191e810c19729de860ea\')})}',
+        );
+      });
+
       it('escapes quotes in the collection and db', function () {
         assert.equal(
           toJSString({ a: dbRef("co'l", 1, 'd"b') }, 0),
@@ -495,6 +534,14 @@ e  s`,
         ['double spaces', dbRef('a  b', 1)],
         ['newline', dbRef('a\nb', 1)],
         ['nested DBRef oid', dbRef('col', dbRef('inner', 1), 'db')],
+        ['fields', dbRef('col', 1, 'db', { b: 1 })],
+        ['fields but no db', dbRef('col', 1, undefined, { b: 1 })],
+        [
+          'BSON values in fields',
+          dbRef('col', 1, 'db', {
+            b: new bson.ObjectId('507f191e810c19729de860ea'),
+          }),
+        ],
       ];
 
       for (const [name, dbref] of roundTrips) {

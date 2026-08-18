@@ -83,10 +83,18 @@ const BSON_TO_JS_STRING = {
     // `toJSString` only returns undefined for values that stringify to
     // nothing, which for an oid can only be `undefined` itself.
     const oid = toJSString(v.oid, 0) ?? 'undefined';
-    if (v.db) {
-      return `DBRef(${JSON.stringify(v.collection)}, ${oid}, ${JSON.stringify(v.db)})`;
+    const args = [JSON.stringify(v.collection), oid];
+    // `fields` defaults to an empty object rather than being unset, so only
+    // include it when it actually holds something.
+    const hasFields = !!v.fields && Object.keys(v.fields).length > 0;
+    if (v.db || hasFields) {
+      // `db` has to be present for `fields` to land in the right position.
+      args.push(v.db === undefined ? 'undefined' : JSON.stringify(v.db));
     }
-    return `DBRef(${JSON.stringify(v.collection)}, ${oid})`;
+    if (hasFields) {
+      args.push(toJSString(v.fields, 0) ?? '{}');
+    }
+    return `DBRef(${args.join(', ')})`;
   },
   Timestamp: function (v: Timestamp) {
     return `Timestamp({ t: ${v.high}, i: ${v.low} })`;
