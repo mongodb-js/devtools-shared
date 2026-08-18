@@ -80,6 +80,8 @@ export interface RSMemberOptions {
 export interface CommonOptions {
   /**
    * Directory where server binaries will be downloaded and stored.
+   * Defaults to the `MONGODB_RUNNER_DOWNLOAD_DIR` environment variable if set,
+   * otherwise to `tmpDir`.
    */
   downloadDir?: string;
   /**
@@ -380,7 +382,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster.defaultConnectionOptions = { ...options.internalClientOptions };
     if (!options.binDir) {
       options.binDir = await this.downloadMongoDb(
-        options.downloadDir ?? options.tmpDir,
+        options.downloadDir ??
+          process.env.MONGODB_RUNNER_DOWNLOAD_DIR ??
+          options.tmpDir,
         options.version,
         options.downloadOptions,
       );
