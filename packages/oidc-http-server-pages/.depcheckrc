@@ -4,5 +4,7 @@ ignores:
  - '@types/chai'
  - '@types/sinon-chai'
  - 'sinon'
+ # this is required due to the compass-components package
+ - 'mongodb-query-parser'
 ignore-patterns:
  - 'dist'
