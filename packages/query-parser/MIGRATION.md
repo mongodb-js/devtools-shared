@@ -6,7 +6,25 @@ This is a guide to help you make the switch when this happens.
 
 ## Table Of Contents
 
+- [Migrating from 4.x to 5.0](#migrating-from-4x-to-50)
 - [Migrating from 1.0 to 2.0](#migrating-from-10-to-20)
+
+## Migrating from 4.x to 5.0
+
+The deprecated `stringify` export has been removed. It collapsed newlines and
+runs of spaces into a single space, which silently corrupted string values in a
+query, so there is no drop-in replacement that keeps that behaviour.
+
+Use `toJSString` instead, which is lossless:
+
+```js
+-stringify(query);
++toJSString(query, 0); // compact, no indentation
+```
+
+Note that `toJSString` does not insert a space after `:` or `,` when called with
+an indentation of `0`, so the output is not byte-for-byte identical to what
+`stringify` produced.
 
 ## Migrating from 1.0 to 2.0
 
