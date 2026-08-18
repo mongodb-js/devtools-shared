@@ -103,6 +103,32 @@ jobs:
         run: npm run check-ci -- --stream
         shell: bash
 
+      # Downloading and extracting MongoDB server binaries is slow on Windows,
+      # so we cache them between runs.
+      #
+      # Cache directories are named after the requested version range ('8.x',
+      # '*'), not the version it resolved to, so a cache entry pins tests to
+      # whichever release was current when it was written. Including the ISO
+      # week in the key rotates that weekly, keeping us at most a week behind.
+      # Bump `v1` to force a refresh.
+      - name: Compute cache week
+        if: ${{ runner.os == 'Windows' }}
+        id: cache-week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Cache MongoDB binaries
+        if: ${{ runner.os == 'Windows' }}
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/mongodb-binaries
+          key: v1-mongodb-binaries-${{ runner.os }}-${{ steps.cache-week.outputs.week }}
+
+      - name: Set MongoDB binaries download dir
+        if: ${{ runner.os == 'Windows' }}
+        run: echo "MONGODB_RUNNER_DOWNLOAD_DIR=${RUNNER_TEMP}/mongodb-binaries" >> $GITHUB_ENV
+        shell: bash
+
       - name: Run Tests
         run: |
           scopes=$(node .github/scripts/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
