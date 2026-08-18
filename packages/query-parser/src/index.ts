@@ -6,7 +6,7 @@ import _ from 'lodash';
 import _debug from 'debug';
 
 import { COLLATION_OPTIONS } from './constants';
-import { stringify, toJSString } from './stringify';
+import { toJSString } from './stringify';
 
 const debug = _debug('mongodb-query-parser');
 
@@ -383,7 +383,6 @@ export default function queryParser(
 }
 
 export {
-  stringify,
   toJSString,
   DEFAULT_FILTER,
   DEFAULT_SORT,
