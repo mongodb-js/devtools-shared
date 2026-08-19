@@ -2,6 +2,9 @@ import type { MongoClientOptions } from 'mongodb';
 import { BSON } from 'mongodb';
 import createDebug from 'debug';
 import { ConnectionString } from 'mongodb-connection-string-url';
+import { once } from 'events';
+import { createServer } from 'net';
+import type { AddressInfo } from 'net';
 
 export const debug = createDebug('mongodb-runner');
 export const debugVerbose = debug.extend('verbose');
@@ -55,11 +58,21 @@ export async function safePromiseAll<T>(
   if (rejected.length) {
     if (rejected.length === 1) throw rejected[0].reason;
     throw new AggregateError(
-      [rejected.map((r) => r.reason)],
+      rejected.map((r) => r.reason),
       `${rejected.length} errors: ${rejected.map((r) => r.reason).join(', ')}`,
     );
   }
   return results.map((r) => (r as PromiseFulfilledResult<T>).value);
+}
+
+/** Allocate a currently-free TCP port on 127.0.0.1. */
+export async function allocatePort(): Promise<number> {
+  const server = createServer();
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const { port } = server.address() as AddressInfo;
+  await new Promise((resolve) => server.close(resolve));
+  return port;
 }
 
 export function pick<T extends object, K extends keyof T>(

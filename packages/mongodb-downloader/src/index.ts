@@ -1,11 +1,12 @@
 /* eslint-disable no-console */
 import fetch from 'node-fetch';
 import * as tar from 'tar';
+import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
 import decompress from 'decompress';
-import { pipeline } from 'stream';
+import { pipeline, Transform } from 'stream';
 import getDownloadURL from 'mongodb-download-url';
 import type {
   Options as DownloadOptions,
@@ -16,9 +17,21 @@ import { withLock } from './with-lock';
 
 const debug = createDebug('mongodb-downloader');
 
+const BYTES_PER_MB = 1024 * 1024;
+
 export type { DownloadOptions };
 
 export type DownloadResult = DownloadArtifactInfo & {
+  downloadedBinDir: string;
+};
+
+/**
+ * Result of a download from a direct URL (`downloadUrl`). Since no download
+ * URL lookup is performed, only the URL itself is known; the other artifact
+ * metadata fields are unavailable.
+ */
+export type DownloadUrlResult = Partial<DownloadArtifactInfo> & {
+  url: string;
   downloadedBinDir: string;
 };
 
@@ -31,15 +44,33 @@ export type MongoDBDownloaderOptions = {
   useLockfile: boolean;
   /** The options to pass to the download URL lookup. */
   downloadOptions?: DownloadOptions;
+  /**
+   * A direct URL to a MongoDB tarball to download. If set, no download URL
+   * lookup is performed: `version` is ignored, and of `downloadOptions`,
+   * only `platform` and `crypt_shared` are consulted (they determine the
+   * archive extraction layout). The result contains no artifact metadata
+   * beyond the URL itself (see `DownloadUrlResult`).
+   */
+  downloadUrl?: string;
 };
 
 export class MongoDBDownloader {
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions & { downloadUrl: string },
+  ): Promise<DownloadUrlResult>;
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions & { downloadUrl?: undefined },
+  ): Promise<DownloadResult>;
+  downloadMongoDbWithVersionInfo(
+    options: MongoDBDownloaderOptions,
+  ): Promise<DownloadResult | DownloadUrlResult>;
   async downloadMongoDbWithVersionInfo({
     downloadOptions = {},
     version = '*',
     directory,
     useLockfile,
-  }: MongoDBDownloaderOptions): Promise<DownloadResult> {
+    downloadUrl,
+  }: MongoDBDownloaderOptions): Promise<DownloadResult | DownloadUrlResult> {
     await fs.mkdir(directory, { recursive: true });
     const isWindows = ['win32', 'windows'].includes(
       downloadOptions.platform ?? process.platform,
@@ -58,12 +89,20 @@ export class MongoDBDownloader {
       versionName = versionName + (isEnterprise ? '-enterprise' : '-community');
     }
 
-    const downloadTarget = path.resolve(
-      directory,
-      `mongodb-${process.platform}-${process.env.DISTRO_ID || 'none'}-${
-        process.arch
-      }-${versionName}`.replace(/[^a-zA-Z0-9_-]/g, ''),
-    );
+    const downloadTarget = downloadUrl
+      ? path.resolve(
+          directory,
+          `mongodb-custom-${createHash('sha256')
+            .update(downloadUrl)
+            .digest('hex')
+            .slice(0, 16)}`,
+        )
+      : path.resolve(
+          directory,
+          `mongodb-${process.platform}-${process.env.DISTRO_ID || 'none'}-${
+            process.arch
+          }-${versionName}`.replace(/[^a-zA-Z0-9_-]/g, ''),
+        );
     const bindir = path.resolve(
       downloadTarget,
       isCryptLibrary && !isWindows ? 'lib' : 'bin',
@@ -99,11 +138,14 @@ export class MongoDBDownloader {
           }
 
           await fs.mkdir(downloadTarget, { recursive: true });
-          const artifactInfo = await this.lookupDownloadUrl({
-            targetVersion: version,
-            enterprise: isEnterprise,
-            options: downloadOptions,
-          });
+          const artifactInfo: DownloadArtifactInfo | { url: string } =
+            downloadUrl
+              ? { url: downloadUrl }
+              : await this.lookupDownloadUrl({
+                  targetVersion: version,
+                  enterprise: isEnterprise,
+                  options: downloadOptions,
+                });
           const { url } = artifactInfo;
           debug(`Downloading ${url} into ${downloadTarget}...`);
 
@@ -139,11 +181,35 @@ export class MongoDBDownloader {
     const response = await fetch(url, {
       highWaterMark: MongoDBDownloader.HWM,
     } as Parameters<typeof fetch>[1]);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download ${url}: ${response.status} ${response.statusText}`,
+      );
+    }
+    const totalBytes = +(response.headers.get('content-length') ?? '');
+    const totalMB = totalBytes ? (totalBytes / BYTES_PER_MB).toFixed(1) : null;
+    debug(`Download started`, { url, totalMB });
+    let downloadedBytes = 0;
+    let lastProgressLog = Date.now();
+    const progress = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        downloadedBytes += chunk.length;
+        if (Date.now() - lastProgressLog >= 3000) {
+          lastProgressLog = Date.now();
+          const downloadedMB = (downloadedBytes / BYTES_PER_MB).toFixed(1);
+          debug(
+            `Downloading: ${downloadedMB}MB${totalMB ? ` / ${totalMB}MB` : ''}`,
+          );
+        }
+        callback(null, chunk);
+      },
+    });
     if (/\.tgz$|\.tar(\.[^.]+)?$/.exec(url)) {
       // the server's tarballs can contain hard links, which the (unmaintained?)
       // `download` package is unable to handle (https://github.com/kevva/decompress/issues/93)
       await promisify(pipeline)(
         response.body,
+        progress,
         tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 }),
       );
     } else {
@@ -153,6 +219,7 @@ export class MongoDBDownloader {
       );
       await promisify(pipeline)(
         response.body,
+        progress,
         createWriteStream(filename, { highWaterMark: MongoDBDownloader.HWM }),
       );
       debug(`Written file ${url} to ${filename}, extracting...`);
@@ -206,7 +273,7 @@ export class MongoDBDownloader {
   }: {
     bindir: string;
     artifactInfoFile: string;
-  }): Promise<DownloadResult | undefined> {
+  }): Promise<DownloadResult | DownloadUrlResult | undefined> {
     try {
       await fs.stat(artifactInfoFile);
       return {
@@ -230,32 +297,24 @@ async function withoutLock<T>(
 const downloader = new MongoDBDownloader();
 
 /** Download mongod + mongos with version info and return version info and the path to a directory containing them. */
-export async function downloadMongoDbWithVersionInfo({
-  downloadOptions = {},
-  version = '*',
-  directory,
-  useLockfile,
-}: MongoDBDownloaderOptions): Promise<DownloadResult> {
-  return await downloader.downloadMongoDbWithVersionInfo({
-    downloadOptions,
-    version,
-    directory,
-    useLockfile,
-  });
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions & { downloadUrl: string },
+): Promise<DownloadUrlResult>;
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions & { downloadUrl?: undefined },
+): Promise<DownloadResult>;
+export function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions,
+): Promise<DownloadResult | DownloadUrlResult>;
+export async function downloadMongoDbWithVersionInfo(
+  options: MongoDBDownloaderOptions,
+): Promise<DownloadResult | DownloadUrlResult> {
+  return await downloader.downloadMongoDbWithVersionInfo(options);
 }
 /** Download mongod + mongos and return the path to a directory containing them. */
-export async function downloadMongoDb({
-  downloadOptions = {},
-  version = '*',
-  directory,
-  useLockfile,
-}: MongoDBDownloaderOptions): Promise<string> {
-  return (
-    await downloader.downloadMongoDbWithVersionInfo({
-      downloadOptions,
-      version,
-      directory,
-      useLockfile,
-    })
-  ).downloadedBinDir;
+export async function downloadMongoDb(
+  options: MongoDBDownloaderOptions,
+): Promise<string> {
+  return (await downloader.downloadMongoDbWithVersionInfo(options))
+    .downloadedBinDir;
 }
