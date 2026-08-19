@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -52,7 +52,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "@mongodb-js/shell-bson-parser": "^1.5.14",
+    "@mongodb-js/shell-bson-parser": "^1.5.15",
     "debug": "^4.4.0",
     "javascript-stringify": "^2.1.0",
     "lodash": "^4.17.21"
