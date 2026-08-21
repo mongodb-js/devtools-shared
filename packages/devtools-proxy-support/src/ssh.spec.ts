@@ -5,6 +5,18 @@ import { createFetch } from './fetch';
 import { expect } from 'chai';
 import sinon from 'sinon';
 
+async function expectAuthenticationFailure(agent: SSHAgent): Promise<void> {
+  try {
+    await agent.initialize();
+    expect.fail('missed exception');
+  } catch (err: unknown) {
+    expect(err).to.be.instanceOf(Error);
+    expect((err as Error).message).to.equal(
+      'All configured authentication methods failed',
+    );
+  }
+}
+
 describe('SSHAgent', function () {
   let setup: HTTPServerProxyTestSetup;
   let agent: SSHAgent | undefined;
@@ -53,6 +65,411 @@ describe('SSHAgent', function () {
       fetch('http://example.com/hello'),
     ]);
     expect(setup.authHandler).to.have.been.calledOnceWith('foo^', 'ba&r');
+  });
+
+  it('does not send the password to keyboard-interactive after partial success', async function () {
+    const keyboardInteractiveResponses: string[][] = [];
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['password', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'password') {
+        ctx.reject(['keyboard-interactive'], true);
+        return;
+      }
+      if (ctx.method === 'keyboard-interactive') {
+        ctx.prompt(
+          [{ prompt: 'Verification code: ', echo: false }],
+          (responses) => {
+            keyboardInteractiveResponses.push(responses);
+            ctx.reject();
+          },
+        );
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    await expectAuthenticationFailure(agent);
+
+    expect(keyboardInteractiveResponses).to.deep.equal([]);
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'password' },
+    ]);
+  });
+
+  it('keeps partial success sticky after a public key rejection', async function () {
+    const keyboardInteractiveResponses: string[][] = [];
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['password', 'publickey', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'password') {
+        ctx.reject(['publickey', 'keyboard-interactive'], true);
+        return;
+      }
+      if (ctx.method === 'publickey') {
+        setup.handleTestSshPublicKeyAuthentication(ctx, () => {
+          ctx.reject(['keyboard-interactive'], false);
+        });
+        return;
+      }
+      if (ctx.method === 'keyboard-interactive') {
+        ctx.prompt(
+          [{ prompt: 'Verification code: ', echo: false }],
+          (responses) => {
+            keyboardInteractiveResponses.push(responses);
+            ctx.reject();
+          },
+        );
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+      sshOptions: {
+        identityKeyFile: setup.sshIdentityKeyFile,
+      },
+    });
+
+    await expectAuthenticationFailure(agent);
+
+    expect(keyboardInteractiveResponses).to.deep.equal([]);
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'password' },
+      { username: 'foo', method: 'publickey' },
+      { username: 'foo', method: 'publickey' },
+    ]);
+  });
+
+  it('continues public key authentication after a partially successful password', async function () {
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['password', 'publickey', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'password') {
+        ctx.reject(['publickey', 'keyboard-interactive'], true);
+        return;
+      }
+      if (ctx.method === 'publickey') {
+        setup.handleTestSshPublicKeyAuthentication(ctx, () => {
+          ctx.accept();
+        });
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+      sshOptions: {
+        identityKeyFile: setup.sshIdentityKeyFile,
+      },
+    });
+
+    const response = await createFetch(agent)('http://example.com/hello');
+
+    expect(await response.text()).to.equal('OK /hello');
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'password' },
+      { username: 'foo', method: 'publickey' },
+      { username: 'foo', method: 'publickey' },
+    ]);
+  });
+
+  it('does not send the password after partial public key authentication', async function () {
+    const keyboardInteractiveResponses: string[][] = [];
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['password', 'publickey', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'password') {
+        ctx.reject(['publickey', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'publickey') {
+        setup.handleTestSshPublicKeyAuthentication(ctx, () => {
+          ctx.reject(['keyboard-interactive'], true);
+        });
+        return;
+      }
+      if (ctx.method === 'keyboard-interactive') {
+        ctx.prompt(
+          [{ prompt: 'Verification code: ', echo: false }],
+          (responses) => {
+            keyboardInteractiveResponses.push(responses);
+            ctx.reject();
+          },
+        );
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+      sshOptions: {
+        identityKeyFile: setup.sshIdentityKeyFile,
+      },
+    });
+
+    await expectAuthenticationFailure(agent);
+
+    expect(keyboardInteractiveResponses).to.deep.equal([]);
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'password' },
+      { username: 'foo', method: 'publickey' },
+      { username: 'foo', method: 'publickey' },
+    ]);
+  });
+
+  it('authenticates with only a configured public key', async function () {
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['publickey']);
+        return;
+      }
+      if (ctx.method === 'publickey') {
+        setup.handleTestSshPublicKeyAuthentication(ctx, () => {
+          ctx.accept();
+        });
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo@127.0.0.1:${setup.sshProxyPort}/`,
+      sshOptions: {
+        identityKeyFile: setup.sshIdentityKeyFile,
+      },
+    });
+
+    const response = await createFetch(agent)('http://example.com/hello');
+
+    expect(await response.text()).to.equal('OK /hello');
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'publickey' },
+      { username: 'foo', method: 'publickey' },
+    ]);
+  });
+
+  it('uses keyboard-interactive after a password rejection without partial success', async function () {
+    const keyboardInteractiveResponses: string[][] = [];
+    setup.sshAuthenticationHandler = (ctx) => {
+      if (ctx.method === 'none') {
+        ctx.reject(['password', 'keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'password') {
+        ctx.reject(['keyboard-interactive']);
+        return;
+      }
+      if (ctx.method === 'keyboard-interactive') {
+        ctx.prompt([{ prompt: 'Password: ', echo: false }], (responses) => {
+          keyboardInteractiveResponses.push(responses);
+          if (responses.length === 1 && responses[0] === 'bar') {
+            ctx.accept();
+          } else {
+            ctx.reject();
+          }
+        });
+        return;
+      }
+      ctx.reject();
+    };
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    const response = await createFetch(agent)('http://example.com/hello');
+
+    expect(await response.text()).to.equal('OK /hello');
+    expect(keyboardInteractiveResponses).to.deep.equal([['bar']]);
+    expect(setup.sshAuthenticationAttempts).to.deep.equal([
+      { username: 'foo', method: 'none' },
+      { username: 'foo', method: 'password' },
+      { username: 'foo', method: 'keyboard-interactive' },
+    ]);
+  });
+
+  it('uses the password for a single hidden keyboard-interactive prompt', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    const response = await createFetch(agent)('http://example.com/hello');
+
+    expect(await response.text()).to.equal('OK /hello');
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['bar']] },
+    ]);
+  });
+
+  it('does not consume the password on an empty keyboard-interactive round', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      { prompts: [], expectedResponses: [] },
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    await agent.initialize();
+
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [[], ['bar']] },
+    ]);
+  });
+
+  it('does not expose the password to multiple keyboard-interactive prompts', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [
+          { prompt: 'Password: ', echo: false },
+          { prompt: 'Verification code: ', echo: false },
+        ],
+        expectedResponses: ['', ''],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    await agent.initialize();
+
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['', '']] },
+    ]);
+  });
+
+  it('does not expose the password to a visible keyboard-interactive prompt', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Username: ', echo: true }],
+        expectedResponses: [''],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    await agent.initialize();
+
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['']] },
+    ]);
+  });
+
+  it('does not reuse the password for a later keyboard-interactive round', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+      {
+        prompts: [{ prompt: 'Verification code: ', echo: false }],
+        expectedResponses: [''],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    await agent.initialize();
+
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['bar'], ['']] },
+    ]);
+  });
+
+  it('rejects an incorrect keyboard-interactive password', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:wrong@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    try {
+      await agent.initialize();
+      expect.fail('missed exception');
+    } catch (err: any) {
+      expect(err.message).to.equal(
+        'All configured authentication methods failed',
+      );
+    }
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['wrong']] },
+    ]);
+  });
+
+  it('does not attempt keyboard-interactive authentication without a password', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+
+    try {
+      await agent.initialize();
+      expect.fail('missed exception');
+    } catch (err: any) {
+      expect(err.message).to.equal(
+        'All configured authentication methods failed',
+      );
+    }
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.have.length(0);
+  });
+
+  it('can use the password again when the SSH client reconnects', async function () {
+    setup.sshKeyboardInteractiveAuthRounds = [
+      {
+        prompts: [{ prompt: 'Password: ', echo: false }],
+        expectedResponses: ['bar'],
+      },
+    ];
+    agent = new SSHAgent({
+      proxy: `ssh://foo:bar@127.0.0.1:${setup.sshProxyPort}/`,
+    });
+    const fetch = createFetch(agent);
+
+    const firstResponse = await fetch('http://example.com/hello');
+    expect(await firstResponse.text()).to.equal('OK /hello');
+    await agent.interruptForTesting();
+    const secondResponse = await fetch('http://example.com/hello');
+    expect(await secondResponse.text()).to.equal('OK /hello');
+
+    expect(setup.sshKeyboardInteractiveAuthAttempts).to.deep.equal([
+      { username: 'foo', responses: [['bar']] },
+      { username: 'foo', responses: [['bar']] },
+    ]);
   });
 
   it('allows explicitly initializing the connection', async function () {
