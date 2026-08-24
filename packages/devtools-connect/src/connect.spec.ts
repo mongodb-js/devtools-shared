@@ -3,7 +3,6 @@ import type { DevtoolsConnectOptions } from './';
 import { isHumanOidcFlow } from './connect';
 import { EventEmitter, once } from 'events';
 import { MongoClient } from 'mongodb';
-import { MongoClient as MongoClient6 } from 'mongodb6';
 import sinon, { stubConstructor } from 'ts-sinon';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
@@ -623,7 +622,6 @@ describe('devtools connect', function () {
     });
 
     for (const [name, versionRe, Client] of [
-      ['6.x driver', /^6\.\d+\.\d+$/, MongoClient6],
       ['7.x driver', /^7\.\d+\.\d+$/, MongoClient],
     ] as const) {
       it(`successfully connects to mongod service (${name})`, async function () {

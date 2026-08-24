@@ -71,7 +71,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "mongodb-connection-string-url": "^3.0.1 || ^7.0.0",
+    "mongodb-connection-string-url": "^7.0.2",
     "regexp.escape": "^2.0.1"
   }
 }
