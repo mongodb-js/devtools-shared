@@ -29,12 +29,34 @@ override.
 
 - Docker with `docker compose` v2.
 - Access to the SLS container images. The default repository is a private ECR
-  registry, so log in first:
+  registry. mongodb-runner authenticates to it automatically before starting
+  the compose project, which requires the `aws` CLI on your `PATH` and AWS
+  credentials in the usual places. Pass `--slsSkipEcrLogin` to disable this if
+  you have already authenticated another way.
+
+  To authenticate by hand instead:
 
   ```bash
-  aws ecr get-login-password --region us-east-1 | \
-    docker login --username AWS --password-stdin 664315256653.dkr.ecr.us-east-1.amazonaws.com
+  aws ecr get-authorization-token \
+      --region us-east-1 \
+      --registry-ids 664315256653 \
+      --query 'authorizationData[0].authorizationToken' \
+      --output text |
+      base64 -d | cut -d: -f2- |
+      docker login --username AWS --password-stdin 664315256653.dkr.ecr.us-east-1.amazonaws.com
   ```
+
+  Note that `aws ecr get-login-password`, which is the more commonly documented
+  form, issues a token scoped to _your own_ registry. If your AWS profile lives
+  outside account `664315256653` that token is for the wrong account and
+  `docker login` rejects it with a bare `status: 400 Bad Request`. Hence the
+  explicit `--registry-ids`.
+
+  Authenticating successfully is not sufficient to pull: minting a token only
+  requires `ecr:GetAuthorizationToken` in your own account, while pulling
+  requires `ecr:BatchGetImage` granted by a resource policy on the repositories
+  in `664315256653`. If login succeeds but pulls fail, that policy is what you
+  are missing.
 
 - A `mongod` build that understands the `disaggregatedStorageConfig`
   server parameter. Stock community/enterprise release binaries do **not** —
@@ -59,14 +81,10 @@ variables, readiness polling, per-shard log creation, and the
 Full sequence, assuming a mongodb server checkout at `$MONGO_REPO`:
 
 ```bash
-# 1. Log in to the SLS image registry
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin 664315256653.dkr.ecr.us-east-1.amazonaws.com
-
-# 2. Look up the pinned SLS image tag
+# 1. Look up the pinned SLS image tag
 SLS_IMAGE_TAG=$(python3 -c "import json; print(json.load(open('$MONGO_REPO/buildscripts/modules/atlas/manifest.json'))['pinned_sls_commit'])")
 
-# 3. Start a 2-node replica set backed by SLS
+# 2. Start a 2-node replica set backed by SLS (logs in to ECR automatically)
 mongodb-runner start -t replset \
   --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
   --slsImageTag=$SLS_IMAGE_TAG \
