@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { dockerLoginToEcr, parseEcrRegistry } from './ecr';
+import { dockerLoginToEcr, maybeLoginToEcr, parseEcrRegistry } from './ecr';
 
 describe('ecr', function () {
   describe('parseEcrRegistry', function () {
@@ -71,6 +71,9 @@ describe('ecr', function () {
         else callback(null, stdout, '');
         return {
           stdin: {
+            on() {
+              /* no-op */
+            },
             write(chunk: string) {
               stdinData += chunk;
             },
@@ -177,6 +180,32 @@ describe('ecr', function () {
       });
     }
 
+    it('reports a missing docker binary as such, not as a permissions problem', async function () {
+      const token = Buffer.from('AWS:secret').toString('base64');
+      const { impl } = fakeExecFile((cmd) =>
+        cmd === 'aws'
+          ? { stdout: `${token}\n` }
+          : {
+              error: Object.assign(new Error('spawn docker ENOENT'), {
+                code: 'ENOENT',
+              }),
+            },
+      );
+
+      const err = await dockerLoginToEcr(registry, {
+        execFile: impl as any,
+      }).catch((e: Error) => e);
+
+      expect(
+        (err as Error).message,
+        'a missing docker binary is not an ECR permissions failure',
+      ).to.not.include('ecr:BatchGetImage');
+      expect(
+        (err as Error).message,
+        'error should name docker as the missing prerequisite',
+      ).to.include('not found on PATH');
+    });
+
     it('explains the pull permission trap when docker login fails', async function () {
       const token = Buffer.from('AWS:secret').toString('base64');
       const { impl } = fakeExecFile((cmd) =>
@@ -200,4 +229,51 @@ describe('ecr', function () {
     });
   });
 
+  describe('maybeLoginToEcr', function () {
+    // Records whether any subprocess was spawned at all.
+    function spyExecFile() {
+      const state = { called: false };
+      const impl = (...args: any[]) => {
+        state.called = true;
+        args[args.length - 1](null, '', '');
+        return {
+          stdin: {
+            on() {
+              /* no-op */
+            },
+            write() {
+              /* no-op */
+            },
+            end() {
+              /* no-op */
+            },
+          },
+        } as any;
+      };
+      return { impl, state };
+    }
+
+    it('skips non-ECR repositories entirely', async function () {
+      const { impl, state } = spyExecFile();
+      await maybeLoginToEcr('docker.io/library/', true, {
+        execFile: impl as any,
+      });
+      expect(
+        state.called,
+        'must not shell out for a non-ECR repository',
+      ).to.equal(false);
+    });
+
+    it('skips when login is disabled', async function () {
+      const { impl, state } = spyExecFile();
+      await maybeLoginToEcr(
+        '664315256653.dkr.ecr.us-east-1.amazonaws.com/disagg-storage/',
+        false,
+        { execFile: impl as any },
+      );
+      expect(state.called, 'ecrLogin=false must suppress the login').to.equal(
+        false,
+      );
+    });
+  });
 });

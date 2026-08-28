@@ -99,6 +99,14 @@ async function dockerLogin(
       ['login', '--username', 'AWS', '--password-stdin', registry.registry],
       (err) => {
         if (err) {
+          if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+            return reject(
+              new Error(
+                `docker is required to authenticate to ${registry.registry}, but was not found on PATH. ` +
+                  `Install Docker, or pass --slsSkipEcrLogin if you have already authenticated another way.`,
+              ),
+            );
+          }
           const stderr = String(
             (err as { stderr?: string }).stderr ?? '',
           ).trim();
@@ -116,6 +124,10 @@ async function dockerLogin(
         resolve();
       },
     );
+    // A failed spawn or an early exit makes this write emit EPIPE/ENOENT on the
+    // stream; the execFile callback already reports the real failure, so
+    // swallowing it here just keeps it from becoming an uncaught exception.
+    proc.stdin?.on('error', () => undefined);
     proc.stdin?.write(password);
     proc.stdin?.end();
   });
@@ -151,4 +163,25 @@ export async function dockerLoginToEcr(
   }
   await dockerLogin(registry, password, execFile);
   debug('ECR login succeeded', { registry: registry.registry });
+}
+
+/**
+ * Log in to the registry backing `imageRepo`, if it is an ECR registry and
+ * `enabled` is set. A no-op otherwise.
+ */
+export async function maybeLoginToEcr(
+  imageRepo: string,
+  enabled: boolean,
+  deps: Partial<EcrLoginDeps> = {},
+): Promise<void> {
+  if (!enabled) {
+    debug('skipping ECR login (disabled)');
+    return;
+  }
+  const registry = parseEcrRegistry(imageRepo);
+  if (!registry) {
+    debug('skipping ECR login (not an ECR repository)', { imageRepo });
+    return;
+  }
+  await dockerLoginToEcr(registry, deps);
 }
