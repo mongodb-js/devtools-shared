@@ -104,7 +104,7 @@ const disallowedConnectionStringOptions = [
   'session',
   'tlsAllowInvalidCertificates',
   'tlsAllowInvalidHostnames',
-  'tlsCAFile', // !
+  'tlsCAFile',
   'tlsInsecure',
 ] as const;
 
