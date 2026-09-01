@@ -84,20 +84,10 @@ export function isFailureToSetupListener(entry: LogEntry): boolean {
  * @returns The port in question, or an -1 if the log line did not match.
  */
 function getPortFromLogEntry(logEntry: LogEntry): number {
-  let match;
   // Log message id 23016 has the format
   // { t: <timestamp>, s: 'I', c: 'NETWORK', id: 23016, ctx: 'listener', msg: '...', attr: { port: 27020 } }
   if (logEntry.id === 23016) {
     return logEntry.attr.port;
-  }
-  // Or, 4.2-style: <timestamp> I  NETWORK  [listener] waiting for connections on port 27020
-  if (
-    logEntry.id === undefined &&
-    (match = /^waiting for connections on port (?<port>\d+)( ssl)?$/i.exec(
-      logEntry.message,
-    ))
-  ) {
-    return +(match.groups?.port ?? '0');
   }
   if (isFailureToSetupListener(logEntry)) {
     throw new Error(
@@ -150,28 +140,10 @@ export type BuildInfo = { version: string | null; modules: string[] | null };
  * @returns Partial build info.
  */
 function getBuildInfoFromLogEntry(logEntry: LogEntry): Partial<BuildInfo> {
-  let match;
   // Log message id 23403 has the format
-  // { t: <timestamp>, s: 'I', c: 'CONTROL', id: 23403, ctx: 'initandlisten', msg: '...', attr: { buildInfO: { ... } } }
+  // { t: <timestamp>, s: 'I', c: 'CONTROL', id: 23403, ctx: 'initandlisten', msg: '...', attr: { buildInfo: { ... } } }
   if (logEntry.id === 23403) {
     return logEntry.attr.buildInfo;
-  }
-  // Or, 4.2-style, split across multiple lines
-  if (
-    logEntry.id === undefined &&
-    (match = /^(?:db|mongos) version v(?<version>.+)$/i.exec(logEntry.message))
-  ) {
-    return { version: match.groups?.version };
-  }
-  if (
-    logEntry.id === undefined &&
-    (match = /^modules: (?<moduleList>.+)$/i.exec(logEntry.message))
-  ) {
-    return {
-      modules: match.groups?.moduleList
-        ?.split(' ')
-        ?.filter((module) => module !== 'none'),
-    };
   }
   return {};
 }
