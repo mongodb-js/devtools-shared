@@ -65,6 +65,11 @@ const allowedConnectionStringOptions = [
   'ssl', // Only if value is `true` or target host is local.
   'timeoutMS',
   'tls', // Only if value is `true` or target host is local.
+  // `tlsCertificateKeyFile` and `tlsCRLFile` name local files, which looks alarming but
+  // is allowed on purpose: a client sends its certificate and public key during the TLS
+  // handshake, never the private key, so the residual risk is a socially engineered
+  // certificate extraction. That was weighed up when these lists were drawn up and
+  // accepted as low. `tlsCAFile` is disallowed for an unrelated reason, see below.
   'tlsCertificateKeyFile',
   'tlsCertificateKeyFilePassword',
   'tlsCRLFile',
@@ -104,6 +109,8 @@ const disallowedConnectionStringOptions = [
   'session',
   'tlsAllowInvalidCertificates',
   'tlsAllowInvalidHostnames',
+  // Unlike the other TLS options here, this one changes which certificate authorities
+  // are trusted, which can make an attacker's certificate look valid.
   'tlsCAFile',
   'tlsInsecure',
 ] as const;
@@ -208,11 +215,11 @@ export interface ConnectionStringPolicyResult {
 }
 
 /**
- * Check a connection string against the policy list, and report the options that fall
- * outside it.
+ * Check a connection string against the policy list. Reports whether the string is safe to
+ * connect with without asking the user first, and which of its options are not.
  *
- * This is *not* a general-purpose connection string validator: it makes no claim about
- * whether a connection string is valid or whether connecting will succeed.
+ * It says nothing about whether the connection string is valid, whether connecting will
+ * succeed, or what happens once the connection is established.
  */
 export function checkConnectionStringPolicy(
   connectionString: string,

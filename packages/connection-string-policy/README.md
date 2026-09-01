@@ -3,13 +3,17 @@
 Checks a MongoDB connection string against a policy list of options, and reports the ones
 that fall outside it.
 
-Some connection string options change where credentials are sent, or whether the connection
-is verified. This package reports whether a connection string uses any of them, so that a
-tool can decide whether to accept it as-is, ask the user to confirm, or refuse it.
+Use it when a connection string comes from somewhere other than the user: a deep link, a
+protocol handler, a command line argument, or a tool call. Some options change where
+credentials are sent, and some disable TLS certificate verification, so connecting with one
+of those without asking the user first is a risk.
 
-It is not a connection string validator: it says nothing about whether a connection string
-is well-formed or whether connecting will succeed. It also does not decide what happens
-next — it returns data, never throws for policy reasons, and does no logging or prompting.
+The check looks at the connection string and nothing else. It reports whether the string is
+safe to connect with without asking the user, and which of its options are not. It does not
+tell you whether the connection string is well-formed, whether connecting will succeed, or
+anything about what happens once the connection is established. It also does not decide what
+to do next: it returns data, never throws for policy reasons, and does no logging or
+prompting.
 
 ## Usage
 
