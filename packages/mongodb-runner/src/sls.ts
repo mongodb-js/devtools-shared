@@ -251,6 +251,14 @@ export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnviron
    * created in the OS temp directory (matching the server's jstest setup).
    */
   encryptionKeyFilePath?: string;
+  /**
+   * Number of times to retry the per-shard log setup (GetLogServers +
+   * StartLog) before giving up (default: 10). The scheduler may briefly
+   * report no log servers after the compose project becomes ready.
+   */
+  setupMaxRetries?: number;
+  /** Interval between per-shard log setup attempts in ms (default: 2000). */
+  setupRetryIntervalMs?: number;
 }
 
 // Well-known test encryption key, matching createKeyFile() in the server
@@ -341,35 +349,57 @@ export async function createSLSDisaggregatedStorageOptions(
     },
     setupShard: async ({ index }) => {
       const logId = firstLogId + index;
-      debug('starting SLS log for shard', { index, logId });
-      const res = await grpcurl(
-        'crs-cell1-0:27996',
-        'schedulerservice.v1.SchedulerService/GetLogServers',
-        { cells: [SLS_CELL1, SLS_CELL2, SLS_CELL3] },
-      );
-      const serverIds = res.server_ids ?? res.serverIds ?? [];
-      if (!serverIds.length) {
-        throw new Error('SLS GetLogServers returned no servers');
-      }
-      try {
-        await grpcurl(
-          'crs-cell1-0:27996',
-          'schedulerservice.v1.ControlPlaneService/StartLog',
-          { log_id: logId, server_ids: serverIds, ancestry: { ancestors: [] } },
-        );
-      } catch (err) {
-        // The storage layer's state persists while the compose project is
-        // running, so the log may already exist from a previous run.
-        const { stderr = '', stdout = '' } = (err ?? {}) as {
-          stderr?: string;
-          stdout?: string;
-        };
-        const output = `${stderr}${stdout}`;
-        if (output.includes('already exists')) {
-          debug('SLS log already exists, reusing it', { logId });
+      const maxRetries = options.setupMaxRetries ?? 10;
+      const retryIntervalMs = options.setupRetryIntervalMs ?? 2000;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          debug('starting SLS log for shard', { index, logId });
+          const res = await grpcurl(
+            'crs-cell1-0:27996',
+            'schedulerservice.v1.SchedulerService/GetLogServers',
+            { cells: [SLS_CELL1, SLS_CELL2, SLS_CELL3] },
+          );
+          const serverIds = res.server_ids ?? res.serverIds ?? [];
+          if (!serverIds.length) {
+            throw new Error('SLS GetLogServers returned no servers');
+          }
+          try {
+            await grpcurl(
+              'crs-cell1-0:27996',
+              'schedulerservice.v1.ControlPlaneService/StartLog',
+              {
+                log_id: logId,
+                server_ids: serverIds,
+                ancestry: { ancestors: [] },
+              },
+            );
+          } catch (err) {
+            // The storage layer's state persists while the compose project is
+            // running, so the log may already exist from a previous run.
+            const { stderr = '', stdout = '' } = (err ?? {}) as {
+              stderr?: string;
+              stdout?: string;
+            };
+            const output = `${stderr}${stdout}`;
+            if (output.includes('already exists')) {
+              debug('SLS log already exists, reusing it', { logId });
+              return;
+            }
+            throw err;
+          }
           return;
+        } catch (err) {
+          if (attempt >= maxRetries) {
+            throw err;
+          }
+          debug('SLS log setup failed, retrying', {
+            logId,
+            attempt,
+            retryIntervalMs,
+            err,
+          });
+          await sleep(retryIntervalMs);
         }
-        throw err;
       }
     },
     config: (shard) =>
