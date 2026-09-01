@@ -552,7 +552,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       delete options.disaggregatedStorage;
       cluster.dockerComposeProject = await DockerComposeProject.start(
         disaggregatedStorage.composeFile,
-        { env: disaggregatedStorage.env },
+        { env: disaggregatedStorage.env, logDir: options.logDir },
       );
     }
 
