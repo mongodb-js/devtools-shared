@@ -2,19 +2,19 @@ export {
   MongoServer,
   type MongoServerEvents,
   MongoServerOptions,
-} from './mongoserver';
+} from '@mongodb-js/mongodb-runner';
 export {
   MongoCluster,
   type MongoClusterEvents,
   MongoClusterOptions,
   MongoDBUserDoc,
-  RSMemberOptions as MongoClusterRSMemberOptions,
-  RSOptions as MongoClusterRSOptions,
-  CommonOptions as MongoClusterCommonOptions,
-  ShardedOptions as MongoClusterShardedOptions,
+  MongoClusterRSMemberOptions,
+  MongoClusterRSOptions,
+  MongoClusterCommonOptions,
+  MongoClusterShardedOptions,
   type ShardDescriptor,
   type DisaggregatedStorageOptions,
-} from './mongocluster';
+} from '@mongodb-js/mongodb-runner';
 export {
   createSLSMultiCellEnvironment,
   createSLSDisaggregatedStorageConfig,
@@ -30,11 +30,17 @@ export {
   type SLSServiceInfo,
   type SLSMultiCellEnvironment,
   type SLSMultiCellEnvironmentOptions,
-} from './sls';
+} from '@mongodb-js/mongodb-runner';
 export {
   DockerComposeProject,
   type DockerComposeProjectOptions,
-} from './docker-compose';
-export type { LogEntry } from './mongologreader';
-export type { ConnectionString } from 'mongodb-connection-string-url';
-export { prune, start, stop, exec, instances } from './runner-helpers';
+} from '@mongodb-js/mongodb-runner';
+export type { LogEntry } from '@mongodb-js/mongodb-runner';
+export type { ConnectionString } from '@mongodb-js/mongodb-runner';
+export {
+  prune,
+  start,
+  stop,
+  exec,
+  instances,
+} from '@mongodb-js/mongodb-runner';
