@@ -5,11 +5,56 @@ import path from 'path';
 import {
   createSLSDisaggregatedStorageOptions,
   createSLSMultiCellEnvironment,
+  readPinnedSlsCommit,
 } from './sls';
 import { allocatePorts, uuid } from './util';
 import { isBindable } from '../test/helpers';
 
+const FIXTURES = path.resolve(__dirname, '..', 'test', 'fixtures', 'sls');
+
 describe('sls', function () {
+  describe('readPinnedSlsCommit', function () {
+    it('reads pinned_sls_commit from a manifest', async function () {
+      expect(
+        await readPinnedSlsCommit(path.join(FIXTURES, 'complete')),
+        'should return the pinned commit verbatim',
+      ).to.equal('abc123def456');
+    });
+
+    it('names the path it looked at when the manifest is absent', async function () {
+      const missing = path.join(FIXTURES, 'does-not-exist');
+      const err = await readPinnedSlsCommit(missing).catch((e: Error) => e);
+      expect(
+        (err as Error).message,
+        'error should name the manifest path that was checked',
+      ).to.include(path.join(missing, 'manifest.json'));
+      expect(
+        (err as Error).message,
+        'error should mention the override flag',
+      ).to.include('--slsImageTag');
+    });
+
+    it('reports a manifest that is missing the key', async function () {
+      const err = await readPinnedSlsCommit(
+        path.join(FIXTURES, 'no-key'),
+      ).catch((e: Error) => e);
+      expect(
+        (err as Error).message,
+        'error should name the missing key',
+      ).to.include('pinned_sls_commit');
+    });
+
+    it('reports a malformed manifest', async function () {
+      const err = await readPinnedSlsCommit(
+        path.join(FIXTURES, 'malformed'),
+      ).catch((e: Error) => e);
+      expect(
+        (err as Error).message,
+        'error should say the manifest could not be parsed',
+      ).to.match(/parse/i);
+    });
+  });
+
   describe('createSLSMultiCellEnvironment', function () {
     let tmpDir: string;
     let composeFile: string;
@@ -86,6 +131,33 @@ describe('sls', function () {
       } finally {
         await sls.releasePorts();
       }
+    });
+
+    const manifestComposeFile = path.join(
+      FIXTURES,
+      'complete',
+      'docker-compose.yml',
+    );
+
+    it('defaults the image tag to the adjacent manifest', async function () {
+      const { env } = await createSLSMultiCellEnvironment({
+        composeFile: manifestComposeFile,
+      });
+      expect(
+        env.SLS_IMAGE_TAG,
+        'should read the tag from the manifest next to the compose file',
+      ).to.equal('abc123def456');
+    });
+
+    it('lets an explicit image tag override the manifest', async function () {
+      const { env } = await createSLSMultiCellEnvironment({
+        composeFile: manifestComposeFile,
+        imageTag: 'explicit-tag',
+      });
+      expect(
+        env.SLS_IMAGE_TAG,
+        'an explicit tag should take precedence over the manifest',
+      ).to.equal('explicit-tag');
     });
   });
 
