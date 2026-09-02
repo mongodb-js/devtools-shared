@@ -1,25 +1,25 @@
-# mongodb-runner
+# @mongodb-js/mongodb-runner
 
 Helper for spinning up MongoDB servers and clusters for testing.
 
 ## Requirements
 
-Node.js >= 20.19.5, npm >= 11.6.0. Running as `npx mongodb-runner ...`
+Node.js >= 20.19.5, npm >= 11.6.0. Running as `npx @mongodb-js/mongodb-runner ...`
 is typically the easiest way to install/run this tool.
 
 ## Example usage
 
-> Note: Version 5 of mongodb-runner is a full re-write. Many things work
+> Note: Version 5 of @mongodb-js/mongodb-runner is a full re-write. Many things work
 > differently in version 5 and above.
 
 ```bash
-$ npx mongodb-runner start -t sharded
-$ npx mongodb-runner start -t replset -- --port 27017
-$ npx mongodb-runner start -t replset -- --setParameter allowDiskUseByDefault=true
-$ npx mongodb-runner start -t replset --version 8.2.x-enterprise --oidc='--payload={"groups":["x"],"sub":"y","aud":"aud"} --expiry=60 --skip-refresh-token'
-$ npx mongodb-runner stop --all
-$ npx mongodb-runner exec -t standalone -- sh -c 'mongosh $MONGODB_URI'
-$ npx mongodb-runner exec -t standalone -- --setParameter allowDiskUseByDefault=true -- sh -c 'mongosh $MONGODB_URI'
+$ npx @mongodb-js/mongodb-runner start -t sharded
+$ npx @mongodb-js/mongodb-runner start -t replset -- --port 27017
+$ npx @mongodb-js/mongodb-runner start -t replset -- --setParameter allowDiskUseByDefault=true
+$ npx @mongodb-js/mongodb-runner start -t replset --version 8.2.x-enterprise --oidc='--payload={"groups":["x"],"sub":"y","aud":"aud"} --expiry=60 --skip-refresh-token'
+$ npx @mongodb-js/mongodb-runner stop --all
+$ npx @mongodb-js/mongodb-runner exec -t standalone -- sh -c 'mongosh $MONGODB_URI'
+$ npx @mongodb-js/mongodb-runner exec -t standalone -- --setParameter allowDiskUseByDefault=true -- sh -c 'mongosh $MONGODB_URI'
 ```
 
 ## Options
@@ -57,7 +57,7 @@ Options:
 ## Programmatic use
 
 ```
-import { MongoCluster } from 'mongodb-runner';
+import { MongoCluster } from '@mongodb-js/mongodb-runner';
 
 const cluster = await MongoCluster.start({
   topology: 'standalone'
@@ -106,7 +106,7 @@ You can specify a config file for the CLI using `--config`:
 ```
 
 ```sh
-$ npx mongodb-runner start --config <path/to/config.json>
+$ npx @mongodb-js/mongodb-runner start --config <path/to/config.json>
 ```
 
 ## DSC clusters
