@@ -1,8 +1,13 @@
 import { spawn } from 'child_process';
 import { once } from 'events';
-import { promises as fs, openSync, closeSync } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { debug, uuid } from './util';
+
+/** Strip any characters that are not safe to use in a filename. */
+export function sanitizeForFilename(value: string): string {
+  return value.replace(/[^-_a-zA-Z0-9.]/g, '');
+}
 
 export interface DockerComposeProjectOptions {
   /**
@@ -81,8 +86,11 @@ async function startLogFollower(
   logDir: string,
 ): Promise<{ pid: number | undefined; logFile: string }> {
   await fs.mkdir(logDir, { recursive: true });
-  const logFile = path.join(logDir, `docker-compose-${projectName}.log`);
-  const fd = openSync(logFile, 'a');
+  const logFile = path.join(
+    logDir,
+    `docker-compose-${sanitizeForFilename(projectName)}.log`,
+  );
+  const handle = await fs.open(logFile, 'a');
   try {
     const proc = spawn(
       'docker',
@@ -95,7 +103,7 @@ async function startLogFollower(
       {
         // Output goes straight to the file descriptor; no pumping through
         // this process, so the follower is fully independent of it.
-        stdio: ['ignore', fd, fd],
+        stdio: ['ignore', handle.fd, handle.fd],
         env: { ...process.env, ...env },
         detached: true,
       },
@@ -108,7 +116,7 @@ async function startLogFollower(
     });
     return { pid: proc.pid, logFile };
   } finally {
-    closeSync(fd); // the child process holds its own copy
+    await handle.close(); // the child process holds its own copy
   }
 }
 
@@ -143,7 +151,7 @@ export class DockerComposeProject {
     }
     debug('docker compose project started');
     let logFollowerPid: number | undefined;
-    if (options.logDir !== undefined) {
+    if (options.logDir) {
       try {
         ({ pid: logFollowerPid } = await startLogFollower(
           composeFile,
@@ -172,12 +180,12 @@ export class DockerComposeProject {
     await fs.mkdir(logDir, { recursive: true });
     const outFile = path.join(
       logDir,
-      `docker-compose-${this.projectName}-${new Date()
-        .toISOString()
-        .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`,
+      `docker-compose-${sanitizeForFilename(
+        this.projectName,
+      )}-${sanitizeForFilename(new Date().toISOString())}.log`,
     );
     debug('dumping docker compose logs', { outFile });
-    const fd = openSync(outFile, 'w');
+    const handle = await fs.open(outFile, 'w');
     try {
       const proc = spawn(
         'docker',
@@ -187,7 +195,7 @@ export class DockerComposeProject {
           '--timestamps',
         ]),
         {
-          stdio: ['ignore', fd, fd],
+          stdio: ['ignore', handle.fd, handle.fd],
           env: { ...process.env, ...this.env },
         },
       );
@@ -195,7 +203,7 @@ export class DockerComposeProject {
       const [code] = await once(proc, 'exit');
       debug('dumped docker compose logs', { outFile, code });
     } finally {
-      closeSync(fd);
+      await handle.close();
     }
     return outFile;
   }
@@ -218,7 +226,7 @@ export class DockerComposeProject {
     // If the log follower died (or was never started) while the project kept
     // running, fall back to a one-off snapshot before teardown destroys the
     // container logs.
-    if (this.logDir !== undefined && !this.isLogFollowerRunning()) {
+    if (this.logDir && !this.isLogFollowerRunning()) {
       try {
         await this.dumpLogs(this.logDir);
       } catch (err) {
