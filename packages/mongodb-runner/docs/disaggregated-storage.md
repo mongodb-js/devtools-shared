@@ -93,10 +93,22 @@ mongodb-runner start -t replset \
 #   --downloadUrl=https://.../dsc-mongod.tgz
 ```
 
-This prints the connection string once the cluster is up. The first run pulls
-all SLS images, which can take several minutes (`--debug` shows the
-progress). `mongodb-runner stop --id=...` (printed by `start`) tears down the
-mongod processes and the compose project together.
+This prints the connection string once the cluster is up. To get the allocated
+SLS service ports/URIs as structured output, add `--json` and capture stdout to
+a file instead of scraping it:
+
+```bash
+mongodb-runner start -t replset \
+  --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
+  --binDir=/path/to/dsc-mongod/bin \
+  --json > cluster.json
+```
+
+The JSON object carries `id` and `connectionString` plus an `sls` field with
+the `ports` and `services` (the same info printed to stderr without `--json`).
+The first run pulls all SLS images, which can take several minutes (`--debug`
+shows the progress). `mongodb-runner stop --id=...` (printed by `start`) tears
+down the mongod processes and the compose project together.
 
 The same works for `-t standalone` and `-t sharded`. A DSC-capable
 `mongod` is required (see Prerequisites) — with a stock binary, startup fails
