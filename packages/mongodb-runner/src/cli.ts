@@ -87,12 +87,11 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe:
         'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
-      implies: 'slsImageTag',
     })
     .option('slsImageTag', {
       type: 'string',
       describe:
-        'SLS docker image tag to use with --slsCompose (e.g. the pinned_sls_commit from the server repo manifest)',
+        'SLS docker image tag to use with --slsCompose (defaults to the pinned_sls_commit from the manifest.json next to the compose file)',
     })
     .option('slsSkipEcrLogin', {
       type: 'boolean',
@@ -139,7 +138,7 @@ import type { MongoClientOptions } from 'mongodb';
     const disaggregatedStorage = argv.slsCompose
       ? await utilities.createSLSDisaggregatedStorageOptions({
           composeFile: argv.slsCompose,
-          imageTag: argv.slsImageTag!,
+          imageTag: argv.slsImageTag,
           ecrLogin: !argv.slsSkipEcrLogin,
         })
       : undefined;

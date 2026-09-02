@@ -70,24 +70,23 @@ override.
   server checkout. Files it references (`slsbackup.proto`,
   `flags-state.json`) are resolved relative to it, and the services/ports are
   parsed from it, so any version of the file works as-is.
-- The SLS image tag to use, typically the `pinned_sls_commit` from
-  `buildscripts/modules/atlas/manifest.json` in the mongodb server repository.
+- The image tag is read automatically from the `pinned_sls_commit` in
+  `manifest.json` sitting next to the compose file (the server repository's
+  `buildscripts/modules/atlas/manifest.json`). Pass `--slsImageTag` to
+  override it.
 
 ## Quick start
 
-Given the compose file and image tag, everything else (compose environment
+Given the compose file, everything else (image tag, compose environment
 variables, readiness polling, per-shard log creation, and the
 `disaggregatedStorageConfig` server parameter) is generated automatically.
 Full sequence, assuming a mongodb server checkout at `$MONGO_REPO`:
 
 ```bash
-# 1. Look up the pinned SLS image tag
-SLS_IMAGE_TAG=$(python3 -c "import json; print(json.load(open('$MONGO_REPO/buildscripts/modules/atlas/manifest.json'))['pinned_sls_commit'])")
-
-# 2. Start a 2-node replica set backed by SLS (logs in to ECR automatically)
+# The image tag is read from the manifest.json next to the compose file; pass
+# --slsImageTag to override it. Logs in to ECR automatically.
 mongodb-runner start -t replset \
   --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
-  --slsImageTag=$SLS_IMAGE_TAG \
   --binDir=/path/to/dsc-mongod/bin \
   --debug
 # or, instead of --binDir:
@@ -226,7 +225,8 @@ from the server codebase and returns:
 | `ports`       | The allocated host port per service, e.g. `ports['crs-cell1-0']`                                         |
 | `services`    | Host `addr`/`uri` per service, e.g. `services['cms-cell1-0'].uri`                                        |
 
-Required options: `composeFile`, `imageTag`. Optional: `imageRepo`,
+Required options: `composeFile`. Optional: `imageTag` (defaults to the
+`pinned_sls_commit` from the manifest next to the compose file), `imageRepo`,
 `thirdPartyImageRepo`, `testDataId` (container label for test attribution),
 `hostInternalIP`. The service list is parsed from the compose file's
 `ports:` mappings (`parseSLSComposeServices`), so it adapts to whatever
@@ -240,13 +240,13 @@ server parameter for one shard; options: `logId`, `cellMetadataService`,
 
 ## CLI use
 
-For an SLS project, `--slsCompose` + `--slsImageTag` handle everything (see
-Quick start):
+For an SLS project, `--slsCompose` handles everything (see Quick start);
+`--slsImageTag` is optional and overrides the tag read from the manifest:
 
 ```bash
 mongodb-runner start -t replset \
   --slsCompose=/path/to/sls-multicell-docker-compose.yml \
-  --slsImageTag=<tag> --binDir=...
+  --binDir=...
 ```
 
 Custom (non-SLS) storage backends are only supported through the programmatic
