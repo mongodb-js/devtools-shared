@@ -64,7 +64,7 @@
     "eslint": "^7.25.0 || ^8.0.0",
     "gen-esm-wrapper": "^1.1.3",
     "mocha": "^8.4.0",
-    "mongodb": "^7.5.0",
+    "mongodb": "^7.6.0",
     "nyc": "^15.1.0",
     "prettier": "^3.8.1",
     "sinon": "^9.2.3",
@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "mongodb-build-info": "^1.9.12",
-    "mongodb-connection-string-url": "^7.0.1"
+    "mongodb-connection-string-url": "^7.0.2"
   },
   "peerDependencies": {
     "mongodb": "^7.0.0"

@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
-    "ipaddr.js": "^2.1.0"
+    "ipaddr.js": "^2.5.0"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.8",
