@@ -27,6 +27,26 @@ describe('docker-compose', function () {
     let origPath: string | undefined;
     let dockerArgsLog: string;
 
+    // The fake `docker` exits immediately, but close() only writes the
+    // snapshot fallback once the log follower process is no longer running,
+    // so wait for that to avoid racing against the follower's exit.
+    async function waitForLogFollowerExit(
+      project: DockerComposeProject,
+    ): Promise<void> {
+      const { logFollowerPid } = project.serialize() as {
+        logFollowerPid?: number;
+      };
+      if (logFollowerPid === undefined) return;
+      await eventually(() => {
+        try {
+          process.kill(logFollowerPid, 0);
+        } catch {
+          return; // process is gone
+        }
+        throw new Error(`log follower ${logFollowerPid} is still running`);
+      });
+    }
+
     before(function () {
       // The fake `docker` executable is a shell script.
       if (process.platform === 'win32') this.skip();
@@ -76,6 +96,7 @@ describe('docker-compose', function () {
         );
       });
 
+      await waitForLogFollowerExit(project);
       await project.close();
 
       const invocations = await fs.readFile(dockerArgsLog, 'utf8');
@@ -83,8 +104,8 @@ describe('docker-compose', function () {
       expect(invocations).to.include('logs --follow --no-color --timestamps');
       expect(invocations).to.include('down --volumes');
 
-      // The (immediately exiting) fake follower is dead by close() time, so a
-      // snapshot dump is also written.
+      // The fake follower is dead by close() time, so a snapshot dump is
+      // also written.
       const files = await fs.readdir(logDir);
       expect(
         files.filter((f) =>
@@ -121,6 +142,7 @@ describe('docker-compose', function () {
         logDir,
       });
       const restored = DockerComposeProject.deserialize(project.serialize());
+      await waitForLogFollowerExit(project);
       await restored.close();
       const invocations = await fs.readFile(dockerArgsLog, 'utf8');
       expect(invocations).to.include('down --volumes');
