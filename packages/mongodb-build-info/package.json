@@ -78,6 +78,6 @@
   },
   "dependencies": {
     "debug": "^4.4.0",
-    "mongodb-connection-string-url": "^3.0.1 || ^7.0.0"
+    "mongodb-connection-string-url": "^7.0.2"
   }
 }
