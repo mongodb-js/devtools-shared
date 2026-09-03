@@ -1,6 +1,13 @@
 import { spawn } from 'child_process';
 import { once } from 'events';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { debug, uuid } from './util';
+
+/** Strip any characters that are not safe to use in a filename. */
+export function sanitizeForFilename(value: string): string {
+  return value.replace(/[^-_a-zA-Z0-9.]/g, '');
+}
 
 export interface DockerComposeProjectOptions {
   /**
@@ -14,6 +21,22 @@ export interface DockerComposeProjectOptions {
    * coexist.
    */
   projectName?: string;
+  /**
+   * If set, the logs of all containers in the project are continuously
+   * streamed (`docker compose logs --follow`) to a file in this directory
+   * for the lifetime of the project. Streaming starts as soon as the project
+   * is up, so the logs are preserved even if the current process dies before
+   * the project is torn down, and are unaffected by Docker log rotation.
+   */
+  logDir?: string;
+}
+
+function dockerComposeArgs(
+  composeFile: string,
+  projectName: string,
+  args: string[],
+): string[] {
+  return ['compose', '-f', composeFile, '-p', projectName, ...args];
 }
 
 async function runDockerCompose(
@@ -24,7 +47,7 @@ async function runDockerCompose(
 ): Promise<{ code: number | null; stderr: string }> {
   const proc = spawn(
     'docker',
-    ['compose', '-f', composeFile, '-p', projectName, ...args],
+    dockerComposeArgs(composeFile, projectName, args),
     {
       stdio: ['inherit', 'pipe', 'pipe'],
       env: { ...process.env, ...env },
@@ -51,11 +74,59 @@ async function runDockerCompose(
   return { code: code as number | null, stderr };
 }
 
+/**
+ * Start a detached `docker compose logs --follow` process whose output is
+ * redirected directly to a file, so it keeps streaming (and survives) even if
+ * the current process exits.
+ */
+async function startLogFollower(
+  composeFile: string,
+  projectName: string,
+  env: Record<string, string> | undefined,
+  logDir: string,
+): Promise<{ pid: number | undefined; logFile: string }> {
+  await fs.mkdir(logDir, { recursive: true });
+  const logFile = path.join(
+    logDir,
+    `docker-compose-${sanitizeForFilename(projectName)}.log`,
+  );
+  const handle = await fs.open(logFile, 'a');
+  try {
+    const proc = spawn(
+      'docker',
+      dockerComposeArgs(composeFile, projectName, [
+        'logs',
+        '--follow',
+        '--no-color',
+        '--timestamps',
+      ]),
+      {
+        // Output goes straight to the file descriptor; no pumping through
+        // this process, so the follower is fully independent of it.
+        stdio: ['ignore', handle.fd, handle.fd],
+        env: { ...process.env, ...env },
+        detached: true,
+      },
+    );
+    await once(proc, 'spawn');
+    proc.unref();
+    debug('started docker compose log follower', {
+      pid: proc.pid,
+      logFile,
+    });
+    return { pid: proc.pid, logFile };
+  } finally {
+    await handle.close(); // the child process holds its own copy
+  }
+}
+
 export class DockerComposeProject {
   private constructor(
     private readonly composeFile: string,
     private readonly projectName: string,
     private readonly env?: Record<string, string>,
+    private readonly logDir?: string,
+    private readonly logFollowerPid?: number,
   ) {}
 
   static async start(
@@ -79,7 +150,72 @@ export class DockerComposeProject {
       );
     }
     debug('docker compose project started');
-    return new DockerComposeProject(composeFile, projectName, options.env);
+    let logFollowerPid: number | undefined;
+    if (options.logDir) {
+      try {
+        ({ pid: logFollowerPid } = await startLogFollower(
+          composeFile,
+          projectName,
+          options.env,
+          options.logDir,
+        ));
+      } catch (err) {
+        debug('failed to start docker compose log follower', err);
+      }
+    }
+    return new DockerComposeProject(
+      composeFile,
+      projectName,
+      options.env,
+      options.logDir,
+      logFollowerPid,
+    );
+  }
+
+  /**
+   * Write a snapshot of the logs of all containers in the project (including
+   * stopped ones) to a file in `logDir`. Returns the path of the written file.
+   */
+  async dumpLogs(logDir: string): Promise<string> {
+    await fs.mkdir(logDir, { recursive: true });
+    const outFile = path.join(
+      logDir,
+      `docker-compose-${sanitizeForFilename(
+        this.projectName,
+      )}-${sanitizeForFilename(new Date().toISOString())}.log`,
+    );
+    debug('dumping docker compose logs', { outFile });
+    const handle = await fs.open(outFile, 'w');
+    try {
+      const proc = spawn(
+        'docker',
+        dockerComposeArgs(this.composeFile, this.projectName, [
+          'logs',
+          '--no-color',
+          '--timestamps',
+        ]),
+        {
+          stdio: ['ignore', handle.fd, handle.fd],
+          env: { ...process.env, ...this.env },
+        },
+      );
+      await once(proc, 'spawn');
+      const [code] = await once(proc, 'exit');
+      debug('dumped docker compose logs', { outFile, code });
+    } finally {
+      await handle.close();
+    }
+    return outFile;
+  }
+
+  private isLogFollowerRunning(): boolean {
+    if (this.logFollowerPid === undefined) return false;
+    try {
+      process.kill(this.logFollowerPid, 0);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async close(): Promise<void> {
@@ -87,6 +223,16 @@ export class DockerComposeProject {
       composeFile: this.composeFile,
       projectName: this.projectName,
     });
+    // If the log follower died (or was never started) while the project kept
+    // running, fall back to a one-off snapshot before teardown destroys the
+    // container logs.
+    if (this.logDir && !this.isLogFollowerRunning()) {
+      try {
+        await this.dumpLogs(this.logDir);
+      } catch (err) {
+        debug('failed to dump docker compose logs', err);
+      }
+    }
     const { code, stderr } = await runDockerCompose(
       this.composeFile,
       this.projectName,
@@ -96,6 +242,15 @@ export class DockerComposeProject {
     if (code !== 0) {
       debug('docker compose down failed', { code: String(code), stderr });
     }
+    // The follower exits by itself once all containers are removed; the kill
+    // is a fallback so we never leak the process.
+    if (this.logFollowerPid !== undefined) {
+      try {
+        process.kill(this.logFollowerPid);
+      } catch {
+        /* already exited */
+      }
+    }
     debug('docker compose project stopped');
   }
 
@@ -104,6 +259,8 @@ export class DockerComposeProject {
       composeFile: this.composeFile,
       projectName: this.projectName,
       env: this.env,
+      logDir: this.logDir,
+      logFollowerPid: this.logFollowerPid,
     };
   }
 
@@ -112,6 +269,8 @@ export class DockerComposeProject {
       serialized.composeFile,
       serialized.projectName,
       serialized.env,
+      serialized.logDir,
+      serialized.logFollowerPid,
     );
   }
 }

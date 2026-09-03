@@ -112,7 +112,8 @@ const disaggregatedStorage = await createSLSDisaggregatedStorageOptions({
   composeFile: '/path/to/sls-multicell-docker-compose.yml',
   imageTag: 'abc123', // pinned_sls_commit
   // optional: projectName, firstLogId, readyTimeoutSecs, imageRepo,
-  //           testDataId, hostInternalIP
+  //           testDataId, hostInternalIP, setupMaxRetries,
+  //           setupRetryIntervalMs
 });
 
 const cluster = await MongoCluster.start({
