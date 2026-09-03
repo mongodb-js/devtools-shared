@@ -67,7 +67,7 @@ aws ecr get-login-password --region us-east-1 | \
 SLS_IMAGE_TAG=$(python3 -c "import json; print(json.load(open('$MONGO_REPO/buildscripts/modules/atlas/manifest.json'))['pinned_sls_commit'])")
 
 # 3. Start a 2-node replica set backed by SLS
-mongodb-runner start -t replset \
+@mongodb-js/mongodb-runner start -t replset \
   --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
   --slsImageTag=$SLS_IMAGE_TAG \
   --binDir=/path/to/dsc-mongod/bin \
@@ -227,7 +227,7 @@ For an SLS project, `--slsCompose` + `--slsImageTag` handle everything (see
 Quick start):
 
 ```bash
-mongodb-runner start -t replset \
+@mongodb-js/mongodb-runner start -t replset \
   --slsCompose=/path/to/sls-multicell-docker-compose.yml \
   --slsImageTag=<tag> --binDir=...
 ```
@@ -235,7 +235,7 @@ mongodb-runner start -t replset \
 Custom (non-SLS) storage backends are only supported through the programmatic
 API, since they require readiness polling and per-shard setup hooks.
 
-`mongodb-runner stop --id=...` restores the cluster metadata and tears down
+`@mongodb-js/mongodb-runner stop --id=...` restores the cluster metadata and tears down
 the compose project along with the mongod processes, even from a different
 process than the one that started it.
 

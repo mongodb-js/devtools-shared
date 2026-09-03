@@ -1,5 +1,5 @@
 {
-  "name": "mongodb-runner",
+  "name": "@mongodb-js/mongodb-runner",
   "description": "The easiest way to test your code against MongoDB Server",
   "author": {
     "name": "MongoDB Inc",
@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "6.11.0",
+  "version": "6.11.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -29,14 +29,18 @@
   "main": "dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    "require": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    ".": {
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/.esm-wrapper.mjs"
+      }
     },
-    "import": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/.esm-wrapper.mjs"
-    }
+    "./cli": "./dist/cli.js",
+    "./package.json": "./package.json"
   },
   "scripts": {
     "bootstrap": "npm run compile",
