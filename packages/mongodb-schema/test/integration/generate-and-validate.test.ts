@@ -4,7 +4,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import assert from 'assert';
 import { Double, Int32, ObjectId, EJSON } from 'bson';
 import { MongoClient, type Db } from 'mongodb';
-import { MongoCluster } from 'mongodb-runner';
+import { MongoCluster } from '@mongodb-js/mongodb-runner';
 import path from 'path';
 import { tmpdir } from 'os';
 

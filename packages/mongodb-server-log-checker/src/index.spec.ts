@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import type { LogEntry } from './index';
 import { ServerLogsChecker } from './index';
 import { EventEmitter } from 'events';
-import { MongoCluster } from 'mongodb-runner';
+import { MongoCluster } from '@mongodb-js/mongodb-runner';
 import path from 'path';
 import { tmpdir } from 'os';
 import { setTimeout as delay } from 'timers/promises';

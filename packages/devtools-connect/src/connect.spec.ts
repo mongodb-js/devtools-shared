@@ -8,7 +8,7 @@ import sinon, { stubConstructor } from 'ts-sinon';
 import chai, { expect } from 'chai';
 import sinonChai from 'sinon-chai';
 import { Agent as HTTPSAgent } from 'https';
-import { MongoCluster } from 'mongodb-runner';
+import { MongoCluster } from '@mongodb-js/mongodb-runner';
 import { tmpdir } from 'os';
 import * as devtoolsProxySupport from '@mongodb-js/devtools-proxy-support';
 
