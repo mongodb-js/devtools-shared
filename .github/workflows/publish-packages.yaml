@@ -8,7 +8,10 @@ on:
       - completed
 
 permissions:
-  contents: none # we use the github app's token to checkout and push
+  # Used for Trusted Publishing
+  # https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow-1
+  id-token: write
+  contents: read
 
 jobs:
   publish:
@@ -52,10 +55,7 @@ jobs:
         shell: bash
 
       - name: "Publish what is not already in NPM"
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
           git update-index --assume-unchanged .npmrc
           npm run publish-packages
 
