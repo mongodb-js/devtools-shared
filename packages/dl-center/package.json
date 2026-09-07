@@ -62,7 +62,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^25.5.2",
     "@types/s3rver": "^3.7.4",
-    "@types/sinon-chai": "^4.0.0",
+    "@types/sinon-chai": "^3.2.12",
     "chai": "^4.5.0",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
