@@ -8,7 +8,10 @@ on:
       - completed
 
 permissions:
-  contents: none # we use the github app's token to checkout and push
+  # Used for Trusted Publishing
+  # https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow-1
+  id-token: write
+  contents: read
 
 jobs:
   publish:
