@@ -2,7 +2,7 @@
   "name": "@mongodb-js/eslint-plugin-devtools",
   "description": "Custom eslint rules for DevTools",
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
