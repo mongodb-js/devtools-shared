@@ -1,6 +1,6 @@
 {
   "name": "mongodb-download-url",
-  "version": "1.8.15",
+  "version": "1.8.16",
   "description": "Lookup download URLs for MongoDB versions.",
   "scripts": {
     "bootstrap": "npm run compile",
