@@ -5,7 +5,6 @@ ignores:
  - '@types/react'
  - '@types/react-dom'
  - '@types/chai'
- - '@types/sinon-chai'
  - 'sinon'
 ignore-patterns:
  - 'dist'

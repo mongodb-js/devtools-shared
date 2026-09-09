@@ -3,7 +3,6 @@ ignores:
  - '@mongodb-js/mocha-config-devtools'
  - '@mongodb-js/tsconfig-devtools'
  - '@types/chai'
- - '@types/sinon-chai'
  - 'sinon'
  # this is explicitly called as a dependency to make sure that is bootstrapped
  # before mongodb-runner, since it is required via mongodb
