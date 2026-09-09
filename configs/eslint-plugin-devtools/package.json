@@ -2,7 +2,7 @@
   "name": "@mongodb-js/eslint-plugin-devtools",
   "description": "Custom eslint rules for DevTools",
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -30,7 +30,7 @@
     "reformat": "npm run eslint . -- --fix && npm run prettier -- --write ."
   },
   "devDependencies": {
-    "@mongodb-js/mocha-config-devtools": "^2.0.0",
+    "@mongodb-js/mocha-config-devtools": "^2.0.1",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@typescript-eslint/rule-tester": "^8.49.0",
     "depcheck": "^1.4.7",
