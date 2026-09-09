@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/tracking-plan",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Generate a Markdown tracking plan from typed telemetry event definitions.",
   "license": "Apache-2.0",
   "repository": {
@@ -56,8 +56,8 @@
     "reformat": "npm run prettier -- --write ."
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.10",
-    "@mongodb-js/mocha-config-devtools": "^1.1.5",
+    "@mongodb-js/eslint-config-devtools": "^0.11.11",
+    "@mongodb-js/mocha-config-devtools": "^2.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@mongodb-js/tsconfig-devtools": "^1.1.5",
     "@types/mocha": "^9.1.1",
