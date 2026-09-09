@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai';
+import { expect } from 'chai';
 import { PassThrough } from 'stream';
 import sinon from 'ts-sinon';
 import {
@@ -9,9 +9,7 @@ import {
   StateShareServer,
   StateShareClient,
 } from './ipc-rpc-state-share';
-import sinonChai from 'sinon-chai';
 import type { DevtoolsConnectionState } from './connect';
-chai.use(sinonChai);
 
 describe('IPC RPC state sharing', function () {
   describe('signed content sharing', function () {

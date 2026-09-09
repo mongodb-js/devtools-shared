@@ -3,9 +3,7 @@ import { MongoLogWriter, mongoLogId } from '.';
 import { EJSON } from 'bson';
 import stream from 'stream';
 import { inspect } from 'util';
-import chai, { expect } from 'chai';
-import sinonChai from 'sinon-chai';
-chai.use(sinonChai);
+import { expect } from 'chai';
 
 describe('MongoLogWriter', function () {
   it('allows writing log messages to a stream', async function () {

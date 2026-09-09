@@ -5,14 +5,11 @@ import {
   machineIdSync as otherMachineIdSync,
   machineId as otherMachineIdAsync,
 } from 'node-machine-id';
-import chai, { expect } from 'chai';
+import { expect } from 'chai';
 import { createHash } from 'crypto';
-import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 import bindings from 'bindings';
 import assert from 'assert';
-
-chai.use(sinonChai);
 
 type MachineIdFunctionPair = [
   typeof getMachineIdAsync | typeof getMachineIdSync,
