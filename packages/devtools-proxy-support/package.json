@@ -69,7 +69,7 @@
     "debug": "^4.4.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
-    "lru-cache": "^11.3.5",
+    "lru-cache": "^11.5.2",
     "node-fetch": "^3.3.2",
     "pac-proxy-agent": "^7.0.2",
     "socks-proxy-agent": "^8.0.4",
