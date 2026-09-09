@@ -5,14 +5,11 @@ import { EventEmitter, once } from 'events';
 import { MongoClient } from 'mongodb';
 import { MongoClient as MongoClient6 } from 'mongodb6';
 import sinon, { stubConstructor } from 'ts-sinon';
-import chai, { expect } from 'chai';
-import sinonChai from 'sinon-chai';
+import { expect } from 'chai';
 import { Agent as HTTPSAgent } from 'https';
 import { MongoCluster } from '@mongodb-js/mongodb-runner';
 import { tmpdir } from 'os';
 import * as devtoolsProxySupport from '@mongodb-js/devtools-proxy-support';
-
-chai.use(sinonChai);
 
 describe('devtools connect', function () {
   let bus: EventEmitter;

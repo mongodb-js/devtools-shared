@@ -1,12 +1,9 @@
-import chai, { expect } from 'chai';
+import { expect } from 'chai';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
 import { MongoDBDownloader } from '.';
-
-chai.use(sinonChai);
 
 describe('MongoDBDownloader', function () {
   this.timeout(60_000);
