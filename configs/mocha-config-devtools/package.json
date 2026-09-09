@@ -26,6 +26,7 @@
     "prettier": "^3.8.1"
   },
   "dependencies": {
+    "@types/sinon-chai": "^3.2.12",
     "chai": "^4.3.6",
     "chai-dom": "^1.9.0",
     "global-jsdom": "^24.0.0",
