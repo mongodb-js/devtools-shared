@@ -385,7 +385,7 @@ const STAGE_OPERATORS = [
     namespaces: [...ANY_NAMESPACE],
     description: 'Returns documents based on proximity to a geospatial point.',
     comment: `/**
- * near: The point to search near.
+ * near: The point to search near, supports the let option and bound let option.
  * distanceField: The calculated distance.
  * maxDistance: Optional maximum distance, in meters, documents can be before being excluded from results.
  * minDistance: Optional minimum distance from the center point.
@@ -397,16 +397,16 @@ const STAGE_OPERATORS = [
  */
 `,
     snippet: `{
-      near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
-      distanceField: '\${3:string}',
-      maxDistance: \${4:number},
-      minDistance: \${5:number},
-      query: {\${6}},
-      includeLocs: '\${7:string}',
-      distanceMultiplier: \${8:number},
-      key: '\${9:string}',
-      spherical: \${10:boolean}
-    }`,
+  near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
+  distanceField: '\${3:string}',
+  maxDistance: \${4:number},
+  minDistance: \${5:number},
+  query: {\${6}},
+  includeLocs: '\${7:string}',
+  distanceMultiplier: \${8:number},
+  key: '\${9:string}',
+  spherical: \${10:boolean}
+}`,
   },
   {
     name: '$graphLookup',
