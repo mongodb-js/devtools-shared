@@ -387,22 +387,27 @@ const STAGE_OPERATORS = [
     comment: `/**
  * near: The point to search near.
  * distanceField: The calculated distance.
- * maxDistance: The maximum distance, in meters, documents can be before being excluded from results.
- * query: Limits results that match the query
+ * maxDistance: Optional maximum distance, in meters, documents can be before being excluded from results.
+ * minDistance: Optional minimum distance from the center point.
+ * query: Limits results that match the query.
  * includeLocs: Optional. Labels and includes the point used to match the document.
- * num: Optional. The maximum number of documents to return.
+ * distanceMultiplier: Optional factor to multiply returned distances by.
+ * key: Optional geospatial indexed field to use.
  * spherical: Defaults to false. Specifies whether to use spherical geometry.
  */
 `,
+
     snippet: `{
-  near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
-  distanceField: '\${3:string}',
-  maxDistance: \${4:number},
-  query: {\${5}},
-  includeLocs: '\${6}',
-  num: \${7:number},
-  spherical: \${8:boolean}
-}`,
+      near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
+      distanceField: '\${3:string}',
+      maxDistance: \${4:number},
+      minDistance: \${5:number},
+      query: {\${6}},
+      includeLocs: '\${7:string}',
+      distanceMultiplier: \${8:number},
+      key: '\${9:string}',
+      spherical: \${10:boolean}
+    }`,
   },
   {
     name: '$graphLookup',
