@@ -99,6 +99,12 @@ import type { MongoClientOptions } from 'mongodb';
       describe:
         'Skip authenticating to the SLS image registry (use if you have already run docker login)',
     })
+    .option('json', {
+      type: 'boolean',
+      default: false,
+      describe:
+        'For `start` and `ls`: print machine-readable JSON on stdout instead of plain text',
+    })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
     .command('start', 'Start a MongoDB instance')
@@ -177,7 +183,26 @@ import type { MongoClientOptions } from 'mongodb';
           ? `--runnerDir=${argv.runnerDir}`
           : ''),
     );
-    console.log(cs.toString());
+    if (argv.json) {
+      const result: Record<string, unknown> = {
+        __proto__: null,
+        id,
+        connectionString: cluster.connectionString,
+      };
+      if (cluster.oidcIssuer) {
+        result.oidcIssuer = cluster.oidcIssuer;
+        result.connectionStringWithOidc = cs.toString();
+      }
+      if (disaggregatedStorage && 'sls' in disaggregatedStorage) {
+        result.sls = {
+          ports: disaggregatedStorage.sls.ports,
+          services: disaggregatedStorage.sls.services,
+        };
+      }
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(cs.toString());
+    }
     cluster.unref();
   }
 
@@ -189,8 +214,16 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function ls() {
+    const entries: { id: string; connectionString: string }[] = [];
     for await (const { id, connectionString } of utilities.instances(argv)) {
-      console.log(`${id}: ${connectionString}`);
+      if (argv.json) {
+        entries.push({ id, connectionString });
+      } else {
+        console.log(`${id}: ${connectionString}`);
+      }
+    }
+    if (argv.json) {
+      console.log(JSON.stringify(entries, null, 2));
     }
   }
 
