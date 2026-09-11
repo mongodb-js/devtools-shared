@@ -396,7 +396,6 @@ const STAGE_OPERATORS = [
  * spherical: Defaults to false. Specifies whether to use spherical geometry.
  */
 `,
-
     snippet: `{
       near: { type: 'Point', coordinates: [ \${1:number}, \${2:number} ] },
       distanceField: '\${3:string}',
