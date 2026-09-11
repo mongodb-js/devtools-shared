@@ -155,6 +155,18 @@ layer, managing the storage backend's docker compose project alongside the
 mongod processes. See
 [docs/disaggregated-storage.md](./docs/disaggregated-storage.md).
 
+Point it at a disaggregated-storage-capable MongoDB install (or a Server
+source checkout) and everything else is located automatically:
+
+```bash
+npx @mongodb-js/mongodb-runner start -t replset --slsDir=/path/to/dsc-install --binDir=...
+# or, for a Server source checkout:
+npx @mongodb-js/mongodb-runner start -t replset --slsCompose=.../atlas/sls-multicell-docker-compose.yml --binDir=...
+```
+
+Pass `--slsDir` without a value to resolve it relative to `--binDir`
+(`--binDir=.../bin` looks in `.../` for the bundle).
+
 ## License
 
 Apache 2.0

@@ -88,10 +88,16 @@ import type { MongoClientOptions } from 'mongodb';
       describe:
         'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
     })
+    .option('slsDir', {
+      type: 'string',
+      describe:
+        'Path to a disaggregated-storage-capable MongoDB install (or its buildscripts/modules/atlas directory); locates the SLS compose file and image tag automatically. Pass without a value to resolve relative to --binDir. Mutually exclusive with --slsCompose',
+    })
+    .conflicts('slsDir', 'slsCompose')
     .option('slsImageTag', {
       type: 'string',
       describe:
-        'SLS docker image tag to use with --slsCompose (defaults to the pinned_sls_commit from the manifest.json next to the compose file)',
+        'SLS docker image tag to use (defaults to the pinned_sls_commit from the manifest.json next to the compose file)',
     })
     .option('slsSkipEcrLogin', {
       type: 'boolean',
@@ -141,9 +147,24 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function start() {
-    const disaggregatedStorage = argv.slsCompose
+    let composeFile = argv.slsCompose;
+    if (argv.slsDir !== undefined) {
+      // An empty value means "resolve relative to --binDir".
+      const slsDir =
+        argv.slsDir ||
+        (argv.binDir
+          ? path.join(argv.binDir, '..')
+          : (() => {
+              throw new Error(
+                '--slsDir was given without a value and --binDir is not set, so there is nowhere to look for the SLS bundle',
+              );
+            })());
+      const bundle = await utilities.resolveSLSBundle(slsDir);
+      composeFile = bundle.composeFile;
+    }
+    const disaggregatedStorage = composeFile
       ? await utilities.createSLSDisaggregatedStorageOptions({
-          composeFile: argv.slsCompose,
+          composeFile,
           imageTag: argv.slsImageTag,
           ecrLogin: !argv.slsSkipEcrLogin,
         })
