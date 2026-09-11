@@ -150,6 +150,18 @@ layer, managing the storage backend's docker compose project alongside the
 mongod processes. See
 [docs/disaggregated-storage.md](./docs/disaggregated-storage.md).
 
+Point it at an SLS dir — the `buildscripts/modules/atlas` directory of a
+disaggregated-storage-capable MongoDB build (an installed build or a Server
+source checkout), or any parent containing it — and everything else is located
+automatically:
+
+```bash
+# installed build
+npx @mongodb-js/mongodb-runner start -t replset --slsDir=/path/to/dsc-install --binDir=...
+# Server source checkout
+npx @mongodb-js/mongodb-runner start -t replset --slsDir=$MONGO_REPO --binDir=...
+```
+
 ## License
 
 Apache 2.0

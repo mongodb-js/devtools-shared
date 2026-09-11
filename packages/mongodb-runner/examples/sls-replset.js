@@ -15,7 +15,7 @@
 //
 // This is equivalent to:
 //   mongodb-runner start -t replset \
-//     --slsCompose=<path> --binDir=...
+//     --slsDir=<path> --binDir=...
 
 // Enable mongodb-runner debug output (compose progress, server startup, ...)
 // unless the user already configured DEBUG themselves.

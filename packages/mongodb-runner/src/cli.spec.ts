@@ -21,6 +21,15 @@ async function runCli(
   return stdout;
 }
 
+async function runCliExpectingFailure(args: string[]): Promise<string> {
+  try {
+    await runCli(args);
+  } catch (err) {
+    return String((err as { stderr?: string }).stderr ?? '');
+  }
+  throw new Error(`expected the CLI to fail: ${args.join(' ')}`);
+}
+
 describe('cli', function () {
   this.timeout(process.platform === 'win32' ? 400_000 : 100_000);
   let tmpDir = '';
@@ -212,5 +221,23 @@ describe('cli', function () {
     const stdout = await runCli(['ls', '--json', '--runnerDir', emptyDir]);
 
     expect(JSON.parse(stdout)).to.deep.equal([]);
+  });
+
+  it('rejects a --slsDir with no path', async function () {
+    const stderr = await runCliExpectingFailure(['start', '--slsDir']);
+    expect(stderr, 'the error should say a path is required').to.include(
+      '--slsDir requires a path',
+    );
+  });
+
+  it('rejects a --slsDir that is not an SLS dir', async function () {
+    const stderr = await runCliExpectingFailure([
+      'start',
+      `--slsDir=${path.join(tmpDir, 'not-an-sls-dir')}`,
+    ]);
+    expect(
+      stderr,
+      'a directory without the SLS files should be rejected',
+    ).to.include('not a disaggregated-storage-capable MongoDB build');
   });
 });

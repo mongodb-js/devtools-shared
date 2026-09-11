@@ -42,38 +42,41 @@ override.
   - `binDir`: a local directory containing the binaries, or
   - `downloadUrl`: a URL to a tarball of such a build (cached by URL, standard
     release-tarball layout with a top-level directory containing `bin/`).
-- The SLS multi-cell compose file — mongodb-runner does not ship one; point
-  it at the file you want to use, typically
-  `buildscripts/modules/atlas/sls-multicell-docker-compose.yml` in a mongodb
-  server checkout. Files it references (`slsbackup.proto`,
-  `flags-state.json`) are resolved relative to it, and the services/ports are
-  parsed from it, so any version of the file works as-is.
+- The SLS dir — mongodb-runner does not ship these files. They live in the
+  `buildscripts/modules/atlas` directory of the 10gen/mongo repo and are:
+  - `sls-multicell-docker-compose.yml` — the multi-cell compose file.
+  - `manifest.json` — its `pinned_sls_commit` supplies the default image tag.
+  - `slsbackup.proto` and `flags-state.json` — files the compose file
+    references.
+
+  Point `slsDir` at it; the runner locates and validates the files and reads
+  the image tag from the manifest.
+
 - The image tag is read automatically from the `pinned_sls_commit` in
-  `manifest.json` sitting next to the compose file (the server repository's
-  `buildscripts/modules/atlas/manifest.json`). Pass `--slsImageTag` to
+  `manifest.json` sitting next to the compose file. Pass `--slsImageTag` to
   override it.
 
 ## Quick start
 
-Given the compose file, everything else (image tag, compose environment
+Given a disaggregated-storage-capable MongoDB build — an installed build or a
+Server source checkout — everything else (image tag, compose environment
 variables, readiness polling, per-shard log creation, and the
 `disaggregatedStorageConfig` server parameter) is generated automatically.
-Full sequence, assuming a mongodb server checkout at `$MONGO_REPO`:
+Assuming a build at `$BUILD_DIR`:
 
 ```bash
 # 1. Log in to the SLS image registry
 aws ecr get-login-password --region us-east-1 | \
   docker login --username AWS --password-stdin 664315256653.dkr.ecr.us-east-1.amazonaws.com
 
-# 2. Start a 2-node replica set backed by SLS (the image tag is read from the
-# manifest.json next to the compose file; pass --slsImageTag to override it)
-@mongodb-js/mongodb-runner start -t replset \
-  --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
-  --binDir=/path/to/dsc-mongod/bin \
-  --debug
-# or, instead of --binDir:
-#   --downloadUrl=https://.../dsc-mongod.tgz
+# 2. Start a 2-node replica set backed by SLS
+@mongodb-js/mongodb-runner start --topology=replset --slsDir="$BUILD_DIR" \
+  --binDir=/path/to/dsc-mongod/bin --logDir="$LOG_DIR" --id=tools-dsc
 ```
+
+`--slsDir` locates and validates the SLS dir and reads the image tag from its
+`manifest.json`; for a Server source checkout, point it at the repo root and
+the files are found under `buildscripts/modules/atlas`.
 
 This prints the connection string once the cluster is up. To get the allocated
 SLS service ports/URIs as structured output, add `--json` and capture stdout to
@@ -81,7 +84,7 @@ a file instead of scraping it:
 
 ```bash
 mongodb-runner start -t replset \
-  --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
+  --slsDir="$BUILD_DIR" \
   --binDir=/path/to/dsc-mongod/bin \
   --json > cluster.json
 ```
@@ -244,13 +247,11 @@ server parameter for one shard; options: `logId`, `cellMetadataService`,
 
 ## CLI use
 
-For an SLS project, `--slsCompose` handles everything (see Quick start);
+For an SLS project, `--slsDir` handles everything (see Quick start);
 `--slsImageTag` is optional and overrides the tag read from the manifest:
 
 ```bash
-@mongodb-js/mongodb-runner start -t replset \
-  --slsCompose=/path/to/sls-multicell-docker-compose.yml \
-  --binDir=...
+@mongodb-js/mongodb-runner start -t replset --slsDir=/path/to/dsc-install --binDir=...
 ```
 
 Custom (non-SLS) storage backends are only supported through the programmatic
