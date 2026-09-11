@@ -26,6 +26,44 @@ export const SLS_HOSTNAME = 'local.sls.mmscloudteam.com';
 const DEFAULT_SLS_IMAGE_REPO =
   '664315256653.dkr.ecr.us-east-1.amazonaws.com/disagg-storage/';
 
+/** Name of the build manifest inside a Server build's atlas module directory. */
+export const SLS_MANIFEST_FILE = 'manifest.json';
+
+/**
+ * Read `pinned_sls_commit` from a Server build's
+ * `buildscripts/modules/atlas/manifest.json`. This is the SLS image tag
+ * matching the commit the binaries were built from.
+ */
+export async function readPinnedSlsCommit(atlasDir: string): Promise<string> {
+  const manifestPath = path.join(atlasDir, SLS_MANIFEST_FILE);
+  let contents: string;
+  try {
+    contents = await fs.readFile(manifestPath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `Could not read the SLS build manifest at ${manifestPath}: ` +
+        `${(err as Error).message}. Pass --slsImageTag explicitly to skip this lookup.`,
+    );
+  }
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(contents);
+  } catch (err) {
+    throw new Error(
+      `Could not parse the SLS build manifest at ${manifestPath}: ` +
+        `${(err as Error).message}. Pass --slsImageTag explicitly to skip this lookup.`,
+    );
+  }
+  const pinned = (manifest as Record<string, unknown>)?.pinned_sls_commit;
+  if (typeof pinned !== 'string' || !pinned) {
+    throw new Error(
+      `The SLS build manifest at ${manifestPath} has no pinned_sls_commit key. ` +
+        `Pass --slsImageTag explicitly to skip this lookup.`,
+    );
+  }
+  return pinned;
+}
+
 export interface SLSServiceInfo {
   /** Environment variable through which the compose file receives the host port. */
   portVar: string;
@@ -96,10 +134,10 @@ export interface SLSMultiCellEnvironmentOptions {
    */
   composeFile: string;
   /**
-   * Image tag for the SLS images (typically the `pinned_sls_commit` from the
-   * server repository's buildscripts/modules/atlas/manifest.json).
+   * Image tag for the SLS images. Defaults to the `pinned_sls_commit` from
+   * the `manifest.json` sitting next to the compose file.
    */
-  imageTag: string;
+  imageTag?: string;
   /** Docker image repository for SLS images. */
   imageRepo?: string;
   /** Docker image repository for third-party images (default: imageRepo with 'disagg-storage' replaced by 'thirdparty'). */
@@ -130,7 +168,9 @@ export interface SLSMultiCellEnvironment {
 export async function createSLSMultiCellEnvironment(
   options: SLSMultiCellEnvironmentOptions,
 ): Promise<SLSMultiCellEnvironment> {
-  const { composeFile, imageTag } = options;
+  const { composeFile } = options;
+  const imageTag =
+    options.imageTag ?? (await readPinnedSlsCommit(path.dirname(composeFile)));
 
   const serviceInfo = parseSLSComposeServices(
     await fs.readFile(composeFile, 'utf8'),

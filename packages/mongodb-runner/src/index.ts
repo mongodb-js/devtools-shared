@@ -22,6 +22,7 @@ export {
   type SLSDisaggregatedStorageConfigOptions,
   type SLSDisaggregatedStorageSetupOptions,
   parseSLSComposeServices,
+  readPinnedSlsCommit,
   SLS_HOSTNAME,
   SLS_CELL1,
   SLS_CELL2,
