@@ -12,6 +12,7 @@ import type { ProxyLogEmitter } from './logging';
 import { connect as tlsConnect } from 'tls';
 import type { Socket } from 'net';
 import { getFips } from 'crypto';
+import { createSshAuthMethodSelector } from './ssh-auth';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 function ssh2(): typeof import('ssh2') {
@@ -59,9 +60,38 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     this.sshClient = this.createSshClient();
   }
 
+  private getPassword(): string | undefined {
+    return decodeURIComponent(this.url.password) || undefined;
+  }
+
   private createSshClient(): SshClient {
     const client = new (ssh2().Client)();
+    let handledNonEmptyKeyboardInteractiveRound = false;
+    client.on(
+      'keyboard-interactive',
+      (_name, _instructions, _instructionsLang, prompts, finish) => {
+        if (prompts.length === 0) {
+          finish([]);
+          return;
+        }
+
+        const password =
+          !handledNonEmptyKeyboardInteractiveRound &&
+          prompts.length === 1 &&
+          prompts[0].echo === false
+            ? this.getPassword()
+            : undefined;
+        handledNonEmptyKeyboardInteractiveRound = true;
+
+        // Treat keyboard-interactive as a conservative password fallback,
+        // rather than a general interactive or multi-factor authentication UI.
+        finish(password ? [password] : prompts.map(() => ''));
+      },
+    );
     client.on('close', () => {
+      // A Client instance can reconnect after its socket closes, so keep this
+      // state scoped to a single SSH connection.
+      handledNonEmptyKeyboardInteractiveRound = false;
       this.logger.emit('ssh:client-closed');
       this.connected = false;
     });
@@ -108,17 +138,24 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       return this.reinitializingPromise;
     }
 
+    const password = this.getPassword();
+    const privateKey = this.proxyOptions.sshOptions?.identityKeyFile
+      ? await fs.readFile(this.proxyOptions.sshOptions.identityKeyFile)
+      : undefined;
     const sshConnectConfig: ConnectConfig = {
       readyTimeout: 20000,
       keepaliveInterval: 20000,
       host: decodeURIComponent(this.url.hostname),
       port: +this.url.port || 22,
       username: decodeURIComponent(this.url.username) || undefined,
-      password: decodeURIComponent(this.url.password) || undefined,
-      privateKey: this.proxyOptions.sshOptions?.identityKeyFile
-        ? await fs.readFile(this.proxyOptions.sshOptions.identityKeyFile)
-        : undefined,
+      password,
+      tryKeyboard: Boolean(password),
+      privateKey,
       passphrase: this.proxyOptions.sshOptions?.identityKeyPassphrase,
+      authHandler: createSshAuthMethodSelector({
+        hasPassword: Boolean(password),
+        hasPrivateKey: Boolean(privateKey),
+      }),
       // debug: console.log.bind(null, '[client]')
     };
 

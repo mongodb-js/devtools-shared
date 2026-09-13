@@ -10,8 +10,16 @@ import { createServer as createHTTPSServer } from 'https';
 import type { AddressInfo, Server, Socket } from 'net';
 import path from 'path';
 import { createServer as createHTTPServer, get as httpGet } from 'http';
-import type { TcpipRequestInfo } from 'ssh2';
+import type {
+  AuthContext,
+  AuthenticationType,
+  ParsedKey,
+  Prompt,
+  PublicKeyAuthContext,
+  TcpipRequestInfo,
+} from 'ssh2';
 import { Server as SSHServer } from 'ssh2';
+import { utils as sshUtils } from 'ssh2';
 import DuplexPair from 'duplexpair';
 import { promisify } from 'util';
 
@@ -26,6 +34,14 @@ function parseHTTPAuthHeader(header: string | undefined): [string, string] {
     .toString()
     .split(':');
   return [username, pw];
+}
+
+function parseTestSshKey(key: Buffer): ParsedKey {
+  const parsedKey = sshUtils.parseKey(key);
+  if (parsedKey instanceof Error) {
+    throw parsedKey;
+  }
+  return parsedKey;
 }
 
 export class HTTPServerProxyTestSetup {
@@ -44,8 +60,24 @@ export class HTTPServerProxyTestSetup {
   // hibernate). These are the underlying net.Sockets, not the high-level
   // ssh2 Client objects emitted by the SSH server's 'connection' event.
   readonly sshServerSockets: Socket[] = [];
+  readonly sshKeyboardInteractiveAuthAttempts: Array<{
+    username: string;
+    responses: string[][];
+  }> = [];
+  readonly sshAuthenticationAttempts: Array<{
+    username: string;
+    method: AuthenticationType;
+  }> = [];
+  readonly sshIdentityKeyFile = path.resolve(__dirname, 'fixtures', 'sshd.key');
   canTunnel: () => boolean = () => true;
   authHandler: undefined | ((username: string, password: string) => boolean);
+  sshAuthenticationHandler: undefined | ((ctx: AuthContext) => void);
+  sshKeyboardInteractiveAuthRounds:
+    | undefined
+    | Array<{
+        prompts: Prompt[];
+        expectedResponses: string[];
+      }>;
 
   get httpServerPort(): number {
     return (this.httpServer.address() as AddressInfo).port;
@@ -75,6 +107,41 @@ export class HTTPServerProxyTestSetup {
     ca: readFileSync(path.resolve(__dirname, 'fixtures', 'ca.crt')),
     sshdKey: readFileSync(path.resolve(__dirname, 'fixtures', 'sshd.key')),
   });
+  private readonly sshIdentityKey = parseTestSshKey(this.tlsOptions.sshdKey);
+
+  /**
+   * Handles the public key probe and verifies the signed request before
+   * delegating the final authentication outcome to the test.
+   */
+  handleTestSshPublicKeyAuthentication(
+    ctx: PublicKeyAuthContext,
+    onAuthenticated: () => void,
+  ): void {
+    if (
+      ctx.key.algo !== this.sshIdentityKey.type ||
+      !ctx.key.data.equals(this.sshIdentityKey.getPublicSSH())
+    ) {
+      ctx.reject();
+      return;
+    }
+
+    if (!ctx.signature) {
+      ctx.accept();
+      return;
+    }
+
+    const hashAlgorithm = (ctx as PublicKeyAuthContext & { hashAlgo?: string })
+      .hashAlgo;
+    if (
+      !ctx.blob ||
+      !this.sshIdentityKey.verify(ctx.blob, ctx.signature, hashAlgorithm)
+    ) {
+      ctx.reject();
+      return;
+    }
+
+    onAuthenticated();
+  }
 
   constructor() {
     this.requests = [];
@@ -155,6 +222,54 @@ export class HTTPServerProxyTestSetup {
       (client) => {
         client
           .on('authentication', (ctx) => {
+            this.sshAuthenticationAttempts.push({
+              username: ctx.username,
+              method: ctx.method,
+            });
+
+            if (this.sshAuthenticationHandler) {
+              this.sshAuthenticationHandler(ctx);
+              return;
+            }
+
+            const keyboardInteractiveRounds =
+              this.sshKeyboardInteractiveAuthRounds;
+            if (keyboardInteractiveRounds) {
+              if (ctx.method !== 'keyboard-interactive') {
+                return ctx.reject(['keyboard-interactive']);
+              }
+
+              const attempt = {
+                username: ctx.username,
+                responses: [] as string[][],
+              };
+              this.sshKeyboardInteractiveAuthAttempts.push(attempt);
+              let roundIndex = 0;
+              const promptNextRound = (): void => {
+                const round = keyboardInteractiveRounds[roundIndex++];
+                if (!round) {
+                  ctx.accept();
+                  return;
+                }
+                ctx.prompt(round.prompts, (responses) => {
+                  attempt.responses.push(responses);
+                  const responsesMatch =
+                    responses.length === round.expectedResponses.length &&
+                    responses.every(
+                      (response, index) =>
+                        response === round.expectedResponses[index],
+                    );
+                  if (!responsesMatch) {
+                    ctx.reject();
+                    return;
+                  }
+                  promptNextRound();
+                });
+              };
+              promptNextRound();
+              return;
+            }
+
             if (ctx.method === 'none' && !this.authHandler) return ctx.accept();
             if (
               ctx.method === 'password' &&
