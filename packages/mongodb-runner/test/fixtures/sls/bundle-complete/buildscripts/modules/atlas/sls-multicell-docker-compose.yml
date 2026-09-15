@@ -1,0 +1,4 @@
+services:
+  cms-cell1-0:
+    ports:
+      - '${CMS_CELL1_0_PORT:-30001}:27998'

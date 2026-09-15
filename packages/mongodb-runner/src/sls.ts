@@ -64,6 +64,69 @@ export async function readPinnedSlsCommit(atlasDir: string): Promise<string> {
   return pinned;
 }
 
+/** Relative path of the atlas module directory inside a Server build. */
+export const SLS_ATLAS_SUBDIR = path.join('buildscripts', 'modules', 'atlas');
+
+const SLS_COMPOSE_FILE = 'sls-multicell-docker-compose.yml';
+const SLS_BACKUP_PROTO_FILE = 'slsbackup.proto';
+const SLS_FLAGS_STATE_FILE = 'flags-state.json';
+
+/** Files that make up a disaggregated-storage-capable build's SLS bundle. */
+export interface SLSBundle {
+  /** The `buildscripts/modules/atlas` directory holding the bundle. */
+  atlasDir: string;
+  composeFile: string;
+  manifestFile: string;
+  backupProtoFile: string;
+  flagsStateFile: string;
+}
+
+async function exists(file: string): Promise<boolean> {
+  try {
+    await fs.access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Locate the SLS bundle shipped inside a disaggregated-storage-capable
+ * MongoDB build. `dir` may be either the install root or the
+ * `buildscripts/modules/atlas` directory itself.
+ */
+export async function resolveSLSBundle(dir: string): Promise<SLSBundle> {
+  const nested = path.join(dir, SLS_ATLAS_SUBDIR);
+  const atlasDir = (await exists(nested)) ? nested : dir;
+
+  const bundle: SLSBundle = {
+    atlasDir,
+    composeFile: path.join(atlasDir, SLS_COMPOSE_FILE),
+    manifestFile: path.join(atlasDir, SLS_MANIFEST_FILE),
+    backupProtoFile: path.join(atlasDir, SLS_BACKUP_PROTO_FILE),
+    flagsStateFile: path.join(atlasDir, SLS_FLAGS_STATE_FILE),
+  };
+
+  const missing: string[] = [];
+  for (const file of [
+    bundle.composeFile,
+    bundle.manifestFile,
+    bundle.backupProtoFile,
+    bundle.flagsStateFile,
+  ]) {
+    if (!(await exists(file))) missing.push(path.basename(file));
+  }
+  if (missing.length) {
+    throw new Error(
+      `${dir} is not a disaggregated-storage-capable MongoDB build ` +
+        `(missing: ${missing.join(', ')}; looked in ${atlasDir})`,
+    );
+  }
+
+  debug('resolved SLS bundle', { atlasDir });
+  return bundle;
+}
+
 export interface SLSServiceInfo {
   /** Environment variable through which the compose file receives the host port. */
   portVar: string;

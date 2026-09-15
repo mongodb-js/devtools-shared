@@ -23,6 +23,8 @@ export {
   type SLSDisaggregatedStorageSetupOptions,
   parseSLSComposeServices,
   readPinnedSlsCommit,
+  resolveSLSBundle,
+  SLS_ATLAS_SUBDIR,
   SLS_HOSTNAME,
   SLS_CELL1,
   SLS_CELL2,
@@ -31,6 +33,7 @@ export {
   type SLSServiceInfo,
   type SLSMultiCellEnvironment,
   type SLSMultiCellEnvironmentOptions,
+  type SLSBundle,
 } from './sls';
 export {
   parseEcrRegistry,

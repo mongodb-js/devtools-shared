@@ -64,23 +64,38 @@ override.
   - `binDir`: a local directory containing the binaries, or
   - `downloadUrl`: a URL to a tarball of such a build (cached by URL, standard
     release-tarball layout with a top-level directory containing `bin/`).
-- The SLS multi-cell compose file — mongodb-runner does not ship one; point
-  it at the file you want to use, typically
-  `buildscripts/modules/atlas/sls-multicell-docker-compose.yml` in a mongodb
-  server checkout. Files it references (`slsbackup.proto`,
-  `flags-state.json`) are resolved relative to it, and the services/ports are
-  parsed from it, so any version of the file works as-is.
+- The SLS bundle — mongodb-runner does not ship one. Point it at a bundle one
+  of two ways:
+  - `slsDir` (recommended for an installed build): a path to a
+    disaggregated-storage-capable MongoDB install (the tarball's root, or its
+    `buildscripts/modules/atlas` directory). The runner locates the compose
+    file, validates the bundle, and reads the image tag from it automatically.
+  - `slsCompose` (escape hatch for a Server source checkout): the path to the
+    compose file directly, typically
+    `buildscripts/modules/atlas/sls-multicell-docker-compose.yml` in a mongodb
+    server checkout. Files it references (`slsbackup.proto`,
+    `flags-state.json`) are resolved relative to it, and the services/ports are
+    parsed from it, so any version of the file works as-is. The two options are
+    mutually exclusive.
 - The image tag is read automatically from the `pinned_sls_commit` in
-  `manifest.json` sitting next to the compose file (the server repository's
-  `buildscripts/modules/atlas/manifest.json`). Pass `--slsImageTag` to
+  `manifest.json` sitting next to the compose file. Pass `--slsImageTag` to
   override it.
 
 ## Quick start
 
-Given the compose file, everything else (image tag, compose environment
-variables, readiness polling, per-shard log creation, and the
+Given an install or source checkout, everything else (image tag, compose
+environment variables, readiness polling, per-shard log creation, and the
 `disaggregatedStorageConfig` server parameter) is generated automatically.
-Full sequence, assuming a mongodb server checkout at `$MONGO_REPO`:
+Assuming a disaggregated-storage-capable MongoDB install at `$INSTALL_DIR`:
+
+```bash
+@mongodb-js/mongodb-runner start --topology=replset --slsDir="$INSTALL_DIR" \
+  --logDir="$LOG_DIR" --id=tools-dsc --json >cluster.json
+```
+
+`--slsDir` locates and validates the SLS bundle and reads the image tag from
+its manifest. For a Server source checkout rather than an installed build,
+pass the compose file explicitly with `--slsCompose` instead:
 
 ```bash
 # The image tag is read from the manifest.json next to the compose file; pass
@@ -89,19 +104,6 @@ Full sequence, assuming a mongodb server checkout at `$MONGO_REPO`:
   --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
   --binDir=/path/to/dsc-mongod/bin \
   --debug
-# or, instead of --binDir:
-#   --downloadUrl=https://.../dsc-mongod.tgz
-```
-
-This prints the connection string once the cluster is up. To get the allocated
-SLS service ports/URIs as structured output, add `--json` and capture stdout to
-a file instead of scraping it:
-
-```bash
-mongodb-runner start -t replset \
-  --slsCompose=$MONGO_REPO/buildscripts/modules/atlas/sls-multicell-docker-compose.yml \
-  --binDir=/path/to/dsc-mongod/bin \
-  --json > cluster.json
 ```
 
 The JSON object carries `id` and `connectionString` plus an `sls` field with
@@ -253,13 +255,12 @@ server parameter for one shard; options: `logId`, `cellMetadataService`,
 
 ## CLI use
 
-For an SLS project, `--slsCompose` handles everything (see Quick start);
-`--slsImageTag` is optional and overrides the tag read from the manifest:
+For an SLS project, `--slsDir` (installed build) or `--slsCompose` (source
+checkout) handle everything (see Quick start); `--slsImageTag` is optional and
+overrides the tag read from the manifest:
 
 ```bash
-@mongodb-js/mongodb-runner start -t replset \
-  --slsCompose=/path/to/sls-multicell-docker-compose.yml \
-  --binDir=...
+@mongodb-js/mongodb-runner start -t replset --slsDir=/path/to/dsc-install --binDir=...
 ```
 
 Custom (non-SLS) storage backends are only supported through the programmatic
