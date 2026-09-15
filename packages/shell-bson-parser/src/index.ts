@@ -25,6 +25,9 @@ function buildAST(input: string): { ast: Node; hasComments: boolean } {
 
 export { ParseMode };
 
+export * from './validators';
+export { toJSString } from './stringify';
+
 export function parse(input: string, options?: Partial<Options>) {
   const parsedOptions = buildOptions(options);
 
