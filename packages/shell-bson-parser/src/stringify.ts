@@ -160,7 +160,6 @@ const BSON_TO_JS_STRING = {
   },
 };
 
-/** @public */
 export function toJSString(
   obj: unknown,
   ind: Parameters<typeof JSON.stringify>[2] = 2,

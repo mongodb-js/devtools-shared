@@ -7,11 +7,10 @@ import {
   DEFAULT_MAX_TIME_MS,
   DEFAULT_SKIP,
   validate,
-  queryParser,
 } from './validators';
 
 function convert(string: string) {
-  const res = queryParser(string);
+  const res = validate('filter', string);
   const ret = bson.EJSON.serialize(res, { legacy: true, relaxed: false });
   return ret;
 }
@@ -20,7 +19,10 @@ describe('query validators and parser', function () {
   describe('filter', function () {
     context('when no new keyword is provided', function () {
       it('returns the filter', function () {
-        const res = queryParser('{_id: ObjectId("58c33a794d08b991e3648fd2")}');
+        const res = validate(
+          'filter',
+          '{_id: ObjectId("58c33a794d08b991e3648fd2")}',
+        );
         assert.deepEqual(res, {
           _id: new bson.ObjectId('58c33a794d08b991e3648fd2'),
         });
@@ -29,7 +31,8 @@ describe('query validators and parser', function () {
 
     context('when a new keyword is provided', function () {
       it('returns the filter', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{_id: new ObjectId("58c33a794d08b991e3648fd2")}',
         );
         assert.deepEqual(res, {

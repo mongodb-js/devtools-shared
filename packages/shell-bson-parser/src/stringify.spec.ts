@@ -1,6 +1,6 @@
 import assert from 'assert';
 import bson from 'bson';
-import { queryParser } from './validators';
+import { validate } from './validators';
 import { toJSString } from './stringify';
 
 describe('stringify', function () {
@@ -53,7 +53,7 @@ e  s`,
     it('escapes quotes, backslashes and newlines in Code', function () {
       const code = `a "b" 'c' \\d\ne`;
       const jsString = toJSString({ a: new bson.Code(code) }) as string;
-      assert.deepEqual(queryParser(jsString), {
+      assert.deepEqual(validate('filter', jsString), {
         a: new bson.Code(code),
       });
     });
@@ -63,7 +63,7 @@ e  s`,
       const jsString = toJSString({
         a: new bson.Code(code, { b: 1 }),
       }) as string;
-      assert.deepEqual(queryParser(jsString), {
+      assert.deepEqual(validate('filter', jsString), {
         a: new bson.Code(code, { b: 1 }),
       });
     });
@@ -170,7 +170,7 @@ e  s`,
       for (const [name, dbref] of roundTrips) {
         it(`round-trips a DBRef with ${name}`, function () {
           const jsString = toJSString({ a: dbref }, 0) as string;
-          assert.deepEqual(queryParser(jsString), { a: dbref });
+          assert.deepEqual(validate('filter', jsString), { a: dbref });
         });
       }
     });
@@ -179,7 +179,10 @@ e  s`,
     const compactStringify = (obj: unknown) => toJSString(obj, 0);
 
     it('should work', function () {
-      const res = queryParser('{_id: ObjectId("58c33a794d08b991e3648fd2")}');
+      const res = validate(
+        'filter',
+        '{_id: ObjectId("58c33a794d08b991e3648fd2")}',
+      );
       assert.equal(
         compactStringify(res),
         "{_id:ObjectId('58c33a794d08b991e3648fd2')}",
@@ -265,7 +268,10 @@ e  s`,
 
     context('when providing a Date', function () {
       it('correctly converts to an ISODate', function () {
-        const res = queryParser("{test: new Date('2017-01-01T12:35:31.000Z')}");
+        const res = validate(
+          'filter',
+          "{test: new Date('2017-01-01T12:35:31.000Z')}",
+        );
         assert.equal(
           compactStringify(res),
           "{test:ISODate('2017-01-01T12:35:31.000Z')}",
@@ -273,62 +279,63 @@ e  s`,
       });
 
       it('falls back to an invalid ISODate if the provided Date is invalid', function () {
-        const res = queryParser("{test: new Date('invalid')}");
+        const res = validate('filter', "{test: new Date('invalid')}");
         assert.equal(compactStringify(res), "{test:ISODate('Invalid Date')}");
       });
     });
 
     context('when providing an ISODate', function () {
       it('correctly converts to an ISODate', function () {
-        const res = queryParser("{test: ISODate('2017-01-01T12:35:31.000Z')}");
+        const res = validate(
+          'filter',
+          "{test: ISODate('2017-01-01T12:35:31.000Z')}",
+        );
         assert.equal(
           compactStringify(res),
           "{test:ISODate('2017-01-01T12:35:31.000Z')}",
         );
       });
 
-      it('throws if the provided ISODate is invalid', function () {
-        assert.throws(
-          () => queryParser("{test: ISODate('invalid')}"),
-          /"invalid" is not a valid ISODate/,
-        );
+      it('returns false if the provided ISODate is invalid', function () {
+        assert.equal(validate('filter', "{test: ISODate('invalid')}"), false);
       });
     });
 
     context('when providing a DBRef with (collection, oid)', function () {
       it('correctly converts to a DBRef', function () {
-        const res = queryParser("{dbref: DBRef('col', 1)}");
+        const res = validate('filter', "{dbref: DBRef('col', 1)}");
         assert.equal(compactStringify(res), '{dbref:DBRef("col", 1)}');
       });
     });
 
     context('when providing a DBRef with (db.collection, oid)', function () {
       it('correctly converts to a DBRef', function () {
-        const res = queryParser("{dbref: DBRef('db.col', 1)}");
+        const res = validate('filter', "{dbref: DBRef('db.col', 1)}");
         assert.equal(compactStringify(res), '{dbref:DBRef("col", 1, "db")}');
       });
     });
 
     context('when providing a DBRef with (collection, oid, db)', function () {
       it('correctly converts to a DBRef', function () {
-        const res = queryParser("{dbref: DBRef('col', 1, 'db')}");
+        const res = validate('filter', "{dbref: DBRef('col', 1, 'db')}");
         assert.equal(compactStringify(res), '{dbref:DBRef("col", 1, "db")}');
       });
     });
 
     context('when provided a RegExp', function () {
       it('correctly formats the options', function () {
-        const res = queryParser('{name: /foo/i}');
+        const res = validate('filter', '{name: /foo/i}');
         assert.equal(compactStringify(res), '{name:RegExp("foo", \'i\')}');
       });
 
       it('escapes quotes', function () {
-        const res = queryParser("{name: /'/}");
+        const res = validate('filter', "{name: /'/}");
         assert.equal(compactStringify(res), '{name:RegExp("\'")}');
       });
 
       it('handles $regex object format (keeps format)', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{"name": {"$regex": "pineapple", "$options": "i"}}',
         );
         assert.equal(
@@ -401,7 +408,8 @@ e  s`,
 
     context('when provided a Binary', function () {
       it('should support BinData', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           `{name: new BinData(${bson.Binary.SUBTYPE_BYTE_ARRAY}, "OyQRAeK7QlWMr0E2xWapYg==")}`,
         );
         assert.equal(
@@ -411,7 +419,8 @@ e  s`,
       });
 
       it('should support UUID', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{name: UUID("3b241101-e2bb-4255-8caf-4136c566a962")}',
         );
         assert.equal(
@@ -421,7 +430,8 @@ e  s`,
       });
 
       it('does not convert LegacyJavaUUID to UUID', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{name: LegacyJavaUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
         assert.equal(
@@ -431,7 +441,8 @@ e  s`,
       });
 
       it('does not convert LegacyCSharpUUID to UUID', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{name: LegacyCSharpUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
         assert.equal(
@@ -441,7 +452,8 @@ e  s`,
       });
 
       it('does not convert LegacyPythonUUID to UUID', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           '{name: LegacyPythonUUID("00112233-4455-6677-8899-aabbccddeeff")}',
         );
         assert.equal(
@@ -452,7 +464,8 @@ e  s`,
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromHexString/
       it('should support Binary.createFromHexString', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           `{name: Binary.createFromHexString("deadbeef", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
         assert.equal(
@@ -463,7 +476,8 @@ e  s`,
 
       // https://www.mongodb.com/docs/manual/reference/method/Binary.createFromBase64/
       it('should support Binary.createFromBase64', function () {
-        const res = queryParser(
+        const res = validate(
+          'filter',
           `{name: Binary.createFromBase64("3q2+7w==", ${bson.Binary.SUBTYPE_BYTE_ARRAY})}`,
         );
         assert.equal(

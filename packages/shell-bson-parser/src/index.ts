@@ -1,49 +1,34 @@
-import { parse as parseAST } from 'acorn';
-import type { Node } from 'estree';
+import type { parse as parseSync } from './parse';
+import type { validate as validateSync } from './validators';
+import type { toJSString as toJSStringSync } from './stringify';
+import type { WorkerMethod } from './worker-client';
+import { callWorker } from './worker-client';
 
-import { checkTree } from './check';
-import { executeAST } from './eval';
-import type { Options } from './options';
-import { buildOptions, ParseMode } from './options';
+export { ParseMode } from './parse';
 
-function buildAST(input: string): { ast: Node; hasComments: boolean } {
-  let hasComments = false;
+export {
+  DEFAULT_COLLATION,
+  DEFAULT_FILTER,
+  DEFAULT_HINT,
+  DEFAULT_LIMIT,
+  DEFAULT_MAX_TIME_MS,
+  DEFAULT_PROJECT,
+  DEFAULT_SKIP,
+  DEFAULT_SORT,
+} from './validators';
 
-  const ast = parseAST(input, {
-    ecmaVersion: 6,
-    onComment: () => (hasComments = true),
-    locations: true,
-    ranges: true,
-    sourceFile: input,
-  }) as Node;
-
-  return {
-    ast,
-    hasComments,
-  };
+function execInWorker<Func extends (...args: any[]) => any>(
+  method: WorkerMethod,
+  ...args: Parameters<Func>
+): Promise<ReturnType<Func>> {
+  return callWorker<ReturnType<Func>>(method, args);
 }
 
-export { ParseMode };
-
-export * from './validators';
-export { toJSString } from './stringify';
-
-export function parse(input: string, options?: Partial<Options>) {
-  const parsedOptions = buildOptions(options);
-
-  const { hasComments, ast } = buildAST(
-    // Wrapping input into brackets with newlines so that parser can correctly
-    // process an expression and handle possible trailing comments
-    `(\n${input}\n)`,
-  );
-
-  const passedCommentsCheck = !hasComments || parsedOptions.allowComments;
-
-  if (passedCommentsCheck && checkTree(ast, parsedOptions)) {
-    return executeAST(ast);
-  }
-
-  return '';
-}
+export const parse = (...args: Parameters<typeof parseSync>) =>
+  execInWorker('parse', ...args);
+export const validate = (...args: Parameters<typeof validateSync>) =>
+  execInWorker('validate', ...args);
+export const toJSString = (...args: Parameters<typeof toJSStringSync>) =>
+  execInWorker('toJSString', ...args);
 
 export default parse;
