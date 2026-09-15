@@ -1,6 +1,10 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { EJSON } from 'bson';
+
+import {
+  serializeBsonValues,
+  deserializeBsonValues,
+} from './structured-clone-bson';
 
 export type WorkerMethod = 'parse' | 'toJSString' | 'validate';
 
@@ -54,15 +58,7 @@ function getWorker(): Worker {
     }
     pending.delete(response.id);
     if (response.ok) {
-      entry.resolve(
-        (
-          EJSON.deserialize(response.result as Record<string, unknown>, {
-            relaxed: false,
-          }) as {
-            value: unknown;
-          }
-        ).value,
-      );
+      entry.resolve(deserializeBsonValues(response.result));
     } else {
       entry.reject(new Error(response.error));
     }
@@ -92,7 +88,7 @@ export function callWorker<T>(
   const request: WorkerRequest = {
     id,
     method,
-    args: EJSON.serialize({ args }, { relaxed: false }).args,
+    args: serializeBsonValues(args),
   };
   activeWorker.postMessage(request);
 

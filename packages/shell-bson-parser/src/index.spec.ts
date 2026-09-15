@@ -5,6 +5,7 @@ import * as api from './index';
 import { terminateWorker } from './worker-client';
 import { handleRequest } from './worker';
 import type { WorkerRequest } from './worker-client';
+import { VALIDATION_USE_CASES } from './../test/validation-test-cases';
 
 class FakeWorker {
   onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -42,7 +43,7 @@ describe('index (worker-backed async API)', function () {
 
     it('is exposed as the default export', async function () {
       const res = await api.default('{ x: 1 }');
-      assert.deepEqual(res, { x: new bson.Int32(1) });
+      assert.deepEqual(res, { x: 1 });
     });
   });
 
@@ -76,5 +77,14 @@ describe('index (worker-backed async API)', function () {
       const res = await api.validate('doesNotExist', 'anything');
       assert.equal(res, false);
     });
+
+    for (const [key, tests] of Object.entries(VALIDATION_USE_CASES)) {
+      it(`should validate ${key}`, async function () {
+        for (const { input, expected } of tests) {
+          const res = await api.validate(key, input);
+          assert.deepEqual(res, expected);
+        }
+      });
+    }
   });
 });

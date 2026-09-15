@@ -2,12 +2,8 @@ import assert from 'assert';
 import sinon from 'sinon';
 import bson from 'bson';
 
-import {
-  DEFAULT_LIMIT,
-  DEFAULT_MAX_TIME_MS,
-  DEFAULT_SKIP,
-  validate,
-} from './validators';
+import { validate } from './validators';
+import { VALIDATION_USE_CASES } from './../test/validation-test-cases';
 
 function convert(string: string) {
   const res = validate('filter', string);
@@ -367,101 +363,7 @@ describe('query validators and parser', function () {
     });
   });
 
-  const usecases = {
-    project: [
-      { input: '{_id: "a"}', expected: { _id: 'a' } },
-      { input: '{_id: "1"}', expected: { _id: '1' } },
-      { input: '{grabage', expected: false },
-      { input: 'true', expected: false },
-      { input: '123', expected: false },
-      { input: '"something"', expected: false },
-      { input: 'null', expected: false },
-      { input: '', expected: null },
-      { input: '    ', expected: null },
-      { input: '{}', expected: null },
-    ],
-    collation: [
-      { input: '{invalid: "simple"}', expected: false },
-      { input: '{locale: ""}', expected: false },
-      { input: '{locale: "invalid"}', expected: false },
-      { input: '', expected: null },
-      { input: '  ', expected: null },
-      { input: '{}', expected: null },
-      { input: '{locale: "simple"}', expected: { locale: 'simple' } },
-      {
-        input: '{locale: "en_US", strength: 1}',
-        expected: { locale: 'en_US', strength: 1 },
-      },
-    ],
-    hint: [
-      { input: '', expected: null },
-      { input: '  ', expected: null },
-      { input: '{}', expected: null },
-      { input: '{_id: 1}', expected: { _id: 1 } },
-      { input: '{_id: -1}', expected: { _id: -1 } },
-      { input: '{pineapple: 1, age: -1}', expected: { pineapple: 1, age: -1 } },
-      { input: '"pineapple"', expected: 'pineapple' },
-      { input: "'pineapple'", expected: 'pineapple' },
-      { input: '["one", "two"]', expected: false },
-      { input: '{pineapple: 0}', expected: { pineapple: 0 } },
-      { input: '{pineapple: -1}', expected: { pineapple: -1 } },
-      { input: '{pineapple: NaN}', expected: { pineapple: NaN } },
-      { input: '{pineapple: 2}', expected: { pineapple: 2 } },
-      { input: '{not_pineapple', expected: false },
-      { input: 'invalid pineapple: }', expected: false },
-      { input: '{invalid pineapple}', expected: false },
-      { input: '{invalid pineapple: }', expected: false },
-      { input: 'true', expected: false },
-      { input: 'pineapple', expected: false },
-      { input: '123', expected: false },
-      { input: 'null', expected: false },
-    ],
-    sort: [
-      { input: '', expected: null },
-      { input: '{_id: 1}', expected: { _id: 1 } },
-      { input: '{_id: -1}', expected: { _id: -1 } },
-      { input: '{_id: "asc"}', expected: { _id: 'asc' } },
-      { input: '{_id: "desc"}', expected: { _id: 'desc' } },
-      {
-        input: '{ score: { $meta: "textScore" } }',
-        expected: {
-          score: { $meta: 'textScore' },
-        },
-      },
-      { input: '[["123", -1]]', expected: [['123', -1]] },
-      { input: '[["bar", 1]]', expected: [['bar', 1]] },
-      { input: '{_id: "a"}', expected: false },
-      { input: '{_id: "1"}', expected: false },
-      { input: '{grabage', expected: false },
-      { input: '[1]', expected: false },
-      { input: '["foo"]', expected: false },
-      { input: '[["foo", "bar"]]', expected: false },
-      { input: '[[123, -1]]', expected: false },
-      { input: '', expected: null },
-      { input: 'null', expected: null },
-      { input: 'undefined', expected: null },
-    ],
-    skip: [
-      { input: '{skip: "a"}', expected: false },
-      { input: '0', expected: 0 },
-      { input: 1, expected: 1 },
-      { input: '   ', expected: DEFAULT_SKIP },
-    ],
-    limit: [
-      { input: '{limit: "a"}', expected: false },
-      { input: '0', expected: 0 },
-      { input: 1 as any, expected: 1 },
-      { input: '   ', expected: DEFAULT_LIMIT },
-    ],
-    maxTimeMS: [
-      { input: '{maxTimeMS: "a"}', expected: false },
-      { input: '0', expected: 0 },
-      { input: 1 as any, expected: 1 },
-      { input: '   ', expected: DEFAULT_MAX_TIME_MS },
-    ],
-  };
-
-  for (const [key, tests] of Object.entries(usecases)) {
+  for (const [key, tests] of Object.entries(VALIDATION_USE_CASES)) {
     it(`should validate ${key}`, function () {
       for (const { input, expected } of tests) {
         assert.deepEqual(validate(key, input), expected);

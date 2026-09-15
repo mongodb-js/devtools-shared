@@ -1,8 +1,10 @@
-import { EJSON } from 'bson';
-
 import { parse } from './parse';
 import { toJSString } from './stringify';
 import { validate } from './validators';
+import {
+  serializeBsonValues,
+  deserializeBsonValues,
+} from './structured-clone-bson';
 import type { WorkerRequest, WorkerResponse } from './worker-client';
 
 const handlers = {
@@ -19,15 +21,11 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
     if (!handler) {
       throw new Error(`Unknown method: ${method}`);
     }
-    const deserializedArgs = EJSON.deserialize({ args }, { relaxed: false })
-      .args as unknown[];
+    const deserializedArgs = deserializeBsonValues(args);
     const value = (handler as (...args: unknown[]) => unknown)(
       ...deserializedArgs,
     );
-    // Structured clone (used by postMessage) doesn't preserve BSON class
-    // instances (Long, Decimal128, ObjectId, MinKey, ...), so round-trip
-    // through EJSON to keep them intact on the other side.
-    const result = EJSON.serialize({ value }, { relaxed: false });
+    const result = serializeBsonValues(value);
     return { id, ok: true, result };
   } catch (err) {
     return { id, ok: false, error: (err as Error).message };
