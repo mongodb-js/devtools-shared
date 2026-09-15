@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import _debug from 'debug';
 
-import parse, { ParseMode } from './index';
+import { parse, ParseMode } from './parse';
 import { COLLATION_OPTIONS } from './constants';
 
 const debug = _debug('shell-bson-parser:validators');
@@ -267,7 +267,6 @@ const validatorFunctions = {
   isHintValid,
 };
 
-/** @public */
 export function validate(what: string, input: string) {
   const validator =
     validatorFunctions[
@@ -278,22 +277,6 @@ export function validate(what: string, input: string) {
     return false;
   }
   return validator(input);
-}
-
-/** @public */
-export function queryParser(
-  filter: string,
-  project: string | null = DEFAULT_PROJECT,
-) {
-  if (arguments.length === 1) {
-    if (_.isString(filter)) {
-      return _parseFilter(filter);
-    }
-  }
-  return {
-    filter: _parseFilter(filter),
-    project: project !== DEFAULT_PROJECT ? _parseProject(project) : project,
-  };
 }
 
 export {
