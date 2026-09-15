@@ -21,12 +21,11 @@ function isSerializedBson(value: unknown): value is SerializedBson {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !(value instanceof Date) &&
-    !(value instanceof RegExp)
-  );
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }
 
 export function serializeBsonValues<T>(value: T): T {

@@ -5,114 +5,14 @@ import { createSandbox } from 'sinon';
 import { parse } from './parse';
 import type { Options } from './options';
 import { ParseMode } from './options';
+import { PARSE_TEST_CASES } from '../test/parse-test-cases';
 
 describe('parse', function () {
-  it('should correctly parse a valid object', function () {
-    expect(parse('{_id:"hello"}')).to.deep.equal({ _id: 'hello' });
-  });
-
-  it('should accept an empty object', function () {
-    expect(parse('{ }')).to.deep.equal({});
-  });
-
-  it('should parse special globals / values', function () {
-    const input = `{
-    infinity: Infinity,
-    NaN: NaN,
-    undefined: undefined,
-    null: null
-  }`;
-    expect(parse(input)).to.deep.equal({
-      infinity: Infinity,
-      NaN: NaN,
-      undefined: undefined,
-      null: null,
+  for (const { title, input, options, expected } of PARSE_TEST_CASES) {
+    it(title, function () {
+      expect(parse(input, options)).to.deep.equal(expected);
     });
-  });
-
-  it('should accept Binary.createFromHexString and Binary.createFromBase64 when allowMethods is true', function () {
-    expect(
-      parse(
-        `{
-        BinaryCreateFromHexString: Binary.createFromHexString('deadbeef'),
-        BinaryCreateFromBase64: Binary.createFromBase64('3q2+7w=='),
-        }`,
-        { allowMethods: true },
-      ),
-    ).to.deep.equal({
-      BinaryCreateFromHexString: new bson.Binary(
-        Buffer.from('deadbeef', 'hex'),
-        0,
-      ),
-      BinaryCreateFromBase64: new bson.Binary(
-        Buffer.from('3q2+7w==', 'base64'),
-        0,
-      ),
-    });
-  });
-
-  it('should create new UUIDs', function () {
-    expect(parse('{name: UUID()}'))
-      .to.have.property('name')
-      .that.is.instanceOf(bson.Binary);
-    expect(parse('{name: LegacyCSharpUUID()}'))
-      .to.have.property('name')
-      .that.is.instanceOf(bson.Binary);
-    expect(parse('{name: LegacyJavaUUID()}'))
-      .to.have.property('name')
-      .that.is.instanceOf(bson.Binary);
-    expect(parse('{name: LegacyPythonUUID()}'))
-      .to.have.property('name')
-      .that.is.instanceOf(bson.Binary);
-  });
-
-  describe('with a set UUID generation', function () {
-    let sandbox: SinonSandbox;
-
-    beforeEach(function () {
-      sandbox = createSandbox();
-
-      sandbox.replace((bson as any).UUID.prototype, 'toHexString', function () {
-        return '00112233-4455-6677-8899-aabbccddeeff';
-      });
-      sandbox.replace((bson as any).UUID.prototype, 'toBinary', function () {
-        return new bson.Binary(
-          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
-          4,
-        );
-      });
-    });
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    it('should create new UUIDs in the correct formats for legacy', function () {
-      expect(parse('{name: UUID()}')).to.have.deep.equal({
-        name: new bson.Binary(
-          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
-          4,
-        ),
-      });
-      expect(parse('{name: LegacyCSharpUUID()}')).to.have.deep.equal({
-        name: new bson.Binary(
-          Buffer.from('33221100554477668899aabbccddeeff', 'hex'),
-          3,
-        ),
-      });
-      expect(parse('{name: LegacyJavaUUID()}')).to.have.deep.equal({
-        name: new bson.Binary(
-          Buffer.from('7766554433221100ffeeddccbbaa9988', 'hex'),
-          3,
-        ),
-      });
-      expect(parse('{name: LegacyPythonUUID()}')).to.have.deep.equal({
-        name: new bson.Binary(
-          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
-          3,
-        ),
-      });
-    });
-  });
+  }
 
   it('should accept a complex query', function () {
     expect(
@@ -194,256 +94,74 @@ describe('parse', function () {
     });
   });
 
-  it('should support binary operators (like plus / minus)', function () {
-    expect(
-      parse(`{
-    _id: ObjectId("5e159ba7eac34211f2252aaa"),
-    created: Timestamp(10 + 10, 10),
-    filter: { year: { $gte: 2021 - (1/2 + 0.5 - (5 * 0)) } },
-  }`),
-    ).to.deep.equal({
-      _id: new bson.ObjectId('5e159ba7eac34211f2252aaa'),
-      created: new bson.Timestamp({ i: 10, t: 20 }),
-      filter: { year: { $gte: 2020 } },
+  it('should create new UUIDs', function () {
+    expect(parse('{name: UUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyCSharpUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyJavaUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+    expect(parse('{name: LegacyPythonUUID()}'))
+      .to.have.property('name')
+      .that.is.instanceOf(bson.Binary);
+  });
+
+  describe('with a set UUID generation', function () {
+    let sandbox: SinonSandbox;
+
+    beforeEach(function () {
+      sandbox = createSandbox();
+
+      sandbox.replace((bson as any).UUID.prototype, 'toHexString', function () {
+        return '00112233-4455-6677-8899-aabbccddeeff';
+      });
+      sandbox.replace((bson as any).UUID.prototype, 'toBinary', function () {
+        return new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          4,
+        );
+      });
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should create new UUIDs in the correct formats for legacy', function () {
+      expect(parse('{name: UUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          4,
+        ),
+      });
+      expect(parse('{name: LegacyCSharpUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('33221100554477668899aabbccddeeff', 'hex'),
+          3,
+        ),
+      });
+      expect(parse('{name: LegacyJavaUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('7766554433221100ffeeddccbbaa9988', 'hex'),
+          3,
+        ),
+      });
+      expect(parse('{name: LegacyPythonUUID()}')).to.have.deep.equal({
+        name: new bson.Binary(
+          Buffer.from('00112233445566778899aabbccddeeff', 'hex'),
+          3,
+        ),
+      });
     });
   });
-
-  it('should support parsing array operators', function () {
-    expect(
-      parse(`[{
-    "$match": {
-      "released": {
-        "$gte": {
-          "$date": {
-            "$numberLong": "-1806710400000"
-          }
-        }
-      }
-    }
-  },
-  {
-    "$group": {
-      "_id": {
-        "__alias_0": "$year"
-      },
-      "__alias_1": {
-        "$sum": 1
-      }
-    }
-  }]`),
-    ).to.deep.equal([
-      {
-        $match: {
-          released: {
-            $gte: {
-              $date: {
-                $numberLong: '-1806710400000',
-              },
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            __alias_0: '$year',
-          },
-          __alias_1: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-  });
-
-  it('should not allow calling functions that do not exist', function () {
-    expect(parse('{ date: require("") }')).to.equal('');
-  });
-
-  for (const mode of [ParseMode.Extended, ParseMode.Strict, ParseMode.Loose]) {
-    it('should not allow calling functions that only exist as Object.prototype properties', function () {
-      expect(parse('{ date: Date.constructor("") }', { mode })).to.equal('');
-      expect(parse('{ date: Date.hasOwnProperty("") }', { mode })).to.equal('');
-      expect(parse('{ date: Date.__proto__("") }', { mode })).to.equal('');
-      expect(
-        parse('{ date: Code({ toString: Date.constructor("throw null;") }) }', {
-          mode,
-        }),
-      ).to.equal('');
-    });
-  }
 
   describe('Function calls', function () {
     const options: Partial<Options> = {
       mode: ParseMode.Strict,
       allowMethods: true,
     };
-
-    describe('Should deny calls if functions are not allowed', function () {
-      it('reject calls to Math', function () {
-        expect(
-          parse('{ floor: Math.floor(5.5) }', {
-            mode: ParseMode.Strict,
-            allowMethods: false,
-          }),
-        ).to.equal('');
-      });
-
-      for (const dateFn of ['new Date', 'new ISODate', 'Date', 'ISODate']) {
-        context(`Prevent calling function calls on "${dateFn}"`, function () {
-          it('reject calls', function () {
-            expect(
-              parse(`{ date: (${dateFn}(0)).getFullYear() }`, {
-                mode: ParseMode.Strict,
-                allowMethods: false,
-              }),
-            ).to.equal('');
-          });
-        });
-      }
-    });
-
-    describe('Math', function () {
-      it('should allow parsing while using functions from Math', function () {
-        const input = `{
-          abs: Math.abs(-10),
-          acos: Math.acos(1),
-          acosh: Math.acosh(2),
-          asin: Math.asin(1),
-          asinh: Math.asinh(1),
-          atan: Math.atan(1),
-          atan2: Math.atan2(2, 5),
-          atanh: Math.atanh(0.5),
-          cbrt: Math.cbrt(64),
-          ceil: Math.ceil(5.5),
-          clz32: Math.clz32(1000),
-          cos: Math.cos(0.5),
-          cosh: Math.cosh(0.5),
-          exp: Math.exp(2),
-          expm1: Math.expm1(2),
-          floor: Math.floor(5.5),
-          fround: Math.fround(5.05),
-          hypot: Math.hypot(5, 12),
-          imul: Math.imul(3, 4),
-          log: Math.log(8),
-          log10: Math.log10(100),
-          log1p: Math.log1p(1),
-          log2: Math.log2(8),
-          max: Math.max(1, 2, 3),
-          min: Math.min(1, 2, 3),
-          pow: Math.pow(2, 3),
-          round: Math.round(-5.5),
-          sign: Math.sign(-10),
-          sin: Math.sin(0.5),
-          sinh: Math.sinh(0.5),
-          sqrt: Math.sqrt(81),
-          tan: Math.tan(1),
-          tanh: Math.tanh(1),
-          trunc: Math.trunc(30.5),
-        }`;
-        expect(parse(input, options)).to.deep.equal({
-          abs: 10,
-          acos: Math.acos(1),
-          acosh: Math.acosh(2),
-          asin: Math.asin(1),
-          asinh: Math.asinh(1),
-          atan: Math.atan(1),
-          atan2: Math.atan2(2, 5),
-          atanh: Math.atanh(0.5),
-          cbrt: 4,
-          ceil: 6,
-          clz32: 22,
-          cos: Math.cos(0.5),
-          cosh: Math.cosh(0.5),
-          exp: Math.exp(2),
-          expm1: Math.expm1(2),
-          floor: 5,
-          fround: Math.fround(5.05),
-          hypot: 13,
-          imul: 12,
-          log: Math.log(8),
-          log10: 2,
-          log1p: Math.log1p(1),
-          log2: 3,
-          max: 3,
-          min: 1,
-          pow: 8,
-          round: -5,
-          sign: -1,
-          sin: Math.sin(0.5),
-          sinh: Math.sinh(0.5),
-          sqrt: 9,
-          tan: Math.tan(1),
-          tanh: Math.tanh(1),
-          trunc: 30,
-        });
-      });
-
-      it('should be able to handle math expressions', function () {
-        expect(
-          parse(
-            '{ simpleCalc: (5 * Math.floor(5.5) + Math.ceil(5.5)) }',
-            options,
-          ),
-        ).to.deep.equal({ simpleCalc: 31 });
-      });
-
-      it('should prevent invalid functions', function () {
-        expect(parse('{ simpleCalc: Math.totallyLegit(5) }', options)).to.equal(
-          '',
-        );
-      });
-    });
-
-    describe('Function expressions', function () {
-      it('should allow functions as object properties', function () {
-        expect(
-          parse('{ $where: function() { this.x = 1 }}', options),
-        ).to.deep.equal({
-          $where: 'function() { this.x = 1 }',
-        });
-      });
-
-      it('should not allow functions outside object properties', function () {
-        expect(parse('function() { this.x = 1 }', options)).to.equal('');
-      });
-
-      it('should allow multiline functions', function () {
-        expect(
-          parse('{ $where: function\n()\n{\nthis.x = 1\n}}', options),
-        ).to.deep.equal({
-          $where: 'function\n()\n{\nthis.x = 1\n}',
-        });
-      });
-
-      it('should allow arrow functions', function () {
-        expect(parse('{ $where: () => true }', options)).to.deep.equal({
-          $where: '() => true',
-        });
-      });
-
-      it('should allow $expr queries', function () {
-        expect(
-          parse(`{
-        $expr: {
-          $function: {
-            body: function(name) { return hex_md5(name) == "15b0a220baa16331e8d80e15367677ad"; },
-            args: [ "$name" ],
-            lang: "js"
-          }
-        }
-      }`),
-        ).to.deep.equal({
-          $expr: {
-            $function: {
-              body: 'function(name) { return hex_md5(name) == "15b0a220baa16331e8d80e15367677ad"; }',
-              args: ['$name'],
-              lang: 'js',
-            },
-          },
-        });
-      });
-    });
 
     describe('Date', function () {
       let sandbox: SinonSandbox;
@@ -703,84 +421,5 @@ describe('parse', function () {
         );
       });
     });
-
-    // Testing more realistic examples of using the Date object
-    for (const [input, result] of [
-      [
-        '{ dayOfYear: Math.round((new Date(1578974885017).setHours(23) - new Date(new Date(1578974885017).getYear()+1900, 0, 1, 0, 0, 0))/1000/60/60/24)}',
-        { dayOfYear: 14 },
-      ],
-      [
-        '{ _id: { $gte: ObjectId(Math.floor((new Date(1578974885017)).setSeconds(-2592000)/1000).toString(16)+"0000000000000000")}, event: "passing_tests"}',
-        {
-          _id: { $gte: new bson.ObjectId('5df5b1a00000000000000000') },
-          event: 'passing_tests',
-        },
-      ],
-    ] as const) {
-      context('complicated parsing of Math and Date', function () {
-        it(`should parse ${input} as ${JSON.stringify(result)}`, function () {
-          expect(parse(input, options)).to.deep.equal(result);
-        });
-      });
-    }
-
-    it('should not allow calling IIFE', function () {
-      expect(
-        parse('{ date: (function() { return "10"; })() }', options),
-      ).to.equal('');
-    });
-
-    it('should prevent attempting to break the sandbox for identifiers', function () {
-      const input =
-        "{ exploit: clearImmediate.constructor('return process;')().exit(1) }";
-      expect(parse(input, options)).to.equal('');
-    });
-
-    it('should prevent attempting to break the sandbox for literals', function () {
-      const input = `{ exploit: "".toString.constructor('return process;')().exit(1) }`;
-      expect(parse(input, options)).to.equal('');
-    });
-  });
-
-  describe('Comments', function () {
-    const options: Partial<Options> = {
-      mode: ParseMode.Strict,
-      allowComments: true,
-    };
-
-    const input = `{
-    this: 'is', // a test
-    to: 'see' /* if comments work as expected */
-  }`;
-
-    it('should disallow comment mode if turned off', function () {
-      const noCommentOption = { mode: ParseMode.Strict, allowComments: false };
-
-      expect(parse(input, noCommentOption)).to.equal('');
-    });
-
-    it('should allow // and /* */ comments', function () {
-      expect(parse(input, options)).to.deep.equal({
-        this: 'is',
-        to: 'see',
-      });
-    });
-  });
-
-  it('should correctly parse NumberLong and Int64 bigger than Number.MAX_SAFE_INTEGER', function () {
-    expect(
-      parse("{ n: NumberLong('345678654321234552') }").n.toString(),
-    ).to.equal('345678654321234552');
-
-    expect(parse("{ n: Int64('345678654321234552') }").n.toString()).to.equal(
-      '345678654321234552',
-    );
-  });
-
-  it('should correctly parse when leading and trailing comments are present', function () {
-    const opts = { mode: ParseMode.Loose };
-    expect(parse('// foo\n{ x: 1 }', opts)).to.deep.equal({ x: 1 });
-    expect(parse('{ x: 1 }\n// bar', opts)).to.deep.equal({ x: 1 });
   });
 });

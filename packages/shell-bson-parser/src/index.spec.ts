@@ -6,6 +6,7 @@ import { terminateWorker } from './worker-client';
 import { handleRequest } from './worker';
 import type { WorkerRequest } from './worker-client';
 import { VALIDATION_USE_CASES } from './../test/validation-test-cases';
+import { PARSE_TEST_CASES } from './../test/parse-test-cases';
 
 class FakeWorker {
   onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -45,6 +46,13 @@ describe('index (worker-backed async API)', function () {
       const res = await api.default('{ x: 1 }');
       assert.deepEqual(res, { x: 1 });
     });
+
+    for (const { title, input, options, expected } of PARSE_TEST_CASES) {
+      it(title, async function () {
+        const res = await api.parse(input, options);
+        assert.deepEqual(res, expected);
+      });
+    }
   });
 
   describe('toJSString', function () {
