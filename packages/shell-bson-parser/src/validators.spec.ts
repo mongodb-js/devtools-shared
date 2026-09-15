@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import bson from 'bson';
 
 import { validate } from './validators';
-import { VALIDATION_USE_CASES } from './../test/validation-test-cases';
+import { VALIDATION_TEST_CASES } from './../test/validation-test-cases';
 
 function convert(string: string) {
   const res = validate('filter', string);
@@ -360,10 +360,14 @@ describe('query validators and parser', function () {
           });
         });
       });
+
+      it('returns false if the provided ISODate is invalid', function () {
+        assert.equal(validate('filter', "{test: ISODate('invalid')}"), false);
+      });
     });
   });
 
-  for (const [key, tests] of Object.entries(VALIDATION_USE_CASES)) {
+  for (const [key, tests] of Object.entries(VALIDATION_TEST_CASES)) {
     it(`should validate ${key}`, function () {
       for (const { input, expected } of tests) {
         assert.deepEqual(validate(key, input), expected);

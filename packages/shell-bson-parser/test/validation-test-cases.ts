@@ -1,6 +1,6 @@
 import { DEFAULT_LIMIT, DEFAULT_MAX_TIME_MS, DEFAULT_SKIP } from '../src';
 
-export const VALIDATION_USE_CASES = {
+export const VALIDATION_TEST_CASES = {
   project: [
     { input: '{_id: "a"}', expected: { _id: 'a' } },
     { input: '{_id: "1"}', expected: { _id: '1' } },

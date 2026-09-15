@@ -1,10 +1,31 @@
-import { EJSON } from 'bson';
+import * as bson from 'bson';
 
 const BSON_SERIALIZED_TAG = '__bson_serialized__';
 
-type SerializedBson = { [BSON_SERIALIZED_TAG]: true; data: unknown };
+const BSON_PROTOTYPES: Record<string, object> = Object.create({
+  BSONRegExp: bson.BSONRegExp.prototype,
+  BSONSymbol: bson.BSONSymbol.prototype,
+  Binary: bson.Binary.prototype,
+  Code: bson.Code.prototype,
+  DBRef: bson.DBRef.prototype,
+  Decimal128: bson.Decimal128.prototype,
+  Double: bson.Double.prototype,
+  Int32: bson.Int32.prototype,
+  Long: bson.Long.prototype,
+  MaxKey: bson.MaxKey.prototype,
+  MinKey: bson.MinKey.prototype,
+  ObjectId: bson.ObjectId.prototype,
+  Timestamp: bson.Timestamp.prototype,
+  UUID: bson.UUID.prototype,
+});
 
-function isBsonValue(value: unknown): boolean {
+type SerializedBson = {
+  [BSON_SERIALIZED_TAG]: true;
+  type: string;
+  props: Record<string, unknown>;
+};
+
+function isBsonValue(value: unknown): value is { _bsontype: string } {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -30,9 +51,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 export function serializeBsonValues<T>(value: T): T {
   if (isBsonValue(value)) {
+    const props: Record<string, unknown> = Object.create(null);
+    for (const [key, entryValue] of Object.entries(value)) {
+      props[key] = serializeBsonValues(entryValue);
+    }
     return {
       [BSON_SERIALIZED_TAG]: true,
-      data: EJSON.serialize({ v: value }, { relaxed: false }).v,
+      type: value._bsontype,
+      props,
     } as unknown as T;
   }
   if (Array.isArray(value)) {
@@ -51,7 +77,21 @@ export function serializeBsonValues<T>(value: T): T {
 
 export function deserializeBsonValues<T>(value: T): T {
   if (isSerializedBson(value)) {
-    return EJSON.deserialize({ v: value.data }, { relaxed: false }).v as T;
+    const prototype = BSON_PROTOTYPES[value.type];
+    if (!prototype) {
+      throw new Error(
+        `Cannot deserialize unknown BSON type crossing the worker boundary: ${value.type}`,
+      );
+    }
+    const props: Record<string, unknown> = Object.create(null);
+    for (const [key, entryValue] of Object.entries(value.props)) {
+      props[key] = deserializeBsonValues(entryValue);
+    }
+    return Object.assign(Object.create(prototype), props) as T;
+  }
+  // Buffers cross `postMessage` as plain Uint8Array's
+  if (value instanceof Uint8Array && !Buffer.isBuffer(value)) {
+    return Buffer.from(value) as unknown as T;
   }
   if (Array.isArray(value)) {
     return value.map(deserializeBsonValues) as unknown as T;

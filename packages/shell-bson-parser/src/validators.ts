@@ -210,7 +210,7 @@ function isHintValid(input: string) {
   try {
     const parsed = _parseHint(input);
 
-    if (_.isString(parsed)) {
+    if (_.isString(parsed) && parsed !== '') {
       return parsed;
     }
 

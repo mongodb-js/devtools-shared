@@ -1,12 +1,15 @@
-import assert from 'assert';
-import * as bson from 'bson';
+import { expect } from 'chai';
 
 import * as api from './index';
 import { terminateWorker } from './worker-client';
 import { handleRequest } from './worker';
 import type { WorkerRequest } from './worker-client';
-import { VALIDATION_USE_CASES } from './../test/validation-test-cases';
+import { VALIDATION_TEST_CASES } from './../test/validation-test-cases';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases';
+import {
+  TO_JS_STRING_TEST_CASES,
+  TO_JS_STRING_ROUND_TRIP_TEST_CASES,
+} from './../test/tojsstring-test-cases';
 
 class FakeWorker {
   onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -21,76 +24,42 @@ class FakeWorker {
 
 (global as any).Worker = FakeWorker;
 
-describe('index (worker-backed async API)', function () {
+describe('shell-bson-parser with webworker processing', function () {
   after(function () {
     terminateWorker();
   });
 
   describe('parse', function () {
-    it('parses shell BSON syntax into real BSON instances', async function () {
-      const res = await api.parse(
-        '{_id: ObjectId("58c33a794d08b991e3648fd2")}',
-      );
-      assert.deepEqual(res, {
-        _id: new bson.ObjectId('58c33a794d08b991e3648fd2'),
-      });
-    });
-
-    it('preserves types that structured clone alone would lose', async function () {
-      const res = await api.parse('{value: NumberLong(1)}');
-      assert.ok(res.value instanceof bson.Long);
-      assert.equal(res.value.toNumber(), 1);
-    });
-
-    it('is exposed as the default export', async function () {
-      const res = await api.default('{ x: 1 }');
-      assert.deepEqual(res, { x: 1 });
-    });
-
     for (const { title, input, options, expected } of PARSE_TEST_CASES) {
       it(title, async function () {
         const res = await api.parse(input, options);
-        assert.deepEqual(res, expected);
+        expect(res).to.deep.equal(expected);
       });
     }
   });
 
   describe('toJSString', function () {
-    it('stringifies a document with BSON-aware formatting', async function () {
-      const str = await api.toJSString({ a: { $exists: true } }, 0);
-      assert.equal(str, '{a:{$exists:true}}');
-    });
-
-    it('round-trips a BSON value through the worker', async function () {
-      const str = await api.toJSString(
-        { a: new bson.ObjectId('507f191e810c19729de860ea') },
-        0,
-      );
-      assert.equal(str, "{a:ObjectId('507f191e810c19729de860ea')}");
-    });
+    for (const { title, input, indent, expected } of TO_JS_STRING_TEST_CASES) {
+      it(title, async function () {
+        const res = await api.toJSString(input, indent);
+        expect(res).to.deep.equal(expected);
+      });
+    }
+    for (const { title, input, indent } of TO_JS_STRING_ROUND_TRIP_TEST_CASES) {
+      it(title, async function () {
+        const jsString = await api.toJSString(input, indent);
+        const parsed = await api.parse(jsString);
+        expect(parsed).to.deep.equal(input);
+      });
+    }
   });
 
   describe('validate', function () {
-    it('returns the parsed value for a valid filter', async function () {
-      const res = await api.validate('filter', '{value: NumberLong(1)}');
-      assert.equal(res.value.toNumber(), 1);
-    });
-
-    it('returns false for an invalid filter', async function () {
-      const res = await api.validate('filter', '{value: NumberLong(1)');
-      assert.equal(res, false);
-    });
-
-    it('returns false for an unknown validator name', async function () {
-      const res = await api.validate('doesNotExist', 'anything');
-      assert.equal(res, false);
-    });
-
-    for (const [key, tests] of Object.entries(VALIDATION_USE_CASES)) {
+    for (const [key, tests] of Object.entries(VALIDATION_TEST_CASES)) {
       it(`should validate ${key}`, async function () {
         for (const { input, expected } of tests) {
           const res = await api.validate(key, input);
-          assert.deepEqual(res, expected);
+          expect(res).to.deep.equal(expected);
         }
       });
     }
