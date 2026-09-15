@@ -200,14 +200,16 @@ describe('getPackagesInTopologicalOrder', function () {
     );
   });
 
-  it('returns empty array when there are no workspaces', async function () {
+  it('supports single repo without workspace', async function () {
     await fs.writeFile(
       path.join(tmpDir, 'package.json'),
       JSON.stringify({ name: 'root' }),
     );
 
     const result = await getPackagesInTopologicalOrder(tmpDir);
+    const names = result.map((p) => p.name);
 
-    assert.deepStrictEqual(result, []);
+    assert.strictEqual(names.length, 1);
+    assert.ok(names.includes('root'));
   });
 });
