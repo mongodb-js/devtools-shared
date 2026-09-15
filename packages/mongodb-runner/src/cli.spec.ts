@@ -140,4 +140,61 @@ describe('cli', function () {
 
     await runCli(['stop', '--all']);
   });
+
+  it('emits structured output for start with --json', async function () {
+    const stdout = await runCli([
+      'start',
+      '--topology',
+      'standalone',
+      '--json',
+    ]);
+
+    let parsed: any;
+    expect(() => {
+      parsed = JSON.parse(stdout);
+    }, 'stdout must be parseable as JSON, with diagnostics on stderr').to.not.throw();
+
+    expect(parsed.id, 'result should carry the cluster id').to.be.a('string');
+    expect(
+      parsed.connectionString,
+      'result should carry the connection string',
+    ).to.match(/^mongodb:\/\//);
+
+    const client = new MongoClient(parsed.connectionString);
+    const result = await client.db('admin').command({ ping: 1 });
+    await client.close();
+    expect(result.ok, 'reported connection string should be usable').to.eq(1);
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
+
+  it('emits structured output for ls with --json', async function () {
+    const startStdout = await runCli([
+      'start',
+      '--topology',
+      'standalone',
+      '--json',
+    ]);
+    const started = JSON.parse(startStdout);
+
+    const lsStdout = await runCli(['ls', '--json']);
+    let parsed: any;
+    expect(() => {
+      parsed = JSON.parse(lsStdout);
+    }, 'ls --json stdout must be parseable as JSON').to.not.throw();
+
+    expect(parsed, 'ls --json should yield an array').to.be.an('array');
+    const entry = parsed.find((e: any) => e.id === started.id);
+    expect(entry, 'the started cluster should be listed').to.not.equal(
+      undefined,
+    );
+    expect(
+      entry.connectionString,
+      'listed connection string should match the one start reported',
+    ).to.equal(started.connectionString);
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
 });
