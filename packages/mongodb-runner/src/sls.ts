@@ -4,6 +4,7 @@ import path from 'path';
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
 import { debug, allocatePort, sleep, uuid } from './util';
+import { maybeLoginToEcr } from './ecr';
 import type {
   DisaggregatedStorageOptions,
   ShardDescriptor,
@@ -259,6 +260,11 @@ export interface SLSDisaggregatedStorageSetupOptions extends SLSMultiCellEnviron
   setupMaxRetries?: number;
   /** Interval between per-shard log setup attempts in ms (default: 2000). */
   setupRetryIntervalMs?: number;
+  /**
+   * Authenticate the local docker daemon against the image repository before
+   * pulling, when it is an Amazon ECR registry (default: true).
+   */
+  ecrLogin?: boolean;
 }
 
 // Well-known test encryption key, matching createKeyFile() in the server
@@ -298,6 +304,9 @@ export async function createSLSDisaggregatedStorageOptions(
   options: SLSDisaggregatedStorageSetupOptions,
 ): Promise<DisaggregatedStorageOptions & { sls: SLSMultiCellEnvironment }> {
   const sls = await createSLSMultiCellEnvironment(options);
+  // Read the repository back out of the environment we just built so the login
+  // target cannot drift from the repository the images are actually pulled from.
+  await maybeLoginToEcr(sls.env.SLS_IMAGE_REPO, options.ecrLogin ?? true);
   const projectName = options.projectName ?? `mongodb-runner-sls-${uuid()}`;
   const testdriverContainer = `${projectName}-testdriver-1`;
   const firstLogId = options.firstLogId ?? 1;
