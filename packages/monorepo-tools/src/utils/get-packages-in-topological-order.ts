@@ -19,10 +19,9 @@ export interface PackageInfo {
 export async function getPackagesInTopologicalOrder(
   monorepoRoot: string,
 ): Promise<PackageInfo[]> {
-  const patterns: string[] =
-    JSON.parse(
-      await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8'),
-    ).workspaces || [];
+  const patterns: string[] = JSON.parse(
+    await fs.readFile(path.join(monorepoRoot, `package.json`), 'utf8'),
+  ).workspaces || ['.']; // default value that considers monorepo root as a "workspace" for further analysis
 
   const packageJsonPaths = await glob(
     // NOTE: glob patterns should always use forward slashes,
