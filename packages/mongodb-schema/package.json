@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "12.7.12",
+  "version": "12.7.13",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -75,7 +75,7 @@
     "cli-table": "^0.3.4",
     "js-yaml": "^5.2.2",
     "mongodb": "^6.9.0 || ^7.0.0",
-    "mongodb-ns": "^3.2.5",
+    "mongodb-ns": "^3.2.6",
     "numeral": "^2.0.6",
     "progress": "^2.0.3",
     "stats-lite": "^2.0.0",
