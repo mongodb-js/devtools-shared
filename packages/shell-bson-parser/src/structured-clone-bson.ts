@@ -57,12 +57,21 @@ export function serializeBsonValues<T>(value: T): T {
     }
     return {
       [BSON_SERIALIZED_TAG]: true,
-      type: value._bsontype,
+      // UUID reports `_bsontype` 'Binary'; keep its own prototype.
+      type: value instanceof bson.UUID ? 'UUID' : value._bsontype,
       props,
     } as unknown as T;
   }
   if (Array.isArray(value)) {
     return value.map(serializeBsonValues) as unknown as T;
+  }
+  if (value instanceof Map) {
+    return new Map(
+      [...value].map(([k, v]) => [
+        serializeBsonValues(k),
+        serializeBsonValues(v),
+      ]),
+    ) as unknown as T;
   }
   if (isPlainObject(value)) {
     return Object.fromEntries(
@@ -95,6 +104,14 @@ export function deserializeBsonValues<T>(value: T): T {
   }
   if (Array.isArray(value)) {
     return value.map(deserializeBsonValues) as unknown as T;
+  }
+  if (value instanceof Map) {
+    return new Map(
+      [...value].map(([k, v]) => [
+        deserializeBsonValues(k),
+        deserializeBsonValues(v),
+      ]),
+    ) as unknown as T;
   }
   if (isPlainObject(value)) {
     return Object.fromEntries(

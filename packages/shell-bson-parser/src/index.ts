@@ -5,6 +5,7 @@ import type { WorkerMethod } from './worker-client';
 import { callWorker } from './worker-client';
 
 export { ParseMode } from './parse';
+export type { Options } from './options';
 
 export {
   DEFAULT_COLLATION,
@@ -17,6 +18,8 @@ export {
   DEFAULT_SORT,
 } from './validators';
 
+export { terminateWorker } from './worker-client';
+
 function execInWorker<Func extends (...args: any[]) => any>(
   method: WorkerMethod,
   ...args: Parameters<Func>
@@ -24,11 +27,19 @@ function execInWorker<Func extends (...args: any[]) => any>(
   return callWorker<ReturnType<Func>>(method, args);
 }
 
-export const parse = (...args: Parameters<typeof parseSync>) =>
-  execInWorker('parse', ...args);
-export const validate = (...args: Parameters<typeof validateSync>) =>
+/** Parses shell syntax off the main thread. Resolves to the parsed value. */
+export const parse = (
+  ...args: Parameters<typeof parseSync>
+): Promise<ReturnType<typeof parseSync>> => execInWorker('parse', ...args);
+
+export const validate = (
+  ...args: Parameters<typeof validateSync>
+): Promise<ReturnType<typeof validateSync>> =>
   execInWorker('validate', ...args);
-export const toJSString = (...args: Parameters<typeof toJSStringSync>) =>
+
+export const toJSString = (
+  ...args: Parameters<typeof toJSStringSync>
+): Promise<ReturnType<typeof toJSStringSync>> =>
   execInWorker('toJSString', ...args);
 
 export default parse;

@@ -1,6 +1,3 @@
-/**
- * TODO: lucas: this is now used in several modules (import-export, query-parser, probably others). Refactor into 1 shared place. bson?
- */
 import type {
   Binary,
   BSONRegExp,

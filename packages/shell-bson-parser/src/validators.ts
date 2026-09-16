@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import _debug from 'debug';
 
 import { parse, ParseMode } from './parse';
@@ -23,16 +22,19 @@ const DEFAULT_MAX_TIME_MS = 60000; // 1 minute in ms
 /** @public */
 const DEFAULT_HINT = null;
 
+function isObject(value: unknown): value is object {
+  return (
+    (typeof value === 'object' && value !== null) || typeof value === 'function'
+  );
+}
+
 function isEmpty(input: string | number | null | undefined): boolean {
   if (input === null || input === undefined) {
     return true;
   }
-  const s = _.trim(typeof input === 'number' ? `${input}` : input);
+  const s = `${input}`.trim();
 
-  if (s === '{}') {
-    return true;
-  }
-  return _.isEmpty(s);
+  return s === '' || s === '{}';
 }
 
 function isNumberValid(input: string | number) {
@@ -139,12 +141,12 @@ function isProjectValid(input: string) {
   try {
     const parsed = _parseProject(input);
 
-    if (!_.isObject(parsed)) {
+    if (!isObject(parsed)) {
       debug('Project "%s" is invalid. Only documents are allowed', input);
       return false;
     }
 
-    if (!_.every(parsed, isValueOkForProject)) {
+    if (!Object.values(parsed).every(isValueOkForProject)) {
       debug('Project "%s" is invalid bc of its values', input);
       return false;
     }
@@ -156,20 +158,20 @@ function isProjectValid(input: string) {
   }
 }
 
-const ALLOWED_SORT_VALUES = [1, -1, 'asc', 'desc'];
+const ALLOWED_SORT_VALUES: unknown[] = [1, -1, 'asc', 'desc'];
 
 function isValueOkForSortDocument(val: any): boolean {
   return (
-    _.includes(ALLOWED_SORT_VALUES, val) ||
-    !!(_.isObject(val) && (val as { $meta: string }).$meta)
+    ALLOWED_SORT_VALUES.includes(val) ||
+    !!(isObject(val) && (val as { $meta?: string }).$meta)
   );
 }
 
 function isValueOkForSortArray(val: any): boolean {
   return (
-    _.isArray(val) &&
+    Array.isArray(val) &&
     val.length === 2 &&
-    _.isString(val[0]) &&
+    typeof val[0] === 'string' &&
     isValueOkForSortDocument(val[1])
   );
 }
@@ -182,14 +184,14 @@ function isSortValid(input: string) {
       return DEFAULT_SORT;
     }
 
-    if (_.isArray(parsed) && _.every(parsed, isValueOkForSortArray)) {
+    if (Array.isArray(parsed) && parsed.every(isValueOkForSortArray)) {
       return parsed;
     }
 
     if (
-      _.isObject(parsed) &&
-      !_.isArray(parsed) &&
-      _.every(parsed, isValueOkForSortDocument)
+      isObject(parsed) &&
+      !Array.isArray(parsed) &&
+      Object.values(parsed).every(isValueOkForSortDocument)
     ) {
       return parsed;
     }
@@ -210,11 +212,11 @@ function isHintValid(input: string) {
   try {
     const parsed = _parseHint(input);
 
-    if (_.isString(parsed) && parsed !== '') {
+    if (typeof parsed === 'string' && parsed !== '') {
       return parsed;
     }
 
-    if (_.isArray(parsed) || !_.isObject(parsed)) {
+    if (Array.isArray(parsed) || !isObject(parsed)) {
       debug(
         'Hint "%s" is invalid. Only strings or documents are allowed',
         input,
@@ -222,7 +224,7 @@ function isHintValid(input: string) {
       return false;
     }
 
-    if (!_.every(parsed, isValueOkForHint)) {
+    if (!Object.values(parsed).every(isValueOkForHint)) {
       debug('Hint "%s" is invalid bc of its values', input);
       return false;
     }
@@ -270,7 +272,7 @@ const validatorFunctions = {
 export function validate(what: string, input: string) {
   const validator =
     validatorFunctions[
-      `is${_.upperFirst(what)}Valid` as keyof typeof validatorFunctions
+      `is${what.charAt(0).toUpperCase()}${what.slice(1)}Valid` as keyof typeof validatorFunctions
     ];
   if (!validator) {
     debug('Do not know how to validate `%s`. Returning false.', what);

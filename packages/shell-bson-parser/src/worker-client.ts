@@ -57,18 +57,22 @@ function getWorker(): Worker {
       return;
     }
     pending.delete(response.id);
-    if (response.ok) {
-      entry.resolve(deserializeBsonValues(response.result));
-    } else {
+    if (!response.ok) {
       entry.reject(new Error(response.error));
+      return;
+    }
+    try {
+      entry.resolve(deserializeBsonValues(response.result));
+    } catch (err) {
+      entry.reject(err as Error);
     }
   };
 
   worker.onerror = (event: ErrorEvent) => {
-    for (const [id, entry] of pending) {
-      entry.reject(new Error(event.message));
-      pending.delete(id);
-    }
+    terminateWorker(new Error(event.message || 'Worker error'));
+  };
+  worker.onmessageerror = () => {
+    terminateWorker(new Error('Worker message could not be deserialized'));
   };
 
   return worker;
@@ -85,19 +89,27 @@ export function callWorker<T>(
     pending.set(id, { resolve, reject });
   });
 
-  const request: WorkerRequest = {
-    id,
-    method,
-    args: serializeBsonValues(args),
-  };
-  activeWorker.postMessage(request);
+  try {
+    const request: WorkerRequest = {
+      id,
+      method,
+      args: serializeBsonValues(args),
+    };
+    activeWorker.postMessage(request);
+  } catch (err) {
+    pending.get(id)?.reject(err as Error);
+    pending.delete(id);
+    return promise;
+  }
 
   scheduleIdleTermination();
 
   return promise;
 }
 
-export function terminateWorker(): void {
+export function terminateWorker(
+  reason: Error = new Error('Worker terminated'),
+): void {
   if (idleTimer) {
     clearTimeout(idleTimer);
     idleTimer = null;
@@ -107,7 +119,7 @@ export function terminateWorker(): void {
     worker = null;
   }
   for (const [id, entry] of pending) {
-    entry.reject(new Error('Worker terminated'));
+    entry.reject(reason);
     pending.delete(id);
   }
 }
