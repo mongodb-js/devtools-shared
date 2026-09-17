@@ -1,8 +1,10 @@
-export enum ParseMode {
-  Strict = 'strict',
-  Extended = 'extended',
-  Loose = 'loose',
-}
+export const ParseMode = {
+  Strict: 'strict',
+  Extended: 'extended',
+  Loose: 'loose',
+} as const;
+
+export type ParseMode = (typeof ParseMode)[keyof typeof ParseMode];
 
 const StrictOptions = {
   allowMethods: false, // Allow function calls, ie Date.now(), Math.Max(), (new Date()).getFullYear()
