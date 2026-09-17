@@ -1,11 +1,11 @@
 import * as bson from 'bson';
 import { expect } from 'chai';
 import type { SinonSandbox } from 'sinon';
-import { createSandbox } from 'sinon';
-import { parse } from './parse';
-import type { Options } from './options';
-import { ParseMode } from './options';
-import { PARSE_TEST_CASES } from '../test/parse-test-cases';
+import sinon from 'sinon';
+import { parse } from './parse.js';
+import type { Options } from './options.js';
+import { ParseMode } from './options.js';
+import { PARSE_TEST_CASES } from '../test/parse-test-cases.js';
 
 describe('parse', function () {
   for (const { title, input, options, expected } of PARSE_TEST_CASES) {
@@ -33,7 +33,7 @@ describe('parse', function () {
     let sandbox: SinonSandbox;
 
     beforeEach(function () {
-      sandbox = createSandbox();
+      sandbox = sinon.createSandbox();
 
       sandbox.replace((bson as any).UUID.prototype, 'toHexString', function () {
         return '00112233-4455-6677-8899-aabbccddeeff';
@@ -87,7 +87,7 @@ describe('parse', function () {
       let sandbox: SinonSandbox;
 
       beforeEach(function () {
-        sandbox = createSandbox();
+        sandbox = sinon.createSandbox();
       });
       afterEach(function () {
         sandbox.restore();
