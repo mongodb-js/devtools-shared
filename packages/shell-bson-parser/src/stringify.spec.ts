@@ -1,7 +1,7 @@
 import assert from 'assert';
-import bson from 'bson';
-import { toJSString } from './stringify';
-import { parse } from './parse';
+import * as bson from 'bson';
+import { toJSString } from './stringify.js';
+import { parse } from './parse.js';
 
 describe('stringify', function () {
   describe('toJSString', function () {
