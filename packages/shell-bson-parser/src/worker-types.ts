@@ -1,8 +1,5 @@
-export type WorkerMethod = 'parse' | 'toJSString';
-
 export type WorkerRequest = {
   id: number;
-  method: WorkerMethod;
   args: unknown[];
 };
 

@@ -1,5 +1,4 @@
 import { parse } from './parse.js';
-import { toJSString } from './stringify.js';
 import {
   serializeBsonValues,
   deserializeBsonValues,
@@ -7,22 +6,12 @@ import {
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
-const handlers = {
-  parse,
-  toJSString,
-} as const;
-
 // Exported for test
 export function handleRequest(request: WorkerRequest): WorkerResponse {
-  const { id, method, args } = request;
+  const { id, args } = request;
   try {
-    const handler = handlers[method];
-    if (!handler) {
-      throw new Error(`Unknown method: ${method}`);
-    }
-    const deserializedArgs = deserializeBsonValues(args);
-    const value = (handler as (...args: unknown[]) => unknown)(
-      ...deserializedArgs,
+    const value = parse(
+      ...(deserializeBsonValues(args) as Parameters<typeof parse>),
     );
     const result = serializeBsonValues(value);
     return { id, ok: true, result };

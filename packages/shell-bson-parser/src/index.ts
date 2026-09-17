@@ -1,16 +1,12 @@
 import { parse as parseSync } from './parse.js';
-import { toJSString as toJSStringSync } from './stringify.js';
+import { toJSString } from './stringify.js';
 import { ParseMode } from './options.js';
 import { callWorker, terminateWorker } from './worker-client.js';
 
 export const parse = (
   ...args: Parameters<typeof parseSync>
-): Promise<ReturnType<typeof parseSync>> => callWorker('parse', args);
+): Promise<ReturnType<typeof parseSync>> => callWorker(args);
 
-export const toJSString = (
-  ...args: Parameters<typeof toJSStringSync>
-): Promise<ReturnType<typeof toJSStringSync>> => callWorker('toJSString', args);
-
-export { ParseMode, parseSync, toJSStringSync, terminateWorker };
+export { ParseMode, parseSync, toJSString, terminateWorker };
 
 export default parse;
