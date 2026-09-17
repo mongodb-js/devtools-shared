@@ -2,7 +2,7 @@ import {
   serializeBsonValues,
   deserializeBsonValues,
 } from './structured-clone-bson.js';
-import type { WorkerMethod, WorkerResponse } from './worker-types.js';
+import type { WorkerResponse } from './worker-types.js';
 
 /** Close the worker after being idle for 30sec */
 const IDLE_TIMEOUT_MS = 30_000;
@@ -84,10 +84,7 @@ async function createWorker(): Promise<Worker> {
   return worker;
 }
 
-export async function callWorker<T>(
-  method: WorkerMethod,
-  args: unknown[],
-): Promise<T> {
+export async function callWorker<T>(args: unknown[]): Promise<T> {
   const activeWorker = await createWorker();
   const id = nextId++;
   const promise = new Promise<T>((resolve, reject) => {
@@ -96,7 +93,6 @@ export async function callWorker<T>(
   try {
     activeWorker.postMessage({
       id,
-      method,
       args: serializeBsonValues(args),
     });
   } catch (err) {
