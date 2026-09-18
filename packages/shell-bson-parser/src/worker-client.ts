@@ -4,13 +4,27 @@ const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
 import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
+/** Default execution timeout for worker requests */
+const DEFAULT_EXECUTION_TIMEOUT_MS = 120_000;
+
+function getExecutionTimeoutMs(): number {
+  return process.env.TEST_EXECUTION_TIMEOUT_MS
+    ? Number(process.env.TEST_EXECUTION_TIMEOUT_MS)
+    : DEFAULT_EXECUTION_TIMEOUT_MS;
+}
+
+
 let worker: Worker | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let blobUrl: string | null = null;
 let nextId = 0;
 const pending = new Map<
   number,
-  { resolve: (v: any) => void; reject: (e: Error) => void }
+  {
+    resolve: (v: any) => void;
+    reject: (e: Error) => void;
+    executionTimer: ReturnType<typeof setTimeout>;
+  }
 >();
 
 const isNodeEnv =
@@ -55,6 +69,7 @@ async function createWorker(): Promise<Worker> {
     if (!entry) {
       return;
     }
+    clearTimeout(entry.executionTimer);
     pending.delete(response.id);
     if (!response.ok) {
       entry.reject(new Error(response.error));
@@ -80,8 +95,16 @@ async function createWorker(): Promise<Worker> {
 export async function callWorker<T>(args: unknown[]): Promise<T> {
   const activeWorker = await createWorker();
   const id = nextId++;
+  const executionTimeoutMs = getExecutionTimeoutMs();
   const promise = new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    const executionTimer = setTimeout(() => {
+      // Terminate the worker is this message is taking too long to execute,
+      // this means all the other pending requests will also be terminated.
+      terminateWorker(
+        new Error(`Worker execution timed out after ${executionTimeoutMs}ms`),
+      );
+    }, executionTimeoutMs);
+    pending.set(id, { resolve, reject, executionTimer });
   });
   try {
     activeWorker.postMessage({
@@ -89,6 +112,8 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
       args: markBSON(args),
     });
   } catch (err) {
+    const entry = pending.get(id);
+    if (entry) clearTimeout(entry.executionTimer);
     pending.get(id)?.reject(err as Error);
     pending.delete(id);
   }
@@ -107,6 +132,7 @@ export function terminateWorker(
   blobUrl = null;
 
   for (const [id, entry] of pending) {
+    clearTimeout(entry.executionTimer);
     entry.reject(reason);
     pending.delete(id);
   }
