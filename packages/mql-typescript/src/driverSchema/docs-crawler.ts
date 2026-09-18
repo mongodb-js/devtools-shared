@@ -2,7 +2,10 @@ import { removeNewlines, removeTrailingComments } from '../utils';
 import { getSimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import type { SimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import parse, { ParseMode } from '@mongodb-js/shell-bson-parser';
+import {
+  ParseMode,
+  unsafe_parseSync as parse,
+} from '@mongodb-js/shell-bson-parser';
 
 export class DocsCrawler {
   constructor(private readonly url: string) {
