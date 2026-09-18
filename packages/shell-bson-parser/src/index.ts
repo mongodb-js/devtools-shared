@@ -7,6 +7,11 @@ export const parse = (
   ...args: Parameters<typeof parseSync>
 ): Promise<ReturnType<typeof parseSync>> => callWorker(args);
 
-export { ParseMode, parseSync, toJSString, terminateWorker };
+export {
+  ParseMode,
+  parseSync as unsafe_parseSync,
+  toJSString,
+  terminateWorker,
+};
 
 export default parse;
