@@ -3,6 +3,7 @@ import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
+// Exported for tests
 export const ALLOWED_GLOBALS = new Set([
   // Used by this file.
   'self',
@@ -64,19 +65,40 @@ export const ALLOWED_GLOBALS = new Set([
   'Buffer',
 ]);
 
-// Exported for test
+// Exported for tests
 export function restrictGlobalScope(scope: object): void {
   for (const key of Object.getOwnPropertyNames(scope)) {
     if (ALLOWED_GLOBALS.has(key)) continue;
     try {
       delete (scope as any)[key];
     } catch {
-      // Non-configurable in this environment; nothing more we can do.
+      // Non-configurable in this environment
     }
   }
 }
 
-// Exported for test
+// Exported for tests
+export const DISALLOWED_PROTOTYPE_PROPS = [
+  '__proto__',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+  'constructor',
+] as const;
+
+// Exported for tests
+export function restrictObjectPrototype(): void {
+  for (const key of DISALLOWED_PROTOTYPE_PROPS) {
+    try {
+      delete (Object.prototype as any)[key];
+    } catch {
+      // Non-configurable in this environment
+    }
+  }
+}
+
+// Exported for tests
 export function handleRequest(request: WorkerRequest): WorkerResponse {
   const { id, args } = request;
   try {
@@ -89,6 +111,7 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
 }
 
 if (typeof self !== 'undefined') {
+  restrictObjectPrototype();
   restrictGlobalScope(self);
   self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     (self as unknown as Worker).postMessage(handleRequest(event.data));

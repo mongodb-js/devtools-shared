@@ -2,7 +2,12 @@ import { expect } from 'chai';
 
 import * as api from './index.js';
 import { terminateWorker } from './worker-client.js';
-import { restrictGlobalScope, ALLOWED_GLOBALS } from './worker.js';
+import {
+  restrictObjectPrototype,
+  DISALLOWED_PROTOTYPE_PROPS,
+  restrictGlobalScope,
+  ALLOWED_GLOBALS,
+} from './worker.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
 describe('shell-bson-parser with webworker processing', function () {
@@ -77,6 +82,37 @@ describe('shell-bson-parser with webworker processing', function () {
 
       expect(() => restrictGlobalScope(scope)).to.not.throw();
       expect(scope).to.have.property('nonConfigurable', 'danger');
+    });
+  });
+
+  describe('lockdownObjectPrototype', function () {
+    let originalDescriptors: Record<string, PropertyDescriptor | undefined>;
+    beforeEach(function () {
+      originalDescriptors = Object.create(null);
+      for (const key of DISALLOWED_PROTOTYPE_PROPS) {
+        originalDescriptors[key] = Object.getOwnPropertyDescriptor(
+          Object.prototype,
+          key,
+        );
+      }
+    });
+
+    afterEach(function () {
+      for (const key of DISALLOWED_PROTOTYPE_PROPS) {
+        const descriptor = originalDescriptors[key];
+        if (descriptor) {
+          Object.defineProperty(Object.prototype, key, descriptor);
+        }
+      }
+    });
+
+    it('removes every disallowed accessor from Object.prototype', function () {
+      restrictObjectPrototype();
+
+      for (const key of DISALLOWED_PROTOTYPE_PROPS) {
+        expect(Object.prototype).to.not.have.property(key);
+        expect(({} as Record<string, unknown>)[key]).to.equal(undefined);
+      }
     });
   });
 
