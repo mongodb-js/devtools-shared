@@ -1,6 +1,6 @@
 import * as bson from 'bson';
 
-export type SerializedPayload<T> = {
+export type MarkedPayload<T> = {
   data: T;
   bsonTypes: Map<object, string>;
 };
@@ -64,7 +64,7 @@ function pushNestedBsonDocuments(
   }
 }
 
-export function serializeBsonValues<T>(data: T): SerializedPayload<T> {
+export function markBSON<T>(data: T): MarkedPayload<T> {
   const bsonTypes = new Map<object, string>();
   const stack: unknown[] = [data];
   const visited = new Set<object>();
@@ -119,14 +119,14 @@ export function serializeBsonValues<T>(data: T): SerializedPayload<T> {
   return { data, bsonTypes };
 }
 
-export function deserializeBsonValues<T>(payload: SerializedPayload<T>): T {
+export function unmarkBSON<T>(payload: MarkedPayload<T>): T {
   const { data, bsonTypes } = payload;
 
   for (const [item, tag] of bsonTypes) {
     const prototype = BSON_PROTOTYPES[tag];
     if (!prototype) {
       throw new Error(
-        `Cannot deserialize unknown BSON type crossing the worker boundary: ${tag}`,
+        `Cannot unmark unknown BSON type crossing the worker boundary: ${tag}`,
       );
     }
     Reflect.setPrototypeOf(item, prototype);
