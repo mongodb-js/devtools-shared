@@ -1,7 +1,4 @@
-import {
-  serializeBsonValues,
-  deserializeBsonValues,
-} from './structured-clone-bson.js';
+import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
 /** Close the worker after being idle for 30sec */
@@ -68,7 +65,7 @@ async function createWorker(): Promise<Worker> {
       return;
     }
     try {
-      entry.resolve(deserializeBsonValues(response.result));
+      entry.resolve(unmarkBSON(response.result));
     } catch (err) {
       entry.reject(err as Error);
     }
@@ -93,7 +90,7 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
   try {
     activeWorker.postMessage({
       id,
-      args: serializeBsonValues(args),
+      args: markBSON(args),
     });
   } catch (err) {
     pending.get(id)?.reject(err as Error);
