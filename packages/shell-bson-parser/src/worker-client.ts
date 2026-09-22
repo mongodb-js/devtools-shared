@@ -54,7 +54,7 @@ async function createWorker(): Promise<Worker> {
 
   blobUrl = await getWorkerBlobUrl();
 
-  worker = new Worker(blobUrl, { type: 'module' });
+  worker = new Worker(blobUrl);
 
   worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;
