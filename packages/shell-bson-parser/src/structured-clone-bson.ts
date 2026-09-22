@@ -1,6 +1,9 @@
 import * as bson from 'bson';
 
-const BSON_SERIALIZED_TAG = '__bson_serialized__';
+export type SerializedPayload<T> = {
+  data: T;
+  bsonTypes: Map<object, string>;
+};
 
 const BSON_PROTOTYPES: Record<string, object> = Object.create({
   BSONRegExp: bson.BSONRegExp.prototype,
@@ -19,107 +22,115 @@ const BSON_PROTOTYPES: Record<string, object> = Object.create({
   UUID: bson.UUID.prototype,
 });
 
-type SerializedBson = {
-  [BSON_SERIALIZED_TAG]: true;
-  type: string;
-  props: Record<string, unknown>;
-};
+function isBsonValue(value: object): value is { _bsontype: string } {
+  return typeof (value as { _bsontype?: unknown })._bsontype === 'string';
+}
 
-function isBsonValue(value: unknown): value is { _bsontype: string } {
+function isMap(m: unknown): m is Map<unknown, unknown> {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { _bsontype?: unknown })._bsontype === 'string'
+    !!m &&
+    typeof m === 'object' &&
+    Symbol.toStringTag in m &&
+    (m as { [Symbol.toStringTag]: unknown })[Symbol.toStringTag] === 'Map'
   );
 }
 
-function isSerializedBson(value: unknown): value is SerializedBson {
+function isSet(s: unknown): s is Set<unknown> {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as Record<string, unknown>)[BSON_SERIALIZED_TAG] === true
+    !!s &&
+    typeof s === 'object' &&
+    Symbol.toStringTag in s &&
+    (s as { [Symbol.toStringTag]: unknown })[Symbol.toStringTag] === 'Set'
   );
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== 'object' || value === null) {
-    return false;
+/**
+ * `Code.scope` and `DBRef.oid`/`fields` are themselves ordinary values that
+ * might contain further BSON (e.g. an `ObjectId` inside a `DBRef`'s `oid` or
+ * a `Code`'s `scope`). The outer `Code`/`DBRef` is otherwise treated as an
+ * opaque leaf by the walk, so without this they'd never get visited.
+ *
+ * Pushes onto `stack` in place.
+ */
+function pushNestedBsonDocuments(
+  tag: string,
+  item: object,
+  stack: unknown[],
+): void {
+  if (tag === 'Code') {
+    stack.push(Reflect.get(item, 'scope'));
+  } else if (tag === 'DBRef') {
+    stack.push(Reflect.get(item, 'oid'), Reflect.get(item, 'fields'));
   }
-  const proto = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
 }
 
-export function serializeBsonValues<T>(value: T): T {
-  if (isBsonValue(value)) {
-    const props: Record<string, unknown> = Object.create(null);
-    for (const [key, entryValue] of Object.entries(value)) {
-      props[key] = serializeBsonValues(entryValue);
+export function serializeBsonValues<T>(data: T): SerializedPayload<T> {
+  const bsonTypes = new Map<object, string>();
+  const stack: unknown[] = [data];
+  const visited = new Set<object>();
+
+  while (stack.length > 0) {
+    const item = stack.pop();
+
+    if (item === null || typeof item !== 'object') {
+      continue;
     }
-    return {
-      [BSON_SERIALIZED_TAG]: true,
-      // UUID reports `_bsontype` 'Binary'; keep its own prototype.
-      type: value instanceof bson.UUID ? 'UUID' : value._bsontype,
-      props,
-    } as unknown as T;
+    if (visited.has(item)) {
+      continue;
+    }
+    visited.add(item);
+
+    if (isBsonValue(item)) {
+      // A UUID is a Binary with sub_type 4 - that's BSON's own definition,
+      // regardless of whether it was actually constructed via `new UUID()`
+      // or is a plain `Binary` someone tagged sub_type 4 by hand. Check the
+      // sub_type, not `instanceof bson.UUID`, so both come back as UUID.
+      const tag =
+        item._bsontype === 'Binary' &&
+        (item as { sub_type?: unknown }).sub_type === 4
+          ? 'UUID'
+          : item._bsontype;
+      bsonTypes.set(item, tag);
+      pushNestedBsonDocuments(tag, item, stack);
+      continue;
+    }
+
+    if (Array.isArray(item)) {
+      for (const value of item) stack.push(value);
+      continue;
+    }
+
+    if (isMap(item)) {
+      for (const [key, value] of item) stack.push(key, value);
+      continue;
+    }
+
+    if (isSet(item)) {
+      for (const value of item) stack.push(value);
+      continue;
+    }
+
+    const proto = Reflect.getPrototypeOf(item);
+    if (proto === Object.prototype || proto === null) {
+      for (const value of Object.values(item)) stack.push(value);
+    }
   }
-  if (Array.isArray(value)) {
-    return value.map(serializeBsonValues) as unknown as T;
-  }
-  if (value instanceof Map) {
-    return new Map(
-      [...value].map(([k, v]) => [
-        serializeBsonValues(k),
-        serializeBsonValues(v),
-      ]),
-    ) as unknown as T;
-  }
-  if (isPlainObject(value)) {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entryValue]) => [
-        key,
-        serializeBsonValues(entryValue),
-      ]),
-    ) as T;
-  }
-  return value;
+
+  return { data, bsonTypes };
 }
 
-export function deserializeBsonValues<T>(value: T): T {
-  if (isSerializedBson(value)) {
-    const prototype = BSON_PROTOTYPES[value.type];
+export function deserializeBsonValues<T>(payload: SerializedPayload<T>): T {
+  const { data, bsonTypes } = payload;
+
+  for (const [item, tag] of bsonTypes) {
+    const prototype = BSON_PROTOTYPES[tag];
     if (!prototype) {
       throw new Error(
-        `Cannot deserialize unknown BSON type crossing the worker boundary: ${value.type}`,
+        `Cannot deserialize unknown BSON type crossing the worker boundary: ${tag}`,
       );
     }
-    const props: Record<string, unknown> = Object.create(null);
-    for (const [key, entryValue] of Object.entries(value.props)) {
-      props[key] = deserializeBsonValues(entryValue);
-    }
-    return Object.assign(Object.create(prototype), props) as T;
+    Reflect.setPrototypeOf(item, prototype);
   }
-  // Buffers cross `postMessage` as plain Uint8Array's
-  if (value instanceof Uint8Array && !Buffer.isBuffer(value)) {
-    return Buffer.from(value) as unknown as T;
-  }
-  if (Array.isArray(value)) {
-    return value.map(deserializeBsonValues) as unknown as T;
-  }
-  if (value instanceof Map) {
-    return new Map(
-      [...value].map(([k, v]) => [
-        deserializeBsonValues(k),
-        deserializeBsonValues(v),
-      ]),
-    ) as unknown as T;
-  }
-  if (isPlainObject(value)) {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entryValue]) => [
-        key,
-        deserializeBsonValues(entryValue),
-      ]),
-    ) as T;
-  }
-  return value;
+
+  return data;
 }
