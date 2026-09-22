@@ -1,8 +1,5 @@
 import { parse } from './parse.js';
-import {
-  serializeBsonValues,
-  deserializeBsonValues,
-} from './structured-clone-bson.js';
+import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
@@ -10,10 +7,8 @@ import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 export function handleRequest(request: WorkerRequest): WorkerResponse {
   const { id, args } = request;
   try {
-    const value = parse(
-      ...(deserializeBsonValues(args) as Parameters<typeof parse>),
-    );
-    const result = serializeBsonValues(value);
+    const value = parse(...(unmarkBSON(args) as Parameters<typeof parse>));
+    const result = markBSON(value);
     return { id, ok: true, result };
   } catch (err) {
     return { id, ok: false, error: (err as Error).message };

@@ -1,11 +1,11 @@
-import type { SerializedPayload } from './structured-clone-bson.js';
+import type { MarkedPayload } from './structured-clone-bson.js';
 
 export type WorkerRequest = {
   id: number;
-  args: SerializedPayload<unknown[]>;
+  args: MarkedPayload<unknown[]>;
 };
 
 export type WorkerResponse = { id: number } & (
-  | { ok: true; result: SerializedPayload<unknown> }
+  | { ok: true; result: MarkedPayload<unknown> }
   | { ok: false; error: string }
 );
