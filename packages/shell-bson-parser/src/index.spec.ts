@@ -1,28 +1,52 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
+import vm from 'vm';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import * as api from './index.js';
 import { terminateWorker } from './worker-client.js';
+import type { WorkerRequest } from './worker-types.js';
 import {
-  restrictObjectPrototype,
-  DISALLOWED_PROTOTYPE_PROPS,
+  handleRequest,
   restrictGlobalScope,
+  restrictObjectPrototype,
   ALLOWED_GLOBALS,
+  DISALLOWED_PROTOTYPE_PROPS,
 } from './worker.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
+class FakeWorker {
+  // Exposed so tests can assert on every worker instance ever created.
+  static instances: FakeWorker[] = [];
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  terminate = sinon.spy();
+
+  constructor() {
+    FakeWorker.instances.push(this);
+  }
+
+  postMessage(message: WorkerRequest) {
+    queueMicrotask(() => {
+      const response = handleRequest(structuredClone(message));
+      this.onmessage?.({ data: structuredClone(response) });
+    });
+  }
+}
+
 describe('shell-bson-parser with webworker processing', function () {
   const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
+  const initialGlobalWorker = (globalThis as any).Worker;
 
   before(function () {
     process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
+    (globalThis as any).Worker = FakeWorker;
   });
 
   after(function () {
-    if (initialWorkerScriptUrl) {
-      process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
-    } else {
-      delete process.env.TEST_WORKER_SCRIPT_URL;
-    }
+    process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    (globalThis as any).Worker = initialGlobalWorker;
     terminateWorker();
   });
 
@@ -117,14 +141,72 @@ describe('shell-bson-parser with webworker processing', function () {
   });
 
   describe('terminateWorker', function () {
-    it('starts a new worker after termination', async function () {
+    beforeEach(function () {
+      terminateWorker();
+      FakeWorker.instances.length = 0;
+    });
+
+    it('actually calls terminate() on the underlying worker, then spins up a new one', async function () {
       const res1 = await api.parse('{code: "BER"}');
       expect(res1).to.deep.equal({ code: 'BER' });
+      expect(FakeWorker.instances).to.have.lengthOf(1);
+      const firstWorker = FakeWorker.instances[0];
+      expect(firstWorker.terminate.called).to.equal(false);
 
       terminateWorker();
+      expect(firstWorker.terminate.calledOnce).to.equal(true);
 
       const res2 = await api.parse('{city: "berlin"}');
       expect(res2).to.deep.equal({ city: 'berlin' });
+      expect(FakeWorker.instances).to.have.lengthOf(2);
+
+      expect(FakeWorker.instances[1]).to.not.equal(firstWorker);
+      expect(FakeWorker.instances[1].terminate.called).to.equal(false);
     });
+  });
+
+  it('strips dangerous globals and locks down Object.prototype when the real worker starts', async function () {
+    const workerBundlePath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      'dist',
+      'worker.js',
+    );
+    const code = await fs.readFile(workerBundlePath, 'utf8');
+
+    const sandbox: Record<string, unknown> = Object.create(null);
+    sandbox.postMessage = function postMessage() {};
+    sandbox.fetch = function fetch() {};
+    sandbox.require = function require() {};
+    sandbox.importScripts = function importScripts() {};
+    sandbox.XMLHttpRequest = function XMLHttpRequest() {};
+    sandbox.self = sandbox;
+    sandbox.global = sandbox;
+    sandbox.globalThis = sandbox;
+
+    vm.createContext(sandbox);
+
+    expect(sandbox).to.have.property('fetch');
+    expect(sandbox).to.have.property('require');
+    expect(sandbox).to.have.property('importScripts');
+    expect(sandbox).to.have.property('XMLHttpRequest');
+
+    vm.runInContext(code, sandbox, { filename: 'worker.js' });
+
+    expect(sandbox).to.not.have.property('fetch');
+    expect(sandbox).to.not.have.property('require');
+    expect(sandbox).to.not.have.property('importScripts');
+    expect(sandbox).to.not.have.property('XMLHttpRequest');
+
+    expect(typeof sandbox.onmessage).to.equal('function');
+
+    const stillHasProtoAccessor = vm.runInContext(
+      `Object.prototype.hasOwnProperty('__proto__')`,
+      sandbox,
+    );
+    expect(stillHasProtoAccessor).to.equal(false);
+
+    // It should not modify the default object proto
+    expect(Object.prototype).to.have.property('__proto__');
   });
 });
