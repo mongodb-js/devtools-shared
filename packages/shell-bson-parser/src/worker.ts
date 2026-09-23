@@ -3,14 +3,10 @@ import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
+const { self } = globalThis;
+
 // Exported for tests
 export const ALLOWED_GLOBALS = new Set([
-  // Used by this file.
-  'self',
-  'onmessage',
-  'postMessage',
-
-  // Needed for parsing.
   'Object',
   'Array',
   'Function',
@@ -84,7 +80,6 @@ export const DISALLOWED_PROTOTYPE_PROPS = [
   '__defineSetter__',
   '__lookupGetter__',
   '__lookupSetter__',
-  'constructor',
 ] as const;
 
 // Exported for tests
@@ -112,7 +107,7 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
 
 if (typeof self !== 'undefined') {
   restrictObjectPrototype();
-  restrictGlobalScope(self);
+  restrictGlobalScope(globalThis);
   self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     (self as unknown as Worker).postMessage(handleRequest(event.data));
   };
