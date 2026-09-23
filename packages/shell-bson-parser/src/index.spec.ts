@@ -2,33 +2,21 @@ import { expect } from 'chai';
 
 import * as api from './index.js';
 import { terminateWorker } from './worker-client.js';
-import { handleRequest } from './worker.js';
-import type { WorkerRequest } from './worker-types.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
-class FakeWorker {
-  onmessage: ((event: { data: unknown }) => void) | null = null;
-  postMessage(message: WorkerRequest) {
-    queueMicrotask(() => {
-      const response = handleRequest(structuredClone(message));
-      this.onmessage?.({ data: structuredClone(response) });
-    });
-  }
-  terminate() {}
-}
-
-(global as any).Worker = FakeWorker;
-
 describe('shell-bson-parser with webworker processing', function () {
-  const initialSkipWorkerScriptFetch =
-    process.env.TEST_SKIP_WORKER_SCRIPT_FETCH;
+  const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
 
   before(function () {
-    process.env.TEST_SKIP_WORKER_SCRIPT_FETCH = '1';
+    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
   });
 
   after(function () {
-    process.env.TEST_SKIP_WORKER_SCRIPT_FETCH = initialSkipWorkerScriptFetch;
+    if (initialWorkerScriptUrl) {
+      process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    } else {
+      delete process.env.TEST_WORKER_SCRIPT_URL;
+    }
     terminateWorker();
   });
 

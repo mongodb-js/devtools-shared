@@ -1,3 +1,6 @@
+import * as WebWorkerModule from 'web-worker';
+const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
+  .default;
 import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
@@ -27,10 +30,21 @@ function scheduleIdleTermination() {
   }, IDLE_TIMEOUT_MS);
 }
 
-async function getWorkerBlobUrl(): Promise<string> {
-  if (process.env.TEST_SKIP_WORKER_SCRIPT_FETCH) {
-    return '';
+const isNodeEnv =
+  typeof window === 'undefined' &&
+  typeof process !== 'undefined' &&
+  !!process.versions?.node;
+
+async function getWorkerScriptUrl(): Promise<string> {
+  if (isNodeEnv) {
+    return new URL(
+      process.env.TEST_WORKER_SCRIPT_URL ?? './worker.js',
+      import.meta.url,
+    ).toString();
   }
+
+  // On browser env we want to fetch and blob so that the worker
+  // script can run on atlas-cloud running locally.
   const scriptUrl = new URL('./worker.js', import.meta.url);
   const response = await fetch(scriptUrl);
   if (!response.ok) {
@@ -39,9 +53,10 @@ async function getWorkerBlobUrl(): Promise<string> {
     );
   }
   const code = await response.text();
-  return globalThis.URL.createObjectURL(
+  blobUrl = globalThis.URL.createObjectURL(
     new Blob([code], { type: 'text/javascript' }),
   );
+  return blobUrl;
 }
 
 async function createWorker(): Promise<Worker> {
@@ -49,10 +64,8 @@ async function createWorker(): Promise<Worker> {
     return worker;
   }
 
-  blobUrl = await getWorkerBlobUrl();
-
-  worker = new Worker(blobUrl);
-
+  const scriptUrl = await getWorkerScriptUrl();
+  worker = new WebWorker(scriptUrl);
   worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;
     const entry = pending.get(response.id);
