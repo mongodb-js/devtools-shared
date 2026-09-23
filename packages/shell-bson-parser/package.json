@@ -50,7 +50,8 @@
   },
   "dependencies": {
     "acorn": "^8.16.0",
-    "javascript-stringify": "^2.1.0"
+    "javascript-stringify": "^2.1.0",
+    "web-worker": "^1.5.0"
   },
   "peerDependencies": {
     "bson": "^4.6.3 || ^5 || ^6.10.3 || ^7.0.0"
