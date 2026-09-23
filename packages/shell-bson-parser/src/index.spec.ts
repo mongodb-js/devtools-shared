@@ -210,13 +210,13 @@ describe('shell-bson-parser with webworker processing', function () {
       if (initialWorkerScriptUrl) {
         process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
       } else {
-        delete process.env.TEST_WORKER_SCRIPT_URL
+        delete process.env.TEST_WORKER_SCRIPT_URL;
       }
     });
 
     it('rejects a request whose worker thread is wedged past the timeout', async function () {
       try {
-        await callWorker([1000]);
+        await callWorker([1000], { executionTimeoutMs: 500 });
         expect.fail('Expected callWorker to throw an error due to timeout');
       } catch (err) {
         expect((err as Error)?.message).to.equal(

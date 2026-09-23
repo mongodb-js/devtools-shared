@@ -9,13 +9,6 @@ const IDLE_TIMEOUT_MS = 30_000;
 /** Default execution timeout for worker requests */
 const DEFAULT_EXECUTION_TIMEOUT_MS = 120_000;
 
-function getExecutionTimeoutMs(initialExecutionMs?: number): number {
-  if (process.env.TEST_EXECUTION_TIMEOUT_MS) {
-    return Number(process.env.TEST_EXECUTION_TIMEOUT_MS);
-  }
-  return initialExecutionMs ?? DEFAULT_EXECUTION_TIMEOUT_MS;
-}
-
 export type ExecutionOptions = {
   /** Defaults to `120_000` (2 minutes). */
   executionTimeoutMs?: number;
@@ -119,9 +112,8 @@ export async function callWorker<T>(
 ): Promise<T> {
   const activeWorker = await createWorker();
   const id = nextId++;
-  const executionTimeoutMs = getExecutionTimeoutMs(
-    executionOptions?.executionTimeoutMs,
-  );
+  const executionTimeoutMs =
+    executionOptions?.executionTimeoutMs ?? DEFAULT_EXECUTION_TIMEOUT_MS;
   const promise = new Promise<T>((resolve, reject) => {
     const executionTimer = setTimeout(() => {
       // Terminate the worker is this message is taking too long to execute,
