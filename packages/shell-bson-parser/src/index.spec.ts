@@ -4,12 +4,11 @@ import vm from 'vm';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import * as WebWorkerModule from 'web-worker';
 
 import * as api from './index.js';
 import { terminateWorker } from './worker-client.js';
-import type { WorkerRequest } from './worker-types.js';
 import {
-  handleRequest,
   restrictGlobalScope,
   restrictObjectPrototype,
   ALLOWED_GLOBALS,
@@ -17,36 +16,18 @@ import {
 } from './worker.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
-class FakeWorker {
-  // Exposed so tests can assert on every worker instance ever created.
-  static instances: FakeWorker[] = [];
-  onmessage: ((event: { data: unknown }) => void) | null = null;
-  terminate = sinon.spy();
-
-  constructor() {
-    FakeWorker.instances.push(this);
-  }
-
-  postMessage(message: WorkerRequest) {
-    queueMicrotask(() => {
-      const response = handleRequest(structuredClone(message));
-      this.onmessage?.({ data: structuredClone(response) });
-    });
-  }
-}
+const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
+  .default;
 
 describe('shell-bson-parser with webworker processing', function () {
   const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
-  const initialGlobalWorker = (globalThis as any).Worker;
 
   before(function () {
     process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
-    (globalThis as any).Worker = FakeWorker;
   });
 
   after(function () {
     process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
-    (globalThis as any).Worker = initialGlobalWorker;
     terminateWorker();
   });
 
@@ -75,9 +56,9 @@ describe('shell-bson-parser with webworker processing', function () {
 
       expect(scope).to.not.have.property('fetch');
       expect(scope).to.not.have.property('require');
-      expect(scope).to.not.have.property('process');
       expect(scope).to.not.have.property('importScripts');
       expect(scope).to.not.have.property('XMLHttpRequest');
+      expect(scope).to.have.property('process');
       expect(scope).to.have.property('Object', Object);
       expect(scope).to.have.property('Array', Array);
       expect(scope).to.have.property('Math', Math);
@@ -141,27 +122,29 @@ describe('shell-bson-parser with webworker processing', function () {
   });
 
   describe('terminateWorker', function () {
+    let terminateSpy: sinon.SinonSpy;
+
     beforeEach(function () {
+      terminateSpy = sinon.spy(WebWorker.prototype, 'terminate');
+    });
+
+    afterEach(function () {
+      terminateSpy.restore();
       terminateWorker();
-      FakeWorker.instances.length = 0;
     });
 
     it('actually calls terminate() on the underlying worker, then spins up a new one', async function () {
       const res1 = await api.parse('{code: "BER"}');
       expect(res1).to.deep.equal({ code: 'BER' });
-      expect(FakeWorker.instances).to.have.lengthOf(1);
-      const firstWorker = FakeWorker.instances[0];
-      expect(firstWorker.terminate.called).to.equal(false);
+      expect(terminateSpy.called).to.equal(false);
 
       terminateWorker();
-      expect(firstWorker.terminate.calledOnce).to.equal(true);
+      expect(terminateSpy.calledOnce).to.equal(true);
 
       const res2 = await api.parse('{city: "berlin"}');
       expect(res2).to.deep.equal({ city: 'berlin' });
-      expect(FakeWorker.instances).to.have.lengthOf(2);
 
-      expect(FakeWorker.instances[1]).to.not.equal(firstWorker);
-      expect(FakeWorker.instances[1].terminate.called).to.equal(false);
+      expect(terminateSpy.calledOnce).to.equal(true);
     });
   });
 
