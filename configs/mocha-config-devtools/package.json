@@ -28,7 +28,7 @@
   "dependencies": {
     "@types/sinon-chai": "^3.2.12",
     "chai": "^4.3.6",
-    "chai-dom": "^1.9.0",
+    "chai-dom": "^1.12.1",
     "global-jsdom": "^24.0.0",
     "identity-obj-proxy": "^3.0.0",
     "jsdom": "^24.1.3",
