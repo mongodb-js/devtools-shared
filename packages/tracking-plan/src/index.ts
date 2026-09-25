@@ -314,9 +314,6 @@ function generateMarkdown(
   );
   lines.push('');
   lines.push(`> Auto-generated on ${date}. Do not edit manually.`);
-  lines.push(
-    '> Run `npm run generate-tracking-plan` to regenerate from source.',
-  );
   lines.push('');
 
   const byCategory = new Map<string, EventInfo[]>();
