@@ -4,9 +4,6 @@ const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
 import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
-/** Close the worker after being idle for 30sec */
-const IDLE_TIMEOUT_MS = 30_000;
-
 let worker: Worker | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let blobUrl: string | null = null;
@@ -15,20 +12,6 @@ const pending = new Map<
   number,
   { resolve: (v: any) => void; reject: (e: Error) => void }
 >();
-
-function scheduleIdleTermination() {
-  if (idleTimer) {
-    clearTimeout(idleTimer);
-  }
-  idleTimer = setTimeout(() => {
-    // Only safe to terminate when nothing is in flight.
-    if (pending.size === 0) {
-      terminateWorker();
-    } else {
-      scheduleIdleTermination();
-    }
-  }, IDLE_TIMEOUT_MS);
-}
 
 const isNodeEnv =
   typeof window === 'undefined' &&
@@ -108,8 +91,6 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
   } catch (err) {
     pending.get(id)?.reject(err as Error);
     pending.delete(id);
-  } finally {
-    scheduleIdleTermination();
   }
   return promise;
 }
