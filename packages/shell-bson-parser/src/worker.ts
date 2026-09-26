@@ -3,7 +3,100 @@ import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
-// Exported for test
+const { self } = globalThis;
+
+// Exported for tests
+export const ALLOWED_GLOBALS = new Set([
+  'Object',
+  'Array',
+  'Function',
+  'String',
+  'Number',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'Math',
+  'Date',
+  'RegExp',
+  'JSON',
+  'Map',
+  'Set',
+  'WeakMap',
+  'WeakSet',
+  'Promise',
+  'Proxy',
+  'Reflect',
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'ArrayBuffer',
+  'SharedArrayBuffer',
+  'DataView',
+  'Uint8Array',
+  'Int8Array',
+  'Uint8ClampedArray',
+  'Uint16Array',
+  'Int16Array',
+  'Uint32Array',
+  'Int32Array',
+  'Float32Array',
+  'Float64Array',
+  'BigInt64Array',
+  'BigUint64Array',
+  'TextEncoder',
+  'TextDecoder',
+  'undefined',
+  'NaN',
+  'Infinity',
+  'isNaN',
+  'isFinite',
+  'parseFloat',
+  'parseInt',
+  'encodeURIComponent',
+  'decodeURIComponent',
+  'Buffer',
+
+  // web-worker module relies on process as it supports both node and browser.
+  'process',
+]);
+
+// Exported for tests
+export function restrictGlobalScope(scope: object): void {
+  for (const key of Object.getOwnPropertyNames(scope)) {
+    if (ALLOWED_GLOBALS.has(key)) continue;
+    try {
+      delete (scope as any)[key];
+    } catch {
+      // Non-configurable in this environment
+    }
+  }
+}
+
+// Exported for tests
+export const DISALLOWED_PROTOTYPE_PROPS = [
+  '__proto__',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+] as const;
+
+// Exported for tests
+export function restrictObjectPrototype(): void {
+  for (const key of DISALLOWED_PROTOTYPE_PROPS) {
+    try {
+      delete (Object.prototype as any)[key];
+    } catch {
+      // Non-configurable in this environment
+    }
+  }
+}
+
+// Exported for tests
 export function handleRequest(request: WorkerRequest): WorkerResponse {
   const { id, args } = request;
   try {
@@ -16,6 +109,8 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
 }
 
 if (typeof self !== 'undefined') {
+  restrictObjectPrototype();
+  restrictGlobalScope(globalThis);
   self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     (self as unknown as Worker).postMessage(handleRequest(event.data));
   };
