@@ -1,10 +1,10 @@
 import { parse as parseAST } from 'acorn';
 import type { Node } from 'estree';
 
-import { checkTree } from './check';
-import { executeAST } from './eval';
-import type { Options } from './options';
-import { buildOptions } from './options';
+import { checkTree } from './check.js';
+import { executeAST } from './eval.js';
+import type { Options } from './options.js';
+import { buildOptions } from './options.js';
 
 function buildAST(input: string): { ast: Node; hasComments: boolean } {
   let hasComments = false;

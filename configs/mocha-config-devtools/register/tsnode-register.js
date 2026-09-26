@@ -10,6 +10,18 @@ require('ts-node').register({
   },
 });
 
+// The require()-based register above only patches CommonJS module loading.
+// For "type": "module" packages, Mocha loads spec files via dynamic import(),
+// which goes through Node's own ESM loader. Newer Node versions natively
+// strip TypeScript types but don't resolve `.js` specifiers to `.ts` files,
+// so we also register ts-node's ESM loader hook to get NodeNext-style
+// extension resolution for those packages.
+{
+  const { register } = require('node:module');
+  const { pathToFileURL } = require('node:url');
+  register('ts-node/esm', pathToFileURL('./'));
+}
+
 // XXX: @cspotcode/source-map-support library used by ts-node internally causes
 // issues when running tests in electron renderer environment due to webassembly
 // module registering that it's trying to run going out of allowed size boundary
