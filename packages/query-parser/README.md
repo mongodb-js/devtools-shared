@@ -1,5 +1,7 @@
 # mongodb-query-parser
 
+> **Deprecated:** this package is deprecated. Use [`@mongodb-js/shell-bson-parser`](../shell-bson-parser) instead.
+
 > Safe parsing and validation for MongoDB queries (filters), projections, and more.
 
 ## Example
