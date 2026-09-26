@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import * as WebWorkerModule from 'web-worker';
 
 import * as api from './index.js';
-import { terminateWorker } from './worker-client.js';
+import { terminateWorker, callWorker } from './worker-client.js';
 import {
   restrictGlobalScope,
   restrictObjectPrototype,
@@ -27,7 +27,11 @@ describe('shell-bson-parser with webworker processing', function () {
   });
 
   after(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    if (initialWorkerScriptUrl) {
+      process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    } else {
+      delete process.env.TEST_WORKER_SCRIPT_URL;
+    }
     terminateWorker();
   });
 
@@ -191,5 +195,40 @@ describe('shell-bson-parser with webworker processing', function () {
 
     // It should not modify the default object proto
     expect(Object.prototype).to.have.property('__proto__');
+  });
+
+  describe('execution timeout', function () {
+    const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
+
+    beforeEach(function () {
+      terminateWorker();
+      process.env.TEST_WORKER_SCRIPT_URL = '../test/fixtures/slow-worker.mjs';
+    });
+
+    afterEach(function () {
+      terminateWorker();
+      if (initialWorkerScriptUrl) {
+        process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+      } else {
+        delete process.env.TEST_WORKER_SCRIPT_URL;
+      }
+    });
+
+    it('rejects a request whose worker thread is wedged past the timeout', async function () {
+      try {
+        await callWorker([1000], { executionTimeoutMs: 500 });
+        expect.fail('Expected callWorker to throw an error due to timeout');
+      } catch (err) {
+        expect((err as Error)?.message).to.equal(
+          'Worker execution timed out after 500ms',
+        );
+      }
+    });
+
+    it('spins up a fresh worker for the next call after a timeout kill', async function () {
+      await callWorker([1000]).catch(() => {}); // timeouts out
+      const result = await callWorker([0]);
+      expect(result).to.equal('done');
+    });
   });
 });
