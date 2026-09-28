@@ -2,7 +2,6 @@ import { removeNewlines, removeTrailingComments } from '../utils';
 import { getSimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import type { SimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { ParseMode, parse } from '@mongodb-js/shell-bson-parser';
 
 export class DocsCrawler {
   constructor(private readonly url: string) {
@@ -38,6 +37,8 @@ export class DocsCrawler {
     );
 
     try {
+      const { ParseMode, parse } =
+        await import('@mongodb-js/shell-bson-parser');
       let result = await parse(json, { mode: ParseMode.Loose });
 
       if (!Array.isArray(result)) {
