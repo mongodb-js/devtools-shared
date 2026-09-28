@@ -223,9 +223,10 @@ describe('mongodb-download-url', function () {
     describe('ubuntu 20.04', function () {
       withFakeDistro('ubuntu2004');
 
-      it('should resolve * with ubuntu-specific url', async function () {
+      // MongoDB 9.0 dropped support for Ubuntu 20.04, so 8.x is the latest available
+      it('should resolve 8.x with ubuntu-specific url', async function () {
         const query = {
-          version: '*',
+          version: '8.x',
           platform: 'linux',
         };
 
@@ -282,6 +283,32 @@ describe('mongodb-download-url', function () {
         await verify(
           query,
           'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-6.2.0.tgz',
+        );
+      });
+    });
+
+    describe('ubuntu 24.04', function () {
+      withFakeDistro('ubuntu2404');
+
+      it('should resolve * with ubuntu-specific url', async function () {
+        const query = {
+          version: '*',
+          platform: 'linux',
+        };
+
+        await verify(query, kUnknownUrl);
+      });
+
+      it('should resolve 9.0.2 with ubuntu-specific url', async function () {
+        const query = {
+          version: '9.0.2',
+          platform: 'linux',
+          bits: 64,
+        } as const;
+
+        await verify(
+          query,
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2404-9.0.2.tgz',
         );
       });
     });
