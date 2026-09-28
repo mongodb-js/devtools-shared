@@ -27,7 +27,11 @@ describe('shell-bson-parser with webworker processing', function () {
   });
 
   after(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    if (initialWorkerScriptUrl) {
+      process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+    } else {
+      delete process.env.TEST_WORKER_SCRIPT_URL;
+    }
     terminateWorker();
   });
 
