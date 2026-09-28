@@ -3,7 +3,7 @@ import { markBSON, unmarkBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
-const { self } = globalThis;
+const { self, postMessage } = globalThis;
 
 // Exported for tests
 export const ALLOWED_GLOBALS = new Set([
@@ -112,6 +112,6 @@ if (typeof self !== 'undefined') {
   restrictObjectPrototype();
   restrictGlobalScope(globalThis);
   self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    (self as unknown as Worker).postMessage(handleRequest(event.data));
+    postMessage(handleRequest(event.data));
   };
 }
