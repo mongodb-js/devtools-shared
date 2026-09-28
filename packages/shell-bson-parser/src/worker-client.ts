@@ -13,6 +13,7 @@ export type ExecutionOptions = {
 };
 
 let worker: Worker | null = null;
+let workerPromise: Promise<Worker> | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let blobUrl: string | null = null;
 let nextId = 0;
@@ -54,40 +55,52 @@ async function getWorkerScriptUrl(): Promise<string> {
   return blobUrl;
 }
 
-async function createWorker(): Promise<Worker> {
+function createWorker(): Promise<Worker> {
   if (worker) {
-    return worker;
+    return Promise.resolve(worker);
+  }
+  if (workerPromise) {
+    return workerPromise;
   }
 
-  const scriptUrl = await getWorkerScriptUrl();
-  worker = new WebWorker(scriptUrl);
-  worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-    const response = event.data;
-    const entry = pending.get(response.id);
-    if (!entry) {
-      return;
-    }
-    clearTimeout(entry.executionTimer);
-    pending.delete(response.id);
-    if (!response.ok) {
-      entry.reject(new Error(response.error));
-      return;
-    }
-    try {
-      entry.resolve(unmarkBSON(response.result));
-    } catch (err) {
-      entry.reject(err as Error);
-    }
-  };
+  workerPromise = (async () => {
+    const scriptUrl = await getWorkerScriptUrl();
+    const newWorker = new WebWorker(scriptUrl);
+    newWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const response = event.data;
+      const entry = pending.get(response.id);
+      if (!entry) {
+        return;
+      }
+      clearTimeout(entry.executionTimer);
+      pending.delete(response.id);
+      if (!response.ok) {
+        entry.reject(new Error(response.error));
+        return;
+      }
+      try {
+        entry.resolve(unmarkBSON(response.result));
+      } catch (err) {
+        entry.reject(err as Error);
+      }
+    };
 
-  worker.onerror = (event: ErrorEvent) => {
-    terminateWorker(new Error(event.message || 'Worker error'));
-  };
-  worker.onmessageerror = () => {
-    terminateWorker(new Error('Worker message could not be deserialized'));
-  };
+    newWorker.onerror = (event: ErrorEvent) => {
+      terminateWorker(new Error(event.message || 'Worker error'));
+    };
+    newWorker.onmessageerror = () => {
+      terminateWorker(new Error('Worker message could not be deserialized'));
+    };
 
-  return worker;
+    worker = newWorker;
+    return newWorker;
+  })();
+
+  workerPromise.catch(() => {
+    workerPromise = null;
+  });
+
+  return workerPromise;
 }
 
 export async function callWorker<T>(
@@ -131,6 +144,7 @@ export function terminateWorker(
 
   idleTimer = null;
   worker = null;
+  workerPromise = null;
   blobUrl = null;
 
   for (const [id, entry] of pending) {
