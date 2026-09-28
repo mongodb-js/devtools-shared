@@ -5,6 +5,8 @@ This library does not validate that these queries are correct. It's focus is on 
 
 This library creates an AST from the proposed input, and then traverses this AST to check if it looks like a valid MongoDB query. If it does, the library will then evaluate the code to produce the parsed query.
 
+Parsing runs off the main thread inside a Worker, so `parse` is asynchronous and returns a `Promise`. See [Worker](#worker) for details.
+
 This library currently supports three different modes for parsing queries:
 
 **strict**: [default] Disallows comments and calling methods
@@ -12,7 +14,7 @@ This library currently supports three different modes for parsing queries:
 ```javascript
 import parse from '@mongodb-js/shell-bson-parser';
 
-const query = parse(
+const query = await parse(
   `{
     _id: ObjectID("132323"),
     simpleCalc: 6,
@@ -31,7 +33,7 @@ const query = parse(
 ```javascript
 import parse from '@mongodb-js/shell-bson-parser';
 
-const query = parse(
+const query = await parse(
   `{
     _id: ObjectID("132323"),
     simpleCalc: Math.max(1,2,3) * Math.min(4,3,2)
@@ -49,7 +51,7 @@ const query = parse(
 ```javascript
 import parse from '@mongodb-js/shell-bson-parser';
 
-const query = parse(
+const query = await parse(
   `{
     _id: ObjectID("132323"), // a helpful comment
     simpleCalc: Math.max(1,2,3) * Math.min(4,3,2)
@@ -82,3 +84,21 @@ The flags can be set to override the default value from a given mode, ie:
 ```
 
 This options object will disallow method calls, but will allow comments
+
+## Worker
+
+Every call to `parse` is sent to a shared worker (using [`web-worker`](https://github.com/developit/web-worker), so it works in both Node.js and browsers). The worker is created lazily on the first call and reused for later calls. BSON values are serialized across the worker boundary and rebuilt as `bson` instances on the calling side.
+
+If parsing throws inside the worker, the returned promise rejects with the error message.
+
+Call `terminateWorker()` to shut down the worker (for example in test teardown or when unmounting). Any pending `parse` calls are rejected. The next `parse` call starts a new worker.
+
+```javascript
+import { parse, terminateWorker } from '@mongodb-js/shell-bson-parser';
+
+const query = await parse('{ a: 1 }');
+
+terminateWorker();
+```
+
+This package is ESM only.

@@ -23,7 +23,11 @@ const BSON_PROTOTYPES: Record<string, object> = Object.create({
 });
 
 function isBsonValue(value: object): value is { _bsontype: string } {
-  return typeof (value as { _bsontype?: unknown })._bsontype === 'string';
+  if (typeof (value as { _bsontype?: unknown })._bsontype !== 'string') {
+    return false;
+  }
+  const proto = Reflect.getPrototypeOf(value);
+  return proto !== Object.prototype && proto !== null;
 }
 
 function isMap(m: unknown): m is Map<unknown, unknown> {
