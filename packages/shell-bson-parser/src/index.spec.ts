@@ -226,7 +226,7 @@ describe('shell-bson-parser with webworker processing', function () {
     });
 
     it('spins up a fresh worker for the next call after a timeout kill', async function () {
-      await callWorker([1000]).catch(() => {}); // timeouts out
+      await callWorker([1000]).catch(() => {}); // times out
       const result = await callWorker([0]);
       expect(result).to.equal('done');
     });
