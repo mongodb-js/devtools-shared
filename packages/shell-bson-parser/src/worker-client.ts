@@ -106,7 +106,7 @@ export async function callWorker<T>(
     executionOptions?.executionTimeoutMs ?? DEFAULT_EXECUTION_TIMEOUT_MS;
   const promise = new Promise<T>((resolve, reject) => {
     const executionTimer = setTimeout(() => {
-      // Terminate the worker is this message is taking too long to execute,
+      // Terminate the worker if this message is taking too long to execute,
       // this means all the other pending requests will also be terminated.
       terminateWorker(
         new Error(`Worker execution timed out after ${executionTimeoutMs}ms`),
