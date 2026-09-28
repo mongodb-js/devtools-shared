@@ -18,8 +18,8 @@
     "scripts"
   ],
   "scripts": {
-    "bootstrap-ci": "npm ci && lerna run bootstrap",
-    "bootstrap": "npm install && lerna run bootstrap --stream",
+    "bootstrap-ci": "npm ci && lerna run bootstrap --ignore mongodb-query-parser",
+    "bootstrap": "npm install && lerna run bootstrap --stream --ignore mongodb-query-parser",
     "bump-packages": "bump-monorepo-packages",
     "check-ci": "lerna run check --ignore mongodb-query-parser",
     "check": "lerna run check --stream --ignore mongodb-query-parser",
