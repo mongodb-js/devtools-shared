@@ -18,11 +18,11 @@
     "scripts"
   ],
   "scripts": {
-    "bootstrap-ci": "npm ci && lerna run bootstrap --ignore mongodb-query-parser",
-    "bootstrap": "npm install && lerna run bootstrap --stream --ignore mongodb-query-parser",
+    "bootstrap-ci": "npm ci && lerna run bootstrap",
+    "bootstrap": "npm install && lerna run bootstrap --stream",
     "bump-packages": "bump-monorepo-packages",
-    "check-ci": "lerna run check --ignore mongodb-query-parser",
-    "check": "lerna run check --stream --ignore mongodb-query-parser",
+    "check-ci": "lerna run check",
+    "check": "lerna run check --stream",
     "lint": "lerna run lint --stream",
     "compile-changed": "lerna run compile --stream --since origin/HEAD",
     "create-workspace": "node ./scripts/src/create-workspace.js",
@@ -37,8 +37,8 @@
     "reformat-changed": "lerna run reformat --stream --no-bail --since origin/HEAD --exclude-dependents",
     "reformat": "lerna run reformat --stream --no-bail",
     "test-changed": "lerna run test --stream --concurrency 1 --since origin/HEAD",
-    "test-ci": "lerna run test-ci --concurrency 1 --ignore mongodb-query-parser",
-    "test": "lerna run test --concurrency 1 --stream --ignore mongodb-query-parser",
+    "test-ci": "lerna run test-ci --concurrency 1",
+    "test": "lerna run test --concurrency 1 --stream",
     "where": "node packages/monorepo-tools/dist/where.js",
     "request-npm-token": "request-npm-token"
   },
