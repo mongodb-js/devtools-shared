@@ -2,7 +2,6 @@
 'use strict';
 const Benchmark = require('benchmark');
 const { default: parseEJSON } = require('../');
-const { parseFilter } = require('mongodb-query-parser');
 
 const sample = `({
   "_id3": {
@@ -67,9 +66,6 @@ suite
   })
   .add('parseEJSON#weak', function () {
     parseEJSON(sample, { weakParsing: true });
-  })
-  .add('mongodb-query-parser#insecure', function () {
-    parseFilter(sample);
   })
   .add('eval', function () {
     eval(sample);

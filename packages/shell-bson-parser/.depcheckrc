@@ -3,7 +3,5 @@ ignores:
  - '@mongodb-js/tsconfig-devtools'
  - '@types/chai'
  - 'sinon'
- # cyclic monorepo dependency, but only for the benchmarks
- - 'mongodb-query-parser'
 ignore-patterns:
  - 'dist'
