@@ -2,7 +2,6 @@ import { removeNewlines, removeTrailingComments } from '../utils';
 import { getSimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import type { SimplifiedSchema } from '@mongodb-js/mongodb-schema';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import parse, { ParseMode } from '@mongodb-js/shell-bson-parser';
 
 export class DocsCrawler {
   constructor(private readonly url: string) {
@@ -14,7 +13,7 @@ export class DocsCrawler {
 
   private virtualConsole: VirtualConsole;
 
-  private fuzzyParse(json: string): unknown[] | undefined {
+  private async fuzzyParse(json: string): Promise<unknown[] | undefined> {
     // Sometimes the snippet will end with ellipsis instead of json
     json = json.replace(/\.\.\.$/g, '');
 
@@ -38,7 +37,9 @@ export class DocsCrawler {
     );
 
     try {
-      let result = parse(json, { mode: ParseMode.Loose });
+      const { ParseMode, parse } =
+        await import('@mongodb-js/shell-bson-parser');
+      let result = await parse(json, { mode: ParseMode.Loose });
 
       if (!Array.isArray(result)) {
         result = [result];
@@ -70,10 +71,10 @@ export class DocsCrawler {
     }
   }
 
-  private getInsertionCode(
+  private async getInsertionCode(
     element: Element | null | undefined,
     extendedSearch = false,
-  ): { collectionName: string; documents: unknown[] } | undefined {
+  ): Promise<{ collectionName: string; documents: unknown[] } | undefined> {
     if (!element) {
       return undefined;
     }
@@ -112,7 +113,7 @@ export class DocsCrawler {
         }
       }
 
-      const documents = this.fuzzyParse(codeSnippet);
+      const documents = await this.fuzzyParse(codeSnippet);
       if (documents) {
         collectionName ??=
           Array.from(element?.querySelectorAll('p') || [])
@@ -133,7 +134,7 @@ export class DocsCrawler {
         element?.querySelector("a[href='#examples']") ??
         element?.querySelector("a[href='#example']");
       if (examples) {
-        return this.getInsertionCode(element, true);
+        return await this.getInsertionCode(element, true);
       }
     }
 
@@ -156,7 +157,7 @@ export class DocsCrawler {
         .querySelector(`a[href='${fragment}']:not([target])`)
         ?.closest('section');
 
-      const insertionCode = this.getInsertionCode(exampleSection);
+      const insertionCode = await this.getInsertionCode(exampleSection);
 
       if (!insertionCode) {
         return;
