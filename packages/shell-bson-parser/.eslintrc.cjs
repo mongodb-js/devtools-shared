@@ -5,5 +5,5 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig-lint.json'],
   },
-  ignorePatterns: ['webpack.worker.config.cjs'],
+  ignorePatterns: ['webpack.worker.config.cjs', 'test/fixtures/**'],
 };
