@@ -67,8 +67,7 @@ export async function getMachineId({
  * @returns The machine ID or `undefined` if not available
  */
 export function getMachineIdSync({ raw = false }: GetMachineIdOptions = {}):
-  | string
-  | undefined {
+  string | undefined {
   const machineId = getMachineIdFromBindingSync();
 
   if (!machineId || raw === true) {
