@@ -424,16 +424,14 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
         },
       ],
     ] as const
-  ).map(
-    ([input, result]): ParseTestCase => ({
-      title: `Function calls > complicated parsing of Math and Date - should parse ${input} as ${JSON.stringify(
-        result,
-      )}`,
-      input,
-      options: functionCallOptions,
-      expected: result,
-    }),
-  ),
+  ).map(([input, result]): ParseTestCase => ({
+    title: `Function calls > complicated parsing of Math and Date - should parse ${input} as ${JSON.stringify(
+      result,
+    )}`,
+    input,
+    options: functionCallOptions,
+    expected: result,
+  })),
 
   {
     title: 'Function calls - should not allow calling IIFE',

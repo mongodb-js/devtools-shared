@@ -156,9 +156,9 @@ function checkAllowedPlusDisallowedEqualsOptionsKeys(
 }
 
 type ExactAuthMechanismProperties = {
-  [K in keyof AuthMechanismProperties as string extends K
-    ? never
-    : K]: AuthMechanismProperties[K];
+  [
+    K in keyof AuthMechanismProperties as string extends K ? never : K
+  ]: AuthMechanismProperties[K];
 };
 
 // Ensure that all auth mechanism properties known to the Node.js driver

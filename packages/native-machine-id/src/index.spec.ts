@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-console */
 import type { GetMachineIdOptions } from '.';
 import { getMachineId as getMachineIdAsync, getMachineIdSync } from '.';
@@ -8,7 +9,6 @@ import {
 import { expect } from 'chai';
 import { createHash } from 'crypto';
 import sinon from 'sinon';
-import bindings from 'bindings';
 import assert from 'assert';
 
 type MachineIdFunctionPair = [
@@ -109,7 +109,10 @@ describe('native-machine-id', function () {
       describe('returns undefined', function () {
         it('if something goes wrong with the binding function', function () {
           sinon
-            .stub(bindings('native_machine_id'), 'getMachineIdSync')
+            .stub(
+              require('../build/Release/native_machine_id.node'),
+              'getMachineIdSync',
+            )
             .throws(new Error('Binding error'));
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
@@ -118,7 +121,10 @@ describe('native-machine-id', function () {
 
         it('if the binding function returns an empty string', function () {
           sinon
-            .stub(bindings('native_machine_id'), 'getMachineIdSync')
+            .stub(
+              require('../build/Release/native_machine_id.node'),
+              'getMachineIdSync',
+            )
             .returns('');
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
@@ -127,7 +133,10 @@ describe('native-machine-id', function () {
 
         it('if the binding function returns undefined', function () {
           sinon
-            .stub(bindings('native_machine_id'), 'getMachineIdSync')
+            .stub(
+              require('../build/Release/native_machine_id.node'),
+              'getMachineIdSync',
+            )
             .returns(undefined);
 
           expect(getMachineIdSync({ raw: true })).to.be.undefined;
@@ -146,7 +155,7 @@ describe('native-machine-id', function () {
         beforeEach(function () {
           response = sinon.stub();
           sinon.replace(
-            bindings('native_machine_id'),
+            require('../build/Release/native_machine_id.node'),
             'getMachineIdAsync',
             (callback) => {
               const { error, value } = response();
@@ -158,7 +167,10 @@ describe('native-machine-id', function () {
         it('if something goes wrong with the binding function', async function () {
           response.returns({ error: null, value: 'not this' });
           sinon
-            .stub(bindings('native_machine_id'), 'getMachineIdAsync')
+            .stub(
+              require('../build/Release/native_machine_id.node'),
+              'getMachineIdAsync',
+            )
             .throws(new Error('Binding error'));
 
           expect(await getMachineIdAsync({ raw: true })).to.be.undefined;
