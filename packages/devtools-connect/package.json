@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/devtools-connect",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "A connection establishment utility for MongoDB developer tools",
   "homepage": "https://github.com/mongodb-js/devtools-shared/tree/main/packages/devtools-connect",
   "repository": {
@@ -47,8 +47,8 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@mongodb-js/devtools-proxy-support": "^0.7.24",
-    "@mongodb-js/oidc-http-server-pages": "^1.2.20",
+    "@mongodb-js/devtools-proxy-support": "^0.7.25",
+    "@mongodb-js/oidc-http-server-pages": "^1.2.21",
     "lodash.merge": "^4.6.2",
     "mongodb-connection-string-url": "^7.0.2",
     "socks": "^2.8.10"
