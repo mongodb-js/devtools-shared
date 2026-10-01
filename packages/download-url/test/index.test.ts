@@ -924,7 +924,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-arm64-enterprise-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-arm64-enterprise.tgz',
       );
     });
 
@@ -937,7 +937,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64-enterprise-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64-enterprise.tgz',
       );
     });
 
@@ -950,7 +950,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64-enterprise-latest.zip',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64-enterprise.zip',
       );
     });
 
@@ -964,7 +964,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2004-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2004.tgz',
       );
     });
 
@@ -976,7 +976,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64.tgz',
       );
     });
 
@@ -988,7 +988,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64-latest.zip',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64.zip',
       );
     });
 
@@ -1001,7 +1001,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-ubuntu2004-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-ubuntu2004.tgz',
       );
     });
 
@@ -1015,7 +1015,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-amazon2023-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-amazon2023.tgz',
       );
     });
 
@@ -1028,7 +1028,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-amazon2023-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-amazon2023.tgz',
       );
     });
   });
