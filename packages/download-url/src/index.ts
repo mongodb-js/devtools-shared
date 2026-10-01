@@ -200,19 +200,21 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
   let download: DownloadInfo | undefined;
   if (opts.version === 'latest-alpha') {
     const targets = opts.target.map(({ value }) => value);
-    const arch = opts.arch.includes('arm64') ? 'arm64' : 'x86_64';
-    const edition = opts.enterprise ? 'enterprise-' : '';
+    const isArm64 = opts.arch.includes('arm64');
+    const edition = opts.enterprise ? '-enterprise' : '';
     let artifact: string | undefined;
     let target: string | undefined;
     if (targets.includes('macos')) {
-      artifact = `mongodb-macos-${arch}-${edition}latest.tgz`;
+      artifact = `mongodb-macos-${isArm64 ? 'arm64' : 'x86_64'}${edition}.tgz`;
       target = 'macos';
     } else if (targets.includes('linux_x86_64')) {
       target = maximizer(opts.target, (candidate) => candidate.priority)!.value;
-      artifact = `mongodb-linux-${arch}-${edition}${target}-latest.tgz`;
+      artifact = `mongodb-linux-${
+        isArm64 ? 'aarch64' : 'x86_64'
+      }${edition}-${target}.tgz`;
     } else if (targets.includes('windows_x86_64')) {
       target = 'windows';
-      artifact = `mongodb-windows-${arch}-${edition}latest.zip`;
+      artifact = `mongodb-windows-x86_64${edition}.zip`;
     }
     if (artifact) {
       download = {
