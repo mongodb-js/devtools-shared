@@ -65,7 +65,7 @@
     "@mongodb-js/saslprep": "^1.5.5",
     "@peculiar/x509": "^2.1.0",
     "debug": "^4.4.0",
-    "mongodb": "^7.6.0",
+    "mongodb": "^7.5.0",
     "mongodb-connection-string-url": "^7.0.2",
     "reflect-metadata": "^0.2.2",
     "yargs": "^18.2.0"
