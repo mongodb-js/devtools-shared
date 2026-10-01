@@ -25,6 +25,9 @@ updates:
           - major
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: bson
+      - dependency-name: mongodb
     versioning-strategy: increase
     open-pull-requests-limit: 15
     commit-message:
