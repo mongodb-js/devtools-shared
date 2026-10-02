@@ -196,18 +196,27 @@ below).
 A validator constrains documents rather than describing them, so the conversion is
 intentionally lossy and never throws. Value-level constraints (`enum`, `minimum`, `pattern`,
 `maxLength`, ...) are ignored, since the simplified schema records BSON types only, as are
-`required`, `patternProperties` and `additionalProperties`. Beyond that:
+`patternProperties` and `additionalProperties`. Beyond that:
 
-- `anyOf`, `oneOf` and `allOf` all contribute to a single type union, including at the root.
-  A branch with no type of its own adds to the types of the schema it belongs to, so
+- Keywords at the same level all apply, so the result is the types every one of them
+  permits. `anyOf` and `oneOf` contribute the union of their branches, intersected with the
+  schema's own types: `{ bsonType: ['null', 'int'], anyOf: [{ bsonType: 'string' }, { bsonType: 'int' }] }`
+  permits only `int`. `allOf` intersects its branches. Document fields and array members are
+  intersected the same way, and a field no value can satisfy is omitted. `oneOf` is treated
+  like `anyOf`, since exclusivity can't be expressed in the simplified schema.
+- A branch with no type of its own constrains the types of the schema it belongs to, so
   `{ bsonType: 'object', oneOf: [{ properties: { a } }, { properties: { b } }] }` describes
-  one document with fields `a` and `b`.
+  one document with fields `a` and `b`. This applies at the root too.
 - A subschema with no `bsonType` or `type` is read as a document if it has `properties`, and
   as an array if it has `items`.
+- `bsonType: 'number'` (and `type: 'number'`) expands to `Int32`, `Long`, `Double` and
+  `Decimal128`.
+- `additionalItems` adds member types only alongside a tuple-form `items`, as in JSON Schema.
 - Fields encrypted with client-side field level encryption (`encrypt`) are reported as
   `Binary`, which is how they are stored.
 - A document with `$ref` and `$id` properties is reported as `DBRef`, as the driver
-  deserializes one.
+  deserializes one. Unless the validator also lists both as `required`, it can still hold
+  plain documents, so it is reported as both `Document` and `DBRef`.
 - A field whose subschema says nothing about its type is omitted from the result.
 
 ### Validation levels

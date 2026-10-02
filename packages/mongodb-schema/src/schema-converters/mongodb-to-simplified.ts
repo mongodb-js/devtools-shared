@@ -10,9 +10,9 @@
  *
  * A validator constrains documents rather than describing them, so the mapping
  * is intentionally lossy: value-level constraints (enum, minimum, pattern, ...)
- * are ignored, as are `required`, `patternProperties` and `additionalProperties`.
- * Nothing throws - constructs that carry no type information, and malformed
- * subschemas, simply contribute nothing.
+ * are ignored, as are `patternProperties` and `additionalProperties`. Nothing
+ * throws - constructs that carry no type information, and malformed subschemas,
+ * simply contribute nothing.
  */
 import type {
   SchemaBSONType,
@@ -21,7 +21,14 @@ import type {
   SimplifiedSchemaDocumentType,
   SimplifiedSchemaType,
 } from '../schema-analyzer';
-import type { MongoDBJSONSchema } from '../types';
+import type { JSONSchema, MongoDBJSONSchema } from '../types';
+
+const NUMERIC_TYPES: SchemaBSONType[] = [
+  'Int32',
+  'Long',
+  'Double',
+  'Decimal128',
+];
 
 /**
  * BSON type aliases accepted by $jsonSchema's `bsonType`, mapped to the type
@@ -34,7 +41,10 @@ import type { MongoDBJSONSchema } from '../types';
 // Lookups take keys from the validator, so they go through `mapAliases`,
 // which only accepts own properties.
 // eslint-disable-next-line @mongodb-js/devtools/no-plain-object-records
-export const BSONTypeAliasToSimplifiedType: Record<string, SchemaBSONType> = {
+export const BSONTypeAliasToSimplifiedType: Record<
+  string,
+  SchemaBSONType | SchemaBSONType[]
+> = {
   double: 'Double',
   string: 'String',
   object: 'Document',
@@ -57,9 +67,8 @@ export const BSONTypeAliasToSimplifiedType: Record<string, SchemaBSONType> = {
   maxKey: 'MaxKey',
   // The inverse of `InternalTypeToBsonTypeMap`'s `DBRef: 'dbPointer'`.
   dbPointer: 'DBRef',
-  // `number` covers int/long/double/decimal. A single numeric stand-in claims
-  // less than expanding it into four distinct types would.
-  number: 'Double',
+  // `number` accepts every BSON numeric type.
+  number: NUMERIC_TYPES,
 };
 
 /**
@@ -70,19 +79,28 @@ export const BSONTypeAliasToSimplifiedType: Record<string, SchemaBSONType> = {
 // Lookups take keys from the validator, so they go through `mapAliases`,
 // which only accepts own properties.
 // eslint-disable-next-line @mongodb-js/devtools/no-plain-object-records
-export const JSONSchemaTypeToSimplifiedType: Record<string, SchemaBSONType> = {
+export const JSONSchemaTypeToSimplifiedType: Record<
+  string,
+  SchemaBSONType | SchemaBSONType[]
+> = {
   object: 'Document',
   array: 'Array',
   string: 'String',
-  number: 'Double',
+  number: NUMERIC_TYPES,
   boolean: 'Boolean',
   null: 'Null',
   // MongoDB rejects `type: 'integer'` inside $jsonSchema, but accepting it here
   // costs nothing and makes this usable for plain JSON Schema input.
-  integer: 'Int32',
+  integer: ['Int32', 'Long'],
 };
 
-const UNION_KEYWORDS = ['anyOf', 'oneOf', 'allOf'] as const;
+const UNION_KEYWORDS = ['anyOf', 'oneOf'] as const;
+
+/**
+ * The types a subschema permits, or `undefined` when it says nothing about
+ * types and so permits any. An empty array means it permits no value at all.
+ */
+type TypeSet = SimplifiedSchemaType[] | undefined;
 
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (value === undefined) return [];
@@ -157,7 +175,7 @@ function mergeFieldsInto(
 
 function mapAliases(
   value: unknown,
-  map: Record<string, SchemaBSONType>,
+  map: Record<string, SchemaBSONType | SchemaBSONType[]>,
 ): SchemaBSONType[] {
   const types: SchemaBSONType[] = [];
   for (const key of toArray(value)) {
@@ -167,7 +185,7 @@ function mapAliases(
       typeof key === 'string' &&
       Object.prototype.hasOwnProperty.call(map, key)
     ) {
-      types.push(map[key]);
+      types.push(...toArray(map[key]));
     }
   }
   return types;
@@ -201,78 +219,191 @@ function impliedTypes(schema: MongoDBJSONSchema): SchemaBSONType[] {
   if (isSchema(schema.properties) || isSchema(schema.patternProperties)) {
     types.push('Document');
   }
-  if (schema.items !== undefined || isSchema(schema.additionalItems)) {
+  // Not `additionalItems`, which has no effect without a tuple `items`.
+  if (schema.items !== undefined) {
     types.push('Array');
   }
   return types;
 }
 
 /**
- * js-bson deserialises any embedded document with `$ref` and `$id` into a
- * DBRef, so that is what inference reports for a validator's DBRef shape.
+ * Whether two types can describe the same value. A DBRef is a document as far
+ * as the validator is concerned, so it intersects with Document.
  */
-function resolveDBRefs(types: SimplifiedSchemaType[]): SimplifiedSchemaType[] {
-  const resolved: SimplifiedSchemaType[] = [];
-  for (const type of types) {
-    const isDBRef =
-      isDocumentType(type) && '$ref' in type.fields && '$id' in type.fields;
-    mergeTypeInto(resolved, isDBRef ? { bsonType: 'DBRef' } : type);
+function intersectKind(
+  a: SchemaBSONType,
+  b: SchemaBSONType,
+): SchemaBSONType | undefined {
+  if (a === b) return a;
+  if (
+    (a === 'DBRef' && b === 'Document') ||
+    (a === 'Document' && b === 'DBRef')
+  ) {
+    return 'DBRef';
   }
-  return resolved;
-}
-
-function buildType(
-  bsonType: SchemaBSONType,
-  schema: MongoDBJSONSchema,
-): SimplifiedSchemaType {
-  if (bsonType === 'Document') {
-    return { bsonType, fields: collectFields(schema.properties) };
-  }
-
-  if (bsonType === 'Array') {
-    const types: SimplifiedSchemaType[] = [];
-    // `additionalItems` describes the members past a tuple `items` form.
-    for (const items of [...toArray(schema.items), schema.additionalItems]) {
-      mergeTypesInto(types, collectTypes(items));
-    }
-    return { bsonType, types: resolveDBRefs(types) };
-  }
-
-  return { bsonType };
+  return undefined;
 }
 
 /**
- * The types a single subschema can describe. `anyOf`/`oneOf`/`allOf` all
- * contribute to one union - `allOf` is treated as a union rather than an
- * intersection because an intersection is not expressible in the simplified
- * schema, and a union is the conservative over-approximation.
+ * The values both type sets permit. Matching documents keep the fields of
+ * both sides, with the types of a field present in both intersected; a field
+ * no value can satisfy is dropped. Matching arrays intersect their members.
+ */
+function intersectTypes(a: TypeSet, b: TypeSet): TypeSet {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+
+  const types: SimplifiedSchemaType[] = [];
+  for (const left of a) {
+    for (const right of b) {
+      const bsonType = intersectKind(left.bsonType, right.bsonType);
+      if (bsonType === undefined) continue;
+
+      if (bsonType === 'Document') {
+        mergeTypeInto(types, {
+          bsonType,
+          fields: intersectFields(
+            (left as SimplifiedSchemaDocumentType).fields,
+            (right as SimplifiedSchemaDocumentType).fields,
+          ),
+        });
+      } else if (bsonType === 'Array') {
+        const leftMembers = (left as SimplifiedSchemaArrayType).types;
+        const rightMembers = (right as SimplifiedSchemaArrayType).types;
+        mergeTypeInto(types, {
+          bsonType,
+          // An empty member list means the members are unconstrained.
+          types:
+            leftMembers.length === 0
+              ? rightMembers
+              : rightMembers.length === 0
+                ? leftMembers
+                : (intersectTypes(leftMembers, rightMembers) ?? []),
+        });
+      } else {
+        mergeTypeInto(types, { bsonType });
+      }
+    }
+  }
+  return types;
+}
+
+function intersectFields(
+  a: SimplifiedSchema,
+  b: SimplifiedSchema,
+): SimplifiedSchema {
+  const fields: SimplifiedSchema = Object.create(null);
+  for (const name of Object.keys(a)) {
+    if (!(name in b)) {
+      fields[name] = a[name];
+      continue;
+    }
+    const types = intersectTypes(a[name].types, b[name].types);
+    if (types && types.length > 0) fields[name] = { types };
+  }
+  for (const name of Object.keys(b)) {
+    if (!(name in a)) fields[name] = b[name];
+  }
+  return fields;
+}
+
+/**
+ * The values any of the type sets permit. If one branch is unconstrained, so
+ * is the union.
+ */
+function unionTypes(sets: TypeSet[]): TypeSet {
+  const types: SimplifiedSchemaType[] = [];
+  for (const set of sets) {
+    if (set === undefined) return undefined;
+    mergeTypesInto(types, set);
+  }
+  return types;
+}
+
+function isRequired(schema: MongoDBJSONSchema, name: string): boolean {
+  return Array.isArray(schema.required) && schema.required.includes(name);
+}
+
+function buildTypes(
+  bsonType: SchemaBSONType,
+  schema: MongoDBJSONSchema,
+): SimplifiedSchemaType[] {
+  if (bsonType === 'Document') {
+    const fields = collectFields(schema.properties);
+    if (!('$ref' in fields && '$id' in fields)) {
+      return [{ bsonType, fields }];
+    }
+    // js-bson deserialises any embedded document with `$ref` and `$id` into a
+    // DBRef, so that is what inference reports for one. Unless the validator
+    // requires both, plain documents without them are permitted too.
+    if (isRequired(schema, '$ref') && isRequired(schema, '$id')) {
+      return [{ bsonType: 'DBRef' }];
+    }
+    return [{ bsonType, fields }, { bsonType: 'DBRef' }];
+  }
+
+  if (bsonType === 'Array') {
+    // `additionalItems` only applies past a tuple `items` form, and only a
+    // schema adds member types; `true` or absence leaves them unconstrained,
+    // which is ignored here as it would make the tuple form uninformative.
+    const memberSchemas = (
+      Array.isArray(schema.items)
+        ? [...schema.items, schema.additionalItems]
+        : [schema.items]
+    ).filter(isSchema);
+    const members =
+      memberSchemas.length > 0
+        ? unionTypes(memberSchemas.map((items) => collectTypes(items)))
+        : undefined;
+    // An empty member list stands for unconstrained members.
+    return [{ bsonType, types: members ?? [] }];
+  }
+
+  return [{ bsonType }];
+}
+
+/**
+ * The types a single subschema permits. Keywords at the same level all apply,
+ * so `anyOf`/`oneOf` contribute the union of their branches intersected with
+ * the schema's own types, and each `allOf` branch is intersected in turn.
  *
- * `scope` is the types of the enclosing schema, when this is one of its union
+ * `scope` is the types of the enclosing schema, when this is one of its
  * branches. An untyped branch constrains those types rather than introducing
  * its own, so `{ bsonType: 'object', oneOf: [{ properties }] }` merges the
  * branch's properties into the parent's Document, and a `properties`-only
  * branch of a `string` does not invent a Document.
  */
-function collectTypes(
-  schema: unknown,
-  scope?: SchemaBSONType[],
-): SimplifiedSchemaType[] {
-  if (!isSchema(schema)) return [];
+function collectTypes(schema: unknown, scope?: SchemaBSONType[]): TypeSet {
+  if (!isSchema(schema)) return undefined;
 
   const explicit = explicitTypes(schema);
   const own = explicit.length > 0 ? explicit : (scope ?? impliedTypes(schema));
 
-  const types: SimplifiedSchemaType[] = [];
-  for (const bsonType of own) {
-    mergeTypeInto(types, buildType(bsonType, schema));
+  let types: TypeSet;
+  if (own.length > 0) {
+    types = [];
+    for (const bsonType of own) {
+      mergeTypesInto(types, buildTypes(bsonType, schema));
+    }
   }
 
   const branchScope = own.length > 0 ? own : undefined;
   for (const keyword of UNION_KEYWORDS) {
-    const branches = schema[keyword];
-    if (!Array.isArray(branches)) continue;
-    for (const branch of branches) {
-      mergeTypesInto(types, collectTypes(branch, branchScope));
+    // Malformed branches are skipped rather than read as permitting anything,
+    // and an empty branch list (itself invalid) as no constraint.
+    const branches: unknown[] = Array.isArray(schema[keyword])
+      ? schema[keyword].filter(isSchema)
+      : [];
+    if (branches.length === 0) continue;
+    types = intersectTypes(
+      types,
+      unionTypes(branches.map((branch) => collectTypes(branch, branchScope))),
+    );
+  }
+
+  if (Array.isArray(schema.allOf)) {
+    for (const branch of schema.allOf) {
+      types = intersectTypes(types, collectTypes(branch, branchScope));
     }
   }
 
@@ -287,11 +418,12 @@ function collectFields(properties: unknown): SimplifiedSchema {
 
   const subschemas = properties as Record<string, unknown>;
   for (const name of Object.keys(subschemas)) {
-    const types = resolveDBRefs(collectTypes(subschemas[name]));
+    const types = collectTypes(subschemas[name]);
     // A field with no type information is omitted rather than emitted with an
     // empty `types` array: inference cannot produce the latter, since a field
-    // appears there only because a value was observed for it.
-    if (types.length > 0) {
+    // appears there only because a value was observed for it. A field no value
+    // can satisfy is omitted too, since it can only ever be absent.
+    if (types && types.length > 0) {
       fields[name] = { types };
     }
   }
@@ -300,10 +432,10 @@ function collectFields(properties: unknown): SimplifiedSchema {
 }
 
 export function convertMongoDBJSONSchemaToSimplified(
-  jsonSchema: MongoDBJSONSchema,
+  jsonSchema: JSONSchema,
 ): SimplifiedSchema {
   // The root always describes a document, so it is read as one even when
   // untyped - including when its shape lives entirely in union branches.
-  const root = collectTypes(jsonSchema, ['Document']).find(isDocumentType);
+  const root = collectTypes(jsonSchema, ['Document'])?.find(isDocumentType);
   return root?.fields ?? Object.create(null);
 }

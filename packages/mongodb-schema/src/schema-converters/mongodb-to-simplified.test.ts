@@ -1,7 +1,7 @@
 import assert from 'assert';
 import type { SimplifiedSchema } from '..';
 import { analyzeDocuments, getSimplifiedSchema } from '..';
-import type { MongoDBJSONSchema } from '../types';
+import type { JSONSchema } from '../types';
 import { allBSONTypesDoc } from '../../test/all-bson-types-fixture';
 import { convertMongoDBJSONSchemaToSimplified } from './mongodb-to-simplified';
 
@@ -54,13 +54,41 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
-    it('maps the numeric "number" alias to Double', function () {
+    it('expands the numeric "number" alias to every BSON numeric type', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
         properties: { n: { bsonType: 'number' } },
       });
 
-      assert.deepEqual(result, { n: { types: [{ bsonType: 'Double' }] } });
+      assert.deepEqual(result, {
+        n: {
+          types: [
+            { bsonType: 'Int32' },
+            { bsonType: 'Long' },
+            { bsonType: 'Double' },
+            { bsonType: 'Decimal128' },
+          ],
+        },
+      });
+    });
+
+    it('deduplicates "number" against the numeric types it covers', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: { n: { bsonType: ['double', 'number', 'null'] } },
+      });
+
+      assert.deepEqual(result, {
+        n: {
+          types: [
+            { bsonType: 'Double' },
+            { bsonType: 'Int32' },
+            { bsonType: 'Long' },
+            { bsonType: 'Decimal128' },
+            { bsonType: 'Null' },
+          ],
+        },
+      });
     });
 
     it('produces one type entry per alias when bsonType is an array', function () {
@@ -125,8 +153,15 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
 
       assert.deepEqual(result, {
         s: { types: [{ bsonType: 'String' }] },
-        n: { types: [{ bsonType: 'Double' }] },
-        i: { types: [{ bsonType: 'Int32' }] },
+        n: {
+          types: [
+            { bsonType: 'Int32' },
+            { bsonType: 'Long' },
+            { bsonType: 'Double' },
+            { bsonType: 'Decimal128' },
+          ],
+        },
+        i: { types: [{ bsonType: 'Int32' }, { bsonType: 'Long' }] },
         b: { types: [{ bsonType: 'Boolean' }] },
         nul: { types: [{ bsonType: 'Null' }] },
         o: {
@@ -237,7 +272,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       const result = convertMongoDBJSONSchemaToSimplified(
         JSON.parse(
           '{"bsonType":"object","properties":{"__proto__":{"bsonType":"string"}}}',
-        ) as MongoDBJSONSchema,
+        ) as JSONSchema,
       );
 
       assert.deepEqual(Object.keys(result), ['__proto__']);
@@ -361,16 +396,94 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
-    it('treats allOf as a union rather than an intersection', function () {
+    it('intersects allOf branches', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
         properties: {
-          n: { allOf: [{ bsonType: 'int' }, { bsonType: 'string' }] },
+          n: {
+            allOf: [
+              { bsonType: ['int', 'string', 'null'] },
+              { bsonType: ['string', 'int'] },
+              { minimum: 0 },
+            ],
+          },
         },
       });
 
       assert.deepEqual(result, {
         n: { types: [{ bsonType: 'Int32' }, { bsonType: 'String' }] },
+      });
+    });
+
+    it('omits a field whose allOf branches permit no common type', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          kept: { bsonType: 'int' },
+          n: { allOf: [{ bsonType: 'int' }, { bsonType: 'string' }] },
+        },
+      });
+
+      assert.deepEqual(Object.keys(result), ['kept']);
+    });
+
+    it('intersects the fields of allOf document branches', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          d: {
+            allOf: [
+              {
+                bsonType: 'object',
+                properties: {
+                  a: { bsonType: ['int', 'null'] },
+                  b: { bsonType: 'string' },
+                },
+              },
+              {
+                bsonType: 'object',
+                properties: {
+                  a: { bsonType: ['int', 'long'] },
+                  c: { bsonType: 'bool' },
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        d: {
+          types: [
+            {
+              bsonType: 'Document',
+              fields: {
+                a: { types: [{ bsonType: 'Int32' }] },
+                b: { types: [{ bsonType: 'String' }] },
+                c: { types: [{ bsonType: 'Boolean' }] },
+              },
+            },
+          ],
+        },
+      });
+    });
+
+    it('intersects the member types of allOf array branches', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          a: {
+            allOf: [
+              { bsonType: 'array', items: { bsonType: ['int', 'string'] } },
+              { bsonType: 'array', items: { bsonType: ['int', 'null'] } },
+              { bsonType: 'array' },
+            ],
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        a: { types: [{ bsonType: 'Array', types: [{ bsonType: 'Int32' }] }] },
       });
     });
 
@@ -454,7 +567,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
-    it('combines a bsonType array with an anyOf at the same position', function () {
+    it('intersects an anyOf with a bsonType at the same position', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
         properties: {
@@ -465,14 +578,38 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
         },
       });
 
-      assert.deepEqual(result, {
-        f: {
-          types: [
-            { bsonType: 'Null' },
-            { bsonType: 'Int32' },
-            { bsonType: 'String' },
-          ],
+      assert.deepEqual(result, { f: { types: [{ bsonType: 'Int32' }] } });
+    });
+
+    it('intersects anyOf and oneOf at the same position', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          f: {
+            anyOf: [{ bsonType: 'string' }, { bsonType: 'int' }],
+            oneOf: [{ bsonType: 'int' }, { bsonType: 'null' }],
+          },
         },
+      });
+
+      assert.deepEqual(result, { f: { types: [{ bsonType: 'Int32' }] } });
+    });
+
+    it('treats an anyOf with an unconstrained branch as no constraint', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          f: { anyOf: [{ bsonType: 'int' }, { minimum: 5 }] },
+          g: {
+            bsonType: ['int', 'string'],
+            anyOf: [{ bsonType: 'int' }, { minimum: 5 }],
+          },
+        },
+      });
+
+      assert.deepEqual(Object.keys(result), ['g']);
+      assert.deepEqual(result.g, {
+        types: [{ bsonType: 'Int32' }, { bsonType: 'String' }],
       });
     });
 
@@ -512,7 +649,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
           empty: {},
           notOnly: { not: { bsonType: 'string' } },
         },
-      } as MongoDBJSONSchema);
+      });
 
       // Asserted explicitly rather than via deepEqual, which treats an
       // `undefined`-valued key as absent.
@@ -535,7 +672,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
           },
           n: { bsonType: 'int', minimum: 0, maximum: 10, multipleOf: 2 },
         },
-      } as MongoDBJSONSchema);
+      });
 
       assert.deepEqual(result, {
         s: { types: [{ bsonType: 'String' }] },
@@ -566,7 +703,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
             patternProperties: { '^t': { bsonType: 'string' } },
           },
         },
-      } as MongoDBJSONSchema);
+      });
 
       assert.deepEqual(result, {
         tags: { types: [{ bsonType: 'Document', fields: {} }] },
@@ -583,7 +720,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
             additionalProperties: false,
           },
         },
-      } as MongoDBJSONSchema);
+      });
 
       assert.deepEqual(result, {
         o: {
@@ -635,15 +772,18 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
     it('merges root allOf branches into the root properties', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
-        properties: { a: { bsonType: 'int' } },
+        properties: { a: { bsonType: ['int', 'null'] } },
         allOf: [
           { properties: { b: { bsonType: 'string' } } },
-          { bsonType: 'object', properties: { a: { bsonType: 'long' } } },
+          {
+            bsonType: 'object',
+            properties: { a: { bsonType: ['int', 'long'] } },
+          },
         ],
       });
 
       assert.deepEqual(result, {
-        a: { types: [{ bsonType: 'Int32' }, { bsonType: 'Long' }] },
+        a: { types: [{ bsonType: 'Int32' }] },
         b: { types: [{ bsonType: 'String' }] },
       });
     });
@@ -803,6 +943,34 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
+    it('ignores additionalItems for a single-schema items', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          t: {
+            bsonType: 'array',
+            items: { bsonType: 'int' },
+            additionalItems: { bsonType: 'string' },
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        t: { types: [{ bsonType: 'Array', types: [{ bsonType: 'Int32' }] }] },
+      });
+    });
+
+    it('does not imply an Array from additionalItems alone', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          t: { additionalItems: { bsonType: 'string' } },
+        },
+      });
+
+      assert.deepEqual(result, {});
+    });
+
     it('ignores a boolean additionalItems', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
@@ -820,9 +988,10 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
-    it('maps a document with $ref and $id to DBRef, as js-bson deserialises it', function () {
+    it('maps a document requiring $ref and $id to DBRef, as js-bson deserialises it', function () {
       const dbRefShape = {
         bsonType: 'object',
+        required: ['$ref', '$id'],
         properties: {
           $ref: { bsonType: 'string' },
           $id: { bsonType: 'objectId' },
@@ -844,6 +1013,59 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
         },
         both: { types: [{ bsonType: 'DBRef' }] },
       });
+    });
+
+    it('reports both Document and DBRef when $ref and $id are optional', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          r: {
+            bsonType: 'object',
+            required: ['$ref'],
+            properties: {
+              $ref: { bsonType: 'string' },
+              $id: { bsonType: 'objectId' },
+            },
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        r: {
+          types: [
+            {
+              bsonType: 'Document',
+              fields: {
+                $ref: { types: [{ bsonType: 'String' }] },
+                $id: { types: [{ bsonType: 'ObjectId' }] },
+              },
+            },
+            { bsonType: 'DBRef' },
+          ],
+        },
+      });
+    });
+
+    it('narrows a Document to DBRef when an allOf branch requires the DBRef shape', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          r: {
+            bsonType: 'object',
+            allOf: [
+              {
+                required: ['$ref', '$id'],
+                properties: {
+                  $ref: { bsonType: 'string' },
+                  $id: { bsonType: 'objectId' },
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      assert.deepEqual(result, { r: { types: [{ bsonType: 'DBRef' }] } });
     });
 
     it('keeps a document with only $ref as a Document', function () {
@@ -910,7 +1132,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
               badProperties: { bsonType: 'object', properties: ['a'] },
             },
           }),
-        ) as MongoDBJSONSchema,
+        ) as JSONSchema,
       );
 
       assert.deepEqual(result, {
@@ -925,9 +1147,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
 
     it('tolerates a non-object root', function () {
       assert.deepEqual(
-        convertMongoDBJSONSchemaToSimplified(
-          null as unknown as MongoDBJSONSchema,
-        ),
+        convertMongoDBJSONSchemaToSimplified(null as unknown as JSONSchema),
         {},
       );
     });
