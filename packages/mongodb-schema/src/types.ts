@@ -11,6 +11,13 @@ export type MongoDBJSONSchema = Pick<
   properties?: Record<string, MongoDBJSONSchema>;
   items?: MongoDBJSONSchema | MongoDBJSONSchema[];
   anyOf?: MongoDBJSONSchema[];
+  // Not produced by this library, but accepted by $jsonSchema validators.
+  type?: StandardJSONSchema['type'];
+  oneOf?: MongoDBJSONSchema[];
+  allOf?: MongoDBJSONSchema[];
+  patternProperties?: Record<string, MongoDBJSONSchema>;
+  additionalItems?: boolean | MongoDBJSONSchema;
+  encrypt?: Record<string, unknown>;
 };
 
 export type ExpandedJSONSchema = StandardJSONSchema & {
@@ -31,7 +38,10 @@ export type JSONSchema = Partial<JSONSchema4> & MongoDBJSONSchema;
 export type AnyIterable<T = any> = Iterable<T> | AsyncIterable<T>;
 
 type AnySchema =
-  InternalSchema | StandardJSONSchema | MongoDBJSONSchema | ExpandedJSONSchema;
+  | InternalSchema
+  | StandardJSONSchema
+  | MongoDBJSONSchema
+  | ExpandedJSONSchema;
 export type SchemaConverterFn<
   InputSchema = AnySchema,
   OutputSchema = AnySchema,
