@@ -10,7 +10,7 @@ import {
 } from './mongologreader';
 import { Readable } from 'stream';
 import type { Document, MongoClientOptions } from 'mongodb';
-import { MongoClient } from 'mongodb';
+import { MongoClient, MongoServerError } from 'mongodb';
 import path from 'path';
 import { EventEmitter, once } from 'events';
 import {
@@ -97,6 +97,13 @@ function getKeyFileOption(args?: string[] | undefined): string | undefined {
   }
   const arg = args.find((a) => a.startsWith('--keyFile='));
   return arg?.split('=')[1];
+}
+
+function isUnauthorizedError(err: unknown): boolean {
+  return (
+    err instanceof MongoServerError &&
+    (err.codeName === 'Unauthorized' || Number(err.code) === 13)
+  );
 }
 
 export class MongoServer extends EventEmitter<MongoServerEvents> {
@@ -629,6 +636,15 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (!this.hasInsertedMetadataCollEntry) {
       debug('populating metadata collection entry after initial setup');
       const err = await this._populateBuildInfo('insert-new');
+      if (err && isUnauthorizedError(err)) {
+        // Servers started with --auth but without users the runner can use
+        // cannot be reached for bookkeeping; treat it as best-effort.
+        debug(
+          'cannot populate metadata collection entry, server requires authentication',
+          err,
+        );
+        return;
+      }
       if (err && !this.isMongos && !this.isConfigSvr && !this.isDSC) throw err;
     }
     if (!this.buildInfo) {
