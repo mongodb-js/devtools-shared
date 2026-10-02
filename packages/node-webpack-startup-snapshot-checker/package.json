@@ -50,7 +50,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^7.2.3"
   },
   "devDependencies": {
     "@mongodb-js/eslint-config-devtools": "^0.11.13",
@@ -61,7 +61,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/mocha": "^9.1.1",
     "@types/node": "^25.5.2",
-    "chai": "^4.5.0",
+    "chai": "^6.2.2",
     "cross-spawn": "^7.0.6",
     "depcheck": "^1.4.7",
     "eslint": "^7.25.0 || ^8.0.0",
