@@ -574,13 +574,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         },
       );
     } catch (err) {
-      // Don't leak the compose project if cluster setup fails partway through.
-      if (cluster.dockerComposeProject) {
-        try {
-          await cluster.dockerComposeProject.close();
-        } catch {
-          /* ignore */
-        }
+      // Don't leak servers or the compose project if cluster setup fails
+      // partway through.
+      try {
+        await cluster.close();
+      } catch {
+        /* ignore */
       }
       throw err;
     }

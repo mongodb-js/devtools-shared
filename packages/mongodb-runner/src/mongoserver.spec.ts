@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { MongoServer } from './mongoserver';
+import { MongoServerError } from 'mongodb';
 import type { MongoClient } from 'mongodb';
 import sinon from 'sinon';
 
-describe('MongoServer._ensureMatchingMetadataColl', function () {
+describe('MongoServer', function () {
   let server: MongoServer;
 
   beforeEach(function () {
@@ -76,5 +77,37 @@ describe('MongoServer._ensureMatchingMetadataColl', function () {
     await (server as any)._ensureMatchingMetadataColl(client, 'restore-check');
 
     expect(commandStub).to.have.been.calledOnce;
+  });
+
+  describe('assertHasInsertedLocalMetadata', function () {
+    it('does not throw when the server rejects the metadata write as unauthorized', async function () {
+      // Servers started with --auth but without users the runner can use cannot
+      // be reached for bookkeeping, which must not fail cluster startup.
+      sinon.stub(server, 'withClient').rejects(
+        new MongoServerError({
+          code: 13,
+          codeName: 'Unauthorized',
+          message:
+            'not authorized on local to execute command { find: "mongodbrunner" }',
+        }),
+      );
+
+      await server.assertHasInsertedLocalMetadata();
+    });
+
+    it('throws when the metadata population fails for any other reason', async function () {
+      sinon
+        .stub(server, 'withClient')
+        .rejects(new MongoServerError({ code: 6, message: 'host not found' }));
+
+      let err: Error | undefined;
+      try {
+        await server.assertHasInsertedLocalMetadata();
+      } catch (e) {
+        err = e as Error;
+      }
+
+      expect(err).to.be.an.instanceOf(MongoServerError);
+    });
   });
 });
