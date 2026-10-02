@@ -295,13 +295,14 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
       });
     });
 
-    it('unions member types across a tuple items form', function () {
+    it('unions member types across a closed tuple items form', function () {
       const result = convertMongoDBJSONSchemaToSimplified({
         bsonType: 'object',
         properties: {
           a: {
             bsonType: 'array',
             items: [{ bsonType: 'string' }, { bsonType: 'int' }],
+            additionalItems: false,
           },
         },
       });
@@ -315,6 +316,28 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
             },
           ],
         },
+      });
+    });
+
+    it('leaves members unconstrained for a tuple items form open to additional items', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          implicit: {
+            bsonType: 'array',
+            items: [{ bsonType: 'string' }, { bsonType: 'int' }],
+          },
+          explicit: {
+            bsonType: 'array',
+            items: [{ bsonType: 'string' }],
+            additionalItems: true,
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        implicit: { types: [{ bsonType: 'Array', types: [] }] },
+        explicit: { types: [{ bsonType: 'Array', types: [] }] },
       });
     });
 
@@ -539,6 +562,31 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
             },
           ],
         },
+      });
+    });
+
+    it('keeps array members unconstrained when any union branch leaves them so', function () {
+      const result = convertMongoDBJSONSchemaToSimplified({
+        bsonType: 'object',
+        properties: {
+          first: {
+            anyOf: [
+              { bsonType: 'array' },
+              { bsonType: 'array', items: { bsonType: 'string' } },
+            ],
+          },
+          last: {
+            anyOf: [
+              { bsonType: 'array', items: { bsonType: 'string' } },
+              { bsonType: 'array' },
+            ],
+          },
+        },
+      });
+
+      assert.deepEqual(result, {
+        first: { types: [{ bsonType: 'Array', types: [] }] },
+        last: { types: [{ bsonType: 'Array', types: [] }] },
       });
     });
 
@@ -1128,6 +1176,7 @@ describe('convertMongoDBJSONSchemaToSimplified', function () {
               badItems: {
                 bsonType: 'array',
                 items: [null, 'x', { bsonType: 'int' }],
+                additionalItems: false,
               },
               badProperties: { bsonType: 'object', properties: ['a'] },
             },

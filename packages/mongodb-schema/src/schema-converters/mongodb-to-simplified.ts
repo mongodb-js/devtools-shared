@@ -146,6 +146,13 @@ function mergeTypeInto(
   if (isDocumentType(existing) && isDocumentType(incoming)) {
     mergeFieldsInto(existing.fields, incoming.fields);
   } else if (isArrayType(existing) && isArrayType(incoming)) {
+    // An empty member list means unconstrained members, which absorbs any
+    // constrained branch in a union.
+    if (existing.types.length === 0) return;
+    if (incoming.types.length === 0) {
+      existing.types = [];
+      return;
+    }
     mergeTypesInto(existing.types, incoming.types);
   }
 }
@@ -343,9 +350,17 @@ function buildTypes(
   }
 
   if (bsonType === 'Array') {
-    // `additionalItems` only applies past a tuple `items` form, and only a
-    // schema adds member types; `true` or absence leaves them unconstrained,
-    // which is ignored here as it would make the tuple form uninformative.
+    // `additionalItems` only applies past a tuple `items` form, where it
+    // defaults to `true`: unless it is `false` or a schema, members past the
+    // tuple can be anything, and positions aren't representable here, so the
+    // whole member list is unconstrained.
+    if (
+      Array.isArray(schema.items) &&
+      schema.additionalItems !== false &&
+      !isSchema(schema.additionalItems)
+    ) {
+      return [{ bsonType, types: [] }];
+    }
     const memberSchemas = (
       Array.isArray(schema.items)
         ? [...schema.items, schema.additionalItems]

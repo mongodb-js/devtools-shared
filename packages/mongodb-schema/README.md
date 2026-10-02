@@ -211,7 +211,11 @@ intentionally lossy and never throws. Value-level constraints (`enum`, `minimum`
   as an array if it has `items`.
 - `bsonType: 'number'` (and `type: 'number'`) expands to `Int32`, `Long`, `Double` and
   `Decimal128`.
-- `additionalItems` adds member types only alongside a tuple-form `items`, as in JSON Schema.
+- `additionalItems` only applies alongside a tuple-form `items`, as in JSON Schema. Since it
+  defaults to permitting anything and the simplified schema can't record tuple positions, a
+  tuple's members are reported as unconstrained (an empty `types` list) unless
+  `additionalItems` is `false` or a schema. The same holds for a union in which any array
+  branch leaves its members unconstrained.
 - Fields encrypted with client-side field level encryption (`encrypt`) are reported as
   `Binary`, which is how they are stored.
 - A document with `$ref` and `$id` properties is reported as `DBRef`, as the driver

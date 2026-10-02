@@ -126,9 +126,7 @@ export type Schema = {
 // the raw `_bsontype`. `DBRef` is listed because it has no `TypeCastMap` entry;
 // `Number`, `RegExp` and `Symbol` are also reachable at runtime but absent here.
 export type SchemaBSONType =
-  | Exclude<keyof TypeCastMap, 'Object'>
-  | 'Document'
-  | 'DBRef';
+  Exclude<keyof TypeCastMap, 'Object'> | 'Document' | 'DBRef';
 
 type SchemaAnalysisBaseType = {
   name: string;
