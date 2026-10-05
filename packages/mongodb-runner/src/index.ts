@@ -32,6 +32,12 @@ export {
   type SLSMultiCellEnvironmentOptions,
 } from './sls';
 export {
+  parseEcrRegistry,
+  dockerLoginToEcr,
+  maybeLoginToEcr,
+  type EcrRegistry,
+} from './ecr';
+export {
   DockerComposeProject,
   type DockerComposeProjectOptions,
 } from './docker-compose';

@@ -94,6 +94,12 @@ import type { MongoClientOptions } from 'mongodb';
       describe:
         'SLS docker image tag to use with --slsCompose (e.g. the pinned_sls_commit from the server repo manifest)',
     })
+    .option('slsSkipEcrLogin', {
+      type: 'boolean',
+      default: false,
+      describe:
+        'Skip authenticating to the SLS image registry (use if you have already run docker login)',
+    })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
     .command('start', 'Start a MongoDB instance')
@@ -134,6 +140,7 @@ import type { MongoClientOptions } from 'mongodb';
       ? await utilities.createSLSDisaggregatedStorageOptions({
           composeFile: argv.slsCompose,
           imageTag: argv.slsImageTag!,
+          ecrLogin: !argv.slsSkipEcrLogin,
         })
       : undefined;
     if (disaggregatedStorage && 'sls' in disaggregatedStorage) {
