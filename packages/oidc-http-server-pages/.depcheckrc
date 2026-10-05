@@ -3,7 +3,5 @@ ignores:
  - '@mongodb-js/tsconfig-devtools'
  - '@types/chai'
  - 'sinon'
- # this is required due to the compass-components package
- - 'mongodb-query-parser'
 ignore-patterns:
  - 'dist'
