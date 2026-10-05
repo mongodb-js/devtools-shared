@@ -36,10 +36,7 @@ async function getWorkerScriptUrl(): Promise<string> {
       ? process.env?.TEST_WORKER_SCRIPT_URL
       : undefined;
   if (testWorkerScriptUrl) {
-    return new URL(
-      testWorkerScriptUrl,
-      import.meta.url,
-    ).toString();
+    return new URL(testWorkerScriptUrl, import.meta.url).toString();
   }
   if (isNodeEnv) {
     return new URL('./worker.mjs', import.meta.url).toString();
