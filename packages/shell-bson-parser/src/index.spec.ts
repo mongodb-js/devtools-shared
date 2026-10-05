@@ -17,7 +17,7 @@ import {
   restrictObjectPrototype,
   ALLOWED_GLOBALS,
   DISALLOWED_PROTOTYPE_PROPS,
-} from './worker.mjs';
+} from './worker.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
 const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
@@ -27,7 +27,7 @@ describe('shell-bson-parser with webworker processing', function () {
   const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
 
   before(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.mjs';
+    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
   });
 
   after(function () {
@@ -181,7 +181,7 @@ describe('shell-bson-parser with webworker processing', function () {
       path.dirname(fileURLToPath(import.meta.url)),
       '..',
       'dist',
-      'worker.mjs',
+      'worker.js',
     );
     const code = await fs.readFile(workerBundlePath, 'utf8');
 
