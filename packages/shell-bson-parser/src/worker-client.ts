@@ -51,7 +51,7 @@ async function createWorker(): Promise<Worker> {
   }
 
   const scriptUrl = await getWorkerScriptUrl();
-  worker = new WebWorker(scriptUrl);
+  worker = new WebWorker(scriptUrl, { type: 'module' });
   worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;
     const entry = pending.get(response.id);
