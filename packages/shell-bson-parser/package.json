@@ -36,7 +36,7 @@
     "prepublishOnly": "npm run compile",
     "compile": "tsc -p tsconfig.json && npm run bundle-worker && npm run bundle-cjs",
     "bundle-worker": "webpack --config webpack.worker.config.cjs",
-    "bundle-cjs": "webpack --config webpack.cjs.config.cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "bundle-cjs": "webpack --config webpack.cjs.config.cjs && node -e \"require('fs').writeFileSync('dist/cjs/package.json', JSON.stringify({type:'commonjs'})+'\\n')\"",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
