@@ -39,7 +39,7 @@ async function getWorkerScriptUrl(): Promise<string> {
     return new URL(testWorkerScriptUrl, import.meta.url).toString();
   }
   if (isNodeEnv) {
-    return new URL('./worker.mjs', import.meta.url).toString();
+    return new URL('./worker.js', import.meta.url).toString();
   }
 
   // On browser env we want to fetch and blob so that the worker
