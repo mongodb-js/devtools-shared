@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -55,7 +55,7 @@
     "@aws-sdk/client-s3": "^3.1137.0",
     "debug": "^4.4.0",
     "decompress": "^4.2.1",
-    "mongodb-download-url": "^2.0.0",
+    "mongodb-download-url": "^2.0.1",
     "node-fetch": "^2.7.0",
     "proper-lockfile": "^4.1.2",
     "tar": "^7.5.22"

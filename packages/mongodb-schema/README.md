@@ -163,6 +163,86 @@ A high-level view of the schema tree structure is as follows:
 
 ![](./docs/mongodb-schema_diagram.png)
 
+## Using a collection's schema validator
+
+If a collection has a [`$jsonSchema` validator][json-schema-validator] set on it, that
+validator already describes the collection's shape, so you can read it directly instead of
+sampling documents. How far the existing documents actually match it depends on the
+collection's `validationLevel` (see [below](#validation-levels)).
+`convertMongoDBJSONSchemaToSimplified` turns a `$jsonSchema` into the
+same simplified schema `getSimplifiedSchema` returns:
+
+```javascript
+const {
+  convertMongoDBJSONSchemaToSimplified,
+  getSimplifiedSchema,
+} = require('@mongodb-js/mongodb-schema');
+
+const [collInfo] = await database.listCollections({ name: 'data' }).toArray();
+const jsonSchema = collInfo?.options?.validator?.$jsonSchema;
+
+const schema = jsonSchema
+  ? convertMongoDBJSONSchemaToSimplified(jsonSchema)
+  : await getSimplifiedSchema(database.collection('data').find());
+```
+
+The function takes the `$jsonSchema` subdocument itself, not the enclosing `validator`
+document. A validator can combine `$jsonSchema` with other query operators, e.g.
+`{ $and: [{ $jsonSchema: {...} }, { status: { $in: [...] } }] }`; extracting it from those
+is left to the caller, as the example above does only for the top-level case. This is
+distinct from `anyOf`/`oneOf`/`allOf` _inside_ the `$jsonSchema`, which are handled (see
+below).
+
+A validator constrains documents rather than describing them, so the conversion is
+intentionally lossy and never throws. Value-level constraints (`enum`, `minimum`, `pattern`,
+`maxLength`, ...) are ignored, since the simplified schema records BSON types only, as are
+`patternProperties` and `additionalProperties`. Beyond that:
+
+- Keywords at the same level all apply, so the result is the types every one of them
+  permits. `anyOf` and `oneOf` contribute the union of their branches, intersected with the
+  schema's own types: `{ bsonType: ['null', 'int'], anyOf: [{ bsonType: 'string' }, { bsonType: 'int' }] }`
+  permits only `int`. `allOf` intersects its branches. Document fields and array members are
+  intersected the same way, and a field no value can satisfy is omitted. `oneOf` is treated
+  like `anyOf`, since exclusivity can't be expressed in the simplified schema.
+- A branch with no type of its own constrains the types of the schema it belongs to, so
+  `{ bsonType: 'object', oneOf: [{ properties: { a } }, { properties: { b } }] }` describes
+  one document with fields `a` and `b`. This applies at the root too.
+- A subschema with no `bsonType` or `type` is read as a document if it has `properties`, and
+  as an array if it has `items`.
+- `bsonType: 'number'` (and `type: 'number'`) expands to `Int32`, `Long`, `Double` and
+  `Decimal128`.
+- `additionalItems` only applies alongside a tuple-form `items`, as in JSON Schema. Since it
+  defaults to permitting anything and the simplified schema can't record tuple positions, a
+  tuple's members are reported as unconstrained (an empty `types` list) unless
+  `additionalItems` is `false` or a schema. The same holds for a union in which any array
+  branch leaves its members unconstrained.
+- Fields encrypted with client-side field level encryption (`encrypt`) are reported as
+  `Binary`, which is how they are stored.
+- A document with `$ref` and `$id` properties is reported as `DBRef`, as the driver
+  deserializes one. Unless the validator also lists both as `required`, it can still hold
+  plain documents, so it is reported as both `Document` and `DBRef`.
+- A field whose subschema says nothing about its type is omitted from the result.
+
+### Validation levels
+
+A validator only describes the documents it has actually been enforced on, and the
+collection's `validationLevel` and `validationAction` decide which ones those are:
+
+- `constraint` (MongoDB 9.0+): every document in the collection is guaranteed to match.
+  The server checks existing documents when the level is set, and rejects
+  `bypassDocumentValidation` writes.
+- `strict`: all inserts and updates are validated, but documents that were already in the
+  collection before the validator was set, or that were written with
+  `bypassDocumentValidation`, may not match.
+- `moderate`: updates to documents that don't already match are not validated, so
+  non-matching documents can stay that way.
+- `off`, or a `validationAction` of `warn`: nothing is enforced, and the validator may
+  describe the intended shape rather than the actual one.
+
+Even with `constraint`, a validator need not cover every field in the collection (most
+leave out `_id`, for example) unless it sets `additionalProperties: false`. Where
+completeness matters, prefer inferring the schema from documents.
+
 ## BSON Types
 
 `mongodb-schema` supports all [BSON types][bson-types].
@@ -348,6 +428,7 @@ npm test
 Apache 2.0
 
 [bson-types]: http://docs.mongodb.org/manual/reference/bson-types/
+[json-schema-validator]: https://www.mongodb.com/docs/manual/core/schema-validation/specify-json-schema/
 [tests]: https://github.com/mongodb-js/devtools-shared/tree/main/packages/mongodb-schema/test
 [npm_img]: https://img.shields.io/npm/v/@mongodb-js/mongodb-schema.svg
 [npm_url]: https://www.npmjs.org/package/@mongodb-js/mongodb-schema

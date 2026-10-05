@@ -14,7 +14,7 @@ import * as bson from 'bson';
 
 type TestType = NonNullable<typeof Operator._output.tests>[number];
 
-type SchemaBSONType = SimplifiedSchemaBaseType['bsonType'] | 'Long' | 'Number';
+type SchemaBSONType = SimplifiedSchemaBaseType['bsonType'] | 'Number';
 
 export class TestGenerator extends GeneratorBase {
   private schemaBsonTypeToTS(type: SchemaBSONType): string {
@@ -36,7 +36,6 @@ export class TestGenerator extends GeneratorBase {
       case 'Int32':
         return 'bson.Int32 | number';
       case 'Long':
-      case 'Int64':
         return 'bson.Long';
       case 'MaxKey':
         return 'bson.MaxKey';
@@ -44,6 +43,8 @@ export class TestGenerator extends GeneratorBase {
         return 'bson.MinKey';
       case 'Null':
         return 'null';
+      case 'DBRef':
+        return 'bson.DBRef';
       case 'ObjectId':
         return 'bson.ObjectId';
       case 'BSONRegExp':
