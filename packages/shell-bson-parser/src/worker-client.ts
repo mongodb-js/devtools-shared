@@ -31,14 +31,18 @@ const isNodeEnv =
   !!process.versions?.node;
 
 async function getWorkerScriptUrl(): Promise<string> {
-  if (process.env.TEST_WORKER_SCRIPT_URL) {
+  const testWorkerScriptUrl =
+    typeof process !== 'undefined'
+      ? process.env?.TEST_WORKER_SCRIPT_URL
+      : undefined;
+  if (testWorkerScriptUrl) {
     return new URL(
-      process.env.TEST_WORKER_SCRIPT_URL,
+      testWorkerScriptUrl,
       import.meta.url,
     ).toString();
   }
   if (isNodeEnv) {
-    return new URL('./worker.js', import.meta.url).toString();
+    return new URL('./worker.mjs', import.meta.url).toString();
   }
 
   // On browser env we want to fetch and blob so that the worker

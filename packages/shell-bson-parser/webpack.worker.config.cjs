@@ -4,10 +4,10 @@ const path = require('path');
 module.exports = {
   mode: 'production',
   target: 'webworker',
-  entry: path.resolve(__dirname, 'dist', 'worker.js'),
+  entry: path.resolve(__dirname, 'dist', 'worker.mjs'),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'worker.js',
+    filename: 'worker.mjs',
   },
   module: {
     parser: {

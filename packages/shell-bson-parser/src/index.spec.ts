@@ -13,7 +13,7 @@ import {
   restrictObjectPrototype,
   ALLOWED_GLOBALS,
   DISALLOWED_PROTOTYPE_PROPS,
-} from './worker.js';
+} from './worker.mjs';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
 const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
@@ -23,7 +23,7 @@ describe('shell-bson-parser with webworker processing', function () {
   const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
 
   before(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
+    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.mjs';
   });
 
   after(function () {
@@ -52,6 +52,16 @@ describe('shell-bson-parser with webworker processing', function () {
         expect(res).to.deep.equal(expected);
       });
     }
+
+    it('keeps the error type of a failed parse', async function () {
+      try {
+        await api.parse('{ a: }');
+        expect.fail('Expected parse to throw');
+      } catch (err) {
+        expect(err).to.be.instanceOf(SyntaxError);
+        expect((err as Error).name).to.equal('SyntaxError');
+      }
+    });
   });
 
   describe('restrictGlobalScope', function () {
@@ -167,7 +177,7 @@ describe('shell-bson-parser with webworker processing', function () {
       path.dirname(fileURLToPath(import.meta.url)),
       '..',
       'dist',
-      'worker.js',
+      'worker.mjs',
     );
     const code = await fs.readFile(workerBundlePath, 'utf8');
 
