@@ -29,6 +29,12 @@ export interface DockerComposeProjectOptions {
    * the project is torn down, and are unaffected by Docker log rotation.
    */
   logDir?: string;
+  /**
+   * Called immediately before `docker compose up` runs, after the project name
+   * is resolved. Use this to release resources that would otherwise prevent the
+   * containers from binding (e.g. reserved host ports).
+   */
+  beforeUp?: () => Promise<void> | void;
 }
 
 function dockerComposeArgs(
@@ -138,6 +144,9 @@ export class DockerComposeProject {
       options.env?.COMPOSE_PROJECT_NAME ??
       `mongodb-runner-${uuid()}`;
     debug('starting docker compose project', { composeFile, projectName });
+    if (options.beforeUp) {
+      await options.beforeUp();
+    }
     const { code, stderr } = await runDockerCompose(
       composeFile,
       projectName,

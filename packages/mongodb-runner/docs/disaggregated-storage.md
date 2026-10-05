@@ -163,6 +163,12 @@ const cluster = await MongoCluster.start({
     // COMPOSE_PROJECT_NAME for a predictable project/container naming scheme.
     env: { ...sls.env, COMPOSE_PROJECT_NAME: 'my-sls-project' },
 
+    // The environment helper reserves the host ports it allocates; release
+    // them immediately before `docker compose up` so the containers can bind
+    // them. Callers that never start compose must call `sls.releasePorts()`
+    // themselves once the environment is no longer needed.
+    beforeComposeUp: () => sls.releasePorts(),
+
     // Called once after `docker compose up`. Poll until the storage layer
     // actually serves traffic; with the SLS compose file, waiting for
     // the /ready file in the testdriver container is the canonical check.
@@ -202,12 +208,13 @@ await cluster.close(); // also tears down the compose project
 `createSLSMultiCellEnvironment(options)` mirrors the `SLSMultiCellFixture`
 from the server codebase and returns:
 
-| Field         | Description                                                                                              |
-| ------------- | -------------------------------------------------------------------------------------------------------- |
-| `composeFile` | Path to the compose file in use                                                                          |
-| `env`         | All environment variables the compose file expects (`SLS_IMAGE_REPO`, `SLS_IMAGE_TAG`, `*_PORT` vars, …) |
-| `ports`       | The allocated host port per service, e.g. `ports['crs-cell1-0']`                                         |
-| `services`    | Host `addr`/`uri` per service, e.g. `services['cms-cell1-0'].uri`                                        |
+| Field            | Description                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `composeFile`    | Path to the compose file in use                                                                                                                                                                |
+| `env`            | All environment variables the compose file expects (`SLS_IMAGE_REPO`, `SLS_IMAGE_TAG`, `*_PORT` vars, …)                                                                                       |
+| `ports`          | The allocated host port per service, e.g. `ports['crs-cell1-0']`                                                                                                                               |
+| `services`       | Host `addr`/`uri` per service, e.g. `services['cms-cell1-0'].uri`                                                                                                                              |
+| `releasePorts()` | Releases the reserved host ports. Must be called immediately before `docker compose up` (e.g. via `beforeComposeUp`), or once the environment is no longer needed if compose is never started. |
 
 Required options: `composeFile`, `imageTag`. Optional: `imageRepo`,
 `thirdPartyImageRepo`, `testDataId` (container label for test attribution),

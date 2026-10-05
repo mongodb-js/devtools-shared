@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
-import { debug, allocatePort, sleep, uuid } from './util';
+import { debug, allocatePorts, sleep, uuid } from './util';
 import type {
   DisaggregatedStorageOptions,
   ShardDescriptor,
@@ -118,6 +118,12 @@ export interface SLSMultiCellEnvironment {
   ports: Record<string, number>;
   /** Host address and URI for each service, keyed by service name. */
   services: Record<string, { addr: string; uri: string }>;
+  /**
+   * Release the port reservations held while building this environment. Must be
+   * called once the environment is fully built and immediately before the
+   * compose project starts, so its containers can bind the ports.
+   */
+  releasePorts(): Promise<void>;
 }
 
 /**
@@ -158,9 +164,19 @@ export async function createSLSMultiCellEnvironment(
 
   const services: Record<string, { addr: string; uri: string }> =
     Object.create(null);
-  for (const [serviceName, infos] of Object.entries(serviceInfo)) {
+  // Allocate every host port for the run at once and hold the reservations
+  // until the compose project starts. Allocating one-at-a-time (and releasing
+  // each before the next request) lets the kernel hand the same ephemeral port
+  // to two services, which then makes `docker compose up` fail with "port is
+  // already allocated".
+  const serviceEntries = Object.entries(serviceInfo);
+  const allocation = await allocatePorts(
+    serviceEntries.reduce((sum, [, infos]) => sum + infos.length, 0),
+  );
+  let portIndex = 0;
+  for (const [serviceName, infos] of serviceEntries) {
     for (const [i, info] of infos.entries()) {
-      const port = await allocatePort();
+      const port = allocation.ports[portIndex++];
       env[info.portVar] = String(port);
       // The first host-exposed port is the service's main address.
       if (i === 0) {
@@ -172,7 +188,13 @@ export async function createSLSMultiCellEnvironment(
   }
 
   debug('created SLS multi-cell environment', { composeFile, ports });
-  return { composeFile, env, ports, services };
+  return {
+    composeFile,
+    env,
+    ports,
+    services,
+    releasePorts: () => allocation.release(),
+  };
 }
 
 export interface SLSDisaggregatedStorageConfigOptions {
@@ -298,6 +320,20 @@ export async function createSLSDisaggregatedStorageOptions(
   options: SLSDisaggregatedStorageSetupOptions,
 ): Promise<DisaggregatedStorageOptions & { sls: SLSMultiCellEnvironment }> {
   const sls = await createSLSMultiCellEnvironment(options);
+  try {
+    return await buildSLSDisaggregatedStorageOptions(sls, options);
+  } catch (err) {
+    // The ports were reserved while building the environment; don't leak the
+    // reservations if setup fails before the caller can release them.
+    await sls.releasePorts();
+    throw err;
+  }
+}
+
+async function buildSLSDisaggregatedStorageOptions(
+  sls: SLSMultiCellEnvironment,
+  options: SLSDisaggregatedStorageSetupOptions,
+): Promise<DisaggregatedStorageOptions & { sls: SLSMultiCellEnvironment }> {
   const projectName = options.projectName ?? `mongodb-runner-sls-${uuid()}`;
   const testdriverContainer = `${projectName}-testdriver-1`;
   const firstLogId = options.firstLogId ?? 1;
@@ -326,6 +362,9 @@ export async function createSLSDisaggregatedStorageOptions(
     sls,
     composeFile: sls.composeFile,
     env: { ...sls.env, COMPOSE_PROJECT_NAME: projectName },
+    // The ports were reserved while the environment was built; release them
+    // right before compose starts so the containers can bind them.
+    beforeComposeUp: () => sls.releasePorts(),
     waitForReady: async () => {
       const timeoutSecs = options.readyTimeoutSecs ?? 300;
       const deadline = Date.now() + timeoutSecs * 1000;

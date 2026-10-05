@@ -4,7 +4,7 @@ import createDebug from 'debug';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import { once } from 'events';
 import { createServer } from 'net';
-import type { AddressInfo } from 'net';
+import type { AddressInfo, Server } from 'net';
 
 export const debug = createDebug('mongodb-runner');
 export const debugVerbose = debug.extend('verbose');
@@ -73,6 +73,56 @@ export async function allocatePort(): Promise<number> {
   const { port } = server.address() as AddressInfo;
   await new Promise((resolve) => server.close(resolve));
   return port;
+}
+
+function closeServer(server: Server): Promise<void> {
+  return new Promise((resolve) => server.close(() => resolve()));
+}
+
+export interface PortAllocation {
+  /** The allocated ports. Distinct for as long as the allocation is held. */
+  ports: number[];
+  /**
+   * Release the reservations. Call this as late as possible — immediately
+   * before the ports are actually bound — to minimize the window in which
+   * another process on the host could take one.
+   */
+  release(): Promise<void>;
+}
+
+/**
+ * Allocate `count` distinct, currently-free TCP ports on 127.0.0.1.
+ *
+ * Unlike `allocatePort`, the ports are reserved: the underlying sockets are
+ * held open until `release()` is called, so the kernel will not hand any of
+ * them to a concurrent caller. This avoids the check-then-release race in
+ * `allocatePort`, where two sequential calls can be given the same port.
+ */
+export async function allocatePorts(count: number): Promise<PortAllocation> {
+  const servers: Server[] = [];
+  try {
+    await Promise.all(
+      range(count).map(async () => {
+        // Reject any connection immediately: the socket exists only to reserve
+        // the port, and a lingering connection would make `close()` hang.
+        const server = createServer((socket) => socket.destroy());
+        servers.push(server);
+        server.listen(0, '127.0.0.1');
+        await once(server, 'listening');
+        // A reservation that is never released must not keep the process alive.
+        server.unref();
+      }),
+    );
+  } catch (err) {
+    await Promise.all(servers.map((server) => closeServer(server)));
+    throw err;
+  }
+  return {
+    ports: servers.map((server) => (server.address() as AddressInfo).port),
+    release: async () => {
+      await Promise.all(servers.map((server) => closeServer(server)));
+    },
+  };
 }
 
 export function pick<T extends object, K extends keyof T>(

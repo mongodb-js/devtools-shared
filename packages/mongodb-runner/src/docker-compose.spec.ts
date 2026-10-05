@@ -125,6 +125,24 @@ describe('docker-compose', function () {
       expect(invocations).to.not.include('logs');
     });
 
+    it('runs beforeUp before docker compose up', async function () {
+      let dockerInvoked = true;
+      const project = await DockerComposeProject.start('compose.yml', {
+        projectName: 'before-up-proj',
+        beforeUp: async () => {
+          dockerInvoked = await fs.access(dockerArgsLog).then(
+            () => true,
+            () => false,
+          );
+        },
+      });
+      await project.close();
+      expect(dockerInvoked).to.equal(
+        false,
+        'docker should not be invoked before beforeUp runs',
+      );
+    });
+
     it('treats an empty-string logDir as disabled', async function () {
       const project = await DockerComposeProject.start('compose.yml', {
         projectName: 'empty-logdir-proj',
