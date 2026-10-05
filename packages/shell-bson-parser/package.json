@@ -27,13 +27,16 @@
   "types": "./dist/index.d.ts",
   "exports": {
     "types": "./dist/index.d.ts",
+    "require": "./dist/cjs/index.js",
+    "import": "./dist/index.js",
     "default": "./dist/index.js"
   },
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && npm run bundle-worker",
+    "compile": "tsc -p tsconfig.json && npm run bundle-worker && npm run bundle-cjs",
     "bundle-worker": "webpack --config webpack.worker.config.cjs",
+    "bundle-cjs": "webpack --config webpack.cjs.config.cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint",
     "prettier": "prettier",
