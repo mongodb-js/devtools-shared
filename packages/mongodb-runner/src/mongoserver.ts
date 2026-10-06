@@ -250,11 +250,13 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
     srv.isDSC = !!options.args?.includes('disaggregatedStorageEnabled=true');
-    srv.isAuth = !!options.args?.includes('--auth');
+    const keyFilePath = getKeyFileOption(options.args);
+    // A keyfile implicitly enables authentication, same as --auth.
+    srv.isAuth =
+      !!options.args?.includes('--auth') || keyFilePath !== undefined;
     if (options.host && !srv.isConfigSvr) {
       srv.host = options.host;
     }
-    const keyFilePath = getKeyFileOption(options.args);
     if (keyFilePath) {
       srv.keyFileContents = await fs.readFile(keyFilePath, 'utf8');
       debug('read keyFile contents for server', {
