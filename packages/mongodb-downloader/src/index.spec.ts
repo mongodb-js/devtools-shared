@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { Readable } from 'stream';
 import sinon from 'sinon';
+import { S3Client } from '@aws-sdk/client-s3';
 import { MongoDBDownloader } from '.';
 
 describe('MongoDBDownloader', function () {
@@ -385,5 +387,142 @@ describe('MongoDBDownloader', function () {
         );
       });
     }
+  });
+
+  describe('s3 downloads', function () {
+    const s3Url =
+      's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2204-latest.tgz';
+    const awsEnvKeys = [
+      'AWS_REGION',
+      'AWS_DEFAULT_REGION',
+      'AWS_ACCESS_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_SESSION_TOKEN',
+      'AWS_EC2_METADATA_DISABLED',
+      'AWS_SHARED_CREDENTIALS_FILE',
+      'AWS_CONFIG_FILE',
+      'AWS_PROFILE',
+      'AWS_DEFAULT_PROFILE',
+    ] as const;
+    let savedEnv: Record<string, string | undefined>;
+
+    type OpenDownloadStream = (url: string) => Promise<{
+      body: Readable;
+      totalBytes: number | null;
+    }>;
+
+    function openDownloadStream(url: string): Promise<{
+      body: Readable;
+      totalBytes: number | null;
+    }> {
+      return (
+        testDownloader as unknown as {
+          openDownloadStream: OpenDownloadStream;
+        }
+      ).openDownloadStream(url);
+    }
+
+    async function captureError(
+      promise: Promise<unknown>,
+    ): Promise<Error | undefined> {
+      try {
+        await promise;
+      } catch (err) {
+        return err as Error;
+      }
+      return undefined;
+    }
+
+    function disableLocalAwsConfig(): void {
+      process.env.AWS_EC2_METADATA_DISABLED = 'true';
+      process.env.AWS_SHARED_CREDENTIALS_FILE = path.join(
+        directory,
+        'missing-credentials',
+      );
+      process.env.AWS_CONFIG_FILE = path.join(directory, 'missing-config');
+    }
+
+    beforeEach(function () {
+      savedEnv = {};
+      for (const key of awsEnvKeys) {
+        savedEnv[key] = process.env[key];
+        delete process.env[key];
+      }
+    });
+
+    afterEach(function () {
+      for (const key of awsEnvKeys) {
+        const value = savedEnv[key];
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+    });
+
+    it('fails with an actionable message when credentials are absent', async function () {
+      process.env.AWS_REGION = 'us-east-1';
+      disableLocalAwsConfig();
+
+      const error = await captureError(openDownloadStream(s3Url));
+
+      expect(error?.message).to.match(/credentials/i);
+      expect(error?.message).to.match(/access/i);
+    });
+
+    it('fails with an actionable message when the region is absent', async function () {
+      process.env.AWS_ACCESS_KEY_ID = 'access-key-id';
+      process.env.AWS_SECRET_ACCESS_KEY = 'secret-access-key';
+      disableLocalAwsConfig();
+
+      const error = await captureError(openDownloadStream(s3Url));
+
+      expect(error?.message).to.match(/region/i);
+    });
+
+    it('propagates non-credential errors unchanged', async function () {
+      const accessDenied = new Error('Access Denied');
+      accessDenied.name = 'AccessDenied';
+      const sendStub = sinon.stub(
+        S3Client.prototype,
+        'send',
+      ) as sinon.SinonStub;
+      sendStub.rejects(accessDenied);
+
+      try {
+        const error = await captureError(openDownloadStream(s3Url));
+
+        expect(error).to.equal(accessDenied);
+      } finally {
+        sendStub.restore();
+      }
+    });
+
+    it('downloads using the bucket and key from the s3 URL', async function () {
+      const body = Readable.from('tarball');
+      const sendStub = sinon.stub(
+        S3Client.prototype,
+        'send',
+      ) as sinon.SinonStub;
+      sendStub.resolves({ Body: body, ContentLength: 7 });
+
+      try {
+        const result = await openDownloadStream(s3Url);
+
+        expect(sendStub).to.have.been.calledOnce;
+        const command = sendStub.firstCall.args[0] as {
+          input: { Bucket: string; Key: string };
+        };
+        expect(command.input.Bucket).to.equal('origin-mongodb-server-latest');
+        expect(command.input.Key).to.equal(
+          'server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2204-latest.tgz',
+        );
+        expect(result.body).to.equal(body);
+        expect(result.totalBytes).to.equal(7);
+      } finally {
+        sendStub.restore();
+      }
+    });
   });
 });

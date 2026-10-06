@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { MongoServer } from './mongoserver';
+import { MongoServerError } from 'mongodb';
 import type { MongoClient } from 'mongodb';
 import sinon from 'sinon';
 
-describe('MongoServer._ensureMatchingMetadataColl', function () {
+describe('MongoServer', function () {
   let server: MongoServer;
 
   beforeEach(function () {
@@ -76,5 +77,83 @@ describe('MongoServer._ensureMatchingMetadataColl', function () {
     await (server as any)._ensureMatchingMetadataColl(client, 'restore-check');
 
     expect(commandStub).to.have.been.calledOnce;
+  });
+
+  describe('assertHasInsertedLocalMetadata', function () {
+    it('does not throw when a server started with --auth rejects the metadata write as unauthorized', async function () {
+      // Servers started with --auth but without users the runner can use cannot
+      // be reached for bookkeeping, which must not fail cluster startup.
+      server.isAuth = true;
+      sinon.stub(server, 'withClient').rejects(
+        new MongoServerError({
+          code: 13,
+          codeName: 'Unauthorized',
+          message:
+            'not authorized on local to execute command { find: "mongodbrunner" }',
+        }),
+      );
+
+      await server.assertHasInsertedLocalMetadata();
+    });
+
+    it('throws on an unauthorized metadata write when the server was not started with --auth', async function () {
+      // Without --auth, an Unauthorized response means we cannot confirm we are
+      // talking to the instance we intended to, so it must remain fatal.
+      sinon.stub(server, 'withClient').rejects(
+        new MongoServerError({
+          code: 13,
+          codeName: 'Unauthorized',
+          message:
+            'not authorized on local to execute command { find: "mongodbrunner" }',
+        }),
+      );
+
+      let err: Error | undefined;
+      try {
+        await server.assertHasInsertedLocalMetadata();
+      } catch (e) {
+        err = e as Error;
+      }
+
+      expect(err).to.be.an.instanceOf(MongoServerError);
+    });
+
+    it('throws on an unauthorized metadata write for a mongos that was not started with --auth', async function () {
+      // mongos/configsvr/DSC normally tolerate populate errors, but an auth
+      // rejection is still fatal when the server was not started with --auth.
+      server.isMongos = true;
+      sinon.stub(server, 'withClient').rejects(
+        new MongoServerError({
+          code: 13,
+          codeName: 'Unauthorized',
+          message:
+            'not authorized on local to execute command { find: "mongodbrunner" }',
+        }),
+      );
+
+      let err: Error | undefined;
+      try {
+        await server.assertHasInsertedLocalMetadata();
+      } catch (e) {
+        err = e as Error;
+      }
+
+      expect(err).to.be.an.instanceOf(MongoServerError);
+    });
+
+    it('throws when the metadata population fails for any other reason', async function () {
+      sinon
+        .stub(server, 'withClient')
+        .rejects(new MongoServerError({ code: 6, message: 'host not found' }));
+
+      let err: Error | undefined;
+      try {
+        await server.assertHasInsertedLocalMetadata();
+      } catch (e) {
+        err = e as Error;
+      }
+
+      expect(err).to.be.an.instanceOf(MongoServerError);
+    });
   });
 });

@@ -10,7 +10,7 @@ import {
 } from './mongologreader';
 import { Readable } from 'stream';
 import type { Document, MongoClientOptions } from 'mongodb';
-import { MongoClient } from 'mongodb';
+import { MongoClient, MongoServerError } from 'mongodb';
 import path from 'path';
 import { EventEmitter, once } from 'events';
 import {
@@ -82,6 +82,7 @@ interface SerializedServerProperties {
   isMongos?: boolean;
   isConfigSvr?: boolean;
   isDSC?: boolean;
+  isAuth?: boolean;
   keyFileContents?: string;
 }
 
@@ -97,6 +98,13 @@ function getKeyFileOption(args?: string[] | undefined): string | undefined {
   }
   const arg = args.find((a) => a.startsWith('--keyFile='));
   return arg?.split('=')[1];
+}
+
+function isUnauthorizedError(err: unknown): boolean {
+  return (
+    err instanceof MongoServerError &&
+    (err.codeName === 'Unauthorized' || Number(err.code) === 13)
+  );
 }
 
 export class MongoServer extends EventEmitter<MongoServerEvents> {
@@ -116,6 +124,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   // Whether this server uses DSC. DSC servers do not
   // allow writes to the `local` database, so metadata tracking is skipped.
   private isDSC = false;
+  // Whether this server was started with --auth. Its metadata bookkeeping is
+  // best-effort because the runner may not have credentials it can use.
+  public isAuth = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
 
@@ -142,6 +153,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       isMongos: this.isMongos,
       isConfigSvr: this.isConfigSvr,
       isDSC: this.isDSC,
+      isAuth: this.isAuth,
       keyFileContents: this.keyFileContents,
     };
   }
@@ -163,6 +175,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isArbiter = !!serialized.isArbiter;
     srv.isMongos = !!serialized.isMongos;
     srv.isConfigSvr = !!serialized.isConfigSvr;
+    srv.isAuth = !!serialized.isAuth;
     srv.keyFileContents = serialized.keyFileContents;
     if (!srv.closing) {
       srv.pid = serialized.pid;
@@ -237,10 +250,13 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isMongos = options.binary === 'mongos';
     srv.isConfigSvr = !!options.args?.includes('--configsvr');
     srv.isDSC = !!options.args?.includes('disaggregatedStorageEnabled=true');
+    const keyFilePath = getKeyFileOption(options.args);
+    // A keyfile implicitly enables authentication, same as --auth.
+    srv.isAuth =
+      !!options.args?.includes('--auth') || keyFilePath !== undefined;
     if (options.host && !srv.isConfigSvr) {
       srv.host = options.host;
     }
-    const keyFilePath = getKeyFileOption(options.args);
     if (keyFilePath) {
       srv.keyFileContents = await fs.readFile(keyFilePath, 'utf8');
       debug('read keyFile contents for server', {
@@ -629,6 +645,20 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     if (!this.hasInsertedMetadataCollEntry) {
       debug('populating metadata collection entry after initial setup');
       const err = await this._populateBuildInfo('insert-new');
+      if (err && isUnauthorizedError(err)) {
+        if (!this.isAuth) {
+          // Without --auth, an Unauthorized response means we cannot tell
+          // whether this is the instance we intended to talk to, so it stays
+          // fatal regardless of topology.
+          throw err;
+        }
+        // --auth servers may not have users the runner can use for bookkeeping.
+        debug(
+          'cannot populate metadata collection entry, server requires authentication',
+          err,
+        );
+        return;
+      }
       if (err && !this.isMongos && !this.isConfigSvr && !this.isDSC) throw err;
     }
     if (!this.buildInfo) {

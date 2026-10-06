@@ -21,6 +21,10 @@ async function verify(
     assert.strictEqual(res.url, expectedURL);
   }
 
+  if (res.url.startsWith('s3://')) {
+    return;
+  }
+
   const response = await fetch(res.url, { method: 'HEAD' });
   if (!response.ok) {
     throw new Error(`Failed to get url: ${res.url}: ${response.statusText}`);
@@ -223,9 +227,10 @@ describe('mongodb-download-url', function () {
     describe('ubuntu 20.04', function () {
       withFakeDistro('ubuntu2004');
 
-      it('should resolve * with ubuntu-specific url', async function () {
+      // MongoDB 9.0 dropped support for Ubuntu 20.04, so 8.x is the latest available
+      it('should resolve 8.x with ubuntu-specific url', async function () {
         const query = {
-          version: '*',
+          version: '8.x',
           platform: 'linux',
         };
 
@@ -282,6 +287,32 @@ describe('mongodb-download-url', function () {
         await verify(
           query,
           'https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2004-6.2.0.tgz',
+        );
+      });
+    });
+
+    describe('ubuntu 24.04', function () {
+      withFakeDistro('ubuntu2404');
+
+      it('should resolve * with ubuntu-specific url', async function () {
+        const query = {
+          version: '*',
+          platform: 'linux',
+        };
+
+        await verify(query, kUnknownUrl);
+      });
+
+      it('should resolve 9.0.2 with ubuntu-specific url', async function () {
+        const query = {
+          version: '9.0.2',
+          platform: 'linux',
+          bits: 64,
+        } as const;
+
+        await verify(
+          query,
+          'https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2404-9.0.2.tgz',
         );
       });
     });
@@ -893,7 +924,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        'https://downloads.mongodb.com/osx/mongodb-macos-arm64-enterprise-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-arm64-enterprise.tgz',
       );
     });
 
@@ -906,7 +937,7 @@ describe('mongodb-download-url', function () {
       };
       await verify(
         query,
-        'https://downloads.mongodb.com/osx/mongodb-macos-x86_64-enterprise-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64-enterprise.tgz',
       );
     });
 
@@ -919,7 +950,7 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/windows/mongodb-windows-x86_64-enterprise-latest.zip',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64-enterprise.zip',
       );
     });
 
@@ -933,7 +964,71 @@ describe('mongodb-download-url', function () {
       } as const;
       await verify(
         query,
-        'https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu2004-latest.tgz',
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2004.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` community for macos x64', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'macos',
+        arch: 'x64',
+      };
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-macos-x86_64.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` community for windows', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'windows',
+        bits: 64,
+      } as const;
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-windows-x86_64.zip',
+      );
+    });
+
+    it('should resolve `latest-alpha` community for linux', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'linux',
+        distro: 'ubuntu2004',
+        bits: 64,
+      } as const;
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-ubuntu2004.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` for linux amazon2023', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'linux',
+        distro: 'amazon2023',
+        enterprise: true,
+        bits: 64,
+      } as const;
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-amazon2023.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` community for linux amazon2023', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'linux',
+        distro: 'amazon2023',
+        bits: 64,
+      } as const;
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-amazon2023.tgz',
       );
     });
   });

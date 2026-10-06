@@ -8,6 +8,9 @@ import { inspect } from 'util';
 import _debug from 'debug';
 const debug = _debug('mongodb-download-url');
 
+const LATEST_ALPHA_S3_PREFIX =
+  's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/';
+
 type PriorityValue<T> = { value: T; priority: number };
 
 type ArtifactOptions = {
@@ -195,27 +198,31 @@ async function parseTarget(
 
 async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
   let download: DownloadInfo | undefined;
-  if (opts.version === 'latest-alpha' && opts.enterprise) {
+  if (opts.version === 'latest-alpha') {
     const targets = opts.target.map(({ value }) => value);
-    const arch = opts.arch.includes('arm64') ? 'arm64' : 'x86_64';
-    let url, target: string | undefined;
+    const isArm64 = opts.arch.includes('arm64');
+    const edition = opts.enterprise ? '-enterprise' : '';
+    let artifact: string | undefined;
+    let target: string | undefined;
     if (targets.includes('macos')) {
-      url = `https://downloads.mongodb.com/osx/mongodb-macos-${arch}-enterprise-latest.tgz`;
+      artifact = `mongodb-macos-${isArm64 ? 'arm64' : 'x86_64'}${edition}.tgz`;
       target = 'macos';
     } else if (targets.includes('linux_x86_64')) {
       target = maximizer(opts.target, (candidate) => candidate.priority)!.value;
-      url = `https://downloads.mongodb.com/linux/mongodb-linux-${arch}-enterprise-${target}-latest.tgz`;
+      artifact = `mongodb-linux-${
+        isArm64 ? 'aarch64' : 'x86_64'
+      }${edition}-${target}.tgz`;
     } else if (targets.includes('windows_x86_64')) {
       target = 'windows';
-      url = `https://downloads.mongodb.com/windows/mongodb-windows-${arch}-enterprise-latest.zip`;
+      artifact = `mongodb-windows-x86_64${edition}.zip`;
     }
-    if (url) {
+    if (artifact) {
       download = {
         target,
-        edition: 'enterprise',
+        edition: opts.enterprise ? 'enterprise' : 'targeted',
         arch: 'x86_64',
         archive: {
-          url,
+          url: `${LATEST_ALPHA_S3_PREFIX}${artifact}`,
           sha1: '',
           sha256: '',
           debug_symbols: '',

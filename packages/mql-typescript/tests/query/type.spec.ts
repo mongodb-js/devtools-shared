@@ -13,12 +13,7 @@ function test0() {
     _id: bson.Int32 | number;
     address: string;
     zipCode:
-      | string
-      | bson.Int32
-      | number
-      | bson.Double
-      | number
-      | Array<string>;
+      string | bson.Int32 | number | bson.Double | number | Array<string>;
   };
 
   const aggregation: schema.Pipeline<addressBook> = [
@@ -84,12 +79,7 @@ function test3() {
     _id: bson.Int32 | number;
     address: string;
     zipCode:
-      | string
-      | bson.Int32
-      | number
-      | bson.Double
-      | number
-      | Array<string>;
+      string | bson.Int32 | number | bson.Double | number | Array<string>;
   };
 
   const aggregation: schema.Pipeline<addressBook> = [

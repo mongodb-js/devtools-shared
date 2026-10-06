@@ -6,7 +6,8 @@ import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
 import decompress from 'decompress';
-import { pipeline, Transform } from 'stream';
+import { pipeline, Transform, type Readable } from 'stream';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import getDownloadURL from 'mongodb-download-url';
 import type {
   Options as DownloadOptions,
@@ -18,6 +19,11 @@ import { withLock } from './with-lock';
 const debug = createDebug('mongodb-downloader');
 
 const BYTES_PER_MB = 1024 * 1024;
+
+type DownloadStream = {
+  body: Readable;
+  totalBytes: number | null;
+};
 
 export type { DownloadOptions };
 
@@ -178,15 +184,7 @@ export class MongoDBDownloader {
     bindir: string;
     url: string;
   }): Promise<void> {
-    const response = await fetch(url, {
-      highWaterMark: MongoDBDownloader.HWM,
-    } as Parameters<typeof fetch>[1]);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to download ${url}: ${response.status} ${response.statusText}`,
-      );
-    }
-    const totalBytes = +(response.headers.get('content-length') ?? '');
+    const { body, totalBytes } = await this.openDownloadStream(url);
     const totalMB = totalBytes ? (totalBytes / BYTES_PER_MB).toFixed(1) : null;
     debug(`Download started`, { url, totalMB });
     let downloadedBytes = 0;
@@ -208,7 +206,7 @@ export class MongoDBDownloader {
       // the server's tarballs can contain hard links, which the (unmaintained?)
       // `download` package is unable to handle (https://github.com/kevva/decompress/issues/93)
       await promisify(pipeline)(
-        response.body,
+        body,
         progress,
         tar.x({ cwd: downloadTarget, strip: isCryptLibrary ? 0 : 1 }),
       );
@@ -218,7 +216,7 @@ export class MongoDBDownloader {
         path.basename(new URL(url).pathname),
       );
       await promisify(pipeline)(
-        response.body,
+        body,
         progress,
         createWriteStream(filename, { highWaterMark: MongoDBDownloader.HWM }),
       );
@@ -248,6 +246,50 @@ export class MongoDBDownloader {
         });
       }
       throw err;
+    }
+  }
+
+  private async openDownloadStream(url: string): Promise<DownloadStream> {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 's3:'
+      ? await this.openS3DownloadStream(parsedUrl)
+      : await this.openHttpDownloadStream(url);
+  }
+
+  private async openHttpDownloadStream(url: string): Promise<DownloadStream> {
+    const response = await fetch(url, {
+      highWaterMark: MongoDBDownloader.HWM,
+    } as Parameters<typeof fetch>[1]);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download ${url}: ${response.status} ${response.statusText}`,
+      );
+    }
+    const contentLength = response.headers.get('content-length');
+    return {
+      body: response.body as Readable,
+      totalBytes: contentLength ? +contentLength : null,
+    };
+  }
+
+  private async openS3DownloadStream(url: URL): Promise<DownloadStream> {
+    const client = new S3Client({});
+    try {
+      const response = await client.send(
+        new GetObjectCommand({
+          Bucket: url.hostname,
+          Key: decodeURIComponent(url.pathname.replace(/^\//, '')),
+        }),
+      );
+      if (!response.Body) {
+        throw new Error(`Failed to download ${url.href}: empty response body`);
+      }
+      return {
+        body: response.Body as Readable,
+        totalBytes: response.ContentLength ?? null,
+      };
+    } catch (err) {
+      throw translateS3Error(err);
     }
   }
 
@@ -284,6 +326,20 @@ export class MongoDBDownloader {
       /* ignore - file doesn't exist, proceed with download */
     }
   }
+}
+
+function translateS3Error(err: unknown): Error {
+  if (err instanceof Error && err.name === 'CredentialsProviderError') {
+    return new Error(
+      'Unable to download from s3://: no AWS credentials were found, so access to the private bucket is not possible. Configure credentials through the environment or a shared AWS config file.',
+    );
+  }
+  if (err instanceof Error && err.message === 'Region is missing') {
+    return new Error(
+      'Unable to download from s3://: no AWS region configured. Set the AWS_REGION environment variable or configure a region in your AWS config.',
+    );
+  }
+  return err instanceof Error ? err : new Error(String(err));
 }
 
 /** Runs the callback without a lock, using same interface as `withLock` */

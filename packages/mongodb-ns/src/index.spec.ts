@@ -231,6 +231,28 @@ describe('ns', function () {
     assert.equal(ns('abc.').database, 'abc');
   });
 
+  describe('shared classification regexps', function () {
+    it('keeps an implied lastIndex of 0 between parses', function () {
+      // The RegExps were moved up to the module scope and are shared across invocations
+      // if one were to add 'g' or 'y' they would become stateful
+      // these tests will fail if the RegExps become stateful
+      assert(ns('__mdb_internal_a.x').isInternal());
+      assert(ns('__mdb_internal_b.x').isInternal());
+
+      assert(ns('a.system.javascript').isSystem());
+      assert(ns('b.system.typescript').isSystem());
+
+      assert(ns('c.local.oplog.rs').isOplog());
+      assert(ns('d.local.oplog.$main').isOplog());
+
+      assert.equal(ns('foo').validDatabaseName, true);
+      assert.equal(ns('bar').validDatabaseName, true);
+
+      assert(ns('p.mycol').validCollectionName);
+      assert(ns('q.yourcol').validCollectionName);
+    });
+  });
+
   describe('sorting', function () {
     it('should sort them', function () {
       const names = [

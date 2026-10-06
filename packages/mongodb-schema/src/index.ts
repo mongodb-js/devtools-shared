@@ -21,6 +21,7 @@ import type {
 import { convertInternalToExpanded } from './schema-converters/internal-to-expanded';
 import { convertInternalToMongodb } from './schema-converters/internal-to-mongodb';
 import { convertInternalToStandard } from './schema-converters/internal-to-standard';
+import { convertMongoDBJSONSchemaToSimplified } from './schema-converters/mongodb-to-simplified';
 import * as schemaStats from './stats';
 import type {
   AnyIterable,
@@ -102,6 +103,7 @@ export {
   analyzeDocuments,
   getSchemaPaths,
   getSimplifiedSchema,
+  convertMongoDBJSONSchemaToSimplified,
   SchemaAnalyzer,
   schemaStats,
   toTypescriptTypeDefinition,
