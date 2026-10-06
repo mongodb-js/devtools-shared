@@ -365,50 +365,17 @@ describe('MongoCluster', function () {
       if (process.platform !== 'linux') return this.skip(); // No docker
     });
 
-    it('can spawn a 8.0.x replset using docker', async function () {
-      cluster = await MongoCluster.start({
-        version: '8.0.x',
-        topology: 'replset',
-        tmpDir,
-        docker: 'mongo:8.0',
-        downloadOptions: {
-          distro: 'ubuntu2404',
-        },
-      });
-      expect(cluster.connectionString).to.be.a('string');
-      expect(cluster.serverVersion).to.match(/^8\./);
-      const hello = await cluster.withClient(async (client) => {
-        return await client.db('admin').command({ hello: 1 });
-      });
-      expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
-    });
-
-    it('can spawn a 8.0.x sharded env using docker', async function () {
-      cluster = await MongoCluster.start({
-        version: '8.0.x',
-        topology: 'sharded',
-        tmpDir,
-        docker: 'mongo:8.0',
-        shards: 1,
-        secondaries: 0,
-        downloadOptions: {
-          distro: 'ubuntu2404',
-        },
-      });
-      expect(cluster.connectionString).to.be.a('string');
-      expect(cluster.serverVersion).to.match(/^8\./);
-      const hello = await cluster.withClient(async (client) => {
-        return await client.db('admin').command({ hello: 1 });
-      });
-      expect(hello.msg).to.equal('isdbgrid');
-    });
-
-    it('can spawn a 8.0.x standalone mongod with TLS enabled and get build info', async function () {
-      cluster = await MongoCluster.start({
-        version: '8.0.x',
-        topology: 'standalone',
-        tmpDir,
-        args: [
+    // These exercise the docker code path across server generations. 4.2 is
+    // included because it is the easiest way to ensure that MongoServer can
+    // handle the pre-4.4 log format (in the devtools-shared CI, we only test
+    // ubuntu-latest otherwise). It also requires the legacy TLS arguments.
+    const dockerVersions = [
+      {
+        version: '4.2.x',
+        docker: 'mongo:4.2',
+        replsetDistro: 'ubuntu1804',
+        otherDistro: 'ubuntu1604',
+        tlsArgs: [
           '--sslMode',
           'requireSSL',
           '--sslPEMKeyFile',
@@ -416,18 +383,103 @@ describe('MongoCluster', function () {
           '--sslCAFile',
           `/projectroot/test/fixtures/${CA_CERT}`,
         ],
-        docker: [
-          `--volume=${path.resolve(__dirname, '..')}:/projectroot:ro`,
-          'mongo:8.0',
+      },
+      {
+        version: '8.0.x',
+        docker: 'mongo:8.0',
+        replsetDistro: 'ubuntu2404',
+        otherDistro: 'ubuntu2404',
+        tlsArgs: [
+          '--tlsMode',
+          'requireTLS',
+          '--tlsCertificateKeyFile',
+          `/projectroot/test/fixtures/${SERVER_KEY}`,
+          '--tlsCAFile',
+          `/projectroot/test/fixtures/${CA_CERT}`,
         ],
-        downloadOptions: {
-          distro: 'ubuntu2404',
-        },
+      },
+      {
+        version: '9.0.x',
+        docker: 'mongo:9.0',
+        replsetDistro: 'ubuntu2404',
+        otherDistro: 'ubuntu2404',
+        tlsArgs: [
+          '--tlsMode',
+          'requireTLS',
+          '--tlsCertificateKeyFile',
+          `/projectroot/test/fixtures/${SERVER_KEY}`,
+          '--tlsCAFile',
+          `/projectroot/test/fixtures/${CA_CERT}`,
+        ],
+      },
+    ];
+
+    for (const {
+      version,
+      docker,
+      replsetDistro,
+      otherDistro,
+      tlsArgs,
+    } of dockerVersions) {
+      const serverVersion = new RegExp(`^${version.split('.')[0]}\\.`);
+
+      it(`can spawn a ${version} replset using docker`, async function () {
+        cluster = await MongoCluster.start({
+          version,
+          topology: 'replset',
+          tmpDir,
+          docker,
+          downloadOptions: {
+            distro: replsetDistro,
+          },
+        });
+        expect(cluster.connectionString).to.be.a('string');
+        expect(cluster.serverVersion).to.match(serverVersion);
+        const hello = await cluster.withClient(async (client) => {
+          return await client.db('admin').command({ hello: 1 });
+        });
+        expect(+hello.passives.length + +hello.hosts.length).to.equal(3);
       });
-      expect(cluster.connectionString).to.be.a('string');
-      expect(cluster.serverVersion).to.match(/^8\./);
-      expect(cluster.serverVariant).to.equal('community');
-    });
+
+      it(`can spawn a ${version} sharded env using docker`, async function () {
+        cluster = await MongoCluster.start({
+          version,
+          topology: 'sharded',
+          tmpDir,
+          docker,
+          shards: 1,
+          secondaries: 0,
+          downloadOptions: {
+            distro: otherDistro,
+          },
+        });
+        expect(cluster.connectionString).to.be.a('string');
+        expect(cluster.serverVersion).to.match(serverVersion);
+        const hello = await cluster.withClient(async (client) => {
+          return await client.db('admin').command({ hello: 1 });
+        });
+        expect(hello.msg).to.equal('isdbgrid');
+      });
+
+      it(`can spawn a ${version} standalone mongod with TLS enabled and get build info`, async function () {
+        cluster = await MongoCluster.start({
+          version,
+          topology: 'standalone',
+          tmpDir,
+          args: tlsArgs,
+          docker: [
+            `--volume=${path.resolve(__dirname, '..')}:/projectroot:ro`,
+            docker,
+          ],
+          downloadOptions: {
+            distro: otherDistro,
+          },
+        });
+        expect(cluster.connectionString).to.be.a('string');
+        expect(cluster.serverVersion).to.match(serverVersion);
+        expect(cluster.serverVariant).to.equal('community');
+      });
+    }
   });
 
   it('can spawn a 6.x enterprise standalone mongod', async function () {
