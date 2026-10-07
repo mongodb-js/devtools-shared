@@ -150,6 +150,8 @@ async function parseTarget(
       results.push({ value: 'linux_x86_64', priority: 1 });
     } else if (archs.includes('i686')) {
       results.push({ value: 'linux_i686', priority: 1 });
+    } else if (archs.includes('arm64')) {
+      results.push({ value: 'linux_aarch64', priority: 1 });
     }
 
     let distroResultsErr;
@@ -207,7 +209,10 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
     if (targets.includes('macos')) {
       artifact = `mongodb-macos-${isArm64 ? 'arm64' : 'x86_64'}${edition}.tgz`;
       target = 'macos';
-    } else if (targets.includes('linux_x86_64')) {
+    } else if (
+      targets.includes('linux_x86_64') ||
+      targets.includes('linux_aarch64')
+    ) {
       target = maximizer(opts.target, (candidate) => candidate.priority)!.value;
       artifact = `mongodb-linux-${
         isArm64 ? 'aarch64' : 'x86_64'
@@ -217,16 +222,26 @@ async function resolve(opts: ProcessedOptions): Promise<DownloadArtifactInfo> {
       artifact = `mongodb-windows-x86_64${edition}.zip`;
     }
     if (artifact) {
+      const archive = artifact;
+      const crypt = (prefix: string) => ({
+        url: `${LATEST_ALPHA_S3_PREFIX}${archive.replace('mongodb-', prefix)}`,
+        sha1: '',
+        sha256: '',
+      });
       download = {
         target,
         edition: opts.enterprise ? 'enterprise' : 'targeted',
         arch: 'x86_64',
         archive: {
-          url: `${LATEST_ALPHA_S3_PREFIX}${artifact}`,
+          url: `${LATEST_ALPHA_S3_PREFIX}${archive}`,
           sha1: '',
           sha256: '',
           debug_symbols: '',
         },
+        ...(opts.enterprise && {
+          crypt_shared: crypt('mongo_crypt_shared_v1-'),
+          cryptd: crypt('mongodb-cryptd-'),
+        }),
       };
     }
   }

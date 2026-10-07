@@ -1031,6 +1031,50 @@ describe('mongodb-download-url', function () {
         's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-amazon2023.tgz',
       );
     });
+
+    it('should resolve `latest-alpha` crypt_shared for linux arm64', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'linux',
+        distro: 'amazon2023',
+        enterprise: true,
+        arch: 'aarch64',
+        crypt_shared: true,
+      };
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongo_crypt_shared_v1-linux-aarch64-enterprise-amazon2023.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` cryptd for linux arm64', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'linux',
+        distro: 'ubuntu2204',
+        enterprise: true,
+        arch: 'aarch64',
+        cryptd: true,
+      };
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-cryptd-linux-aarch64-enterprise-ubuntu2204.tgz',
+      );
+    });
+
+    it('should resolve `latest-alpha` crypt_shared for windows', async function () {
+      const query = {
+        version: 'latest-alpha',
+        platform: 'windows',
+        enterprise: true,
+        bits: 64,
+        crypt_shared: true,
+      } as const;
+      await verify(
+        query,
+        's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongo_crypt_shared_v1-windows-x86_64-enterprise.zip',
+      );
+    });
   });
 
   describe('options', function () {
