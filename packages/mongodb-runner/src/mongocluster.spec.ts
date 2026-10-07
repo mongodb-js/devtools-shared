@@ -1,5 +1,9 @@
 import { expect } from 'chai';
-import { MongoCluster } from './mongocluster';
+import {
+  MongoCluster,
+  redactSerializedCluster,
+  type SerializedClusterProperties,
+} from './mongocluster';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -916,6 +920,98 @@ describe('MongoCluster', function () {
     cluster = await MongoCluster.deserialize(cluster.serialize());
     await cluster.withClient((client) => {
       expect(client.serverApi?.version).to.eq('1');
+    });
+  });
+
+  describe('serialization', function () {
+    it('can serialize metadata written before the options field existed', async function () {
+      // Older metadata has no `options` key; serializing it again must not throw.
+      const cluster = await MongoCluster.deserialize({
+        topology: 'standalone',
+        servers: [],
+        shards: [],
+        defaultConnectionOptions: {},
+        users: [],
+      });
+      expect(() => cluster.serialize()).to.not.throw();
+    });
+  });
+
+  describe('redactSerializedCluster', function () {
+    it('removes credentials recursively without mutating the input', function () {
+      const serialized = {
+        topology: 'replset',
+        replSetName: 'repl0',
+        servers: [
+          {
+            _id: 'a',
+            keyFileContents: 'server-keyfile-secret',
+            commandline: ['mongod', '--auth'],
+          },
+          {
+            _id: 'b',
+            commandline: [
+              'mongod',
+              '--tlsCertificateKeyFilePassword',
+              'arg-secret',
+            ],
+          },
+          {
+            _id: 'c',
+            commandline: [
+              'mongod',
+              '--tlsCertificateKeyFilePassword=eq-secret',
+            ],
+          },
+        ],
+        shards: [
+          {
+            topology: 'replset',
+            servers: [{ _id: 'd', keyFileContents: 'shard-keyfile-secret' }],
+            shards: [],
+            defaultConnectionOptions: { auth: { password: 'nested-password' } },
+            users: [
+              { username: 'nested', password: 'nested-password', roles: [] },
+            ],
+          },
+        ],
+        defaultConnectionOptions: {
+          tlsCertificateKeyFilePassword: 'tls-secret',
+        },
+        users: [{ username: 'top', password: 'top-password', roles: [] }],
+        options: {
+          topology: 'replset',
+          args: ['--auth'],
+          users: [{ username: 'opt', password: 'option-password', roles: [] }],
+        },
+      } as unknown as SerializedClusterProperties;
+
+      const redacted = redactSerializedCluster(serialized);
+
+      const json = JSON.stringify(redacted);
+      for (const secret of [
+        'server-keyfile-secret',
+        'shard-keyfile-secret',
+        'arg-secret',
+        'eq-secret',
+        'nested-password',
+        'top-password',
+        'option-password',
+        'tls-secret',
+      ]) {
+        expect(json, `should not contain ${secret}`).to.not.contain(secret);
+      }
+
+      // Non-secret data is preserved.
+      expect(redacted.servers[0]._id).to.eq('a');
+      expect(redacted.users[0].username).to.eq('top');
+      expect(redacted.options?.args).to.deep.eq(['--auth']);
+
+      // The stored metadata is left untouched.
+      expect(serialized.servers[0].keyFileContents).to.eq(
+        'server-keyfile-secret',
+      );
+      expect(serialized.users[0].password).to.eq('top-password');
     });
   });
 });

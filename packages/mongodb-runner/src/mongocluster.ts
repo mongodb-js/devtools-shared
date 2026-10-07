@@ -1,4 +1,8 @@
-import type { MongoServerEvents, MongoServerOptions } from './mongoserver';
+import type {
+  MongoServerEvents,
+  MongoServerOptions,
+  SerializedServerProperties,
+} from './mongoserver';
 import { MongoServer } from './mongoserver';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
@@ -251,6 +255,77 @@ export type MongoClusterEvents = {
   removeListener: [keyof MongoClusterEvents];
 };
 
+export interface SerializedClusterProperties {
+  topology: MongoClusterOptions['topology'];
+  replSetName?: string;
+  servers: SerializedServerProperties[];
+  shards: SerializedClusterProperties[];
+  oidcMockProviderProcess?: ReturnType<OIDCMockProviderProcess['serialize']>;
+  dockerComposeProject?: ReturnType<DockerComposeProject['serialize']>;
+  defaultConnectionOptions: Partial<MongoClientOptions>;
+  users: MongoDBUserDoc[];
+  options?: MongoClusterOptions;
+}
+
+// Object keys whose values are credentials and must never be shown in the
+// CLI's JSON output. `keyFileContents` is the keyfile used as the `__system`
+// password, and `tlsCertificateKeyFilePassword` unlocks a client certificate.
+const redactedKeys = new Set([
+  'password',
+  'pwd',
+  'keyFileContents',
+  'tlsCertificateKeyFilePassword',
+]);
+
+// Secrets can also appear as command-line argument values rather than object
+// properties (e.g. `--tlsCertificateKeyFilePassword=...`).
+const redactedArgFlags = ['--tlsCertificateKeyFilePassword'];
+
+function redactSecrets<T>(value: T): T {
+  if (Array.isArray(value)) {
+    const result: unknown[] = [];
+    for (let i = 0; i < value.length; i++) {
+      const item = value[i];
+      if (typeof item === 'string') {
+        const flag = redactedArgFlags.find((f) => item === f);
+        if (flag !== undefined) {
+          result.push(`${flag}=<redacted>`);
+          i++; // Skip the flag's value.
+          continue;
+        }
+        const prefix = redactedArgFlags.find((f) => item.startsWith(`${f}=`));
+        if (prefix !== undefined) {
+          result.push(`${prefix}=<redacted>`);
+          continue;
+        }
+      }
+      result.push(redactSecrets(item));
+    }
+    return result as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, unknown> = Object.create(null);
+    for (const [key, val] of Object.entries(value)) {
+      if (redactedKeys.has(key)) continue;
+      result[key] = redactSecrets(val);
+    }
+    return result as T;
+  }
+  return value;
+}
+
+/**
+ * Produce a credential-free view of a serialized cluster for display. Unlike
+ * `serialize()`, whose output is persisted and must round-trip, this drops
+ * secrets (keyfile contents, user passwords, TLS certificate passwords)
+ * recursively, including copies nested in shards and options.
+ */
+export function redactSerializedCluster(
+  serialized: SerializedClusterProperties,
+): SerializedClusterProperties {
+  return redactSecrets(serialized);
+}
+
 function removePortArg([...args]: string[]): string[] {
   let portArgIndex = -1;
   if ((portArgIndex = args.indexOf('--port')) !== -1) {
@@ -391,6 +466,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private dockerComposeProject?: DockerComposeProject;
   private defaultConnectionOptions: Partial<MongoClientOptions> = {};
   private users: MongoDBUserDoc[] = [];
+  private originalOptions?: MongoClusterOptions;
 
   private constructor() {
     super();
@@ -424,7 +500,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     });
   }
 
-  serialize(): unknown /* JSON-serializable */ {
+  serialize(): SerializedClusterProperties {
     return {
       topology: this.topology,
       replSetName: this.replSetName,
@@ -434,6 +510,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       dockerComposeProject: this.dockerComposeProject?.serialize(),
       defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
       users: jsonClone(this.users),
+      options: this.originalOptions
+        ? jsonClone(this.originalOptions)
+        : undefined,
     };
   }
 
@@ -444,17 +523,19 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     return true;
   }
 
-  static async deserialize(serialized: any): Promise<MongoCluster> {
+  static async deserialize(
+    serialized: SerializedClusterProperties,
+  ): Promise<MongoCluster> {
     const cluster = new MongoCluster();
     cluster.topology = serialized.topology;
     cluster.replSetName = serialized.replSetName;
     cluster.defaultConnectionOptions = serialized.defaultConnectionOptions;
     cluster.users = serialized.users;
     cluster.servers = await safePromiseAll(
-      serialized.servers.map((srv: any) => MongoServer.deserialize(srv)),
+      serialized.servers.map((srv) => MongoServer.deserialize(srv)),
     );
     cluster.shards = await safePromiseAll(
-      serialized.shards.map((shard: any) => MongoCluster.deserialize(shard)),
+      serialized.shards.map((shard) => MongoCluster.deserialize(shard)),
     );
     cluster.oidcMockProviderProcess = serialized.oidcMockProviderProcess
       ? OIDCMockProviderProcess.deserialize(serialized.oidcMockProviderProcess)
@@ -462,6 +543,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster.dockerComposeProject = serialized.dockerComposeProject
       ? DockerComposeProject.deserialize(serialized.dockerComposeProject)
       : undefined;
+    cluster.originalOptions = serialized.options;
     return cluster;
   }
 
@@ -522,6 +604,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     try {
       options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
 
+      cluster.originalOptions = options;
       cluster.topology = options.topology;
       cluster.users = options.users ?? [];
       cluster.defaultConnectionOptions = { ...options.internalClientOptions };

@@ -2,6 +2,7 @@ export {
   MongoServer,
   type MongoServerEvents,
   MongoServerOptions,
+  SerializedServerProperties as MongoServerSerializedProperties,
 } from './mongoserver';
 export {
   MongoCluster,
@@ -14,6 +15,7 @@ export {
   ShardedOptions as MongoClusterShardedOptions,
   type ShardDescriptor,
   type DisaggregatedStorageOptions,
+  SerializedClusterProperties as MongoClusterSerializedProperties,
 } from './mongocluster';
 export {
   createSLSMultiCellEnvironment,
