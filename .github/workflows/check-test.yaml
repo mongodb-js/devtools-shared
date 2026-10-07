@@ -90,6 +90,12 @@ jobs:
           git checkout -- packages/saslprep/src/code-points-data.ts
         shell: bash
 
+      - name: Configure Electron sandbox
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+
       - name: Info
         run: |
           LERNA_VERSION=$(npm ls lerna --json | jq -r .dependencies.lerna.version)
