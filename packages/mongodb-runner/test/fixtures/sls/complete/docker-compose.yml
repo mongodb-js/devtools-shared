@@ -1,0 +1,5 @@
+services:
+  crs-cell1-0:
+    image: disagg-storage
+    ports:
+      - '${CRS_CELL1_PORT:-30001}:27998'

@@ -7,13 +7,15 @@
 //
 // Usage:
 //   SLS_COMPOSE_FILE=/path/to/sls-multicell-docker-compose.yml \
-//   SLS_IMAGE_TAG=<pinned_sls_commit> \
 //   MONGOD_BIN_DIR=/path/to/mongod/dir \
 //     node examples/sls-replset.js
 //
+// Set SLS_IMAGE_TAG to override the tag read from the manifest.json next to
+// the compose file.
+//
 // This is equivalent to:
 //   mongodb-runner start -t replset \
-//     --slsCompose=<path> --slsImageTag=<tag> --binDir=...
+//     --slsCompose=<path> --binDir=...
 
 // Enable mongodb-runner debug output (compose progress, server startup, ...)
 // unless the user already configured DEBUG themselves.
@@ -35,11 +37,11 @@ async function main() {
         'which will fail with "Unknown --setParameter".)',
     );
   }
-  if (!process.env.SLS_COMPOSE_FILE || !process.env.SLS_IMAGE_TAG) {
+  if (!process.env.SLS_COMPOSE_FILE) {
     throw new Error(
       'Set SLS_COMPOSE_FILE to the path of an SLS multi-cell ' +
-        'docker-compose.yml and SLS_IMAGE_TAG to the SLS image tag to use ' +
-        '(e.g. the pinned_sls_commit from the server repo manifest).',
+        'docker-compose.yml. Set SLS_IMAGE_TAG to override the image tag ' +
+        'read from the manifest.json next to the compose file.',
     );
   }
 
