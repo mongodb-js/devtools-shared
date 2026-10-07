@@ -209,6 +209,13 @@ export interface DisaggregatedStorageOptions {
     | ((shard: ShardDescriptor) => string | Record<string, unknown>);
 
   /**
+   * Called immediately before `docker compose up` runs, once the compose
+   * environment is fully built. Use this to release resources that would
+   * otherwise prevent the containers from binding (e.g. reserved host ports).
+   */
+  beforeComposeUp?: () => Promise<void> | void;
+
+  /**
    * Called once after `docker compose up` returns, before any mongod starts.
    * Should poll/retry until the storage layer is ready to accept connections.
    */
@@ -504,59 +511,70 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }
       | undefined,
   ): Promise<MongoCluster> {
-    options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
+    // The caller may hold host-port reservations for the storage backend (see
+    // `beforeComposeUp`) from before this call. Capture them up front so they
+    // can be released if startup fails before `docker compose up` runs.
+    const reservedStorage =
+      parentClusterContext?.disaggregatedStorage ??
+      options.disaggregatedStorage;
 
     const cluster = new MongoCluster();
-    cluster.topology = options.topology;
-    cluster.users = options.users ?? [];
-    cluster.defaultConnectionOptions = { ...options.internalClientOptions };
-    if (!options.binDir) {
-      options.binDir = await this.downloadMongoDb(
-        options.downloadDir ??
-          process.env.MONGODB_RUNNER_DOWNLOAD_DIR ??
-          options.tmpDir,
-        options.version,
-        options.downloadOptions,
-        options.downloadUrl,
-      );
-    }
-
-    if (options.oidc !== undefined) {
-      cluster.oidcMockProviderProcess = await OIDCMockProviderProcess.start(
-        options.oidc || '--port=0',
-      );
-      const oidcServerConfig = [
-        {
-          issuer: cluster.oidcMockProviderProcess.issuer,
-          audience: cluster.oidcMockProviderProcess.audience,
-          authNamePrefix: 'dev',
-          clientId: 'cid',
-          authorizationClaim: 'groups',
-        },
-      ];
-      delete options.oidc;
-      options.args = [
-        ...(options.args ?? []),
-        '--setParameter',
-        `oidcIdentityProviders=${JSON.stringify(oidcServerConfig)}`,
-        '--setParameter',
-        'authenticationMechanisms=SCRAM-SHA-256,MONGODB-OIDC',
-        '--setParameter',
-        'enableTestCommands=true',
-      ];
-    }
-
-    let disaggregatedStorage = parentClusterContext?.disaggregatedStorage;
-    if (!disaggregatedStorage && options.disaggregatedStorage) {
-      disaggregatedStorage = options.disaggregatedStorage;
-      delete options.disaggregatedStorage;
-      cluster.dockerComposeProject = await DockerComposeProject.start(
-        disaggregatedStorage.composeFile,
-        { env: disaggregatedStorage.env, logDir: options.logDir },
-      );
-    }
-
     try {
+      options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
+
+      cluster.topology = options.topology;
+      cluster.users = options.users ?? [];
+      cluster.defaultConnectionOptions = { ...options.internalClientOptions };
+      if (!options.binDir) {
+        options.binDir = await this.downloadMongoDb(
+          options.downloadDir ??
+            process.env.MONGODB_RUNNER_DOWNLOAD_DIR ??
+            options.tmpDir,
+          options.version,
+          options.downloadOptions,
+          options.downloadUrl,
+        );
+      }
+
+      if (options.oidc !== undefined) {
+        cluster.oidcMockProviderProcess = await OIDCMockProviderProcess.start(
+          options.oidc || '--port=0',
+        );
+        const oidcServerConfig = [
+          {
+            issuer: cluster.oidcMockProviderProcess.issuer,
+            audience: cluster.oidcMockProviderProcess.audience,
+            authNamePrefix: 'dev',
+            clientId: 'cid',
+            authorizationClaim: 'groups',
+          },
+        ];
+        delete options.oidc;
+        options.args = [
+          ...(options.args ?? []),
+          '--setParameter',
+          `oidcIdentityProviders=${JSON.stringify(oidcServerConfig)}`,
+          '--setParameter',
+          'authenticationMechanisms=SCRAM-SHA-256,MONGODB-OIDC',
+          '--setParameter',
+          'enableTestCommands=true',
+        ];
+      }
+
+      let disaggregatedStorage = parentClusterContext?.disaggregatedStorage;
+      if (!disaggregatedStorage && options.disaggregatedStorage) {
+        disaggregatedStorage = options.disaggregatedStorage;
+        delete options.disaggregatedStorage;
+        cluster.dockerComposeProject = await DockerComposeProject.start(
+          disaggregatedStorage.composeFile,
+          {
+            env: disaggregatedStorage.env,
+            logDir: options.logDir,
+            beforeUp: disaggregatedStorage.beforeComposeUp,
+          },
+        );
+      }
+
       if (disaggregatedStorage) {
         if (cluster.dockerComposeProject) {
           // Only the compose-owning (top-level) cluster waits for readiness.
@@ -580,6 +598,15 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         await cluster.close();
       } catch {
         /* ignore */
+      }
+      if (!cluster.dockerComposeProject) {
+        // Compose never started, so its `beforeComposeUp` hook (which releases
+        // any port reservations held for it) has not run. Release them now.
+        try {
+          await reservedStorage?.beforeComposeUp?.();
+        } catch {
+          /* ignore */
+        }
       }
       throw err;
     }

@@ -82,6 +82,37 @@ describe('MongoCluster', function () {
     );
   });
 
+  it('releases storage port reservations when startup fails before compose', async function () {
+    // Fail during binary download, i.e. after the caller created the SLS
+    // options (and reserved its ports) but before `docker compose up` runs.
+    sinon
+      .stub(MongoCluster, 'downloadMongoDb' as any)
+      .rejects(new Error('stub: download failed'));
+
+    let released = 0;
+    const err = await MongoCluster.start({
+      version: '8.x',
+      topology: 'standalone',
+      tmpDir,
+      disaggregatedStorage: {
+        composeFile: path.join(tmpDir, 'unused-compose.yml'),
+        config: '{}',
+        beforeComposeUp: () => {
+          released++;
+        },
+      },
+    }).then(
+      () => undefined,
+      (e) => e as Error,
+    );
+
+    expect(err?.message).to.equal('stub: download failed');
+    expect(released).to.equal(
+      1,
+      'port reservations should be released when startup fails before compose',
+    );
+  });
+
   it('forwards the detached option to the spawned server process', async function () {
     // Stub spawn so we assert the option is plumbed through without actually
     // starting a server. binDir is set so no binary download is attempted.
