@@ -172,9 +172,6 @@ describe('proxy options handling', function () {
       let setup: HTTPServerProxyTestSetup;
 
       before(async function () {
-        // TODO: COMPASS-9232 reenable the test on Linux and, ideally, on Windows, after
-        // investigating the failures.
-        // || process.platform === 'linux'
         if (process.platform === 'win32' && process.env.CI) {
           return this.skip();
         }
