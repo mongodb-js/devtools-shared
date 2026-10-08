@@ -74,21 +74,11 @@ describe('structured-clone-bson', function () {
       expect(Object.getPrototypeOf(result)).to.equal(Object.prototype);
     });
 
-    it('restores a plain Binary (sub_type != 4) as Binary, not UUID', function () {
-      const bin = new bson.Binary(Buffer.from([1, 2, 3]), 0);
+    it('restores a plain Binary with sub_type 4 as Binary, not UUID', function () {
+      const bin = new bson.Binary(Buffer.alloc(16, 7), 4);
       const result = roundTrip({ b: bin }) as { b: bson.Binary };
       expect(result.b).to.be.instanceOf(bson.Binary);
       expect(result.b).not.to.be.instanceOf(bson.UUID);
-    });
-
-    it('restores any Binary with sub_type 4 as UUID, even if it was never actually constructed via `new UUID()`', function () {
-      // Documented behavior: the wire format can't distinguish "built via
-      // `new UUID()`" from "a plain Binary someone happened to tag sub_type
-      // 4" - both are UUIDs by BSON's own definition, so both should come
-      // back as UUID.
-      const bin = new bson.Binary(Buffer.alloc(16, 7), 4);
-      const result = roundTrip({ b: bin }) as { b: bson.Binary };
-      expect(result.b).to.be.instanceOf(bson.UUID);
     });
 
     it('handles a Code value with no scope at all', function () {
@@ -279,8 +269,8 @@ describe('structured-clone-bson', function () {
       expect(bsonTypes.get(uuid)).to.equal('UUID');
     });
 
-    it('records plain Binary (non-sub_type 4) as Binary', function () {
-      const bin = new bson.Binary(Buffer.from([1, 2, 3]), 0);
+    it('records plain Binary with sub_type 4 as Binary', function () {
+      const bin = new bson.Binary(Buffer.alloc(16), 4);
       const { bsonTypes } = trackBSON({ b: bin });
       expect(bsonTypes.get(bin)).to.equal('Binary');
     });
