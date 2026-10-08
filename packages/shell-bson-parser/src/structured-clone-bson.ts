@@ -86,13 +86,10 @@ export function trackBSON<T>(data: T): TrackedPayload<T> {
     visited.add(item);
 
     if (isBsonValue(item)) {
-      // A UUID is a Binary with sub_type 4 - that's BSON's own definition,
-      // regardless of whether it was actually constructed via `new UUID()`
-      // or is a plain `Binary` someone tagged sub_type 4 by hand. Check the
-      // sub_type, not `instanceof bson.UUID`, so both come back as UUID.
+      // UUID and Binary share the _bsontype tag, so preserve their actual
+      // class using the prototype rather than Binary's subtype.
       const tag =
-        item._bsontype === 'Binary' &&
-        (item as { sub_type?: unknown }).sub_type === 4
+        Object.getPrototypeOf(item) === BSON.UUID.prototype
           ? 'UUID'
           : item._bsontype;
       bsonTypes.set(item, tag);
