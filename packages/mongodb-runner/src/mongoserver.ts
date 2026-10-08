@@ -69,7 +69,7 @@ export interface MongoServerOptions {
   detached?: boolean;
 }
 
-interface SerializedServerProperties {
+export interface SerializedServerProperties {
   _id: string;
   pid?: number;
   port?: number;
@@ -84,6 +84,7 @@ interface SerializedServerProperties {
   isDSC?: boolean;
   isAuth?: boolean;
   keyFileContents?: string;
+  commandline?: string[];
 }
 
 export interface MongoServerEvents {
@@ -129,6 +130,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   public isAuth = false;
   private keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
+  private commandline: string[] = [];
 
   get id(): string {
     return this.uuid;
@@ -155,6 +157,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       isDSC: this.isDSC,
       isAuth: this.isAuth,
       keyFileContents: this.keyFileContents,
+      commandline: this.commandline,
     };
   }
 
@@ -177,6 +180,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     srv.isConfigSvr = !!serialized.isConfigSvr;
     srv.isAuth = !!serialized.isAuth;
     srv.keyFileContents = serialized.keyFileContents;
+    srv.commandline = serialized.commandline ?? [];
     if (!srv.closing) {
       srv.pid = serialized.pid;
       srv.dbPath = serialized.dbPath;
@@ -302,6 +306,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
 
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
+    srv.commandline = commandline;
     const proc = spawn(executable, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
       cwd: options.tmpDir,

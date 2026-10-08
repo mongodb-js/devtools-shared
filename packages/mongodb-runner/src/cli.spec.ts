@@ -140,4 +140,77 @@ describe('cli', function () {
 
     await runCli(['stop', '--all']);
   });
+
+  it('emits structured output for start with --json', async function () {
+    const stdout = await runCli([
+      'start',
+      '--topology',
+      'standalone',
+      '--json',
+    ]);
+
+    const parsed = JSON.parse(stdout) as {
+      id: string;
+      connectionString: string;
+    };
+
+    expect(stdout.trim(), 'JSON output should be a single line').to.not.contain(
+      '\n',
+    );
+    expect(parsed.id, 'result should carry the cluster id').to.be.a('string');
+    expect(
+      parsed.connectionString,
+      'result should carry the connection string',
+    ).to.match(/^mongodb:\/\//);
+
+    const client = new MongoClient(parsed.connectionString);
+    const result = await client.db('admin').command({ ping: 1 });
+    await client.close();
+    expect(result.ok, 'reported connection string should be usable').to.eq(1);
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
+
+  it('emits structured output for ls with --json', async function () {
+    const startStdout = await runCli([
+      'start',
+      '--topology',
+      'standalone',
+      '--json',
+    ]);
+    const started = JSON.parse(startStdout);
+
+    const lsStdout = await runCli(['ls', '--json']);
+    expect(
+      lsStdout.trim(),
+      'ls --json output should be a single line',
+    ).to.not.contain('\n');
+    let parsed: any;
+    expect(() => {
+      parsed = JSON.parse(lsStdout);
+    }, 'ls --json stdout must be parseable as JSON').to.not.throw();
+
+    expect(parsed, 'ls --json should yield an array').to.be.an('array');
+    const entry = parsed.find((e: any) => e.id === started.id);
+    expect(entry, 'the started cluster should be listed').to.not.equal(
+      undefined,
+    );
+    expect(
+      entry.connectionString,
+      'listed connection string should match the one start reported',
+    ).to.equal(started.connectionString);
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
+
+  it('emits an empty JSON array for ls --json with no instances', async function () {
+    const emptyDir = path.join(tmpDir, 'empty-runner');
+    await fs.mkdir(emptyDir, { recursive: true });
+
+    const stdout = await runCli(['ls', '--json', '--runnerDir', emptyDir]);
+
+    expect(JSON.parse(stdout)).to.deep.equal([]);
+  });
 });

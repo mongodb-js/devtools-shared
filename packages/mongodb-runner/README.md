@@ -50,6 +50,8 @@ Options:
       --docker       Docker image name to run server instances under    [string]
       --id           ID to save the cluster metadata under              [string]
       --all          for `stop`: stop all clusters                     [boolean]
+      --json         for `start` and `ls`: print machine-readable JSON
+                     on stdout instead of plain text                   [boolean]
       --debug        Enable debug output                               [boolean]
       --help         Show help                                         [boolean]
 ```
@@ -107,6 +109,38 @@ You can specify a config file for the CLI using `--config`:
 
 ```sh
 $ npx @mongodb-js/mongodb-runner start --config <path/to/config.json>
+```
+
+## Machine-readable output
+
+By default `start` prints diagnostics to stderr and the bare connection string
+to stdout, and `ls` prints one `id: uri` line per running instance. Pass
+`--json` to get structured output on stdout instead (diagnostics still go to
+stderr, and are not part of the JSON). The JSON is printed on a single line so
+it can be captured and parsed without whitespace splitting:
+
+```sh
+$ npx mongodb-runner start -t replset --json
+{"id":"2b56a4d3-...","connectionString":"mongodb://localhost:27017,localhost:27018/?replicaSet=repl0"}
+```
+
+For OIDC clusters the result also contains `oidcIssuer` and
+`connectionStringWithOidc` (the connection string with
+`authMechanism=MONGODB-OIDC` appended). For DSC clusters it contains an `sls`
+object with the allocated `ports` and `services`. Capture it to a file rather
+than scraping stdout:
+
+```sh
+$ npx mongodb-runner start -t replset --json > cluster.json
+```
+
+`ls --json` prints a JSON array of the running instances, with the serialized
+cluster data for each one. Credentials (keyfile contents, user passwords, and
+TLS certificate passwords) are redacted:
+
+```sh
+$ npx mongodb-runner ls --json
+[{"id":"2b56a4d3-...","connectionString":"mongodb://localhost:27017/","filepath":"/home/user/.mongodb/runner2/m-2b56a4d3-....json","topology":"standalone","servers":[{"_id":"...","port":27017}],...}]
 ```
 
 ## DSC clusters

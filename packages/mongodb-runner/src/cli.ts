@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import createDebug from 'debug';
 import * as utilities from './index';
+import { redactSerializedCluster } from './mongocluster';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { MongoClientOptions } from 'mongodb';
 
@@ -95,6 +96,12 @@ import type { MongoClientOptions } from 'mongodb';
     })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
+    .option('json', {
+      type: 'boolean',
+      default: false,
+      describe:
+        'For `start` and `ls`: print machine-readable JSON on stdout instead of plain text',
+    })
     .command('start', 'Start a MongoDB instance')
     .command('stop', 'Stop a MongoDB instance')
     .command('prune', 'Clean up metadata for any dead MongoDB instances')
@@ -170,7 +177,29 @@ import type { MongoClientOptions } from 'mongodb';
           ? `--runnerDir=${argv.runnerDir}`
           : ''),
     );
-    console.log(cs.toString());
+    if (argv.json) {
+      const result = {
+        id,
+        connectionString: cluster.connectionString,
+        ...(cluster.oidcIssuer
+          ? {
+              oidcIssuer: cluster.oidcIssuer,
+              connectionStringWithOidc: cs.toString(),
+            }
+          : {}),
+        ...(disaggregatedStorage && 'sls' in disaggregatedStorage
+          ? {
+              sls: {
+                ports: disaggregatedStorage.sls.ports,
+                services: disaggregatedStorage.sls.services,
+              },
+            }
+          : {}),
+      };
+      console.log(JSON.stringify(result));
+    } else {
+      console.log(cs.toString());
+    }
     cluster.unref();
   }
 
@@ -182,8 +211,16 @@ import type { MongoClientOptions } from 'mongodb';
   }
 
   async function ls() {
-    for await (const { id, connectionString } of utilities.instances(argv)) {
-      console.log(`${id}: ${connectionString}`);
+    if (argv.json) {
+      const entries: unknown[] = [];
+      for await (const { serialized, ...rest } of utilities.instances(argv)) {
+        entries.push({ ...rest, ...redactSerializedCluster(serialized) });
+      }
+      console.log(JSON.stringify(entries));
+    } else {
+      for await (const { id, connectionString } of utilities.instances(argv)) {
+        console.log(`${id}: ${connectionString}`);
+      }
     }
   }
 
