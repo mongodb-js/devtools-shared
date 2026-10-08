@@ -182,9 +182,13 @@ describe('proxy options handling', function () {
         await once(server, 'listening');
         const connEvent = once(server, 'connection');
         childProcess = spawn(
-          'npx',
+          // Resolving the xvfb-maybe script and running it with the current
+          // Node binary rather than going through `npx`, because on Windows
+          // spawning `npx` (really `npx.cmd`) fails with ENOENT unless a shell
+          // is used.
+          process.execPath,
           [
-            'xvfb-maybe',
+            require.resolve('xvfb-maybe/src/xvfb-maybe.js'),
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             require('electron') as unknown as string,
             path.resolve(__dirname, '..', 'test', 'electron-test-server.js'),
