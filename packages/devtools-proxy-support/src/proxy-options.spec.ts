@@ -196,13 +196,6 @@ describe('proxy options handling', function () {
           {
             env: {
               ...process.env,
-              // nyc injects `--require node-preload.js` into NODE_OPTIONS and
-              // relies on NODE_PATH to resolve it by bare name. Electron does
-              // not honour NODE_PATH for preloads, so the child would exit with
-              // MODULE_NOT_FOUND. We do not need coverage from the Electron
-              // process, so drop both.
-              NODE_OPTIONS: undefined,
-              NODE_PATH: undefined,
               TEST_SERVER_PORT: String((server.address() as AddressInfo).port),
             },
             stdio: 'inherit',
