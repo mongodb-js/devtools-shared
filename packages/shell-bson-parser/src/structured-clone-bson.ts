@@ -1,33 +1,34 @@
-import * as bson from 'bson';
+import { BSON } from 'bson';
 
-export type MarkedPayload<T> = {
+export type TrackedPayload<T> = {
   data: T;
   bsonTypes: Map<object, string>;
 };
 
-const BSON_PROTOTYPES: Record<string, object> = Object.create({
-  BSONRegExp: bson.BSONRegExp.prototype,
-  BSONSymbol: bson.BSONSymbol.prototype,
-  Binary: bson.Binary.prototype,
-  Code: bson.Code.prototype,
-  DBRef: bson.DBRef.prototype,
-  Decimal128: bson.Decimal128.prototype,
-  Double: bson.Double.prototype,
-  Int32: bson.Int32.prototype,
-  Long: bson.Long.prototype,
-  MaxKey: bson.MaxKey.prototype,
-  MinKey: bson.MinKey.prototype,
-  ObjectId: bson.ObjectId.prototype,
-  Timestamp: bson.Timestamp.prototype,
-  UUID: bson.UUID.prototype,
-});
+const BSON_PROTOTYPE_BY_TAG = new Map<string, object>([
+  ['BSONRegExp', BSON.BSONRegExp.prototype],
+  ['BSONSymbol', BSON.BSONSymbol.prototype],
+  ['Binary', BSON.Binary.prototype],
+  ['Code', BSON.Code.prototype],
+  ['DBRef', BSON.DBRef.prototype],
+  ['Decimal128', BSON.Decimal128.prototype],
+  ['Double', BSON.Double.prototype],
+  ['Int32', BSON.Int32.prototype],
+  ['Long', BSON.Long.prototype],
+  ['MaxKey', BSON.MaxKey.prototype],
+  ['MinKey', BSON.MinKey.prototype],
+  ['ObjectId', BSON.ObjectId.prototype],
+  ['Timestamp', BSON.Timestamp.prototype],
+  ['UUID', BSON.UUID.prototype],
+]);
+
+const KNOWN_BSON_PROTOTYPES = new Set(BSON_PROTOTYPE_BY_TAG.values());
 
 function isBsonValue(value: object): value is { _bsontype: string } {
   if (typeof (value as { _bsontype?: unknown })._bsontype !== 'string') {
     return false;
   }
-  const proto = Reflect.getPrototypeOf(value);
-  return proto !== Object.prototype && proto !== null;
+  return KNOWN_BSON_PROTOTYPES.has(Object.getPrototypeOf(value));
 }
 
 function isMap(m: unknown): m is Map<unknown, unknown> {
@@ -62,13 +63,13 @@ function pushNestedBsonDocuments(
   stack: unknown[],
 ): void {
   if (tag === 'Code') {
-    stack.push(Reflect.get(item, 'scope'));
+    stack.push((item as BSON.Code).scope);
   } else if (tag === 'DBRef') {
-    stack.push(Reflect.get(item, 'oid'), Reflect.get(item, 'fields'));
+    stack.push((item as BSON.DBRef).oid, (item as BSON.DBRef).fields);
   }
 }
 
-export function markBSON<T>(data: T): MarkedPayload<T> {
+export function trackBSON<T>(data: T): TrackedPayload<T> {
   const bsonTypes = new Map<object, string>();
   const stack: unknown[] = [data];
   const visited = new Set<object>();
@@ -114,7 +115,7 @@ export function markBSON<T>(data: T): MarkedPayload<T> {
       continue;
     }
 
-    const proto = Reflect.getPrototypeOf(item);
+    const proto = Object.getPrototypeOf(item);
     if (proto === Object.prototype || proto === null) {
       for (const value of Object.values(item)) stack.push(value);
     }
@@ -123,17 +124,17 @@ export function markBSON<T>(data: T): MarkedPayload<T> {
   return { data, bsonTypes };
 }
 
-export function unmarkBSON<T>(payload: MarkedPayload<T>): T {
+export function untrackBSON<T>(payload: TrackedPayload<T>): T {
   const { data, bsonTypes } = payload;
 
   for (const [item, tag] of bsonTypes) {
-    const prototype = BSON_PROTOTYPES[tag];
+    const prototype = BSON_PROTOTYPE_BY_TAG.get(tag);
     if (!prototype) {
       throw new Error(
         `Cannot unmark unknown BSON type crossing the worker boundary: ${tag}`,
       );
     }
-    Reflect.setPrototypeOf(item, prototype);
+    Object.setPrototypeOf(item, prototype);
   }
 
   return data;

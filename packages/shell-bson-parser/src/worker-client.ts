@@ -1,11 +1,10 @@
 import * as WebWorkerModule from 'web-worker';
 const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
   .default;
-import { markBSON, unmarkBSON } from './structured-clone-bson.js';
+import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
 let worker: Worker | null = null;
-let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let blobUrl: string | null = null;
 let nextId = 0;
 const pending = new Map<
@@ -30,7 +29,7 @@ async function getWorkerScriptUrl(): Promise<string> {
   }
 
   // On browser env we want to fetch and blob so that the worker
-  // script can run on atlas-cloud running locally.
+  // script can run on the web running locally.
   const scriptUrl = new URL('./worker.js', import.meta.url);
   const response = await fetch(scriptUrl);
   if (!response.ok) {
@@ -39,9 +38,7 @@ async function getWorkerScriptUrl(): Promise<string> {
     );
   }
   const code = await response.text();
-  blobUrl = globalThis.URL.createObjectURL(
-    new Blob([code], { type: 'text/javascript' }),
-  );
+  blobUrl = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
   return blobUrl;
 }
 
@@ -52,7 +49,8 @@ async function createWorker(): Promise<Worker> {
 
   const scriptUrl = await getWorkerScriptUrl();
   worker = new WebWorker(scriptUrl, { type: 'module' });
-  worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+
+  const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;
     const entry = pending.get(response.id);
     if (!entry) {
@@ -60,22 +58,27 @@ async function createWorker(): Promise<Worker> {
     }
     pending.delete(response.id);
     if (!response.ok) {
-      entry.reject(new Error(response.error));
+      entry.reject(response.error);
       return;
     }
     try {
-      entry.resolve(unmarkBSON(response.result));
+      entry.resolve(untrackBSON(response.result));
     } catch (err) {
       entry.reject(err as Error);
     }
   };
 
-  worker.onerror = (event: ErrorEvent) => {
+  const onErrorHandler = (event: ErrorEvent) => {
     terminateWorker(new Error(event.message || 'Worker error'));
   };
-  worker.onmessageerror = () => {
+
+  const onMessageErrorHandler = () => {
     terminateWorker(new Error('Worker message could not be deserialized'));
   };
+
+  worker.addEventListener('message', onMessageHandler);
+  worker.addEventListener('error', onErrorHandler);
+  worker.addEventListener('messageerror', onMessageErrorHandler);
 
   return worker;
 }
@@ -89,7 +92,7 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
   try {
     activeWorker.postMessage({
       id,
-      args: markBSON(args),
+      args: trackBSON(args),
     });
   } catch (err) {
     pending.get(id)?.reject(err as Error);
@@ -101,11 +104,9 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
 export function terminateWorker(
   reason: Error = new Error('Worker terminated'),
 ): void {
-  if (idleTimer) clearTimeout(idleTimer);
   if (worker) worker.terminate();
-  if (blobUrl) globalThis.URL.revokeObjectURL(blobUrl);
+  if (blobUrl) URL.revokeObjectURL(blobUrl);
 
-  idleTimer = null;
   worker = null;
   blobUrl = null;
 
