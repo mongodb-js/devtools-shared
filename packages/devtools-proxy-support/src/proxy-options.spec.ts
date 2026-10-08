@@ -172,9 +172,6 @@ describe('proxy options handling', function () {
       let setup: HTTPServerProxyTestSetup;
 
       before(async function () {
-        if (process.platform === 'win32' && process.env.CI) {
-          return this.skip();
-        }
         setup = new HTTPServerProxyTestSetup();
         await setup.listen();
 
