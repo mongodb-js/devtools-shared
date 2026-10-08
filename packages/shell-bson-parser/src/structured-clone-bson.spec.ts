@@ -1,10 +1,10 @@
 import * as bson from 'bson';
 import { expect } from 'chai';
 
-import { markBSON, unmarkBSON } from './structured-clone-bson.js';
+import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 
 function roundTrip<T>(value: T): T {
-  return unmarkBSON(structuredClone(markBSON(value)));
+  return untrackBSON(structuredClone(trackBSON(value)));
 }
 
 const bsonValues: [string, unknown][] = [
@@ -51,6 +51,7 @@ describe('structured-clone-bson', function () {
         big: 10n,
         nan: NaN,
         arr: [1, 'two', [3]],
+        err: new SyntaxError('fail'),
       };
       expect(roundTrip(value)).to.deep.equal(value);
     });
@@ -259,43 +260,43 @@ describe('structured-clone-bson', function () {
     });
   });
 
-  describe('markBSON', function () {
+  describe('trackBSON', function () {
     it('collects BSON values into a Map keyed by the instance', function () {
       const id = new bson.ObjectId();
-      const { bsonTypes } = markBSON({ _id: id, a: 1 });
+      const { bsonTypes } = trackBSON({ _id: id, a: 1 });
       expect(bsonTypes.size).to.equal(1);
       expect(bsonTypes.get(id)).to.equal('ObjectId');
     });
 
     it('does not collect non-BSON values', function () {
-      const { bsonTypes } = markBSON({ a: 1, b: [1, 2, 3] });
+      const { bsonTypes } = trackBSON({ a: 1, b: [1, 2, 3] });
       expect(bsonTypes.size).to.equal(0);
     });
 
     it('records UUID sub_type 4 as UUID, not Binary', function () {
       const uuid = new bson.UUID();
-      const { bsonTypes } = markBSON({ u: uuid });
+      const { bsonTypes } = trackBSON({ u: uuid });
       expect(bsonTypes.get(uuid)).to.equal('UUID');
     });
 
     it('records plain Binary (non-sub_type 4) as Binary', function () {
       const bin = new bson.Binary(Buffer.from([1, 2, 3]), 0);
-      const { bsonTypes } = markBSON({ b: bin });
+      const { bsonTypes } = trackBSON({ b: bin });
       expect(bsonTypes.get(bin)).to.equal('Binary');
     });
 
     it('collects shared references only once', function () {
       const id = new bson.ObjectId();
-      const { bsonTypes } = markBSON({ a: id, b: id });
+      const { bsonTypes } = trackBSON({ a: id, b: id });
       expect(bsonTypes.size).to.equal(1);
     });
   });
 
-  describe('unmarkBSON', function () {
+  describe('untrackBSON', function () {
     it('throws on unknown serialized types', function () {
       const obj = {};
       expect(() =>
-        unmarkBSON({
+        untrackBSON({
           data: obj,
           bsonTypes: new Map([[obj, 'Nope']]),
         }),

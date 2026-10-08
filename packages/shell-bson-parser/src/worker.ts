@@ -1,5 +1,5 @@
 import { parse } from './parse.js';
-import { markBSON, unmarkBSON } from './structured-clone-bson.js';
+import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
@@ -7,11 +7,11 @@ import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 export function handleRequest(request: WorkerRequest): WorkerResponse {
   const { id, args } = request;
   try {
-    const value = parse(...(unmarkBSON(args) as Parameters<typeof parse>));
-    const result = markBSON(value);
+    const value = parse(...(untrackBSON(args) as Parameters<typeof parse>));
+    const result = trackBSON(value);
     return { id, ok: true, result };
   } catch (err) {
-    return { id, ok: false, error: (err as Error).message };
+    return { id, ok: false, error: err as Error };
   }
 }
 
