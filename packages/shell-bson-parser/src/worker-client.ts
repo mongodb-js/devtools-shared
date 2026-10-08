@@ -1,6 +1,3 @@
-import * as WebWorkerModule from 'web-worker';
-const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
-  .default;
 import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
@@ -25,27 +22,53 @@ const pending = new Map<
   }
 >();
 
+// jsdom defines `window` but no `Worker`, so `typeof window` alone cannot tell
+// a real browser apart from a Node test environment.
 const isNodeEnv =
-  typeof window === 'undefined' &&
   typeof process !== 'undefined' &&
-  !!process.versions?.node;
+  !!process.versions?.node &&
+  typeof (globalThis as { Worker?: unknown }).Worker === 'undefined';
+
+async function loadWebWorker(): Promise<typeof Worker> {
+  // web-worker's CJS build mistakes jsdom for a browser and throws when
+  // constructing a worker; its ESM entry resolves import.meta.url correctly.
+  // The CJS bundle keeps this a native import() (see webpack.cjs.config.cjs).
+  const WebWorkerModule = (await import('web-worker')) as unknown as {
+    default: typeof Worker;
+  };
+  return WebWorkerModule.default;
+}
 
 async function getWorkerScriptUrl(): Promise<string> {
   const testWorkerScriptUrl =
     typeof process !== 'undefined'
       ? process.env?.TEST_WORKER_SCRIPT_URL
       : undefined;
+
+  // eslint-disable-next-line no-console
+  console.log(`
+    testWorkerScriptUrl: ${String(testWorkerScriptUrl)}
+    isNodeEnv: ${String(isNodeEnv)}
+    window: ${String(typeof window !== 'undefined')}
+    process: ${String(typeof process !== 'undefined')}
+    cjs or esm: ${String(typeof require !== 'undefined')}
+  `);
+
+  // Bundlers rewrite `new URL(<dynamic>, import.meta.url)` into an unresolvable
+  // context module and inline a bare `import.meta.url` as a build-time path, so
+  // resolve the override against the emitted worker URL instead.
+  const workerScriptUrl = new URL('./worker.js', import.meta.url);
+
   if (testWorkerScriptUrl) {
-    return new URL(testWorkerScriptUrl, import.meta.url).toString();
+    return new URL(testWorkerScriptUrl, workerScriptUrl).toString();
   }
   if (isNodeEnv) {
-    return new URL('./worker.js', import.meta.url).toString();
+    return workerScriptUrl.toString();
   }
 
   // On browser env we want to fetch and blob so that the worker
-  // script can run on the web running locally.
-  const scriptUrl = new URL('./worker.js', import.meta.url);
-  const response = await fetch(scriptUrl);
+  // script can run on atlas-cloud running locally.
+  const response = await fetch(workerScriptUrl);
   if (!response.ok) {
     throw new Error(
       `Failed to fetch shell-bson-parser worker script: ${response.status} ${response.statusText}`,
@@ -66,6 +89,7 @@ function createWorker(): Promise<Worker> {
 
   workerPromise = (async () => {
     const scriptUrl = await getWorkerScriptUrl();
+    const WebWorker = await loadWebWorker();
     const newWorker = new WebWorker(scriptUrl, { type: 'module' });
     const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
       const response = event.data;
