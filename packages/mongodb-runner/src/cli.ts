@@ -84,15 +84,15 @@ import type { MongoClientOptions } from 'mongodb';
       type: 'string',
       describe: 'Configure OIDC authentication on the server',
     })
-    .option('slsCompose', {
+    .option('slsDir', {
       type: 'string',
       describe:
-        'Path to an SLS multi-cell docker-compose.yml; launches the SLS DSC project and configures mongod to use it (requires a DSC-capable mongod via --binDir or --downloadUrl)',
+        'Path to an SLS dir: its buildscripts/modules/atlas directory, or any parent containing it (an installed build or a Server source checkout). Locates the compose file and reads the image tag from the manifest',
     })
     .option('slsImageTag', {
       type: 'string',
       describe:
-        'SLS docker image tag to use with --slsCompose (defaults to the pinned_sls_commit from the manifest.json next to the compose file)',
+        'SLS docker image tag to use (defaults to the pinned_sls_commit from the manifest.json next to the compose file)',
     })
     .option('debug', { type: 'boolean', describe: 'Enable debug output' })
     .option('verbose', { type: 'boolean', describe: 'Enable verbose output' })
@@ -135,10 +135,26 @@ import type { MongoClientOptions } from 'mongodb';
     );
   }
 
+  async function resolveSlsComposeFile(): Promise<string | undefined> {
+    if (argv.slsDir === undefined) {
+      return undefined;
+    }
+    if (!argv.slsDir) {
+      throw new Error(
+        '--slsDir requires a path to a directory containing the SLS services docker compose file and other helper files - see the disaggregated storage docs for more details',
+      );
+    }
+    const resolved = await utilities.resolveSLSDir(argv.slsDir, {
+      requireManifest: !argv.slsImageTag,
+    });
+    return resolved.composeFile;
+  }
+
   async function start() {
-    const disaggregatedStorage = argv.slsCompose
+    const composeFile = await resolveSlsComposeFile();
+    const disaggregatedStorage = composeFile
       ? await utilities.createSLSDisaggregatedStorageOptions({
-          composeFile: argv.slsCompose,
+          composeFile,
           imageTag: argv.slsImageTag,
         })
       : undefined;

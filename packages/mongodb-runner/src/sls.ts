@@ -63,6 +63,96 @@ export async function readPinnedSlsCommit(atlasDir: string): Promise<string> {
   return pinned;
 }
 
+/** Relative path of the atlas module directory inside a Server build. */
+export const SLS_ATLAS_SUBDIR = path.join('buildscripts', 'modules', 'atlas');
+
+const SLS_COMPOSE_FILE = 'sls-multicell-docker-compose.yml';
+const SLS_BACKUP_PROTO_FILE = 'slsbackup.proto';
+const SLS_FLAGS_STATE_FILE = 'flags-state.json';
+
+/** Files that make up the SLS dir of a disaggregated-storage-capable build. */
+export interface SLSDir {
+  /** The `buildscripts/modules/atlas` directory holding the SLS files. */
+  atlasDir: string;
+  composeFile: string;
+  manifestFile: string;
+  backupProtoFile: string;
+  flagsStateFile: string;
+}
+
+async function exists(file: string): Promise<boolean> {
+  try {
+    await fs.access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function isFile(file: string): Promise<boolean> {
+  try {
+    // fs.stat follows symlinks, so a symlink to a file still counts.
+    return (await fs.stat(file)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+export interface ResolveSLSDirOptions {
+  /**
+   * Whether `manifest.json` must be present. It is only read to derive the
+   * default image tag, so callers that pass an explicit tag can skip it.
+   * Defaults to true.
+   */
+  requireManifest?: boolean;
+}
+
+/**
+ * Locate the SLS dir inside a disaggregated-storage-capable MongoDB build.
+ * `dir` may be either the install root or the `buildscripts/modules/atlas`
+ * directory itself. All returned paths are absolute, so they remain valid
+ * when the SLS project is torn down from a different working directory.
+ */
+export async function resolveSLSDir(
+  dir: string,
+  options: ResolveSLSDirOptions = {},
+): Promise<SLSDir> {
+  const base = path.resolve(dir);
+  const nested = path.join(base, SLS_ATLAS_SUBDIR);
+  const atlasDir = (await exists(nested)) ? nested : base;
+
+  const slsDir: SLSDir = {
+    atlasDir,
+    composeFile: path.join(atlasDir, SLS_COMPOSE_FILE),
+    manifestFile: path.join(atlasDir, SLS_MANIFEST_FILE),
+    backupProtoFile: path.join(atlasDir, SLS_BACKUP_PROTO_FILE),
+    flagsStateFile: path.join(atlasDir, SLS_FLAGS_STATE_FILE),
+  };
+
+  const required = [
+    slsDir.composeFile,
+    slsDir.backupProtoFile,
+    slsDir.flagsStateFile,
+  ];
+  if (options.requireManifest ?? true) {
+    required.splice(1, 0, slsDir.manifestFile);
+  }
+
+  const missing: string[] = [];
+  for (const file of required) {
+    if (!(await isFile(file))) missing.push(path.basename(file));
+  }
+  if (missing.length) {
+    throw new Error(
+      `${dir} is not a disaggregated-storage-capable MongoDB build ` +
+        `(missing: ${missing.join(', ')}; looked in ${atlasDir})`,
+    );
+  }
+
+  debug('resolved SLS dir', { atlasDir });
+  return slsDir;
+}
+
 export interface SLSServiceInfo {
   /** Environment variable through which the compose file receives the host port. */
   portVar: string;
@@ -173,7 +263,7 @@ export interface SLSMultiCellEnvironment {
 export async function createSLSMultiCellEnvironment(
   options: SLSMultiCellEnvironmentOptions,
 ): Promise<SLSMultiCellEnvironment> {
-  const { composeFile } = options;
+  const composeFile = path.resolve(options.composeFile);
   const imageTag =
     options.imageTag ?? (await readPinnedSlsCommit(path.dirname(composeFile)));
 
