@@ -5,7 +5,7 @@ export type TrackedPayload<T> = {
   bsonTypes: Map<object, string>;
 };
 
-const BSON_PROTOTYPE_BY_TAG = new Map<string, object>([
+const BSON_PROTOTYPES = new Map<string, object>([
   ['BSONRegExp', BSON.BSONRegExp.prototype],
   ['BSONSymbol', BSON.BSONSymbol.prototype],
   ['Binary', BSON.Binary.prototype],
@@ -22,13 +22,9 @@ const BSON_PROTOTYPE_BY_TAG = new Map<string, object>([
   ['UUID', BSON.UUID.prototype],
 ]);
 
-const KNOWN_BSON_PROTOTYPES = new Set(BSON_PROTOTYPE_BY_TAG.values());
-
 function isBsonValue(value: object): value is { _bsontype: string } {
-  if (typeof (value as { _bsontype?: unknown })._bsontype !== 'string') {
-    return false;
-  }
-  return KNOWN_BSON_PROTOTYPES.has(Object.getPrototypeOf(value));
+  const tag = (value as { _bsontype?: unknown })._bsontype;
+  return typeof tag === 'string' && BSON_PROTOTYPES.has(tag);
 }
 
 function isMap(m: unknown): m is Map<unknown, unknown> {
@@ -88,10 +84,7 @@ export function trackBSON<T>(data: T): TrackedPayload<T> {
     if (isBsonValue(item)) {
       // UUID and Binary share the _bsontype tag, so preserve their actual
       // class using the prototype rather than Binary's subtype.
-      const tag =
-        Object.getPrototypeOf(item) === BSON.UUID.prototype
-          ? 'UUID'
-          : item._bsontype;
+      const tag = item instanceof BSON.UUID ? 'UUID' : item._bsontype;
       bsonTypes.set(item, tag);
       pushNestedBsonDocuments(tag, item, stack);
       continue;
@@ -125,7 +118,7 @@ export function untrackBSON<T>(payload: TrackedPayload<T>): T {
   const { data, bsonTypes } = payload;
 
   for (const [item, tag] of bsonTypes) {
-    const prototype = BSON_PROTOTYPE_BY_TAG.get(tag);
+    const prototype = BSON_PROTOTYPES.get(tag);
     if (!prototype) {
       throw new Error(
         `Cannot unmark unknown BSON type crossing the worker boundary: ${tag}`,
