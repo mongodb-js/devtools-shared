@@ -1,3 +1,0 @@
-{
-  "extends": "@mongodb-js/tsconfig-devtools/tsconfig.common.json"
-}
