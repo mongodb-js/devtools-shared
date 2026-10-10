@@ -52,6 +52,16 @@ describe('shell-bson-parser with webworker processing', function () {
         expect(res).to.deep.equal(expected);
       });
     }
+
+    it('keeps the error type of a failed parse', async function () {
+      try {
+        await api.parse('{ a: }');
+        expect.fail('Expected parse to throw');
+      } catch (err) {
+        expect(err).to.be.instanceOf(SyntaxError);
+        expect((err as Error).name).to.equal('SyntaxError');
+      }
+    });
   });
 
   describe('restrictGlobalScope', function () {
