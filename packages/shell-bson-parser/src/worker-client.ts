@@ -4,12 +4,25 @@ const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
 import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
+/** Default execution timeout for worker requests */
+const DEFAULT_EXECUTION_TIMEOUT_MS = 120_000;
+
+export type ExecutionOptions = {
+  /** Defaults to `120_000` (2 minutes). */
+  executionTimeoutMs?: number;
+};
+
 let worker: Worker | null = null;
+let workerPromise: Promise<Worker> | null = null;
 let blobUrl: string | null = null;
 let nextId = 0;
 const pending = new Map<
   number,
-  { resolve: (v: any) => void; reject: (e: Error) => void }
+  {
+    resolve: (v: any) => void;
+    reject: (e: Error) => void;
+    executionTimer: ReturnType<typeof setTimeout>;
+  }
 >();
 
 const isNodeEnv =
@@ -42,52 +55,76 @@ async function getWorkerScriptUrl(): Promise<string> {
   return blobUrl;
 }
 
-async function createWorker(): Promise<Worker> {
+function createWorker(): Promise<Worker> {
   if (worker) {
-    return worker;
+    return Promise.resolve(worker);
+  }
+  if (workerPromise) {
+    return workerPromise;
   }
 
-  const scriptUrl = await getWorkerScriptUrl();
-  worker = new WebWorker(scriptUrl, { type: 'module' });
+  workerPromise = (async () => {
+    const scriptUrl = await getWorkerScriptUrl();
+    const newWorker = new WebWorker(scriptUrl, { type: 'module' });
+    const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
+      const response = event.data;
+      const entry = pending.get(response.id);
+      if (!entry) {
+        return;
+      }
+      clearTimeout(entry.executionTimer);
+      pending.delete(response.id);
+      if (!response.ok) {
+        entry.reject(response.error);
+        return;
+      }
+      try {
+        entry.resolve(untrackBSON(response.result));
+      } catch (err) {
+        entry.reject(err as Error);
+      }
+    };
 
-  const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
-    const response = event.data;
-    const entry = pending.get(response.id);
-    if (!entry) {
-      return;
-    }
-    pending.delete(response.id);
-    if (!response.ok) {
-      entry.reject(response.error);
-      return;
-    }
-    try {
-      entry.resolve(untrackBSON(response.result));
-    } catch (err) {
-      entry.reject(err as Error);
-    }
-  };
+    const onErrorHandler = (event: ErrorEvent) => {
+      terminateWorker(new Error(event.message || 'Worker error'));
+    };
 
-  const onErrorHandler = (event: ErrorEvent) => {
-    terminateWorker(new Error(event.message || 'Worker error'));
-  };
+    const onMessageErrorHandler = () => {
+      terminateWorker(new Error('Worker message could not be deserialized'));
+    };
 
-  const onMessageErrorHandler = () => {
-    terminateWorker(new Error('Worker message could not be deserialized'));
-  };
+    newWorker.addEventListener('message', onMessageHandler);
+    newWorker.addEventListener('error', onErrorHandler);
+    newWorker.addEventListener('messageerror', onMessageErrorHandler);
 
-  worker.addEventListener('message', onMessageHandler);
-  worker.addEventListener('error', onErrorHandler);
-  worker.addEventListener('messageerror', onMessageErrorHandler);
+    worker = newWorker;
+    return newWorker;
+  })();
 
-  return worker;
+  workerPromise.catch(() => {
+    workerPromise = null;
+  });
+
+  return workerPromise;
 }
 
-export async function callWorker<T>(args: unknown[]): Promise<T> {
+export async function callWorker<T>(
+  args: unknown[],
+  executionOptions?: ExecutionOptions,
+): Promise<T> {
   const activeWorker = await createWorker();
   const id = nextId++;
+  const executionTimeoutMs =
+    executionOptions?.executionTimeoutMs ?? DEFAULT_EXECUTION_TIMEOUT_MS;
   const promise = new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    const executionTimer = setTimeout(() => {
+      // Terminate the worker if this message is taking too long to execute,
+      // this means all the other pending requests will also be terminated.
+      terminateWorker(
+        new Error(`Worker execution timed out after ${executionTimeoutMs}ms`),
+      );
+    }, executionTimeoutMs);
+    pending.set(id, { resolve, reject, executionTimer });
   });
   try {
     activeWorker.postMessage({
@@ -95,6 +132,8 @@ export async function callWorker<T>(args: unknown[]): Promise<T> {
       args: trackBSON(args),
     });
   } catch (err) {
+    const entry = pending.get(id);
+    if (entry) clearTimeout(entry.executionTimer);
     pending.get(id)?.reject(err as Error);
     pending.delete(id);
   }
@@ -108,9 +147,11 @@ export function terminateWorker(
   if (blobUrl) URL.revokeObjectURL(blobUrl);
 
   worker = null;
+  workerPromise = null;
   blobUrl = null;
 
   for (const [id, entry] of pending) {
+    clearTimeout(entry.executionTimer);
     entry.reject(reason);
     pending.delete(id);
   }
