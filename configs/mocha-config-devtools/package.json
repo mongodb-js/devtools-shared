@@ -26,14 +26,14 @@
     "prettier": "^3.8.1"
   },
   "dependencies": {
-    "@types/sinon-chai": "^3.2.12",
-    "chai": "^4.3.6",
+    "@types/sinon-chai": "^4.0.0",
+    "chai": "^6.3.0",
     "chai-dom": "^1.12.1",
-    "global-jsdom": "^24.0.0",
+    "global-jsdom": "^30.0.0",
     "identity-obj-proxy": "^3.0.0",
-    "jsdom": "^24.1.3",
-    "sinon-chai": "^3.7.0",
+    "jsdom": "^30.1.1",
+    "sinon-chai": "^4.0.1",
     "ts-node": "^10.9.2",
-    "why-is-node-running": "^2.3.0"
+    "why-is-node-running": "^3.2.2"
   }
 }
