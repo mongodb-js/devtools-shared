@@ -7,7 +7,11 @@ import { fileURLToPath } from 'url';
 import * as WebWorkerModule from 'web-worker';
 
 import * as api from './index.js';
-import { terminateWorker, callWorker } from './worker-client.js';
+import {
+  terminateWorker,
+  callWorker,
+  getExecutionTimeoutMs,
+} from './worker-client.js';
 import {
   restrictGlobalScope,
   restrictObjectPrototype,
@@ -239,6 +243,20 @@ describe('shell-bson-parser with webworker processing', function () {
       await callWorker([1000]).catch(() => {}); // times out
       const result = await callWorker([0]);
       expect(result).to.equal('done');
+    });
+  });
+
+  describe('getExecutionTimeoutMs', function () {
+    it('returns the default timeout if 0 is specified', function () {
+      expect(getExecutionTimeoutMs(0)).to.equal(5_000);
+    });
+
+    it('returns the default timeout if a negative value is specified', function () {
+      expect(getExecutionTimeoutMs(-100)).to.equal(5_000);
+    });
+
+    it('returns the specified timeout if it is positive', function () {
+      expect(getExecutionTimeoutMs(2000)).to.equal(2000);
     });
   });
 });

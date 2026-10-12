@@ -5,12 +5,20 @@ import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 import type { WorkerResponse } from './worker-types.js';
 
 /** Default execution timeout for worker requests */
-const DEFAULT_EXECUTION_TIMEOUT_MS = 120_000;
+const DEFAULT_EXECUTION_TIMEOUT_MS = 5_000;
 
 export type ExecutionOptions = {
-  /** Defaults to `120_000` (2 minutes). */
+  /** Defaults to `5_000` (5 seconds). */
   executionTimeoutMs?: number;
 };
+
+/** Exported for tests */
+export function getExecutionTimeoutMs(executionTimeoutMs?: number): number {
+  if (!executionTimeoutMs || executionTimeoutMs <= 0) {
+    return DEFAULT_EXECUTION_TIMEOUT_MS;
+  }
+  return executionTimeoutMs;
+}
 
 let worker: Worker | null = null;
 let workerPromise: Promise<Worker> | null = null;
@@ -114,8 +122,9 @@ export async function callWorker<T>(
 ): Promise<T> {
   const activeWorker = await createWorker();
   const id = nextId++;
-  const executionTimeoutMs =
-    executionOptions?.executionTimeoutMs ?? DEFAULT_EXECUTION_TIMEOUT_MS;
+  const executionTimeoutMs = getExecutionTimeoutMs(
+    executionOptions?.executionTimeoutMs,
+  );
   const promise = new Promise<T>((resolve, reject) => {
     const executionTimer = setTimeout(() => {
       // Terminate the worker if this message is taking too long to execute,
