@@ -60,6 +60,11 @@ export const ALLOWED_GLOBALS = new Set([
   'decodeURIComponent',
   'Buffer',
 
+  // bson's byteutils use these internally
+  'atob',
+  'btoa',
+  'crypto',
+
   // web-worker module relies on process as it supports both node and browser.
   'process',
   'console',
