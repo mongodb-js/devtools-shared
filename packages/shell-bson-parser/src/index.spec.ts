@@ -72,7 +72,7 @@ describe('shell-bson-parser with webworker processing', function () {
       expect(scope).to.not.have.property('require');
       expect(scope).to.not.have.property('importScripts');
       expect(scope).to.not.have.property('XMLHttpRequest');
-      expect(scope).to.have.property('process');
+      expect(scope).to.not.have.property('process');
       expect(scope).to.have.property('Object', Object);
       expect(scope).to.have.property('Array', Array);
       expect(scope).to.have.property('Math', Math);

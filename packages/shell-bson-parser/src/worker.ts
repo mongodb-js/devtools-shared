@@ -7,67 +7,33 @@ const { self, postMessage } = globalThis;
 
 // Exported for tests
 export const ALLOWED_GLOBALS = new Set([
+  // Built-ins that acorn, bson and the evaluator reach for while parsing.
   'Object',
   'Array',
-  'Function',
   'String',
   'Number',
   'Boolean',
   'Symbol',
-  'BigInt',
   'Math',
   'Date',
   'RegExp',
   'JSON',
   'Map',
   'Set',
-  'WeakMap',
-  'WeakSet',
-  'Promise',
-  'Proxy',
-  'Reflect',
   'Error',
-  'TypeError',
-  'RangeError',
-  'SyntaxError',
-  'ReferenceError',
-  'EvalError',
-  'URIError',
-  'ArrayBuffer',
-  'SharedArrayBuffer',
-  'DataView',
+  'SyntaxError', // thrown by acorn on invalid input
+  'ArrayBuffer', // bson's byte utils
   'Uint8Array',
-  'Int8Array',
-  'Uint8ClampedArray',
-  'Uint16Array',
-  'Int16Array',
-  'Uint32Array',
-  'Int32Array',
-  'Float32Array',
-  'Float64Array',
-  'BigInt64Array',
-  'BigUint64Array',
-  'TextEncoder',
-  'TextDecoder',
-  'undefined',
-  'NaN',
-  'Infinity',
-  'isNaN',
-  'isFinite',
-  'parseFloat',
-  'parseInt',
-  'encodeURIComponent',
-  'decodeURIComponent',
-  'Buffer',
+  'isNaN', // bson
+  'parseFloat', // acorn
+  'parseInt', // bson
 
-  // bson's byteutils use these internally
-  'atob',
-  'btoa',
+  // bson's byte utils pick a node or browser implementation at load time.
+  'Buffer', // node
+  'atob', // browser
+
+  // bson randomBytes, used by ObjectId() and UUID() without arguments.
   'crypto',
-
-  // web-worker module relies on process as it supports both node and browser.
-  'process',
-  'console',
 ]);
 
 // Exported for tests
