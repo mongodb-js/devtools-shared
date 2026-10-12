@@ -62,6 +62,7 @@ export const ALLOWED_GLOBALS = new Set([
 
   // web-worker module relies on process as it supports both node and browser.
   'process',
+  'console',
 ]);
 
 // Exported for tests
