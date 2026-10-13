@@ -1,9 +1,7 @@
 import { promises as fs, createReadStream } from 'fs';
 import path from 'path';
-import os from 'os';
 import nock from 'nock';
 import { expect } from 'chai';
-import S3rver from 's3rver';
 
 import type { S3BucketConfig } from './download-center';
 import {
@@ -21,51 +19,29 @@ const readJSON = <T>(filePath: string) =>
     .then((value) => value as T);
 
 describe('download center client', function () {
-  let tempDir: string;
-  let bucketConfig: S3BucketConfig;
+  const bucketConfig: S3BucketConfig = {
+    bucket: 'test',
+    credentials: {
+      accessKeyId: 'test-access-key',
+      secretAccessKey: 'test-secret-key',
+    },
+    endpoint: 'http://s3.example.test',
+    tls: false,
+    forcePathStyle: true,
+  };
   let downloadCenter: DownloadCenter;
 
-  let s3rver: S3rver;
-
-  before(async function () {
-    tempDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'download-center-tests-'),
-    );
-
-    s3rver = new S3rver({
-      address: '0.0.0.0',
-      port: 0,
-      silent: false,
-      directory: tempDir,
-      configureBuckets: [{ name: 'test', configs: [] }],
-    });
-
-    const addressInfo = await s3rver.run();
-
-    bucketConfig = {
-      bucket: 'test',
-      credentials: {
-        accessKeyId: 'S3RVER',
-        secretAccessKey: 'S3RVER',
-      },
-      endpoint: `http://${addressInfo.address}:${addressInfo.port}`,
-      tls: false,
-      forcePathStyle: true,
-    };
-  });
-
-  after(function (done) {
-    s3rver.close(done);
-  });
-
-  beforeEach(async function () {
-    await fs.mkdir(tempDir, { recursive: true });
-    await s3rver.configureBuckets();
+  beforeEach(function () {
+    nock.cleanAll();
     downloadCenter = new DownloadCenter({ ...bucketConfig });
   });
 
-  afterEach(async function () {
-    await fs.rm(tempDir, { recursive: true, force: true });
+  afterEach(function () {
+    try {
+      expect(nock.isDone(), nock.pendingMocks().join('\n')).to.equal(true);
+    } finally {
+      nock.cleanAll();
+    }
   });
 
   const fixturePath = (...args: string[]) =>
@@ -73,16 +49,46 @@ describe('download center client', function () {
 
   describe('upload / download assets', function () {
     it('can upload a file and download it back', async function () {
+      const asset = await fs.readFile(fixturePath('asset.txt'), 'utf8');
+      nock('http://s3.example.test', {
+        reqheaders: { 'x-amz-acl': 'public-read' },
+      })
+        .put(
+          '/test/prefix/asset.txt',
+          (body) => typeof body === 'string' && body.includes(asset),
+        )
+        .query(true)
+        .reply(200);
+      nock('http://s3.example.test')
+        .get('/test/prefix/asset.txt')
+        .query(true)
+        .reply(200, asset);
+
       await downloadCenter.uploadAsset(
         'prefix/asset.txt',
         createReadStream(fixturePath('asset.txt')),
       );
 
       const content = await downloadCenter.downloadAsset('prefix/asset.txt');
-      expect(await content?.transformToString()).to.contain('content');
+      expect(await content?.transformToString()).to.equal(asset);
     });
 
     it('can upload a file with private acls and download it back', async function () {
+      const asset = await fs.readFile(fixturePath('asset.txt'), 'utf8');
+      nock('http://s3.example.test', {
+        reqheaders: { 'x-amz-acl': 'private' },
+      })
+        .put(
+          '/test/prefix-private/asset.txt',
+          (body) => typeof body === 'string' && body.includes(asset),
+        )
+        .query(true)
+        .reply(200);
+      nock('http://s3.example.test')
+        .get('/test/prefix-private/asset.txt')
+        .query(true)
+        .reply(200, asset);
+
       await downloadCenter.uploadAsset(
         'prefix-private/asset.txt',
         createReadStream(fixturePath('asset.txt')),
@@ -94,7 +100,7 @@ describe('download center client', function () {
       const content = await downloadCenter.downloadAsset(
         'prefix-private/asset.txt',
       );
-      expect(await content?.transformToString()).to.contain('content');
+      expect(await content?.transformToString()).to.equal(asset);
     });
   });
 
@@ -103,10 +109,21 @@ describe('download center client', function () {
       const validConfig = await readJSON<DownloadCenterConfig>(
         fixturePath('compass.json'),
       );
+      nock('https://downloads.mongodb.com')
+        .head('/compass/mongodb-compass-1.21.2-darwin-x64.dmg')
+        .reply(200);
+      nock('http://s3.example.test')
+        .put('/test/prefix/compass.json', JSON.stringify(validConfig))
+        .query(true)
+        .reply(200)
+        .get('/test/prefix/compass.json')
+        .query(true)
+        .reply(200, JSON.stringify(validConfig));
+
       await downloadCenter.uploadConfig('prefix/compass.json', validConfig);
 
       const config = await downloadCenter.downloadConfig('prefix/compass.json');
-      expect(config).has.property('manual_link');
+      expect(config).to.deep.equal(validConfig);
     });
 
     it('rejects an invalid configuration (malformed)', async function () {
@@ -142,6 +159,7 @@ describe('download center client', function () {
           },
         ],
       };
+      nock('http://example.com').head('/non-existing-url').reply(404);
 
       const error = await downloadCenter
         .uploadConfig('prefix/compass.json', invalidConfig)
