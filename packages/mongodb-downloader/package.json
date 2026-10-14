@@ -53,8 +53,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1137.0",
+    "@xhmikosr/decompress": "^11.1.4",
     "debug": "^4.4.0",
-    "decompress": "^4.2.1",
     "mongodb-download-url": "^2.0.2",
     "node-fetch": "^2.7.0",
     "proper-lockfile": "^4.1.2",
@@ -67,7 +67,6 @@
     "@mongodb-js/tsconfig-devtools": "^1.1.5",
     "@types/chai": "^4.2.21",
     "@types/debug": "^4.1.8",
-    "@types/decompress": "^4.2.7",
     "@types/mocha": "^9.1.1",
     "@types/node": "^25.5.2",
     "@types/proper-lockfile": "^4.1.4",
