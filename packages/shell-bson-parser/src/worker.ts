@@ -81,9 +81,10 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
 }
 
 if (typeof self !== 'undefined') {
+  const sendResponse = postMessage.bind(self);
+  self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
+    sendResponse(handleRequest(event.data));
+  });
   restrictObjectPrototype();
   restrictGlobalScope(globalThis);
-  self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    postMessage(handleRequest(event.data));
-  };
 }

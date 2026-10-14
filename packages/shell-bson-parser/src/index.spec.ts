@@ -186,7 +186,20 @@ describe('shell-bson-parser with webworker processing', function () {
     const code = await fs.readFile(workerBundlePath, 'utf8');
 
     const sandbox: Record<string, unknown> = Object.create(null);
-    sandbox.postMessage = function postMessage() {};
+    let messageHandler: ((event: MessageEvent) => void) | undefined;
+    let response: any;
+    sandbox.postMessage = function postMessage(value: unknown) {
+      expect(this).to.equal(workerScope);
+      response = value;
+    };
+    sandbox.addEventListener = function addEventListener(
+      name: string,
+      handler: (event: MessageEvent) => void,
+    ) {
+      expect(name).to.equal('message');
+      messageHandler = handler;
+    };
+    sandbox.onmessage = null;
     sandbox.fetch = function fetch() {};
     sandbox.require = function require() {};
     sandbox.importScripts = function importScripts() {};
@@ -196,6 +209,7 @@ describe('shell-bson-parser with webworker processing', function () {
     sandbox.globalThis = sandbox;
 
     vm.createContext(sandbox);
+    const workerScope = vm.runInContext('globalThis', sandbox);
 
     expect(sandbox).to.have.property('fetch');
     expect(sandbox).to.have.property('require');
@@ -209,7 +223,13 @@ describe('shell-bson-parser with webworker processing', function () {
     expect(sandbox).to.not.have.property('importScripts');
     expect(sandbox).to.not.have.property('XMLHttpRequest');
 
-    expect(typeof sandbox.onmessage).to.equal('function');
+    expect(sandbox).to.not.have.property('onmessage');
+    expect(messageHandler).to.be.a('function');
+    messageHandler!({
+      data: { id: 7, args: { data: ['{ a: 1 }'], bsonTypes: new Map() } },
+    } as MessageEvent);
+    expect(response).to.include({ id: 7, ok: true });
+    expect(response.result.data).to.deep.equal({ a: 1 });
 
     const stillHasProtoAccessor = vm.runInContext(
       `Object.prototype.hasOwnProperty('__proto__')`,

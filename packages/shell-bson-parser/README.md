@@ -100,5 +100,3 @@ const query = await parse('{ a: 1 }');
 
 terminateWorker();
 ```
-
-This package is ESM only.

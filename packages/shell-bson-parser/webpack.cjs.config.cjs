@@ -1,39 +1,57 @@
 'use strict';
 const path = require('path');
+const webpack = require('webpack');
 
-// Bundles the already tsc-compiled ESM dist/index.js into a standalone
-// CommonJS entry point. The worker file stays same as in the ESM build.
+const distDir = path.resolve(__dirname, 'dist');
+const cjsDir = path.join(distDir, 'cjs');
+
 module.exports = {
   mode: 'production',
   target: 'node',
-  entry: path.resolve(__dirname, 'dist', 'index.js'),
-  output: {
-    path: path.resolve(__dirname, 'dist', 'cjs'),
-    filename: 'index.js',
-    // Keep the emitted worker at a stable `worker.js` so runtime resolution
-    // next to this bundle finds it instead of a content-hashed name.
-    assetModuleFilename: '[name][ext]',
-    // Allow native `import()` for the `web-worker` external below.
-    environment: {
-      dynamicImport: true,
-    },
-    library: {
-      type: 'commonjs2',
+  entry: {
+    index: path.join(distDir, 'index.js'),
+    'web-worker': {
+      import: 'web-worker',
+      library: { type: 'commonjs2', export: 'default' },
     },
   },
-  // `web-worker` must resolve through its ESM entry: its CJS build mis-detects
-  // jsdom as a browser and throws when constructing a worker.
+  resolve: { conditionNames: ['import', 'node', 'default'] },
+  output: {
+    path: cjsDir,
+    clean: true,
+    filename: '[name].js',
+    library: { type: 'commonjs2' },
+    environment: { dynamicImport: true },
+  },
   externals: [
-    { 'web-worker': 'import web-worker' },
     /^acorn/,
     /^javascript-stringify/,
     /^bson/,
+    ({ request, contextInfo }, callback) => {
+      if (request === 'web-worker' && contextInfo.issuer) {
+        return callback(null, 'commonjs ./web-worker.js');
+      }
+      callback();
+    },
   ],
   module: {
     parser: {
       javascript: {
+        url: false,
+        import: false,
         importExportsPresence: 'warn',
       },
     },
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      'import.meta.url': webpack.DefinePlugin.runtimeValue(
+        ({ module }) =>
+          module.resource === path.join(distDir, 'worker-client.js')
+            ? 'require("node:url").pathToFileURL(require("node:path").join(__dirname, "..", "worker-client.js")).href'
+            : 'require("node:url").pathToFileURL(__filename).href',
+        true,
+      ),
+    }),
+  ],
 };
