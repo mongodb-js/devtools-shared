@@ -5,7 +5,7 @@ import { createHash } from 'crypto';
 import { promisify } from 'util';
 import { promises as fs, createWriteStream } from 'fs';
 import path from 'path';
-import decompress from 'decompress';
+import decompress from '@xhmikosr/decompress';
 import { pipeline, Transform, type Readable } from 'stream';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import getDownloadURL from 'mongodb-download-url';

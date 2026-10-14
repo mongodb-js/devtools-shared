@@ -389,6 +389,64 @@ describe('MongoDBDownloader', function () {
     }
   });
 
+  describe('zip extraction', function () {
+    const archive = Buffer.from(
+      'UEsDBBQAAAAIAEdhTl0H0hEgCAAAAAYAAAAWAAAAbW9uZ29kYi9iaW4vbW9uZ29kLmV4ZcvNz0vPTwEA' +
+        'UEsDBBQAAAAIAEdhTl2FTYPfCQAAAAcAAAAWAAAAbW9uZ29kYi9iaW4vbW9uZ29kLnBkYiuuzE3KzykG' +
+        'AFBLAwQUAAAACABHYU5dmw3x+gcAAAAFAAAAFgAAAGJpbi9tb25nb19jcnlwdF92MS5kbGxLLqosKAEA' +
+        'UEsBAhQDFAAAAAgAR2FOXQfSESAIAAAABgAAABYAAAAAAAAAAAAAAIABAAAAAG1vbmdvZGIvYmluL21v' +
+        'bmdvZC5leGVQSwECFAMUAAAACABHYU5dhU2D3wkAAAAHAAAAFgAAAAAAAAAAAAAAgAE8AAAAbW9uZ29k' +
+        'Yi9iaW4vbW9uZ29kLnBkYlBLAQIUAxQAAAAIAEdhTl2bDfH6BwAAAAUAAAAWAAAAAAAAAAAAAACAAXkA' +
+        'AABiaW4vbW9uZ29fY3J5cHRfdjEuZGxsUEsFBgAAAAADAAMAzAAAALQAAAAAAA==',
+      'base64',
+    );
+
+    for (const isCryptLibrary of [false, true]) {
+      it(`extracts ${isCryptLibrary ? 'crypt libraries without stripping' : 'server binaries with stripping and without debug symbols'}`, async function () {
+        downloadAndExtractStub.restore();
+        const streamStub = sinon
+          .stub(
+            testDownloader as unknown as {
+              openDownloadStream: (url: string) => Promise<{
+                body: Readable;
+                totalBytes: number;
+              }>;
+            },
+            'openDownloadStream',
+          )
+          .resolves({
+            body: Readable.from(archive),
+            totalBytes: archive.length,
+          });
+
+        try {
+          const result = await testDownloader.downloadMongoDbWithVersionInfo({
+            directory,
+            useLockfile: false,
+            downloadUrl: 'https://example.com/mongodb.zip',
+            downloadOptions: {
+              platform: 'win32',
+              crypt_shared: isCryptLibrary,
+            },
+          });
+          const binary = isCryptLibrary ? 'mongo_crypt_v1.dll' : 'mongod.exe';
+          expect(
+            await fs.readFile(
+              path.join(result.downloadedBinDir, binary),
+              'utf8',
+            ),
+          ).to.equal(isCryptLibrary ? 'crypt' : 'mongod');
+          expect(await fs.readdir(result.downloadedBinDir)).to.have.members([
+            '.artifact_info',
+            binary,
+          ]);
+        } finally {
+          streamStub.restore();
+        }
+      });
+    }
+  });
+
   describe('s3 downloads', function () {
     const s3Url =
       's3://origin-mongodb-server-latest/server-latest/mongodb-mongo-master-nightly/mongodb-linux-x86_64-enterprise-ubuntu2204-latest.tgz';
