@@ -90,6 +90,11 @@ jobs:
           git checkout -- packages/saslprep/src/code-points-data.ts
         shell: bash
 
+      # Electron >= 42 no longer downloads its binary on postinstall
+      - name: Download Electron binary
+        run: npx install-electron --no
+        shell: bash
+
       - name: Configure Electron sandbox
         if: ${{ runner.os == 'Linux' }}
         run: |
