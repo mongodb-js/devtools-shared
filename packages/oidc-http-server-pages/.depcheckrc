@@ -4,6 +4,6 @@ ignores:
  - '@types/chai'
  - 'sinon'
  # this is required due to the compass-components package
- - 'mongodb-query-parser'
+ - '@mongodb-js/shell-bson-parser'
 ignore-patterns:
  - 'dist'

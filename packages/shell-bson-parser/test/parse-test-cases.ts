@@ -1,6 +1,6 @@
 import * as bson from 'bson';
-import { ParseMode } from '../src';
-import type { Options } from '../src/options';
+import { ParseMode } from '../src/index.js';
+import type { Options } from '../src/options.js';
 
 export type ParseTestCase = {
   title: string;
@@ -96,7 +96,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
       MinKey: new bson.MinKey(),
       ObjectID: new bson.ObjectId('5e159ba7eac34211f2252aaa'),
       ObjectId: new bson.ObjectId('5e159ba7eac34211f2252aaa'),
-      Symbol: new (bson as any).BSONSymbol('symbol'),
+      Symbol: new bson.BSONSymbol('symbol'),
       Timestamp: new bson.Timestamp({ t: 100, i: 0 }),
       Timestamp_object: new bson.Timestamp({ t: 1, i: 2 }),
       Timestamp_long: new bson.Timestamp(bson.Long.fromNumber(8589934593)),
@@ -222,32 +222,36 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
   // Flattened from a loop over ParseMode.{Extended,Strict,Loose}, each
   // asserting 4 separate expressions.
   ...[ParseMode.Extended, ParseMode.Strict, ParseMode.Loose].flatMap(
-    (mode): ParseTestCase[] => [
-      {
-        title: `should not allow calling functions that only exist as Object.prototype properties (mode=${mode}) - Date.constructor`,
-        input: '{ date: Date.constructor("") }',
-        options: { mode },
-        expected: '',
-      },
-      {
-        title: `should not allow calling functions that only exist as Object.prototype properties (mode=${mode}) - Date.hasOwnProperty`,
-        input: '{ date: Date.hasOwnProperty("") }',
-        options: { mode },
-        expected: '',
-      },
-      {
-        title: `should not allow calling functions that only exist as Object.prototype properties (mode=${mode}) - Date.__proto__`,
-        input: '{ date: Date.__proto__("") }',
-        options: { mode },
-        expected: '',
-      },
-      {
-        title: `should not allow calling functions that only exist as Object.prototype properties (mode=${mode}) - Code({ toString })`,
-        input: '{ date: Code({ toString: Date.constructor("throw null;") }) }',
-        options: { mode },
-        expected: '',
-      },
-    ],
+    (mode: ParseMode): ParseTestCase[] => {
+      const modeLabel: string = mode;
+      return [
+        {
+          title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.constructor`,
+          input: '{ date: Date.constructor("") }',
+          options: { mode },
+          expected: '',
+        },
+        {
+          title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.hasOwnProperty`,
+          input: '{ date: Date.hasOwnProperty("") }',
+          options: { mode },
+          expected: '',
+        },
+        {
+          title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.__proto__`,
+          input: '{ date: Date.__proto__("") }',
+          options: { mode },
+          expected: '',
+        },
+        {
+          title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Code({ toString })`,
+          input:
+            '{ date: Code({ toString: Date.constructor("throw null;") }) }',
+          options: { mode },
+          expected: '',
+        },
+      ];
+    },
   ),
 
   {

@@ -6,7 +6,7 @@ import type {
   FunctionExpression,
   ArrowFunctionExpression,
 } from 'estree';
-import { getScopeFunction, getClass, GLOBALS } from './scope';
+import { getScopeFunction, getClass, GLOBALS } from './scope.js';
 
 const unaryExpression = (node: UnaryExpression): any => {
   if (!node.prefix) throw new Error('Malformed UnaryExpression');

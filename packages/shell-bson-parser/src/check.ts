@@ -1,7 +1,7 @@
 import type { Node, BaseCallExpression, Identifier } from 'estree';
 
-import { GLOBAL_FUNCTIONS, isMethodWhitelisted, GLOBALS } from './scope';
-import type { Options } from './options';
+import { GLOBAL_FUNCTIONS, isMethodWhitelisted, GLOBALS } from './scope.js';
+import type { Options } from './options.js';
 
 class Checker {
   constructor(private options: Options) {}
