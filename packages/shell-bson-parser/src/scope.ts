@@ -73,7 +73,7 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
       String.prototype.substring.call(lsb, 0, 2);
     hex = msb + lsb;
 
-    const hexBuffer = Buffer.from(hex, 'hex');
+    const hexBuffer = bson.ByteUtils.fromHex(hex);
     return new bson.Binary(hexBuffer, 3);
   },
   LegacyCSharpUUID: function (u: any) {
@@ -97,7 +97,7 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     const d = String.prototype.substring.call(hex, 16, 32);
     hex = a + b + c + d;
 
-    const hexBuffer = Buffer.from(hex, 'hex');
+    const hexBuffer = bson.ByteUtils.fromHex(hex);
     return new bson.Binary(hexBuffer, 3);
   },
   LegacyPythonUUID: function (u: any) {
@@ -106,21 +106,20 @@ const SCOPE_ANY: { [x: string]: Function } = lookupMap({
     }
 
     return new bson.Binary(
-      Buffer.from(
+      bson.ByteUtils.fromHex(
         String.prototype.replace.call(u, /[{}-]/g, () => ''),
-        'hex',
       ),
       3,
     );
   },
   BinData: function (t: any, d: any) {
-    return new bson.Binary(Buffer.from(d, 'base64'), t);
+    return new bson.Binary(bson.ByteUtils.fromBase64(d), t);
   },
   UUID: function (u: any) {
     if (u === undefined) {
       return new bson.UUID().toBinary();
     }
-    return new bson.Binary(Buffer.from(u.replace(/-/g, ''), 'hex'), 4);
+    return new bson.Binary(bson.ByteUtils.fromHex(u.replace(/-/g, '')), 4);
   },
   Code: function (c: any, s: any) {
     return new bson.Code(c, s);
