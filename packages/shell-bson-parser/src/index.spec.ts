@@ -11,6 +11,7 @@ import {
   terminateWorker,
   callWorker,
   getExecutionTimeoutMs,
+  getWorkerScriptUrl,
 } from './worker-client.js';
 import {
   restrictGlobalScope,
@@ -37,6 +38,23 @@ describe('shell-bson-parser with webworker processing', function () {
       delete process.env.TEST_WORKER_SCRIPT_URL;
     }
     terminateWorker();
+  });
+
+  it('returns the file URL for the worker script', async function () {
+    const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
+    delete process.env.TEST_WORKER_SCRIPT_URL;
+
+    try {
+      expect(await getWorkerScriptUrl()).to.equal(
+        new URL('./worker.js', import.meta.url).toString(),
+      );
+    } finally {
+      if (initialWorkerScriptUrl) {
+        process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+      } else {
+        delete process.env.TEST_WORKER_SCRIPT_URL;
+      }
+    }
   });
 
   it('keeps the error type of a failed parse', async function () {

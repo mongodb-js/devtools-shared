@@ -33,7 +33,8 @@ const pending = new Map<
   }
 >();
 
-async function getWorkerScriptUrl(): Promise<string> {
+/** Exported for tests */
+export async function getWorkerScriptUrl(): Promise<string> {
   const override =
     typeof process !== 'undefined'
       ? process.env.TEST_WORKER_SCRIPT_URL
