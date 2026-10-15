@@ -121,7 +121,8 @@ jobs:
       # '*'), not the version it resolved to, so a cache entry pins tests to
       # whichever release was current when it was written. Including the ISO
       # week in the key rotates that weekly, keeping us at most a week behind.
-      # Bump `v1` to force a refresh.
+      # Bump `v1` to force a refresh. The key is per group since each group
+      # downloads different versions and only the first save of a key wins.
       - name: Compute cache week
         if: ${{ runner.os == 'Windows' }}
         id: cache-week
@@ -133,7 +134,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/mongodb-binaries
-          key: v1-mongodb-binaries-${{ runner.os }}-${{ steps.cache-week.outputs.week }}
+          key: v1-mongodb-binaries-${{ runner.os }}-group${{ matrix.group }}-${{ steps.cache-week.outputs.week }}
 
       - name: Set MongoDB binaries download dir
         if: ${{ runner.os == 'Windows' }}
@@ -145,6 +146,13 @@ jobs:
           scopes=$(node .github/scripts/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
           echo "Testing group ${{ matrix.group }}/${TOTAL_GROUPS} with: ${scopes}"
           npm run test-ci -- --stream ${scopes}
+        shell: bash
+
+      # Only the extracted binaries are reused, so drop the archives before
+      # the cache is saved (in the post step) to keep the cache small.
+      - name: Remove MongoDB archives from cache dir
+        if: ${{ runner.os == 'Windows' }}
+        run: find "${RUNNER_TEMP}/mongodb-binaries" -name '*.zip' -delete || true
         shell: bash
 
       # Each group uploads coverage for the packages it tested; the parallel
