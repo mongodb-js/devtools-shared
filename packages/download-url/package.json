@@ -1,6 +1,6 @@
 {
   "name": "mongodb-download-url",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Lookup download URLs for MongoDB versions.",
   "scripts": {
     "bootstrap": "npm run compile",
@@ -51,8 +51,8 @@
     "semver": "^7.8.5"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.13",
-    "@mongodb-js/mocha-config-devtools": "^2.0.2",
+    "@mongodb-js/eslint-config-devtools": "^0.11.14",
+    "@mongodb-js/mocha-config-devtools": "^3.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@mongodb-js/tsconfig-devtools": "^1.1.5",
     "@types/chai": "^4.2.21",

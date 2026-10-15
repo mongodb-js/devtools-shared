@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "8.4.1",
+  "version": "8.4.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -60,9 +60,9 @@
     "reformat": "npm run prettier -- --write ."
   },
   "dependencies": {
-    "@mongodb-js/mongodb-downloader": "^3.0.3",
-    "@mongodb-js/oidc-mock-provider": "^0.13.19",
-    "@mongodb-js/saslprep": "^1.6.0",
+    "@mongodb-js/mongodb-downloader": "^3.0.4",
+    "@mongodb-js/oidc-mock-provider": "^0.13.20",
+    "@mongodb-js/saslprep": "^1.6.1",
     "@peculiar/x509": "^2.1.0",
     "debug": "^4.4.0",
     "mongodb": "~7.5.0",
@@ -71,8 +71,8 @@
     "yargs": "^18.2.0"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.13",
-    "@mongodb-js/mocha-config-devtools": "^2.0.2",
+    "@mongodb-js/eslint-config-devtools": "^0.11.14",
+    "@mongodb-js/mocha-config-devtools": "^3.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@mongodb-js/tsconfig-devtools": "^1.1.5",
     "@types/chai": "^4.2.21",
