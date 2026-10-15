@@ -33,25 +33,20 @@ const pending = new Map<
   }
 >();
 
-const isNodeEnv =
-  typeof window === 'undefined' &&
-  typeof process !== 'undefined' &&
-  !!process.versions?.node;
-
-async function getWorkerScriptUrl(): Promise<string> {
-  if (process.env.TEST_WORKER_SCRIPT_URL) {
-    return new URL(
-      process.env.TEST_WORKER_SCRIPT_URL,
-      import.meta.url,
-    ).toString();
-  }
-  if (isNodeEnv) {
-    return new URL('./worker.js', import.meta.url).toString();
+/** Exported for tests */
+export async function getWorkerScriptUrl(): Promise<string> {
+  const override =
+    typeof process !== 'undefined'
+      ? process.env.TEST_WORKER_SCRIPT_URL
+      : undefined;
+  if (override) {
+    return new URL(override, import.meta.url).toString();
   }
 
-  // On browser env we want to fetch and blob so that the worker
-  // script can run on the web running locally.
   const scriptUrl = new URL('./worker.js', import.meta.url);
+  if (scriptUrl.protocol === 'file:') {
+    return scriptUrl.toString();
+  }
   const response = await fetch(scriptUrl);
   if (!response.ok) {
     throw new Error(
@@ -59,7 +54,11 @@ async function getWorkerScriptUrl(): Promise<string> {
     );
   }
   const code = await response.text();
-  blobUrl = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+  // Compass Web injects whatwg-url for bare URL references; it lacks blob APIs.
+  // Use the native constructor for blob creation and revocation.
+  blobUrl = globalThis.URL.createObjectURL(
+    new Blob([code], { type: 'text/javascript' }),
+  );
   return blobUrl;
 }
 
@@ -73,7 +72,10 @@ function createWorker(): Promise<Worker> {
 
   workerPromise = (async () => {
     const scriptUrl = await getWorkerScriptUrl();
-    const newWorker = new WebWorker(scriptUrl, { type: 'module' });
+    const newWorker = new WebWorker(
+      scriptUrl,
+      typeof globalThis.Worker === 'function' ? undefined : { type: 'module' },
+    );
     const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
       const response = event.data;
       const entry = pending.get(response.id);
@@ -153,7 +155,7 @@ export function terminateWorker(
   reason: Error = new Error('Worker terminated'),
 ): void {
   if (worker) worker.terminate();
-  if (blobUrl) URL.revokeObjectURL(blobUrl);
+  if (blobUrl) globalThis.URL.revokeObjectURL(blobUrl);
 
   worker = null;
   workerPromise = null;

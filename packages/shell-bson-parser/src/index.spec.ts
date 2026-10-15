@@ -11,6 +11,7 @@ import {
   terminateWorker,
   callWorker,
   getExecutionTimeoutMs,
+  getWorkerScriptUrl,
 } from './worker-client.js';
 import {
   restrictGlobalScope,
@@ -39,6 +40,23 @@ describe('shell-bson-parser with webworker processing', function () {
     terminateWorker();
   });
 
+  it('returns the file URL for the worker script', async function () {
+    const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
+    delete process.env.TEST_WORKER_SCRIPT_URL;
+
+    try {
+      expect(await getWorkerScriptUrl()).to.equal(
+        new URL('./worker.js', import.meta.url).toString(),
+      );
+    } finally {
+      if (initialWorkerScriptUrl) {
+        process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
+      } else {
+        delete process.env.TEST_WORKER_SCRIPT_URL;
+      }
+    }
+  });
+
   it('keeps the error type of a failed parse', async function () {
     try {
       await api.parse('{ a: }');
@@ -56,6 +74,16 @@ describe('shell-bson-parser with webworker processing', function () {
         expect(res).to.deep.equal(expected);
       });
     }
+
+    it('keeps the error type of a failed parse', async function () {
+      try {
+        await api.parse('{ a: }');
+        expect.fail('Expected parse to throw');
+      } catch (err) {
+        expect(err).to.be.instanceOf(SyntaxError);
+        expect((err as Error).name).to.equal('SyntaxError');
+      }
+    });
   });
 
   describe('restrictGlobalScope', function () {
@@ -176,7 +204,20 @@ describe('shell-bson-parser with webworker processing', function () {
     const code = await fs.readFile(workerBundlePath, 'utf8');
 
     const sandbox: Record<string, unknown> = Object.create(null);
-    sandbox.postMessage = function postMessage() {};
+    let messageHandler: ((event: MessageEvent) => void) | undefined;
+    let response: any;
+    sandbox.postMessage = function postMessage(value: unknown) {
+      expect(this).to.equal(workerScope);
+      response = value;
+    };
+    sandbox.addEventListener = function addEventListener(
+      name: string,
+      handler: (event: MessageEvent) => void,
+    ) {
+      expect(name).to.equal('message');
+      messageHandler = handler;
+    };
+    sandbox.onmessage = null;
     sandbox.fetch = function fetch() {};
     sandbox.require = function require() {};
     sandbox.importScripts = function importScripts() {};
@@ -186,6 +227,7 @@ describe('shell-bson-parser with webworker processing', function () {
     sandbox.globalThis = sandbox;
 
     vm.createContext(sandbox);
+    const workerScope = vm.runInContext('globalThis', sandbox);
 
     expect(sandbox).to.have.property('fetch');
     expect(sandbox).to.have.property('require');
@@ -199,7 +241,13 @@ describe('shell-bson-parser with webworker processing', function () {
     expect(sandbox).to.not.have.property('importScripts');
     expect(sandbox).to.not.have.property('XMLHttpRequest');
 
-    expect(typeof sandbox.onmessage).to.equal('function');
+    expect(sandbox).to.not.have.property('onmessage');
+    expect(messageHandler).to.be.a('function');
+    messageHandler!({
+      data: { id: 7, args: { data: ['{ a: 1 }'], bsonTypes: new Map() } },
+    } as MessageEvent);
+    expect(response).to.include({ id: 7, ok: true });
+    expect(response.result.data).to.deep.equal({ a: 1 });
 
     const stillHasProtoAccessor = vm.runInContext(
       `Object.prototype.hasOwnProperty('__proto__')`,

@@ -1,14 +1,14 @@
 // Avoiding the import of these two functions,
 // adding them here to keep this file self-contained
-function unmarkBSON(value) {
+function untrackBSON(value) {
   return value.data;
 }
-function markBSON(value) {
+function trackBSON(value) {
   return { data: value, bsonTypes: new Map() };
 }
 self.onmessage = (event) => {
   const { id, args } = event.data;
-  const [delayMs] = unmarkBSON(args);
+  const [delayMs] = untrackBSON(args);
   const start = Date.now();
   while (Date.now() - start < delayMs) {
     // noop
@@ -16,6 +16,6 @@ self.onmessage = (event) => {
   self.postMessage({
     id,
     ok: true,
-    result: markBSON('done'),
+    result: trackBSON('done'),
   });
 };
