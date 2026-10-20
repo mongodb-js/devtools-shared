@@ -2,7 +2,7 @@ import ConnectionStringUrl, {
   CommaAndColonSeparatedRecord,
 } from 'mongodb-connection-string-url';
 import type { MongoClientOptions, AuthMechanismProperties } from 'mongodb';
-import { isLocalhost } from 'mongodb-build-info';
+import { isLocalhost } from '@mongodb-js/mongodb-build-info';
 
 const allowedConnectionStringOptions = [
   'appName',

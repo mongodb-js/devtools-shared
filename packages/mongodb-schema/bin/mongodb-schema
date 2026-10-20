@@ -7,7 +7,7 @@ const { SchemaAnalyzer, schemaStats: _schemaStats } = require('../');
 const schemaStats = _schemaStats.default;
 
 const { MongoClient } = require('mongodb');
-const toNS = require('mongodb-ns');
+const toNS = require('@mongodb-js/mongodb-ns');
 const yaml = require('js-yaml');
 const pkg = require('../package.json');
 const Table = require('cli-table');
