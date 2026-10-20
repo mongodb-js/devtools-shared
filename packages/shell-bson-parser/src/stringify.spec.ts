@@ -323,6 +323,14 @@ e  s`,
         assert.equal(compactStringify(res), '{name:RegExp("foo", \'i\')}');
       });
 
+      it('keeps all flags', function () {
+        const res = { name: new RegExp('foo', 'dgimsuy') };
+        assert.equal(
+          compactStringify(res),
+          '{name:RegExp("foo", \'dgimsuy\')}',
+        );
+      });
+
       it('escapes quotes', function () {
         const res = parse("{name: /'/}");
         assert.equal(compactStringify(res), '{name:RegExp("\'")}');

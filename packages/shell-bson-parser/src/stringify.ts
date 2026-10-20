@@ -125,23 +125,8 @@ const BSON_TO_JS_STRING = {
     }
   },
   RegExp: function (v: RegExp) {
-    let o = '';
-    let hasOptions = false;
-
-    if (v.global) {
-      hasOptions = true;
-      o += 'g';
-    }
-    if (v.ignoreCase) {
-      hasOptions = true;
-      o += 'i';
-    }
-    if (v.multiline) {
-      hasOptions = true;
-      o += 'm';
-    }
-
-    return `RegExp(${JSON.stringify(v.source)}${hasOptions ? `, '${o}'` : ''})`;
+    const flags = v.flags;
+    return `RegExp(${JSON.stringify(v.source)}${flags ? `, '${flags}'` : ''})`;
   },
   BSONRegExp: function (v: BSONRegExp) {
     const hasOptions = v.options && v.options?.length > 0;
