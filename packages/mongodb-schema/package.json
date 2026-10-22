@@ -71,11 +71,11 @@
     "reservoir": "^0.1.2"
   },
   "optionalDependencies": {
+    "@mongodb-js/mongodb-ns": "^3.2.8",
     "bson": "^4.6.3 || ^5 || ^6.10.3 || ^7.3.2",
     "cli-table": "^0.3.4",
     "js-yaml": "^5.2.2",
     "mongodb": "^6.9.0 || ^7.0.0",
-    "mongodb-ns": "^3.2.8",
     "numeral": "^2.0.6",
     "progress": "^2.0.3",
     "stats-lite": "^2.0.0",

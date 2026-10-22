@@ -8,11 +8,11 @@ import path from 'path';
 import decompress from '@xhmikosr/decompress';
 import { pipeline, Transform, type Readable } from 'stream';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import getDownloadURL from 'mongodb-download-url';
+import getDownloadURL from '@mongodb-js/mongodb-artifact-url';
 import type {
   Options as DownloadOptions,
   DownloadArtifactInfo,
-} from 'mongodb-download-url';
+} from '@mongodb-js/mongodb-artifact-url';
 import createDebug from 'debug';
 import { withLock } from './with-lock';
 

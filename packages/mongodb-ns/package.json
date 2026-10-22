@@ -1,5 +1,5 @@
 {
-  "name": "mongodb-ns",
+  "name": "@mongodb-js/mongodb-ns",
   "description": "MongoDB namespace parsing and validation",
   "author": {
     "name": "MongoDB Inc",

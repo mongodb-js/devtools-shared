@@ -1,5 +1,5 @@
 {
-  "name": "mongodb-build-info",
+  "name": "@mongodb-js/mongodb-build-info",
   "version": "1.9.18",
   "description": "Extract information from mongodb's buildInfo",
   "author": "Irina Shestak <shestak.irina@gmail.com>",
