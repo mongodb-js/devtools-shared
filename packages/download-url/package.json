@@ -1,5 +1,5 @@
 {
-  "name": "@mongodb-js/mongodb-download-url",
+  "name": "@mongodb-js/mongodb-artifact-url",
   "version": "2.0.3",
   "description": "Lookup download URLs for MongoDB versions.",
   "scripts": {
