@@ -85,7 +85,12 @@ function createWorker(): Promise<Worker> {
       clearTimeout(entry.executionTimer);
       pending.delete(response.id);
       if (!response.ok) {
-        entry.reject(response.error);
+        const { error, errorProps } = response;
+        entry.reject(
+          typeof error === 'object' && error !== null
+            ? Object.assign(error, errorProps)
+            : error,
+        );
         return;
       }
       try {
