@@ -76,10 +76,9 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
     const result = trackBSON(value);
     return { id, ok: true, result };
   } catch (err) {
-    const error = err as Error;
     const errorProps =
       typeof err === 'object' && err !== null ? { ...err } : {};
-    return { id, ok: false, error, errorProps };
+    return { id, ok: false, error: err as Error, errorProps };
   }
 }
 
