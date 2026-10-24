@@ -207,24 +207,24 @@ e  s`,
     });
 
     context('when providing a long', function () {
-      it('correctly converts to NumberLong', function () {
+      it('correctly converts to Long', function () {
         assert.equal(
           compactStringify({ test: bson.Long.fromNumber(5) }),
-          "{test:NumberLong('5')}",
+          "{test:Long('5')}",
         );
 
         assert.equal(
           compactStringify({ test: new bson.Long('123456789123456789') }),
-          "{test:NumberLong('123456789123456789')}",
+          "{test:Long('123456789123456789')}",
         );
       });
     });
 
     context('when providing a decimal128', function () {
-      it('correctly converts to NumberDecimal', function () {
+      it('correctly converts to Decimal128', function () {
         assert.equal(
           compactStringify({ test: bson.Decimal128.fromString('5.5') }),
-          "{test:NumberDecimal('5.5')}",
+          "{test:Decimal128('5.5')}",
         );
       });
     });

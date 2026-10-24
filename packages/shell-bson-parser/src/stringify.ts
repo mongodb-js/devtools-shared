@@ -97,10 +97,10 @@ const BSON_TO_JS_STRING = {
     return `Timestamp({ t: ${v.high}, i: ${v.low} })`;
   },
   Long: function (v: Long) {
-    return `NumberLong('${v.toString()}')`;
+    return `Long('${v.toString()}')`;
   },
   Decimal128: function (v: Decimal128) {
-    return `NumberDecimal('${v.toString()}')`;
+    return `Decimal128('${v.toString()}')`;
   },
   Double: function (v: Double) {
     return `Double('${v.toString()}')`;
