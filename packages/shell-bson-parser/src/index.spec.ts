@@ -3,15 +3,15 @@ import sinon from 'sinon';
 import vm from 'vm';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import * as WebWorkerModule from 'web-worker';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { Worker as NodeWorker } from 'worker_threads';
 
 import * as api from './index.js';
 import {
   terminateWorker,
   callWorker,
   getExecutionTimeoutMs,
-  getWorkerScriptUrl,
+  setWorkerSource,
 } from './worker-client.js';
 import {
   restrictGlobalScope,
@@ -21,39 +21,42 @@ import {
 } from './worker.js';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
-const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
-  .default;
+const specDir = path.dirname(fileURLToPath(import.meta.url));
 
 describe('shell-bson-parser with webworker processing', function () {
-  const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
+  let workerBundle: string;
 
-  before(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
+  before(async function () {
+    // Specs run from src, where worker-source.ts is an empty placeholder.
+    workerBundle = await fs.readFile(
+      path.join(specDir, '..', 'dist', 'worker.js'),
+      'utf8',
+    );
+    setWorkerSource(workerBundle);
   });
 
   after(function () {
-    if (initialWorkerScriptUrl) {
-      process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
-    } else {
-      delete process.env.TEST_WORKER_SCRIPT_URL;
-    }
+    setWorkerSource(null);
     terminateWorker();
   });
 
-  it('returns the file URL for the worker script', async function () {
-    const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
-    delete process.env.TEST_WORKER_SCRIPT_URL;
+  it('inlines the bundled worker into dist/worker-source.js', async function () {
+    const { default: inlined } = await import(
+      pathToFileURL(path.join(specDir, '..', 'dist', 'worker-source.js')).href
+    );
+    expect(inlined).to.equal(workerBundle);
+  });
 
+  it('rejects when the worker source is missing', async function () {
+    terminateWorker();
+    setWorkerSource('');
     try {
-      expect(await getWorkerScriptUrl()).to.equal(
-        new URL('./worker.js', import.meta.url).toString(),
-      );
+      await api.parse('{ a: 1 }');
+      expect.fail('Expected parse to throw');
+    } catch (err) {
+      expect((err as Error).message).to.match(/worker source is missing/);
     } finally {
-      if (initialWorkerScriptUrl) {
-        process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
-      } else {
-        delete process.env.TEST_WORKER_SCRIPT_URL;
-      }
+      setWorkerSource(workerBundle);
     }
   });
 
@@ -176,7 +179,7 @@ describe('shell-bson-parser with webworker processing', function () {
     let terminateSpy: sinon.SinonSpy;
 
     beforeEach(function () {
-      terminateSpy = sinon.spy(WebWorker.prototype, 'terminate');
+      terminateSpy = sinon.spy(NodeWorker.prototype, 'terminate');
     });
 
     afterEach(function () {
@@ -199,14 +202,118 @@ describe('shell-bson-parser with webworker processing', function () {
     });
   });
 
-  it('strips dangerous globals and locks down Object.prototype when the real worker starts', async function () {
-    const workerBundlePath = path.join(
-      path.dirname(fileURLToPath(import.meta.url)),
-      '..',
-      'dist',
-      'worker.js',
-    );
-    const code = await fs.readFile(workerBundlePath, 'utf8');
+  describe('worker lifecycle', function () {
+    afterEach(function () {
+      terminateWorker();
+      setWorkerSource(workerBundle);
+    });
+
+    it('rejects pending requests right away when the worker thread exits', async function () {
+      terminateWorker();
+      setWorkerSource('process.exit(3)');
+      try {
+        await callWorker([1]);
+        expect.fail('Expected callWorker to throw');
+      } catch (err) {
+        expect((err as Error).message).to.equal('Worker exited with code 3');
+      }
+    });
+
+    it('does not let the exit of a terminated worker kill its replacement', async function () {
+      await api.parse('{ a: 1 }');
+      terminateWorker();
+      // The old thread's 'exit' event lands while the new request is pending
+      const res = await api.parse('{ b: 2 }');
+      expect(res).to.deep.equal({ b: 2 });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(await api.parse('{ c: 3 }')).to.deep.equal({ c: 3 });
+    });
+  });
+
+  describe('browser worker', function () {
+    type Listener = (event: unknown) => void;
+
+    class FakeWorker {
+      static instances: FakeWorker[] = [];
+      listeners = new Map<string, Listener>();
+      terminated = false;
+      constructor(public url: string) {
+        FakeWorker.instances.push(this);
+      }
+      addEventListener(type: string, fn: Listener) {
+        this.listeners.set(type, fn);
+      }
+      postMessage(message: { id: number }) {
+        const respond = this.listeners.get('message');
+        setTimeout(() =>
+          respond?.({
+            data: {
+              id: message.id,
+              ok: true,
+              result: { data: 'from-browser', bsonTypes: new Map() },
+            },
+          }),
+        );
+      }
+      terminate() {
+        this.terminated = true;
+      }
+    }
+
+    let createObjectURL: sinon.SinonStub;
+    let revokeObjectURL: sinon.SinonStub;
+
+    beforeEach(function () {
+      terminateWorker();
+      FakeWorker.instances = [];
+      (globalThis as { Worker?: unknown }).Worker = FakeWorker;
+      createObjectURL = sinon
+        .stub(globalThis.URL, 'createObjectURL')
+        .returns('blob:fake');
+      revokeObjectURL = sinon.stub(globalThis.URL, 'revokeObjectURL');
+    });
+
+    afterEach(function () {
+      terminateWorker();
+      delete (globalThis as { Worker?: unknown }).Worker;
+      createObjectURL.restore();
+      revokeObjectURL.restore();
+    });
+
+    it('starts the worker from a blob URL and revokes it on terminate', async function () {
+      expect(await callWorker(['x'])).to.equal('from-browser');
+      expect(FakeWorker.instances).to.have.length(1);
+      expect(FakeWorker.instances[0].url).to.equal('blob:fake');
+      const blob = createObjectURL.firstCall.args[0] as Blob;
+      expect(await blob.text()).to.equal(workerBundle);
+      expect(revokeObjectURL.called).to.equal(false);
+
+      terminateWorker();
+      expect(FakeWorker.instances[0].terminated).to.equal(true);
+      expect(revokeObjectURL.calledOnceWith('blob:fake')).to.equal(true);
+    });
+
+    it('rejects pending requests on a worker error event', async function () {
+      sinon.stub(FakeWorker.prototype, 'postMessage').callsFake(function (
+        this: FakeWorker,
+      ) {
+        // Never responds; fails with an error event instead
+        setTimeout(() => this.listeners.get('error')?.({ message: 'boom' }));
+      });
+      try {
+        await callWorker(['x']);
+        expect.fail('Expected callWorker to throw');
+      } catch (err) {
+        expect((err as Error).message).to.equal('boom');
+      } finally {
+        (FakeWorker.prototype.postMessage as sinon.SinonStub).restore();
+      }
+      expect(FakeWorker.instances[0].terminated).to.equal(true);
+    });
+  });
+
+  it('strips dangerous globals and locks down Object.prototype when the real worker starts', function () {
+    const code = workerBundle;
 
     const sandbox: Record<string, unknown> = Object.create(null);
     let messageHandler: ((event: MessageEvent) => void) | undefined;
@@ -265,20 +372,19 @@ describe('shell-bson-parser with webworker processing', function () {
   });
 
   describe('execution timeout', function () {
-    const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
-
-    beforeEach(function () {
+    beforeEach(async function () {
       terminateWorker();
-      process.env.TEST_WORKER_SCRIPT_URL = '../test/fixtures/slow-worker.mjs';
+      setWorkerSource(
+        await fs.readFile(
+          path.join(specDir, '..', 'test', 'fixtures', 'slow-worker.js'),
+          'utf8',
+        ),
+      );
     });
 
     afterEach(function () {
       terminateWorker();
-      if (initialWorkerScriptUrl) {
-        process.env.TEST_WORKER_SCRIPT_URL = initialWorkerScriptUrl;
-      } else {
-        delete process.env.TEST_WORKER_SCRIPT_URL;
-      }
+      setWorkerSource(workerBundle);
     });
 
     it('rejects a request whose worker thread is wedged past the timeout', async function () {

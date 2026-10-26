@@ -4,6 +4,10 @@ import { trackBSON, untrackBSON } from './structured-clone-bson.js';
 import type { WorkerRequest, WorkerResponse } from './worker-types.js';
 
 const { self, postMessage } = globalThis;
+const parentPort =
+  typeof process !== 'undefined' && process.getBuiltinModule
+    ? process.getBuiltinModule('worker_threads')?.parentPort
+    : null;
 
 // Exported for tests
 export const ALLOWED_GLOBALS = new Set([
@@ -82,7 +86,14 @@ export function handleRequest(request: WorkerRequest): WorkerResponse {
   }
 }
 
-if (typeof self !== 'undefined') {
+if (parentPort) {
+  const postMessage = parentPort.postMessage.bind(parentPort);
+  parentPort.on('message', (request: WorkerRequest) => {
+    postMessage(handleRequest(request));
+  });
+  restrictObjectPrototype();
+  restrictGlobalScope(globalThis);
+} else if (typeof self !== 'undefined') {
   const sendResponse = postMessage.bind(self);
   self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
     sendResponse(handleRequest(event.data));

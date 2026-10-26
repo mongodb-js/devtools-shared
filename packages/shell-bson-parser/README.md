@@ -87,7 +87,7 @@ This options object will disallow method calls, but will allow comments
 
 ## Worker
 
-Every call to `parse` is sent to a shared worker (using [`web-worker`](https://github.com/developit/web-worker), so it works in both Node.js and browsers). The worker is created lazily on the first call and reused for later calls. BSON values are serialized across the worker boundary and rebuilt as `bson` instances on the calling side.
+Every call to `parse` is sent to a shared worker: a Web Worker in browsers, or a `worker_threads` worker in Node.js. The worker code ships inside the package and is loaded lazily on the first `parse` call, so it works the same when bundled and adds nothing for consumers that only use `toJSString`. The worker is created lazily on the first call and reused for later calls. BSON values are serialized across the worker boundary and rebuilt as `bson` instances on the calling side.
 
 If parsing throws inside the worker, the returned promise rejects with the error message.
 

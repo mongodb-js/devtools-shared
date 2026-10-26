@@ -1,12 +1,30 @@
 'use strict';
+const fs = require('fs');
 const path = require('path');
+
+const distDir = path.resolve(__dirname, 'dist');
+
+// Inlines the bundled worker as a string module, so consumers never have to
+// resolve worker.js by path (which breaks once they bundle this package).
+class InlineWorkerSourcePlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tap('InlineWorkerSourcePlugin', () => {
+      const code = fs.readFileSync(path.join(distDir, 'worker.js'), 'utf8');
+      fs.writeFileSync(
+        path.join(distDir, 'worker-source.js'),
+        `const workerSource = ${JSON.stringify(code)};\nexport default workerSource;\n`,
+      );
+      fs.rmSync(path.join(distDir, 'worker-source.js.map'), { force: true });
+    });
+  }
+}
 
 module.exports = {
   mode: 'production',
   target: 'webworker',
-  entry: path.resolve(__dirname, 'dist', 'worker.js'),
+  entry: path.join(distDir, 'worker.js'),
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: distDir,
     filename: 'worker.js',
   },
   module: {
@@ -18,4 +36,5 @@ module.exports = {
       },
     },
   },
+  plugins: [new InlineWorkerSourcePlugin()],
 };

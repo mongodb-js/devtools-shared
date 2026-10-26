@@ -1,8 +1,11 @@
-import * as WebWorkerModule from 'web-worker';
-const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
-  .default;
+import { createBrowserWorker } from './browser-worker.js';
+import { createNodeWorker } from './node-worker.js';
 import { trackBSON, untrackBSON } from './structured-clone-bson.js';
-import type { WorkerResponse } from './worker-types.js';
+import type {
+  WorkerHandle,
+  WorkerCallbacks,
+  WorkerResponse,
+} from './worker-types.js';
 
 /** Default execution timeout for worker requests */
 const DEFAULT_EXECUTION_TIMEOUT_MS = 5_000;
@@ -20,9 +23,9 @@ export function getExecutionTimeoutMs(executionTimeoutMs?: number): number {
   return executionTimeoutMs;
 }
 
-let worker: Worker | null = null;
-let workerPromise: Promise<Worker> | null = null;
-let blobUrl: string | null = null;
+let worker: WorkerHandle | null = null;
+let workerSourceOverride: string | null = null;
+let workerPromise: Promise<WorkerHandle> | null = null;
 let nextId = 0;
 const pending = new Map<
   number,
@@ -34,93 +37,78 @@ const pending = new Map<
 >();
 
 /** Exported for tests */
-export async function getWorkerScriptUrl(): Promise<string> {
-  const override =
-    typeof process !== 'undefined'
-      ? process.env.TEST_WORKER_SCRIPT_URL
-      : undefined;
-  if (override) {
-    return new URL(override, import.meta.url).toString();
-  }
-
-  const scriptUrl = new URL('./worker.js', import.meta.url);
-  if (scriptUrl.protocol === 'file:') {
-    return scriptUrl.toString();
-  }
-  const response = await fetch(scriptUrl);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch shell-bson-parser worker script: ${response.status} ${response.statusText}`,
-    );
-  }
-  const code = await response.text();
-  // Compass Web injects whatwg-url for bare URL references; it lacks blob APIs.
-  // Use the native constructor for blob creation and revocation.
-  blobUrl = globalThis.URL.createObjectURL(
-    new Blob([code], { type: 'text/javascript' }),
-  );
-  return blobUrl;
+export function setWorkerSource(source: string | null): void {
+  workerSourceOverride = source;
 }
 
-function createWorker(): Promise<Worker> {
+async function getWorkerSource(): Promise<string> {
+  if (workerSourceOverride !== null) {
+    return workerSourceOverride;
+  }
+  const source = await import('./worker-source.js');
+  return source.default;
+}
+
+function createWorker(): Promise<WorkerHandle> {
   if (worker) {
     return Promise.resolve(worker);
   }
   if (workerPromise) {
     return workerPromise;
   }
+  const onMessage = (response: WorkerResponse) => {
+    const entry = pending.get(response.id);
+    if (!entry) {
+      return;
+    }
+    clearTimeout(entry.executionTimer);
+    pending.delete(response.id);
+    if (!response.ok) {
+      const { error, errorProps } = response;
+      entry.reject(
+        typeof error === 'object' && error !== null
+          ? Object.assign(error, errorProps)
+          : error,
+      );
+      return;
+    }
+    try {
+      entry.resolve(untrackBSON(response.result));
+    } catch (err) {
+      entry.reject(err as Error);
+    }
+  };
 
-  workerPromise = (async () => {
-    const scriptUrl = await getWorkerScriptUrl();
-    const newWorker = new WebWorker(
-      scriptUrl,
-      typeof globalThis.Worker === 'function' ? undefined : { type: 'module' },
-    );
-    const onMessageHandler = (event: MessageEvent<WorkerResponse>) => {
-      const response = event.data;
-      const entry = pending.get(response.id);
-      if (!entry) {
-        return;
-      }
-      clearTimeout(entry.executionTimer);
-      pending.delete(response.id);
-      if (!response.ok) {
-        const { error, errorProps } = response;
-        entry.reject(
-          typeof error === 'object' && error !== null
-            ? Object.assign(error, errorProps)
-            : error,
-        );
-        return;
-      }
-      try {
-        entry.resolve(untrackBSON(response.result));
-      } catch (err) {
-        entry.reject(err as Error);
-      }
+  const startup = (async () => {
+    const source = await getWorkerSource();
+    if (!source) {
+      throw new Error(
+        '@mongodb-js/shell-bson-parser worker source is missing from the build',
+      );
+    }
+    // Late errors/exits from an already terminated worker must not kill its
+    // replacement, so only react when this handle is still the active one.
+    let newWorker: WorkerHandle | null = null;
+    const handlers: WorkerCallbacks = {
+      onMessage,
+      onError: (err) => {
+        if (newWorker && newWorker === worker) terminateWorker(err);
+      },
     };
-
-    const onErrorHandler = (event: ErrorEvent) => {
-      terminateWorker(new Error(event.message || 'Worker error'));
-    };
-
-    const onMessageErrorHandler = () => {
-      terminateWorker(new Error('Worker message could not be deserialized'));
-    };
-
-    newWorker.addEventListener('message', onMessageHandler);
-    newWorker.addEventListener('error', onErrorHandler);
-    newWorker.addEventListener('messageerror', onMessageErrorHandler);
+    newWorker =
+      typeof globalThis.Worker === 'function'
+        ? createBrowserWorker(source, handlers)
+        : createNodeWorker(source, handlers);
 
     worker = newWorker;
     return newWorker;
   })();
-
-  workerPromise.catch(() => {
-    workerPromise = null;
+  startup.catch(() => {
+    if (workerPromise === startup) workerPromise = null;
   });
+  workerPromise = startup;
 
-  return workerPromise;
+  return startup;
 }
 
 export async function callWorker<T>(
@@ -149,9 +137,11 @@ export async function callWorker<T>(
     });
   } catch (err) {
     const entry = pending.get(id);
-    if (entry) clearTimeout(entry.executionTimer);
-    pending.get(id)?.reject(err as Error);
-    pending.delete(id);
+    if (entry) {
+      clearTimeout(entry.executionTimer);
+      pending.delete(id);
+      entry.reject(err as Error);
+    }
   }
   return promise;
 }
@@ -160,11 +150,9 @@ export function terminateWorker(
   reason: Error = new Error('Worker terminated'),
 ): void {
   if (worker) worker.terminate();
-  if (blobUrl) globalThis.URL.revokeObjectURL(blobUrl);
 
   worker = null;
   workerPromise = null;
-  blobUrl = null;
 
   for (const [id, entry] of pending) {
     clearTimeout(entry.executionTimer);
