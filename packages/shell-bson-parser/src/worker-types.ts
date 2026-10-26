@@ -6,5 +6,6 @@ export type WorkerRequest = {
 };
 
 export type WorkerResponse = { id: number } & (
-  { ok: true; result: TrackedPayload<unknown> } | { ok: false; error: Error }
+  | { ok: true; result: TrackedPayload<unknown> }
+  | { ok: false; error: Error; errorProps: Record<string, unknown> }
 );
