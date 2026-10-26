@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -70,7 +70,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "mongodb-build-info": "^1.9.18",
+    "@mongodb-js/mongodb-build-info": "^1.9.19",
     "mongodb-connection-string-url": "^7.0.2"
   },
   "peerDependencies": {

@@ -1,5 +1,5 @@
 {
-  "name": "mongodb-redact",
+  "name": "@mongodb-js/mongodb-redact",
   "description": "Remove potentially sensitive information from objects without changing the shape.",
   "author": {
     "name": "MongoDB Inc",
@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "1.4.18",
+  "version": "1.4.19",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
