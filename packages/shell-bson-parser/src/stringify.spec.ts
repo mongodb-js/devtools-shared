@@ -1,7 +1,9 @@
 import assert from 'assert';
 import * as bson from 'bson';
-import { toJSString } from './stringify.js';
+import * as stringifyModule from './stringify.js';
 import { parse } from './parse.js';
+
+const { toJSString } = stringifyModule;
 
 describe('stringify', function () {
   describe('toJSString', function () {
@@ -473,5 +475,10 @@ e  s`,
         );
       });
     });
+  });
+
+  it('only exports toJSString', function () {
+    const exported = Object.keys(stringifyModule);
+    assert.deepEqual(exported, ['toJSString']);
   });
 });
