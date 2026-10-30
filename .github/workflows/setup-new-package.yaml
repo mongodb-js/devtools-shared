@@ -40,7 +40,6 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: "npm"
       - name: Install npm@12
         run: |
           npm install -g npm@12
@@ -122,4 +121,6 @@ jobs:
             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             echo ""
             npm access grant read-write "$NPM_ORG_NAME:developers" "$NPM_PACKAGE_NAME"
+          else
+            echo "Package is already scoped to the $NPM_ORG_NAME org. Skipping the access change"
           fi
