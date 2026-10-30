@@ -118,7 +118,31 @@ const functionExpression = (
   return source.slice(range[0], range[1]);
 };
 
+// Adds acorn-style `pos` and `loc` (relative to the wrapped input) to an error,
+// unless a deeper node already did.
+export const attachLocation = <T>(err: T, node: Node | null | undefined): T => {
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    !('loc' in err) &&
+    node?.loc &&
+    node.range
+  ) {
+    const { line, column } = node.loc.start;
+    Object.assign(err, { pos: node.range[0], loc: { line, column } });
+  }
+  return err;
+};
+
 const walk = (node: Node | null): any => {
+  try {
+    return walkNode(node);
+  } catch (err) {
+    throw attachLocation(err, node);
+  }
+};
+
+const walkNode = (node: Node | null): any => {
   switch (node?.type) {
     case 'Identifier':
       if (Object.prototype.hasOwnProperty.call(GLOBALS, node.name)) {
