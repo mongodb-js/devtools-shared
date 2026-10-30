@@ -1,6 +1,6 @@
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
-import { promises as fs, createWriteStream } from 'fs';
+import { promises as fs } from 'fs';
 import type { LogEntry } from './mongologreader';
 import {
   createLogEntryIterator,
@@ -9,6 +9,8 @@ import {
   isFailureToSetupListener,
 } from './mongologreader';
 import { Readable } from 'stream';
+import type { FileTailStream } from './tail-file';
+import { tailFileUntilExit } from './tail-file';
 import type { Document, MongoClientOptions } from 'mongodb';
 import { MongoClient, MongoServerError } from 'mongodb';
 import path from 'path';
@@ -35,7 +37,7 @@ export interface MongoServerOptions {
   binary: string;
   /** Directory for temporary files, e.g., database contents */
   tmpDir: string;
-  /** If set, log file output will be piped through here. */
+  /** If set, each server writes its log to a file in this directory. */
   logDir?: string;
   /** Arguments to pass to the MongoDB binary. May or may not contain --port */
   args?: string[];
@@ -112,6 +114,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   public uuid: string = uuid();
   private buildInfo?: Document;
   private childProcess?: ChildProcess;
+  private logTail?: FileTailStream;
   private pid?: number;
   private host = '127.0.0.1';
   private port?: number;
@@ -307,40 +310,48 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
     srv.commandline = commandline;
-    const proc = spawn(executable, args, {
-      stdio: ['inherit', 'pipe', 'pipe'],
-      cwd: options.tmpDir,
-      detached: options.detached ?? true,
-    });
-    await once(proc, 'spawn');
-    srv.childProcess = proc;
-    srv.pid = proc.pid;
-
-    const { stdout, stderr } = proc;
-    stdout.setEncoding('utf8');
-    stderr.setEncoding('utf8');
-
+    let stdout: Readable;
     if (options.logDir) {
+      // The server writes straight to the file rather than through a pipe to
+      // this process, so it keeps logging after we exit (`start` exits once the
+      // cluster is up). We follow the file to see the startup output instead.
+      await fs.mkdir(options.logDir, { recursive: true });
       const outFile = path.join(
         options.logDir,
-        `${options.binary}-${String(proc.pid)}-${new Date()
+        `${options.binary}-${srv.uuid}-${new Date()
           .toISOString()
           .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`,
       );
-      await fs.mkdir(options.logDir, { recursive: true });
-      const outStream = createWriteStream(outFile);
-      await once(outStream, 'open');
-      stdout.pipe(outStream, { end: false });
-      stderr.pipe(outStream, { end: false });
-      Promise.allSettled([once(stdout, 'end'), once(stderr, 'end')]).then(
-        () => outStream.end(),
-        () => {
-          /* cannot throw */
-        },
-      );
+      const handle = await fs.open(outFile, 'a');
+      let proc: ChildProcess;
+      try {
+        proc = spawn(executable, args, {
+          stdio: ['inherit', handle.fd, handle.fd],
+          cwd: options.tmpDir,
+          detached: options.detached ?? true,
+        });
+        await once(proc, 'spawn');
+      } finally {
+        await handle.close(); // the child process holds its own copy
+      }
+      srv.childProcess = proc;
+      srv.pid = proc.pid;
+      srv.logTail = tailFileUntilExit(outFile, proc);
+      stdout = srv.logTail;
     } else {
-      stderr.on('data', (chunk) => debug('server stderr', chunk));
-      stderr.resume();
+      const proc = spawn(executable, args, {
+        stdio: ['inherit', 'pipe', 'pipe'],
+        cwd: options.tmpDir,
+        detached: options.detached ?? true,
+      });
+      await once(proc, 'spawn');
+      srv.childProcess = proc;
+      srv.pid = proc.pid;
+      stdout = proc.stdout;
+      stdout.setEncoding('utf8');
+      proc.stderr.setEncoding('utf8');
+      proc.stderr.on('data', (chunk) => debug('server stderr', chunk));
+      proc.stderr.resume();
       stdout.resume();
     }
 
@@ -636,12 +647,14 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
 
   ref(): void {
     this.childProcess?.ref();
+    this.logTail?.ref();
     (this.childProcess?.stdout as any)?.ref();
     (this.childProcess?.stderr as any)?.ref();
   }
 
   unref(): void {
     this.childProcess?.unref();
+    this.logTail?.unref();
     (this.childProcess?.stdout as any)?.unref();
     (this.childProcess?.stderr as any)?.unref();
   }

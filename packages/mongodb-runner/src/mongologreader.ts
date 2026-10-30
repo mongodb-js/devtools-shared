@@ -13,7 +13,10 @@ export async function* createLogEntryIterator(
       const logEntry = parseAnyLogEntry(line);
       yield logEntry;
     } catch (error: any) {
-      break;
+      // The server's stderr shares the log file when `logDir` is set (as does
+      // docker's, in docker mode), and it can contain non-log lines. Skipping
+      // them is safe: the stream still ends when the process exits.
+      continue;
     }
   }
 }
