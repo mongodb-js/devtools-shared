@@ -10,6 +10,7 @@ module.exports = {
   target: 'node',
   entry: {
     index: path.join(distDir, 'index.js'),
+    stringify: path.join(distDir, 'stringify.js'),
     'web-worker': {
       import: 'web-worker',
       library: { type: 'commonjs2', export: 'default' },

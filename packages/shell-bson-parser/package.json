@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -26,10 +26,25 @@
   "main": "dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    "types": "./dist/index.d.ts",
-    "require": "./dist/cjs/index.js",
-    "import": "./dist/index.js",
-    "default": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./stringify": {
+      "types": "./dist/stringify.d.ts",
+      "require": "./dist/cjs/stringify.js",
+      "import": "./dist/stringify.js",
+      "default": "./dist/stringify.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "stringify": [
+        "./dist/stringify.d.ts"
+      ]
+    }
   },
   "scripts": {
     "bootstrap": "npm run compile",
