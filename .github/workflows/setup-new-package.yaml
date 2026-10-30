@@ -1,0 +1,125 @@
+name: Setup new npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      packageName:
+        description: "Package name to create a stub for"
+        required: true
+        type: string
+      orgName:
+        description: "NPM organisation name to assign the package to"
+        required: true
+        default: "mongodb-js"
+        type: choice
+        options:
+          - mongodb-js
+          - mongosh
+      trustedPublishingRepoName:
+        description: "Package repository on github in the format <org>/<repo> (for example `mongodb-js/compass`). Required for trusted publishing setup"
+        required: false
+        default: ""
+        type: string
+      trustedPublishingPublishWorkflowFile:
+        description: "Workflow filename that will do the publishing relative to the .github/workflows folder (for example `publish-packages-to-npm.yaml`). Required for trusted publishing setup"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  createPackageStub:
+    name: Create package stub
+    runs-on: ubuntu-latest
+    env:
+      NPM_PACKAGE_NAME: ${{ inputs.packageName }}
+      NPM_ORG_NAME: ${{ inputs.orgName }}
+      NPM_TRUSTED_PUBLISHING_REPO_NAME: ${{ inputs.trustedPublishingRepoName }}
+      NPM_TRUSTED_PUBLISHING_PUBLISH_WORKFLOW_FILE: ${{ inputs.trustedPublishingPublishWorkflowFile }}
+    steps:
+      - name: Setup node v24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "npm"
+      - name: Install npm@12
+        run: |
+          npm install -g npm@12
+      - name: Create package stub
+        run: |
+          # Set up package.json
+          npm init --yes
+          npm pkg set name="$NPM_PACKAGE_NAME"
+          npm pkg set version="0.0.0-init.0"
+          npm pkg set publishConfig.access="public"
+          npm pkg set author="MongoDB Inc."
+          npm pkg delete license
+          if [[ -n "$NPM_TRUSTED_PUBLISHING_REPO_NAME" ]]; then
+            npm pkg set repository="github:$NPM_TRUSTED_PUBLISHING_REPO_NAME"
+          fi
+          # Even though it's a `fix` command, it also works like a package.json
+          # validator for unfixable errors. It also normalizes some of the
+          # package.json config we're setting
+          npm pkg fix
+
+          # Provide a bit of context for initial version
+          echo "# This is an empty placeholder package provisioned for further use\n" > README.md
+
+          # Print the package.json for debugging purposes
+          echo "Created package stub with the following package.json:"
+          echo ""
+          cat package.json
+
+      - name: Publish package
+        run: |
+          # Login first so that publish works
+
+          echo "Logging in before proceeding with publish..."
+          echo ""
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo "!!! THE FOLLOWING SCRIPT IS GOING TO PRINT A LOG IN URL !!!"
+          echo "!!!     FOLLOW THE URL AND AUTHENTICATE TO PROCEED      !!!"
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo ""
+
+          npm login --auth-type=web
+
+          # Publish will ask for authentication again even though we just logged
+          # in, no way around that
+
+          echo ""
+          echo "Logged in as $(npm whoami). Starting the publish..."
+          echo ""
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo "!!! THE FOLLOWING SCRIPT IS GOING TO PRINT A LOG IN URL !!!"
+          echo "!!!     FOLLOW THE URL AND AUTHENTICATE TO PROCEED      !!!"
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo ""
+
+          npm publish --auth-type=web --tag=latest
+
+          if [[ -n "$NPM_TRUSTED_PUBLISHING_REPO_NAME" ]]; then
+            echo "Configuring trusted publishing..."
+            echo ""
+            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            echo "!!! THE FOLLOWING SCRIPT IS GOING TO PRINT A LOG IN URL !!!"
+            echo "!!!     FOLLOW THE URL AND AUTHENTICATE TO PROCEED      !!!"
+            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            echo ""
+            
+            npm trust github "$NPM_PACKAGE_NAME" \
+              --repo="$NPM_TRUSTED_PUBLISHING_REPO_NAME" \
+              --file="$NPM_TRUSTED_PUBLISHING_PUBLISH_WORKFLOW_FILE" \
+              --allow-publish \
+              --yes
+          fi
+
+          if [[ "$NPM_PACKAGE_NAME" != "@$NPM_ORG_NAME/"* ]]; then
+            echo "Adding package to the $NPM_ORG_NAME..."
+            echo ""
+            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            echo "!!! THE FOLLOWING SCRIPT IS GOING TO PRINT A LOG IN URL !!!"
+            echo "!!!     FOLLOW THE URL AND AUTHENTICATE TO PROCEED      !!!"
+            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            echo ""
+            npm access grant read-write "$NPM_ORG_NAME:developers" "$NPM_PACKAGE_NAME"
+          fi
