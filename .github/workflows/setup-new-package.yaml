@@ -80,7 +80,7 @@ jobs:
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           echo ""
 
-          npm login --auth-type=web
+          npm login --auth-type=web --no-otp
 
           # Publish will ask for authentication again even though we just logged
           # in, no way around that
@@ -94,7 +94,7 @@ jobs:
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           echo ""
 
-          npm publish --auth-type=web --tag=latest
+          npm publish --auth-type=web --no-otp --tag=latest
 
           if [[ -n "$NPM_TRUSTED_PUBLISHING_REPO_NAME" ]]; then
             echo "Configuring trusted publishing..."
@@ -106,6 +106,8 @@ jobs:
             echo ""
             
             npm trust github "$NPM_PACKAGE_NAME" \
+              --auth-type=web \
+              --no-otp \
               --repo="$NPM_TRUSTED_PUBLISHING_REPO_NAME" \
               --file="$NPM_TRUSTED_PUBLISHING_PUBLISH_WORKFLOW_FILE" \
               --allow-publish \
@@ -120,7 +122,9 @@ jobs:
             echo "!!!     FOLLOW THE URL AND AUTHENTICATE TO PROCEED      !!!"
             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             echo ""
-            npm access grant read-write "$NPM_ORG_NAME:developers" "$NPM_PACKAGE_NAME"
+            npm access grant read-write "$NPM_ORG_NAME:developers" "$NPM_PACKAGE_NAME" \
+              --auth-type=web \
+              --no-otp
           else
             echo "Package is already scoped to the $NPM_ORG_NAME org. Skipping the access change"
           fi
