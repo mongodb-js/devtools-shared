@@ -5,9 +5,8 @@ import type { Options } from '../src/options.js';
 export type ParseTestCase = {
   title: string;
   input: string;
-  expected: unknown;
   options?: Partial<Options>;
-};
+} & ({ expected: unknown } | { expectedError: string });
 
 const functionCallOptions: Partial<Options> = {
   mode: ParseMode.Strict,
@@ -216,7 +215,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
   {
     title: 'should not allow calling functions that do not exist',
     input: '{ date: require("") }',
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
 
   // Flattened from a loop over ParseMode.{Extended,Strict,Loose}, each
@@ -229,26 +228,26 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
           title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.constructor`,
           input: '{ date: Date.constructor("") }',
           options: { mode },
-          expected: '',
+          expectedError: 'Source expression is invalid',
         },
         {
           title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.hasOwnProperty`,
           input: '{ date: Date.hasOwnProperty("") }',
           options: { mode },
-          expected: '',
+          expectedError: 'Source expression is invalid',
         },
         {
           title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Date.__proto__`,
           input: '{ date: Date.__proto__("") }',
           options: { mode },
-          expected: '',
+          expectedError: 'Source expression is invalid',
         },
         {
           title: `should not allow calling functions that only exist as Object.prototype properties (mode=${modeLabel}) - Code({ toString })`,
           input:
             '{ date: Code({ toString: Date.constructor("throw null;") }) }',
           options: { mode },
-          expected: '',
+          expectedError: 'Source expression is invalid',
         },
       ];
     },
@@ -259,7 +258,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
       'Function calls > Should deny calls if functions are not allowed - reject calls to Math',
     input: '{ floor: Math.floor(5.5) }',
     options: { mode: ParseMode.Strict, allowMethods: false },
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
 
   // Flattened from a loop over dateFn, each a single "reject calls" case.
@@ -268,7 +267,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
       title: `Function calls > Should deny calls if functions are not allowed > Prevent calling function calls on "${dateFn}" - reject calls`,
       input: `{ date: (${dateFn}(0)).getFullYear() }`,
       options: { mode: ParseMode.Strict, allowMethods: false },
-      expected: '',
+      expectedError: 'Source expression is invalid',
     }),
   ),
 
@@ -359,7 +358,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
     title: 'Function calls > Math - should prevent invalid functions',
     input: '{ simpleCalc: Math.totallyLegit(5) }',
     options: functionCallOptions,
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
   {
     title:
@@ -373,7 +372,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
       'Function calls > Function expressions - should not allow functions outside object properties',
     input: 'function() { this.x = 1 }',
     options: functionCallOptions,
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
   {
     title:
@@ -441,7 +440,7 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
     title: 'Function calls - should not allow calling IIFE',
     input: '{ date: (function() { return "10"; })() }',
     options: functionCallOptions,
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
   {
     title:
@@ -449,21 +448,21 @@ export const PARSE_TEST_CASES: ParseTestCase[] = [
     input:
       "{ exploit: clearImmediate.constructor('return process;')().exit(1) }",
     options: functionCallOptions,
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
   {
     title:
       'Function calls - should prevent attempting to break the sandbox for literals',
     input: `{ exploit: "".toString.constructor('return process;')().exit(1) }`,
     options: functionCallOptions,
-    expected: '',
+    expectedError: 'Source expression is invalid',
   },
 
   {
     title: 'Comments - should disallow comment mode if turned off',
     input: commentsTemplate,
     options: { mode: ParseMode.Strict, allowComments: false },
-    expected: '',
+    expectedError: 'Comments are not allowed',
   },
   {
     title: 'Comments - should allow // and /* */ comments',

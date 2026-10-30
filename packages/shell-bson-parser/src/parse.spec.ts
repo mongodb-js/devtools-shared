@@ -8,11 +8,66 @@ import { ParseMode } from './options.js';
 import { PARSE_TEST_CASES } from '../test/parse-test-cases.js';
 
 describe('parse', function () {
-  for (const { title, input, options, expected } of PARSE_TEST_CASES) {
+  for (const testCase of PARSE_TEST_CASES) {
+    const { title, input, options } = testCase;
     it(title, function () {
-      expect(parse(input, options)).to.deep.equal(expected);
+      if ('expectedError' in testCase) {
+        expect(() => parse(input, options)).to.throw(testCase.expectedError);
+      } else {
+        expect(parse(input, options)).to.deep.equal(testCase.expected);
+      }
     });
   }
+
+  describe('error locations', function () {
+    function getError(input: string, options?: Partial<Options>) {
+      try {
+        parse(input, options);
+      } catch (err) {
+        return err as Error;
+      }
+      expect.fail('Expected parse to throw');
+    }
+
+    it('includes pos and loc for syntax errors', function () {
+      const err = getError('{ a: }');
+      expect(err).to.be.instanceOf(SyntaxError);
+      expect(err.message).to.equal('Unexpected token (1:5) in { a: }');
+      expect(err).to.deep.include({
+        pos: 5,
+        raisedAt: 6,
+        loc: { line: 1, column: 5 },
+      });
+    });
+
+    it('includes pos and loc for multiline syntax errors', function () {
+      const err = getError('{\n  a: 1,\n  b: ]\n}');
+      expect(err).to.deep.include({ pos: 15, loc: { line: 3, column: 5 } });
+    });
+
+    it('clamps pos and loc to the input for unterminated input', function () {
+      const err = getError('{ a: 1');
+      expect(err).to.deep.include({ pos: 6, loc: { line: 1, column: 6 } });
+    });
+
+    it('includes pos and loc for invalid BSON values', function () {
+      const err = getError('{ a: 1,\n  b: ObjectId("as") }');
+      expect(err).to.be.instanceOf(bson.BSONError);
+      expect(err).to.deep.include({ pos: 13, loc: { line: 2, column: 5 } });
+    });
+
+    it('includes pos and loc for disallowed expressions', function () {
+      const err = getError('{ a: 1, b: require("") }');
+      expect(err.message).to.equal('Source expression is invalid');
+      expect(err).to.deep.include({ pos: 11, loc: { line: 1, column: 11 } });
+    });
+
+    it('includes pos and loc for disallowed comments', function () {
+      const err = getError('{ a: 1 // hi\n}');
+      expect(err.message).to.equal('Comments are not allowed');
+      expect(err).to.deep.include({ pos: 7, loc: { line: 1, column: 7 } });
+    });
+  });
 
   it('should create new UUIDs', function () {
     expect(parse('{name: UUID()}'))
@@ -324,7 +379,9 @@ describe('parse', function () {
 
             it('should prevent invalid functions', function () {
               const input = `{ evilDate: (${dateFn}(0)).totallyLegit(5) }`;
-              expect(parse(input, options)).to.equal('');
+              expect(() => parse(input, options)).to.throw(
+                'Source expression is invalid',
+              );
             });
           },
         );
