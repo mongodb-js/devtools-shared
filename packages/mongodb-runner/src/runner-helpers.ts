@@ -50,7 +50,17 @@ export async function start(
 export async function* instances(argv: {
   runnerDir: string;
 }): AsyncIterable<StoredInstance> {
-  for await (const { name } of await fs.opendir(argv.runnerDir)) {
+  let dir: Awaited<ReturnType<typeof fs.opendir>>;
+  try {
+    dir = await fs.opendir(argv.runnerDir);
+  } catch (err) {
+    // A runner directory that does not exist means there is nothing to stop
+    // or list. In particular, `stop` should exit cleanly after a `start` that
+    // failed before creating it.
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw err;
+  }
+  for await (const { name } of dir) {
     if (name.startsWith('m-') && name.endsWith('.json')) {
       try {
         const filepath = path.join(argv.runnerDir, name);
