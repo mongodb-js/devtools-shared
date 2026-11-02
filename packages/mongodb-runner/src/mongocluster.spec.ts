@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import {
+  findPrimary,
   MongoCluster,
   redactSerializedCluster,
+  type RSMemberOptions,
   type SerializedClusterProperties,
 } from './mongocluster';
 import { promises as fs } from 'fs';
@@ -52,6 +54,52 @@ describe('MongoCluster', function () {
   afterEach(async function () {
     await cluster?.close();
     sinon.restore();
+  });
+
+  describe('findPrimary', function () {
+    it('selects the highest-priority member', function () {
+      const members: RSMemberOptions[] = [
+        { priority: 0 },
+        { priority: 2 },
+        { priority: 1 },
+      ];
+      expect(findPrimary(members)).to.equal(members[1]);
+    });
+
+    it('selects the first member on a priority tie', function () {
+      const members: RSMemberOptions[] = [{ priority: 1 }, { priority: 1 }];
+      expect(findPrimary(members)).to.equal(members[0]);
+    });
+
+    it('prefers an unset priority over an explicit zero on a tie', function () {
+      // Otherwise replSetInitiate would default every member's priority to 0
+      // and the replica set would have no electable member.
+      const members: RSMemberOptions[] = [{ priority: 0 }, {}];
+      expect(findPrimary(members)).to.equal(members[1]);
+    });
+
+    it('prefers a higher explicit priority over an unset one', function () {
+      const members: RSMemberOptions[] = [{}, { priority: 5 }];
+      expect(findPrimary(members)).to.equal(members[1]);
+    });
+
+    it('values explicitly set priorities over unset ones', function () {
+      const members: RSMemberOptions[] = [
+        {},
+        { priority: -1 }, // explicit, but lower than the implicit 0
+        { priority: 5 },
+      ];
+      expect(findPrimary(members)).to.equal(members[2]);
+    });
+
+    it('selects the first member when no priority is set', function () {
+      const members: RSMemberOptions[] = [{}, {}, {}];
+      expect(findPrimary(members)).to.equal(members[0]);
+    });
+
+    it('returns undefined for an empty member list', function () {
+      expect(findPrimary([])).to.equal(undefined);
+    });
   });
 
   it('can use custom downloadDir option for binary downloads', async function () {
