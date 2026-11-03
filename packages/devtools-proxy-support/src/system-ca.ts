@@ -3,6 +3,7 @@ import type { Options as SystemCAOptions } from 'system-ca';
 import { promises as fs } from 'fs';
 import { rootCertificates } from 'tls';
 import { X509Certificate } from 'crypto';
+import type { KeyObject } from 'crypto';
 
 // A bit more generic than SecureContextOptions['ca'] because of Uint8Array -> Buffer + readonly
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
@@ -65,6 +66,7 @@ export function splitPEMBundle(bundle: string): string[] {
 
 type ParsedCert = {
   cert: X509Certificate;
+  subject: string;
   notBefore: number;
   notAfter: number;
 };
@@ -79,6 +81,7 @@ function parseCert(pem: string): ParsedCert | null {
       const cert = new X509Certificate(pem);
       parsed = {
         cert,
+        subject: cert.subject,
         notBefore: new Date(cert.validFrom).getTime(),
         notAfter: new Date(cert.validTo).getTime(),
       };
@@ -108,10 +111,18 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
   return groups;
 }
 
-function publicKeyOf({ cert }: ParsedCert): string {
-  return cert.publicKey
-    .export({ type: 'spki', format: 'der' })
-    .toString('base64');
+function groupByPublicKey(entries: ParsedPEM[]): ParsedPEM[][] {
+  const groups: { key: KeyObject; members: ParsedPEM[] }[] = [];
+  for (const entry of entries) {
+    const key = entry.cert.publicKey;
+    const group = groups.find((other) => other.key.equals(key));
+    if (group) {
+      group.members.push(entry);
+    } else {
+      groups.push({ key, members: [entry] });
+    }
+  }
+  return groups.map(({ members }) => members);
 }
 
 function describeRemoval({ cert }: ParsedCert): string {
@@ -150,10 +161,10 @@ export function findInvalidCertsWithValidDuplicate(
   const invalid: ParsedPEM[] = [];
   for (const sameSubject of groupBy(
     entries,
-    ({ cert }) => cert.subject,
+    ({ subject }) => subject,
   ).values()) {
     if (sameSubject.length === 1) continue;
-    for (const sameKey of groupBy(sameSubject, publicKeyOf).values()) {
+    for (const sameKey of groupByPublicKey(sameSubject)) {
       invalid.push(...invalidCertsWithValidDuplicate(sameKey, now));
     }
   }
