@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { promises as fs } from 'fs';
+import { X509Certificate } from 'crypto';
 import os from 'os';
 import path from 'path';
 import sinon from 'sinon';
@@ -78,6 +79,13 @@ describe('system-ca', function () {
       expect(splitPEMBundle(`${key}\n${VALID}`)).to.deep.equal([VALID]);
     });
 
+    it('does not complete a certificate that has no END marker', function () {
+      const truncated = VALID.replace('-----END CERTIFICATE-----', '');
+      expect(splitPEMBundle(`${EXPIRED}\n${truncated}`)).to.deep.equal([
+        EXPIRED,
+      ]);
+    });
+
     it('returns an empty list when there is no certificate', function () {
       expect(splitPEMBundle('')).to.deep.equal([]);
       expect(splitPEMBundle('not a certificate')).to.deep.equal([]);
@@ -85,6 +93,10 @@ describe('system-ca', function () {
   });
 
   describe('findInvalidCertsWithValidDuplicate', function () {
+    afterEach(function () {
+      sinon.restore();
+    });
+
     it('finds an expired cert that has a valid duplicate, in any order', function () {
       for (const bundle of [
         [EXPIRED, VALID],
@@ -140,6 +152,16 @@ describe('system-ca', function () {
       expect(
         findInvalidCertsWithValidDuplicate([EXPIRED, garbage, VALID]).pems,
       ).to.deep.equal([EXPIRED]);
+    });
+
+    it('leaves certs alone when their public key cannot be read', function () {
+      // e.g. RSA-PSS keys in Electron: the certificate parses, the key getter throws
+      sinon.stub(X509Certificate.prototype, 'publicKey').get(() => {
+        throw new Error('unsupported key');
+      });
+      expect(
+        findInvalidCertsWithValidDuplicate([EXPIRED, VALID]).pems,
+      ).to.deep.equal([]);
     });
 
     it('reports a repeated cert only once', function () {
@@ -222,6 +244,21 @@ describe('system-ca', function () {
       expect(ca).to.include('# corporate CAs');
       expect(ca).to.include(VALID);
       expect(ca).to.not.include(EXPIRED);
+    });
+
+    it('uses the bundle as it is if removing certificates fails', async function () {
+      sinon.stub(X509Certificate.prototype, 'serialNumber').get(() => {
+        throw new Error('boom');
+      });
+      const { ca, messages } = await systemCA({
+        ca: [EXPIRED, VALID],
+        excludeSystemCerts: true,
+      });
+      expect(ca).to.include(EXPIRED);
+      expect(ca).to.include(VALID);
+      expect(messages).to.have.lengthOf(1);
+      expect(messages[0]).to.include('Unable to remove invalid certificates');
+      expect(messages[0]).to.include('boom');
     });
 
     it('leaves the bundle as it is when there is nothing to remove', async function () {

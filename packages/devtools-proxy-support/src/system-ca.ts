@@ -57,7 +57,9 @@ const PEM_END = '-----END CERTIFICATE-----';
 
 export function splitPEMBundle(bundle: string): string[] {
   const pems: string[] = [];
-  for (const chunk of bundle.split(PEM_END)) {
+  // The last piece follows the last END marker, so it never holds a complete
+  // certificate. A truncated one must not be completed by appending the marker.
+  for (const chunk of bundle.split(PEM_END).slice(0, -1)) {
     const begin = chunk.indexOf(PEM_BEGIN);
     if (begin !== -1) pems.push(chunk.slice(begin) + PEM_END);
   }
@@ -114,7 +116,12 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
 function groupByPublicKey(entries: ParsedPEM[]): ParsedPEM[][] {
   const groups: { key: KeyObject; members: ParsedPEM[] }[] = [];
   for (const entry of entries) {
-    const key = entry.cert.publicKey;
+    let key: KeyObject;
+    try {
+      key = entry.cert.publicKey;
+    } catch {
+      continue;
+    }
     const group = groups.find((other) => other.key.equals(key));
     if (group) {
       group.members.push(entry);
@@ -178,6 +185,19 @@ function removeCerts(bundle: string, pems: string[]): string {
   return pems.reduce((text, pem) => text.split(pem).join(''), bundle);
 }
 
+function removeInvalidCerts(ca: string): { ca: string; messages: string[] } {
+  try {
+    const invalid = findInvalidCertsWithValidDuplicate(splitPEMBundle(ca));
+    return { ca: removeCerts(ca, invalid.pems), messages: invalid.messages };
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return {
+      ca,
+      messages: [`Unable to remove invalid certificates: ${reason}`],
+    };
+  }
+}
+
 // Thin wrapper around system-ca, which merges:
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
@@ -225,13 +245,13 @@ export async function systemCA(
     existingOptions.ca,
     await readTLSCAFilePromise,
   );
-  const invalid = findInvalidCertsWithValidDuplicate(splitPEMBundle(ca));
+  const filtered = removeInvalidCerts(ca);
 
   return {
-    ca: removeCerts(ca, invalid.pems),
+    ca: filtered.ca,
     asyncFallbackError: asyncFallbackError,
     systemCertsError,
     systemCACount: systemCerts.length + rootCertificates.length,
-    messages: invalid.messages,
+    messages: filtered.messages,
   };
 }
