@@ -40,6 +40,13 @@ describe('parse', function () {
       });
     });
 
+    it('keeps $ sequences in the input literal in the message', function () {
+      const err = getError('{ a: "$$NOW", b: }');
+      expect(err.message).to.equal(
+        'Unexpected token (1:17) in { a: "$$NOW", b: }',
+      );
+    });
+
     it('includes pos and loc for multiline syntax errors', function () {
       const err = getError('{\n  a: 1,\n  b: ]\n}');
       expect(err).to.deep.include({ pos: 15, loc: { line: 3, column: 5 } });

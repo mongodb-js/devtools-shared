@@ -61,7 +61,8 @@ function toInputLocation(
   if (wrappedLoc && typeof error.message === 'string') {
     error.message = error.message.replace(
       `(${wrappedLoc.line}:${wrappedLoc.column}) in ${wrapped}`,
-      `(${line}:${column}) in ${input}`,
+      // Callback so `$` sequences in the input are not treated as patterns
+      () => `(${line}:${column}) in ${input}`,
     );
   }
   return err;
