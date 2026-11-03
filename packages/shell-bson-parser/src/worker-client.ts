@@ -43,7 +43,7 @@ export async function getWorkerScriptUrl(): Promise<string> {
     return new URL(override, import.meta.url).toString();
   }
 
-  const scriptUrl = new URL('./worker.js', import.meta.url);
+  const scriptUrl = new URL('./worker.mjs', import.meta.url);
   if (scriptUrl.protocol === 'file:') {
     return scriptUrl.toString();
   }

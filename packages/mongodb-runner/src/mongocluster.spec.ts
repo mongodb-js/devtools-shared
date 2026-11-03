@@ -449,6 +449,28 @@ describe('MongoCluster', function () {
       },
     ];
 
+    // TODO(SERVER-131779): mongod 8.0.x up to 8.0.34 refuses to start on
+    // Ubuntu's 7.0.0-x kernels (now used by GitHub's ubuntu-latest runners)
+    // because its kernel version check ignores Ubuntu's patch level. The fix
+    // ships in 8.0.35 (BACKPORT-29796); remove this skip once it is out.
+    const startOrSkip = async (
+      ctx: Mocha.Context,
+      options: Parameters<typeof MongoCluster.start>[0],
+    ): Promise<MongoCluster> => {
+      try {
+        return await MongoCluster.start(options);
+      } catch (err) {
+        if (
+          /Linux kernel versions 6\.19 and newer has a known incompatibility/.test(
+            (err as Error).message,
+          )
+        ) {
+          ctx.skip();
+        }
+        throw err;
+      }
+    };
+
     for (const {
       version,
       docker,
@@ -459,7 +481,7 @@ describe('MongoCluster', function () {
       const serverVersion = new RegExp(`^${version.split('.')[0]}\\.`);
 
       it(`can spawn a ${version} replset using docker`, async function () {
-        cluster = await MongoCluster.start({
+        cluster = await startOrSkip(this, {
           version,
           topology: 'replset',
           tmpDir,
@@ -477,7 +499,7 @@ describe('MongoCluster', function () {
       });
 
       it(`can spawn a ${version} sharded env using docker`, async function () {
-        cluster = await MongoCluster.start({
+        cluster = await startOrSkip(this, {
           version,
           topology: 'sharded',
           tmpDir,
@@ -497,7 +519,7 @@ describe('MongoCluster', function () {
       });
 
       it(`can spawn a ${version} standalone mongod with TLS enabled and get build info`, async function () {
-        cluster = await MongoCluster.start({
+        cluster = await startOrSkip(this, {
           version,
           topology: 'standalone',
           tmpDir,

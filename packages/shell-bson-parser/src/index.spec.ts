@@ -18,7 +18,7 @@ import {
   restrictObjectPrototype,
   ALLOWED_GLOBALS,
   DISALLOWED_PROTOTYPE_PROPS,
-} from './worker.js';
+} from './worker.mjs';
 import { PARSE_TEST_CASES } from './../test/parse-test-cases.js';
 
 const WebWorker = (WebWorkerModule as unknown as { default: typeof Worker })
@@ -28,7 +28,7 @@ describe('shell-bson-parser with webworker processing', function () {
   const initialWorkerScriptUrl = process.env.TEST_WORKER_SCRIPT_URL;
 
   before(function () {
-    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.js';
+    process.env.TEST_WORKER_SCRIPT_URL = '../dist/worker.mjs';
   });
 
   after(function () {
@@ -46,7 +46,7 @@ describe('shell-bson-parser with webworker processing', function () {
 
     try {
       expect(await getWorkerScriptUrl()).to.equal(
-        new URL('./worker.js', import.meta.url).toString(),
+        new URL('./worker.mjs', import.meta.url).toString(),
       );
     } finally {
       if (initialWorkerScriptUrl) {
@@ -204,7 +204,7 @@ describe('shell-bson-parser with webworker processing', function () {
       path.dirname(fileURLToPath(import.meta.url)),
       '..',
       'dist',
-      'worker.js',
+      'worker.mjs',
     );
     const code = await fs.readFile(workerBundlePath, 'utf8');
 
@@ -239,7 +239,7 @@ describe('shell-bson-parser with webworker processing', function () {
     expect(sandbox).to.have.property('importScripts');
     expect(sandbox).to.have.property('XMLHttpRequest');
 
-    vm.runInContext(code, sandbox, { filename: 'worker.js' });
+    vm.runInContext(code, sandbox, { filename: 'worker.mjs' });
 
     expect(sandbox).to.not.have.property('fetch');
     expect(sandbox).to.not.have.property('require');

@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -49,7 +49,7 @@
   "scripts": {
     "bootstrap": "npm run compile",
     "prepublishOnly": "npm run compile",
-    "compile": "tsc -p tsconfig.json && npm run bundle-worker && npm run bundle-cjs",
+    "compile": "tsc -p tsconfig.json && npm run bundle-cjs && npm run bundle-worker",
     "bundle-worker": "webpack --config webpack.worker.config.cjs",
     "bundle-cjs": "webpack --config webpack.cjs.config.cjs && node -e \"require('fs').writeFileSync('dist/cjs/package.json', JSON.stringify({type:'commonjs'})+'\\n')\"",
     "typecheck": "tsc --noEmit",

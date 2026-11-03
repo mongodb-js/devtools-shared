@@ -1,14 +1,12 @@
 'use strict';
 const path = require('path');
 
-module.exports = {
+const distDir = path.resolve(__dirname, 'dist');
+
+const base = {
   mode: 'production',
   target: 'webworker',
-  entry: path.resolve(__dirname, 'dist', 'worker.js'),
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'worker.js',
-  },
+  entry: path.join(distDir, 'worker.mjs'),
   module: {
     parser: {
       javascript: {
@@ -19,3 +17,17 @@ module.exports = {
     },
   },
 };
+
+module.exports = [
+  {
+    ...base,
+    name: 'worker-cjs',
+    output: { path: path.join(distDir, 'cjs'), filename: 'worker.cjs' },
+  },
+  {
+    ...base,
+    name: 'worker-esm',
+    dependencies: ['worker-cjs'],
+    output: { path: distDir, filename: 'worker.mjs' },
+  },
+];
