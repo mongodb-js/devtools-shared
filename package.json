@@ -9,7 +9,7 @@
     "email": "compass@mongodb.com"
   },
   "engines": {
-    "node": ">=22.21.1",
+    "node": ">=24.22.2",
     "npm": ">=11.16.0"
   },
   "workspaces": [
