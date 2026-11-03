@@ -45,14 +45,29 @@ module.exports = {
     },
   },
   plugins: [
+    {
+      apply(compiler) {
+        compiler.hooks.compilation.tap('worker-cjs-url', (compilation) => {
+          compilation.hooks.processAssets.tap(
+            {
+              name: 'worker-cjs-url',
+              stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+            },
+            () => {
+              const source = compilation.getAsset('index.js').source.source();
+              compilation.updateAsset(
+                'index.js',
+                new webpack.sources.RawSource(
+                  source.toString().replace('./worker.mjs', './worker.cjs'),
+                ),
+              );
+            },
+          );
+        });
+      },
+    },
     new webpack.DefinePlugin({
-      'import.meta.url': webpack.DefinePlugin.runtimeValue(
-        ({ module }) =>
-          module.resource === path.join(distDir, 'worker-client.js')
-            ? 'require("node:url").pathToFileURL(require("node:path").join(__dirname, "..", "worker-client.js")).href'
-            : 'require("node:url").pathToFileURL(__filename).href',
-        true,
-      ),
+      'import.meta.url': 'require("node:url").pathToFileURL(__filename).href',
     }),
   ],
 };
