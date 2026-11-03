@@ -2,12 +2,14 @@ import { systemCertsAsync } from 'system-ca';
 import type { Options as SystemCAOptions } from 'system-ca';
 import { promises as fs } from 'fs';
 import { rootCertificates } from 'tls';
+import { X509Certificate } from 'crypto';
 
 // A bit more generic than SecureContextOptions['ca'] because of Uint8Array -> Buffer + readonly
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
 
 let systemCertsCachePromise:
-  Promise<{ certs: string[]; asyncFallbackError?: Error }> | undefined;
+  | Promise<{ certs: string[]; asyncFallbackError?: Error }>
+  | undefined;
 
 export function resetSystemCACache(systemCAOpts: SystemCAOptions = {}): void {
   systemCertsCachePromise = undefined;
@@ -49,10 +51,128 @@ export function mergeCA(...args: (NodeJSCAOption | undefined)[]): string {
   return [...ca].join('\n');
 }
 
+const PEM_BEGIN = '-----BEGIN CERTIFICATE-----';
+const PEM_END = '-----END CERTIFICATE-----';
+
+export function splitPEMBundle(bundle: string): string[] {
+  const pems: string[] = [];
+  for (const chunk of bundle.split(PEM_END)) {
+    const begin = chunk.indexOf(PEM_BEGIN);
+    if (begin !== -1) pems.push(chunk.slice(begin) + PEM_END);
+  }
+  return pems;
+}
+
+type ParsedCert = {
+  cert: X509Certificate;
+  notBefore: number;
+  notAfter: number;
+};
+type ParsedPEM = ParsedCert & { pem: string };
+
+const parsedCertCache = new Map<string, ParsedCert | null>();
+
+function parseCert(pem: string): ParsedCert | null {
+  let parsed = parsedCertCache.get(pem);
+  if (parsed === undefined) {
+    try {
+      const cert = new X509Certificate(pem);
+      parsed = {
+        cert,
+        notBefore: new Date(cert.validFrom).getTime(),
+        notAfter: new Date(cert.validTo).getTime(),
+      };
+    } catch {
+      parsed = null;
+    }
+    parsedCertCache.set(pem, parsed);
+  }
+  return parsed;
+}
+
+function isCurrentlyValid({ notBefore, notAfter }: ParsedCert, now: number) {
+  return notBefore <= now && now <= notAfter;
+}
+
+function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    const group = groups.get(key);
+    if (group) {
+      group.push(item);
+    } else {
+      groups.set(key, [item]);
+    }
+  }
+  return groups;
+}
+
+function publicKeyOf({ cert }: ParsedCert): string {
+  return cert.publicKey
+    .export({ type: 'spki', format: 'der' })
+    .toString('base64');
+}
+
+function describeRemoval({ cert }: ParsedCert): string {
+  return (
+    `Removing certificate for '${cert.subject.split('\n').join(', ')}' ` +
+    `(serial no '${cert.serialNumber}', valid ${cert.validFrom} - ${cert.validTo}) ` +
+    'because a currently valid certificate with the same subject and key exists'
+  );
+}
+
+function invalidCertsWithValidDuplicate(
+  sameKey: ParsedPEM[],
+  now: number,
+): ParsedPEM[] {
+  return sameKey.some((entry) => isCurrentlyValid(entry, now))
+    ? sameKey.filter((entry) => !isCurrentlyValid(entry, now))
+    : [];
+}
+
+/**
+ * Finds expired (or not yet valid) certificates for which the list also
+ * contains a currently valid certificate with the same subject and the same
+ * public key, i.e. a CA that was renewed without rotating its key. Nothing else
+ * is reported: certificates without such a duplicate, or that cannot be parsed,
+ * are left alone.
+ */
+export function findInvalidCertsWithValidDuplicate(
+  pems: string[],
+  now = Date.now(),
+): { pems: string[]; messages: string[] } {
+  const entries = [...new Set(pems)].flatMap((pem) => {
+    const parsed = parseCert(pem);
+    return parsed ? [{ pem, ...parsed }] : [];
+  });
+
+  const invalid: ParsedPEM[] = [];
+  for (const sameSubject of groupBy(
+    entries,
+    ({ cert }) => cert.subject,
+  ).values()) {
+    if (sameSubject.length === 1) continue;
+    for (const sameKey of groupBy(sameSubject, publicKeyOf).values()) {
+      invalid.push(...invalidCertsWithValidDuplicate(sameKey, now));
+    }
+  }
+  return {
+    pems: invalid.map(({ pem }) => pem),
+    messages: invalid.map(describeRemoval),
+  };
+}
+
+function removeCerts(bundle: string, pems: string[]): string {
+  return pems.reduce((text, pem) => text.split(pem).join(''), bundle);
+}
+
 // Thin wrapper around system-ca, which merges:
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
 // - The system CA store (cached on first call)
+// Expired certificates that have a currently valid duplicate are removed from
+// the result, wherever they come from, see findInvalidCertsWithValidDuplicate().
 export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
@@ -78,8 +198,6 @@ export async function systemCA(
   let asyncFallbackError: Error | undefined;
   let systemCerts: string[] = [];
 
-  const messages: string[] = [];
-
   try {
     if (!existingOptions.excludeSystemCerts) {
       const systemCertsResult = await systemCertsCached();
@@ -90,16 +208,19 @@ export async function systemCA(
     systemCertsError = err;
   }
 
+  const ca = mergeCA(
+    systemCerts,
+    rootCertificates,
+    existingOptions.ca,
+    await readTLSCAFilePromise,
+  );
+  const invalid = findInvalidCertsWithValidDuplicate(splitPEMBundle(ca));
+
   return {
-    ca: mergeCA(
-      systemCerts,
-      rootCertificates,
-      existingOptions.ca,
-      await readTLSCAFilePromise,
-    ),
+    ca: removeCerts(ca, invalid.pems),
     asyncFallbackError: asyncFallbackError,
     systemCertsError,
     systemCACount: systemCerts.length + rootCertificates.length,
-    messages,
+    messages: invalid.messages,
   };
 }
