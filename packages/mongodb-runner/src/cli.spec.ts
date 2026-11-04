@@ -70,6 +70,63 @@ describe('cli', function () {
     await runCli(['prune']);
   });
 
+  it('keeps writing server logs after `start` has exited', async function () {
+    const logDir = path.join(tmpDir, 'logs-after-start');
+    const runnerDir = path.join(tmpDir, 'runner-logs-after-start');
+    const stdout = await runCli([
+      'start',
+      '--topology',
+      'standalone',
+      '--runnerDir',
+      runnerDir,
+      '--logDir',
+      logDir,
+    ]);
+    try {
+      const [logFile] = await fs.readdir(logDir);
+      const logPath = path.join(logDir, logFile);
+      const sizeAtExit = (await fs.stat(logPath)).size;
+      expect(sizeAtExit, 'startup output is in the log').to.be.greaterThan(0);
+
+      // Accepting a connection is logged, and the runner is no longer around
+      // to pipe it into the file.
+      const client = new MongoClient(stdout.trim());
+      await client.db('admin').command({ ping: 1 });
+      await client.close();
+
+      let sizeNow = sizeAtExit;
+      for (let i = 0; i < 50 && sizeNow === sizeAtExit; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        sizeNow = (await fs.stat(logPath)).size;
+      }
+      expect(sizeNow, 'log grew after start exited').to.be.greaterThan(
+        sizeAtExit,
+      );
+    } finally {
+      await runCli(['stop', '--all', '--runnerDir', runnerDir]);
+    }
+  });
+
+  it('reports a failed server startup when --logDir is set', async function () {
+    // The failure is timing-dependent (the process used to exit 0 silently
+    // when the server died between log polls), so repeat it.
+    for (let i = 0; i < 5; i++) {
+      const stderr = await runCliExpectingFailure([
+        'start',
+        '--topology',
+        'standalone',
+        '--runnerDir',
+        path.join(tmpDir, `runner-failed-start-${i}`),
+        '--logDir',
+        path.join(tmpDir, `logs-failed-start-${i}`),
+        '--',
+        '--setParameter',
+        'nonexistentParam=1',
+      ]);
+      expect(stderr, `attempt ${i}`).to.include('Server failed to start');
+    }
+  });
+
   it('can execute against a cluster', async function () {
     const stdout = await runCli([
       'exec',
