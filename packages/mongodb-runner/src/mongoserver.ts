@@ -258,7 +258,14 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     // A keyfile implicitly enables authentication, same as --auth.
     srv.isAuth =
       !!options.args?.includes('--auth') || keyFilePath !== undefined;
-    if (options.host && !srv.isConfigSvr) {
+    if (options.host) {
+      // All servers, including config servers, honor `host`. PR #620
+      // (DRIVERS-3335) excluded config servers after sharded driver test
+      // builds timed out when they advertised `localhost`, but that failure
+      // was never diagnosed and could not be reproduced: sharded clusters
+      // whose config server replset advertises `localhost` work (verified
+      // with mongod/mongos 8.0, covered by the "can use localhost as the
+      // host" sharded cluster test).
       srv.host = options.host;
     }
     if (keyFilePath) {

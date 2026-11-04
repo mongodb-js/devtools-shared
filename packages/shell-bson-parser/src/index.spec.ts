@@ -65,20 +65,39 @@ describe('shell-bson-parser with webworker processing', function () {
       expect(err).to.be.instanceOf(SyntaxError);
       expect((err as Error).name).to.equal('SyntaxError');
       expect(err).to.deep.include({
-        pos: 7,
-        raisedAt: 8,
-        loc: { line: 2, column: 5 },
+        pos: 5,
+        raisedAt: 6,
+        loc: { line: 1, column: 5 },
       });
     }
   });
 
   describe('parse', function () {
-    for (const { title, input, options, expected } of PARSE_TEST_CASES) {
+    for (const testCase of PARSE_TEST_CASES) {
+      const { title, input, options } = testCase;
       it(title, async function () {
-        const res = await api.parse(input, options);
-        expect(res).to.deep.equal(expected);
+        if ('expectedError' in testCase) {
+          try {
+            await api.parse(input, options);
+            expect.fail('Expected parse to throw');
+          } catch (err) {
+            expect((err as Error).message).to.include(testCase.expectedError);
+          }
+        } else {
+          const res = await api.parse(input, options);
+          expect(res).to.deep.equal(testCase.expected);
+        }
       });
     }
+
+    it('keeps the location of an invalid BSON value', async function () {
+      try {
+        await api.parse('{ a: ObjectId("as") }');
+        expect.fail('Expected parse to throw');
+      } catch (err) {
+        expect(err).to.deep.include({ pos: 5, loc: { line: 1, column: 5 } });
+      }
+    });
 
     it('keeps the error type of a failed parse', async function () {
       try {

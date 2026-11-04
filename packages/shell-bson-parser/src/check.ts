@@ -2,8 +2,12 @@ import type { Node, BaseCallExpression, Identifier } from 'estree';
 
 import { GLOBAL_FUNCTIONS, isMethodWhitelisted, GLOBALS } from './scope.js';
 import type { Options } from './options.js';
+import { attachLocation } from './eval.js';
 
 class Checker {
+  // Deepest node that failed the check, used to report error location
+  failedNode: Node | null = null;
+
   constructor(private options: Options) {}
   /**
    * Only allow CallExpressions where the Identifier matches a whitelist of safe
@@ -63,6 +67,12 @@ class Checker {
    * part of a query
    */
   checkSafeExpression = (node: Node | null): boolean => {
+    const isSafe = this.checkExpression(node);
+    if (!isSafe && !this.failedNode) this.failedNode = node;
+    return isSafe;
+  };
+
+  private checkExpression = (node: Node | null): boolean => {
     switch (node?.type) {
       case 'Identifier':
         return Object.prototype.hasOwnProperty.call(GLOBALS, node.name);
@@ -90,14 +100,18 @@ class Checker {
           if (
             ('computed' in property && property.computed) ||
             ('method' in property && property.method)
-          )
+          ) {
+            this.failedNode = property;
             return false;
+          }
           // only allow literals { 10: ...} or identifiers { name: ... } as keys
           if (
             !('key' in property) ||
             !['Literal', 'Identifier'].includes(property.key.type)
-          )
+          ) {
+            this.failedNode = property;
             return false;
+          }
 
           // object values can be a function expression or any safe expression
           return (
@@ -114,12 +128,16 @@ class Checker {
   };
 }
 
-export const checkTree = (node: Node, options: Options) => {
+export const checkTree = (node: Node, options: Options): void => {
   if (node.type === 'Program') {
     if (node.body.length === 1 && node.body[0].type === 'ExpressionStatement') {
       const checker = new Checker(options);
-      return checker.checkSafeExpression(node.body[0].expression);
+      if (checker.checkSafeExpression(node.body[0].expression)) return;
+      throw attachLocation(
+        new Error('Source expression is invalid'),
+        checker.failedNode ?? node,
+      );
     }
   }
-  return false;
+  throw attachLocation(new Error('Expected a single expression'), node);
 };

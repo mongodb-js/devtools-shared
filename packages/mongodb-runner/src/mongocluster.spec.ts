@@ -292,6 +292,42 @@ describe('MongoCluster', function () {
     expect(cluster.connectionString).to.include('localhost');
   });
 
+  it('can use localhost as the host for a sharded cluster', async function () {
+    cluster = await MongoCluster.start({
+      host: 'localhost',
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: twoIfNotWindowsCI,
+    });
+    expect(cluster.connectionString).to.include('localhost');
+
+    // Every server, including the config server replica set members, must
+    // advertise the requested host.
+    const serialized = cluster.serialize();
+    for (const server of serialized.servers) {
+      expect(server.host).to.equal('localhost');
+    }
+    for (const shard of serialized.shards) {
+      for (const server of shard.servers) {
+        expect(server.host).to.equal('localhost');
+      }
+    }
+
+    // The cluster must actually work: addShard must have succeeded with
+    // localhost hosts, and mongos (which connects to the config server
+    // replset through its advertised hosts) must route writes.
+    await cluster.withClient(async (client) => {
+      await client.db('test-sharded-localhost').collection('c').insertOne({});
+      const hello = await client.db('admin').command({ hello: 1 });
+      expect(hello.msg).to.equal('isdbgrid');
+      const { shards } = await client.db('admin').command({ listShards: 1 });
+      expect(shards).to.have.lengthOf(1);
+      expect(shards[0].host).to.include('localhost');
+    });
+  });
+
   context('TLS', function () {
     it('can spawn a 8.x standalone mongod with TLS enabled and get build info (automatically added client key)', async function () {
       cluster = await MongoCluster.start({
