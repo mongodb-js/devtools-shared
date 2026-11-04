@@ -73,19 +73,17 @@ export const isPotentialTLSCertificateError = handleNestedErrors(
   isPotentialTLSCertificateSingleError,
 );
 
-// Convenience wrapper that ensures that the given error is an `Error` instance
-// and that handles nested errors (.cause/AggregateError) as well
+// Error.isError (Node 24+, Electron 45+) also works across realms; fall back to
+// instanceof on older Node versions.
+const isError = (err: unknown): err is Error =>
+  Error.isError?.(err) ?? err instanceof Error;
+
+// Convenience wrapper that handles nested errors (.cause/AggregateError) as well
 function handleNestedErrors(
   fn: (err: Error & { code?: string }) => boolean,
 ): (err: unknown) => boolean {
   const checker = (err: unknown): boolean => {
-    if (
-      // e.g. node-fetch defines its FetchError class to be a `[object FetchError]`
-      !Object.prototype.toString.call(err).match(/\[object .*error\]/i)
-    ) {
-      return checker(new Error(String(err)));
-    }
-    if (!err || typeof err !== 'object') return false; // Make TS happy
+    if (!isError(err)) return false;
     if ('cause' in err && checker(err.cause)) {
       return true; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause
     }
@@ -96,7 +94,7 @@ function handleNestedErrors(
     ) {
       return true; // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError
     }
-    return fn(err as Error);
+    return fn(err);
   };
   return checker;
 }
