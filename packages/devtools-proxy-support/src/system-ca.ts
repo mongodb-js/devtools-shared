@@ -3,7 +3,6 @@ import type { Options as SystemCAOptions } from 'system-ca';
 import { promises as fs } from 'fs';
 import { rootCertificates } from 'tls';
 import { X509Certificate } from 'crypto';
-import type { KeyObject } from 'crypto';
 
 // A bit more generic than SecureContextOptions['ca'] because of Uint8Array -> Buffer + readonly
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
@@ -67,11 +66,9 @@ export function splitPEMBundle(bundle: string): string[] {
 
 type ParsedCert = {
   cert: X509Certificate;
-  subject: string;
   notBefore: number;
   notAfter: number;
 };
-type ParsedPEM = ParsedCert & { pem: string };
 
 const parsedCertCache = new Map<string, ParsedCert | null>();
 
@@ -82,7 +79,6 @@ function parseCert(pem: string): ParsedCert | null {
       const cert = new X509Certificate(pem);
       parsed = {
         cert,
-        subject: cert.subject,
         notBefore: new Date(cert.validFrom).getTime(),
         notAfter: new Date(cert.validTo).getTime(),
       };
@@ -98,95 +94,45 @@ function isCurrentlyValid({ notBefore, notAfter }: ParsedCert, now: number) {
   return notBefore <= now && now <= notAfter;
 }
 
-function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const key = keyOf(item);
-    const group = groups.get(key);
-    if (group) {
-      group.push(item);
-    } else {
-      groups.set(key, [item]);
-    }
-  }
-  return groups;
-}
-
-function groupByPublicKey(entries: ParsedPEM[]): ParsedPEM[][] {
-  const groups: { key: KeyObject; members: ParsedPEM[] }[] = [];
-  for (const entry of entries) {
-    let key: KeyObject;
-    try {
-      key = entry.cert.publicKey;
-    } catch {
-      continue;
-    }
-    const group = groups.find((other) => other.key.equals(key));
-    if (group) {
-      group.members.push(entry);
-    } else {
-      groups.push({ key, members: [entry] });
-    }
-  }
-  return groups.map(({ members }) => members);
-}
-
-function describeRemoval({ cert }: ParsedCert): string {
+function describeRemoval({ cert, notBefore }: ParsedCert, now: number): string {
   return (
-    `Removing certificate for '${cert.subject.split('\n').join(', ')}' ` +
-    `(serial no '${cert.serialNumber}', valid ${cert.validFrom} - ${cert.validTo}) ` +
-    'because a currently valid certificate with the same subject and key exists'
+    `Removing ${now < notBefore ? 'not yet valid' : 'expired'} certificate ` +
+    `for '${cert.subject.split('\n').join(', ')}' ` +
+    `(serial no '${cert.serialNumber}', valid ${cert.validFrom} - ${cert.validTo})`
   );
 }
 
-function invalidCertsWithValidDuplicate(
-  sameKey: ParsedPEM[],
-  now: number,
-): ParsedPEM[] {
-  return sameKey.some((entry) => isCurrentlyValid(entry, now))
-    ? sameKey.filter((entry) => !isCurrentlyValid(entry, now))
-    : [];
-}
-
-/**
- * Finds expired (or not yet valid) certificates for which the list also
- * contains a currently valid certificate with the same subject and the same
- * public key, i.e. a CA that was renewed without rotating its key. Nothing else
- * is reported: certificates without such a duplicate, or that cannot be parsed,
- * are left alone.
- */
-export function findInvalidCertsWithValidDuplicate(
+export function findInvalidCerts(
   pems: string[],
   now = Date.now(),
 ): { pems: string[]; messages: string[] } {
-  const entries = [...new Set(pems)].flatMap((pem) => {
+  const invalid: { pem: string; parsed: ParsedCert }[] = [];
+  for (const pem of new Set(pems)) {
     const parsed = parseCert(pem);
-    return parsed ? [{ pem, ...parsed }] : [];
-  });
-
-  const invalid: ParsedPEM[] = [];
-  for (const sameSubject of groupBy(
-    entries,
-    ({ subject }) => subject,
-  ).values()) {
-    if (sameSubject.length === 1) continue;
-    for (const sameKey of groupByPublicKey(sameSubject)) {
-      invalid.push(...invalidCertsWithValidDuplicate(sameKey, now));
-    }
+    if (parsed && !isCurrentlyValid(parsed, now)) invalid.push({ pem, parsed });
   }
   return {
     pems: invalid.map(({ pem }) => pem),
-    messages: invalid.map(describeRemoval),
+    messages: invalid.map(({ parsed }) => describeRemoval(parsed, now)),
   };
 }
 
 function removeCerts(bundle: string, pems: string[]): string {
-  return pems.reduce((text, pem) => text.split(pem).join(''), bundle);
+  const toRemove = new Set(pems);
+  const chunks = bundle.split(PEM_END);
+  const last = chunks.pop() as string;
+  const kept = chunks.map((chunk) => {
+    const begin = chunk.indexOf(PEM_BEGIN);
+    const isRemoved =
+      begin !== -1 && toRemove.has(chunk.slice(begin) + PEM_END);
+    return isRemoved ? chunk.slice(0, begin) : chunk + PEM_END;
+  });
+  return kept.join('') + last;
 }
 
 function removeInvalidCerts(ca: string): { ca: string; messages: string[] } {
   try {
-    const invalid = findInvalidCertsWithValidDuplicate(splitPEMBundle(ca));
+    const invalid = findInvalidCerts(splitPEMBundle(ca));
     return { ca: removeCerts(ca, invalid.pems), messages: invalid.messages };
   } catch (err: unknown) {
     const reason = err instanceof Error ? err.message : String(err);
@@ -201,8 +147,8 @@ function removeInvalidCerts(ca: string): { ca: string; messages: string[] } {
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
 // - The system CA store (cached on first call)
-// Expired certificates that have a currently valid duplicate are removed from
-// the result, wherever they come from, see findInvalidCertsWithValidDuplicate().
+// Expired certificates are removed from the result, wherever they come from,
+// see findInvalidCerts().
 export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
