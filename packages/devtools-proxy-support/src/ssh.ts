@@ -28,6 +28,8 @@ function ssh2(): typeof import('ssh2') {
 }
 
 const MAX_CONSECUTIVE_REINIT_FAILURES = 3;
+const INITIAL_REINIT_COOLDOWN_MS = 30_000;
+const MAX_REINIT_COOLDOWN_MS = 5 * 60_000;
 
 // The original version of this code was largely taken from
 // https://github.com/mongodb-js/compass/tree/55a5a608713d7316d158dc66febeb6b114d8b40d/packages/ssh-tunnel/src
@@ -40,7 +42,15 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   private connectingPromise?: Promise<void>;
   private reinitializingPromise?: Promise<void>;
   private consecutiveReinitFailures = 0;
+  // Set only by destroy(): an intentional shutdown that must never reconnect.
   private closed = false;
+  // Too many consecutive reinit failures open a circuit breaker with an
+  // exponentially growing cooldown instead of closing the agent for good: a
+  // long-lived agent (e.g. a Compass connection) has to be able to recover once
+  // the bastion becomes reachable again, e.g. after the machine wakes up.
+  private reinitBlockedUntil = 0;
+  private reinitCooldownMs = INITIAL_REINIT_COOLDOWN_MS;
+  private lastReinitError?: Error;
   private forwardOut!: (
     srcIP: string,
     srcPort: number,
@@ -63,7 +73,13 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     const client = new (ssh2().Client)();
     client.on('close', () => {
       this.logger.emit('ssh:client-closed');
-      this.connected = false;
+      // A replaced client can report 'close' long after its successor
+      // connected (a half-dead socket after sleep only closes on TCP timeout).
+      // That must not mark the healthy replacement as disconnected, which would
+      // trigger yet another reinit.
+      if (client === this.sshClient) {
+        this.connected = false;
+      }
     });
     client.on('error', () => {
       // Errors during connection setup are handled through initialize()'s
@@ -71,7 +87,9 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
       // catch block. This listener prevents unhandled 'error' events from
       // crashing the process when the SSH session dies unexpectedly (e.g. after
       // the host machine resumes from hibernate).
-      this.connected = false;
+      if (client === this.sshClient) {
+        this.connected = false;
+      }
     });
     this.forwardOut = promisify(client.forwardOut.bind(client));
     return client;
@@ -89,6 +107,10 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
     if (this.closed) {
       // A socks5 request could come in after we deliberately closed the connection. Don't reconnect in that case.
       throw new Error('Disconnected.');
+    }
+
+    if (Date.now() < this.reinitBlockedUntil) {
+      throw this.createCircuitOpenError();
     }
 
     if (reinitializeClient) {
@@ -227,21 +249,45 @@ export class SSHAgent extends AgentBase implements AgentWithInitialize {
   private async _doReinit(): Promise<void> {
     this.connectingPromise = undefined;
     this.connected = false;
+    // end() is a graceful close that waits on the socket, which never answers
+    // if it is half-dead after sleep. destroy() releases it right away.
     this.sshClient.end();
+    this.sshClient.destroy();
     this.sshClient = this.createSshClient();
     try {
       await this.initialize(false);
       this.consecutiveReinitFailures = 0;
+      this.reinitCooldownMs = INITIAL_REINIT_COOLDOWN_MS;
+      this.lastReinitError = undefined;
     } catch (err) {
       // Only count failures that aren't from an intentional destroy().
       if (!this.closed) {
+        this.lastReinitError = err as Error;
         this.consecutiveReinitFailures++;
         if (this.consecutiveReinitFailures >= MAX_CONSECUTIVE_REINIT_FAILURES) {
-          this.closed = true;
+          // Failures are not reset here, so a failed attempt after the
+          // cooldown re-opens the breaker immediately with a longer cooldown.
+          this.reinitBlockedUntil = Date.now() + this.reinitCooldownMs;
+          this.reinitCooldownMs = Math.min(
+            this.reinitCooldownMs * 2,
+            MAX_REINIT_COOLDOWN_MS,
+          );
         }
       }
       throw err;
     }
+  }
+
+  private createCircuitOpenError(): Error {
+    const retryInSeconds = Math.ceil(
+      (this.reinitBlockedUntil - Date.now()) / 1000,
+    );
+    return new Error(
+      'SSH tunnel unavailable after repeated reconnection failures' +
+        ` (last error: ${this.lastReinitError?.message ?? 'unknown'}).` +
+        ` Retrying in ${retryInSeconds}s.`,
+      { cause: this.lastReinitError },
+    );
   }
 
   destroy(): void {
