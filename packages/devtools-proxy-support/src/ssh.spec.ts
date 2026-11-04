@@ -4,6 +4,10 @@ import { SSHAgent } from './ssh';
 import { createFetch } from './fetch';
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { promises as fs } from 'fs';
+import os from 'os';
+import path from 'path';
+import { utils as ssh2Utils } from 'ssh2';
 
 describe('SSHAgent', function () {
   let setup: HTTPServerProxyTestSetup;
@@ -321,6 +325,39 @@ describe('SSHAgent', function () {
         (err) => expect(err.message).to.equal('Disconnected.'),
       );
     });
+  });
+
+  it('shares a single connection attempt between concurrent initialize() calls when using an identity file', async function () {
+    // Reading the key file is async, so concurrent callers used to all pass the
+    // "already connecting?" check and call connect() on the same ssh2 client.
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ssh-agent-test-'));
+    try {
+      const identityKeyFile = path.join(dir, 'id_ed25519');
+      await fs.writeFile(
+        identityKeyFile,
+        ssh2Utils.generateKeyPairSync('ed25519').private,
+      );
+      agent = new SSHAgent({
+        proxy: `ssh://foo@127.0.0.1:${setup.sshProxyPort}/`,
+        sshOptions: { identityKeyFile },
+      });
+      const establishingEvents: unknown[] = [];
+      agent.logger.on('ssh:establishing-conection', (e: unknown) =>
+        establishingEvents.push(e),
+      );
+
+      await Promise.all([
+        agent.initialize(),
+        agent.initialize(),
+        agent.initialize(),
+      ]);
+
+      expect(establishingEvents).to.have.length(1);
+      const response = await createFetch(agent)('http://example.com/hello');
+      expect(await response.text()).to.equal('OK /hello');
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('ignores late close events from a client that was already replaced', async function () {
