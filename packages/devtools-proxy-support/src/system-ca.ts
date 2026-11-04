@@ -2,6 +2,7 @@ import { systemCertsAsync } from 'system-ca';
 import type { Options as SystemCAOptions } from 'system-ca';
 import { promises as fs } from 'fs';
 import { rootCertificates } from 'tls';
+import { X509Certificate } from 'crypto';
 
 // A bit more generic than SecureContextOptions['ca'] because of Uint8Array -> Buffer + readonly
 type NodeJSCAOption = string | Uint8Array | readonly (string | Uint8Array)[];
@@ -49,10 +50,105 @@ export function mergeCA(...args: (NodeJSCAOption | undefined)[]): string {
   return [...ca].join('\n');
 }
 
+const PEM_BEGIN = '-----BEGIN CERTIFICATE-----';
+const PEM_END = '-----END CERTIFICATE-----';
+
+export function splitPEMBundle(bundle: string): string[] {
+  const pems: string[] = [];
+  // The last piece follows the last END marker, so it never holds a complete
+  // certificate. A truncated one must not be completed by appending the marker.
+  for (const chunk of bundle.split(PEM_END).slice(0, -1)) {
+    const begin = chunk.indexOf(PEM_BEGIN);
+    if (begin !== -1) pems.push(chunk.slice(begin) + PEM_END);
+  }
+  return pems;
+}
+
+type ParsedCert = {
+  cert: X509Certificate;
+  notBefore: number;
+  notAfter: number;
+};
+
+const parsedCertCache = new Map<string, ParsedCert | null>();
+
+function parseCert(pem: string): ParsedCert | null {
+  let parsed = parsedCertCache.get(pem);
+  if (parsed === undefined) {
+    try {
+      const cert = new X509Certificate(pem);
+      parsed = {
+        cert,
+        notBefore: new Date(cert.validFrom).getTime(),
+        notAfter: new Date(cert.validTo).getTime(),
+      };
+    } catch {
+      parsed = null;
+    }
+    parsedCertCache.set(pem, parsed);
+  }
+  return parsed;
+}
+
+function isCurrentlyValid({ notBefore, notAfter }: ParsedCert, now: number) {
+  return notBefore <= now && now <= notAfter;
+}
+
+function describeRemoval({ cert, notBefore }: ParsedCert, now: number): string {
+  return (
+    `Removing ${now < notBefore ? 'not yet valid' : 'expired'} certificate ` +
+    `for '${cert.subject.split('\n').join(', ')}' ` +
+    `(serial no '${cert.serialNumber}', valid ${cert.validFrom} - ${cert.validTo})`
+  );
+}
+
+export function findInvalidCerts(
+  pems: string[],
+  now = Date.now(),
+): { pems: string[]; messages: string[] } {
+  const invalid: { pem: string; parsed: ParsedCert }[] = [];
+  for (const pem of new Set(pems)) {
+    const parsed = parseCert(pem);
+    if (parsed && !isCurrentlyValid(parsed, now)) invalid.push({ pem, parsed });
+  }
+  return {
+    pems: invalid.map(({ pem }) => pem),
+    messages: invalid.map(({ parsed }) => describeRemoval(parsed, now)),
+  };
+}
+
+function removeCerts(bundle: string, pems: string[]): string {
+  const toRemove = new Set(pems);
+  const chunks = bundle.split(PEM_END);
+  const last = chunks.pop() as string;
+  const kept = chunks.map((chunk) => {
+    const begin = chunk.indexOf(PEM_BEGIN);
+    const isRemoved =
+      begin !== -1 && toRemove.has(chunk.slice(begin) + PEM_END);
+    return isRemoved ? chunk.slice(0, begin) : chunk + PEM_END;
+  });
+  return kept.join('') + last;
+}
+
+function removeInvalidCerts(ca: string): { ca: string; messages: string[] } {
+  try {
+    const invalid = findInvalidCerts(splitPEMBundle(ca));
+    return { ca: removeCerts(ca, invalid.pems), messages: invalid.messages };
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return {
+      ca,
+      messages: [`Unable to remove invalid certificates: ${reason}`],
+    };
+  }
+}
+
 // Thin wrapper around system-ca, which merges:
 // - Explicit CA options passed as options
 // - The Node.js TLS root store
 // - The system CA store (cached on first call)
+// Expired certificates are removed from the result, wherever they come from,
+// see findInvalidCerts().
 export async function systemCA(
   existingOptions: {
     ca?: NodeJSCAOption;
@@ -78,8 +174,6 @@ export async function systemCA(
   let asyncFallbackError: Error | undefined;
   let systemCerts: string[] = [];
 
-  const messages: string[] = [];
-
   try {
     if (!existingOptions.excludeSystemCerts) {
       const systemCertsResult = await systemCertsCached();
@@ -90,16 +184,19 @@ export async function systemCA(
     systemCertsError = err;
   }
 
+  const ca = mergeCA(
+    systemCerts,
+    rootCertificates,
+    existingOptions.ca,
+    await readTLSCAFilePromise,
+  );
+  const filtered = removeInvalidCerts(ca);
+
   return {
-    ca: mergeCA(
-      systemCerts,
-      rootCertificates,
-      existingOptions.ca,
-      await readTLSCAFilePromise,
-    ),
+    ca: filtered.ca,
     asyncFallbackError: asyncFallbackError,
     systemCertsError,
     systemCACount: systemCerts.length + rootCertificates.length,
-    messages,
+    messages: filtered.messages,
   };
 }
