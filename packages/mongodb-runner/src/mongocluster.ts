@@ -164,7 +164,7 @@ export type ShardedOptions = {
    * Turn the config server replica set into a config shard (a config server
    * that also holds data) once the cluster is up, by running
    * `transitionFromDedicatedConfigServer` through mongos. Requires MongoDB
-   * 5.0 or newer. Only meaningful for the `sharded` topology.
+   * 8.0 or newer. Only meaningful for the `sharded` topology.
    */
   configShard?: boolean;
 };
@@ -504,6 +504,13 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private originalOptions?: MongoClusterOptions;
   /** True when the config server replica set is also a data-bearing shard. */
   private configShard = false;
+  /**
+   * Credentials of the temporary user used to run the config shard
+   * transition on authenticated clusters, kept around so that the cluster
+   * users can be created while it exists (the localhost exception closes
+   * as soon as any user has been created and does not reopen).
+   */
+  private transitionUser?: { username: string; password: string };
 
   private constructor() {
     super();
@@ -948,15 +955,23 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           });
         }
         debug('added shards');
-        if (options.configShard) {
-          debug('transitioning the config server to a config shard');
+      });
+      if (options.configShard) {
+        debug('transitioning the config server to a config shard');
+        // The localhost exception (which covers addShard above) does not
+        // permit this command, so when the cluster enforces authentication,
+        // create a temporary privileged user through the localhost exception
+        // and run the transition (and the readiness poll) as that user.
+        // `__system` cannot be used here because mongos only accepts it with
+        // enableTestCommands.
+        const runTransition = async (client: MongoClient): Promise<void> => {
           try {
             await client.db('admin').command({
               transitionFromDedicatedConfigServer: 1,
             });
           } catch (err) {
             throw new Error(
-              `Failed to turn the config server into a config shard (requires MongoDB 5.0 or newer): ${
+              `Failed to turn the config server into a config shard (requires MongoDB 8.0 or newer): ${
                 err instanceof Error ? err.message : String(err)
               }`,
             );
@@ -967,24 +982,70 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           const deadline = Date.now() + 60_000;
           // eslint-disable-next-line no-constant-condition
           while (true) {
-            const { shards: currentShards } = await client
-              .db('admin')
-              .command({ listShards: 1 });
+            const { shards: currentShards } = await client.db('admin').command({
+              listShards: 1,
+              // Bound each poll by the remaining time budget so that a
+              // stalled mongos cannot hang start() indefinitely.
+              maxTimeMS: Math.max(1, deadline - Date.now()),
+            });
             if (currentShards.some((s: any) => s._id === 'config')) break;
-            if (Date.now() > deadline) {
+            if (Date.now() >= deadline) {
               throw new Error(
                 'Timed out waiting for transitionFromDedicatedConfigServer to complete',
               );
             }
             await sleep(1000);
           }
-          cluster.configShard = true;
-          debug('config server transitioned to a config shard');
+        };
+        const needsCredentials =
+          mongos.keyFileContents !== undefined || mongos.isAuth;
+        if (!needsCredentials) {
+          await mongos.withClient(runTransition);
+        } else {
+          // Creating the temporary user closes the localhost exception,
+          // and it does not reopen once the user is dropped again, so the
+          // user is kept until the cluster's own users have been created
+          // (see addAuthIfNeeded / dropTransitionUserIfNeeded).
+          cluster.transitionUser = {
+            username: `runner-config-shard-${uuid()}`,
+            password: uuid(),
+          };
+          const { username, password } = cluster.transitionUser;
+          await mongos.withClient(async (client) => {
+            await client.db('admin').command({
+              createUser: username,
+              pwd: password,
+              roles: ['root'],
+              // User management commands can only use w:1 or w:majority
+              writeConcern: { w: 'majority', j: true, wtimeout: 0 },
+            });
+          });
+          try {
+            await mongos.withClient(runTransition, {
+              auth: { username, password },
+            });
+          } catch (err) {
+            // Best effort: remove the temporary user again on failure so
+            // that it does not linger with root privileges.
+            await mongos
+              .withClient(
+                async (client) => {
+                  await client.db('admin').command({ dropUser: username });
+                },
+                { auth: { username, password } },
+              )
+              .catch(() => undefined);
+            cluster.transitionUser = undefined;
+            throw err;
+          }
         }
-      });
+        cluster.configShard = true;
+        debug('config server transitioned to a config shard');
+      }
     }
 
     await cluster.addAuthIfNeeded();
+    await cluster.dropTransitionUserIfNeeded();
     await cluster.addRequireApiVersionIfNeeded(options);
     try {
       await cluster.assertAllServersHaveInsertedLocalMetadata();
@@ -1047,6 +1108,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     if (!this.users?.length) return;
     // Sleep to give time for a possible replset election to settle.
     await sleep(1000);
+    // On authenticated config-shard clusters, the localhost exception has
+    // been closed by the temporary transition user, so create the real
+    // users as that user instead.
+    const clientOptions: MongoClientOptions = this.transitionUser
+      ? { auth: { ...this.transitionUser } }
+      : {};
     await this.withClient(async (client) => {
       const admin = client.db('admin');
       for (const user of this.users) {
@@ -1061,10 +1128,35 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           ...rest,
         });
       }
-    });
+    }, clientOptions);
     await this.updateDefaultConnectionOptions({
       auth: this.users[0],
     });
+  }
+
+  /**
+   * Remove the temporary user used for the config shard transition, if one
+   * was created. Must run after addAuthIfNeeded, since the temporary user
+   * is what allows creating the cluster's own users on authenticated
+   * clusters.
+   */
+  async dropTransitionUserIfNeeded(): Promise<void> {
+    if (!this.transitionUser) return;
+    const { username, password } = this.transitionUser;
+    const mongos = this.servers.find((srv) => srv.isMongos);
+    if (!mongos) {
+      throw new Error(
+        'Cannot drop the temporary config shard transition user: no mongos found',
+      );
+    }
+    await mongos.withClient(
+      async (client) => {
+        await client.db('admin').command({ dropUser: username });
+      },
+      { auth: { username, password } },
+    );
+    this.transitionUser = undefined;
+    debug('dropped the temporary config shard transition user', username);
   }
 
   async updateDefaultConnectionOptions(

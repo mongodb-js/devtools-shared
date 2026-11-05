@@ -42,7 +42,7 @@ Options:
       --shards       number of shards for sharded clusters              [number]
       --configShard  for `start` with the sharded topology: turn the
                      config server into a config shard (requires MongoDB
-                     5.0+)                                            [boolean]
+                     8.0+)                                            [boolean]
       --version      MongoDB server version to use                      [string]
       --logDir       Directory to store server log files in             [string]
       --binDir       Directory containing mongod/mongos binaries        [string]
@@ -119,10 +119,11 @@ $ npx @mongodb-js/mongodb-runner start --config <path/to/config.json>
 By default the runner starts a sharded cluster with a dedicated config server.
 Pass `--configShard` (or `configShard: true` in a config file / programmatic
 options) to turn the config server replica set into a config shard, a config
-server that also holds data, once the cluster is up. This requires MongoDB 5.0
-or newer and is only supported for the `sharded` topology. `start` waits until
-the transition has completed, and `ls --json` (and `start --json`) report
-`configShard: true` for such clusters:
+server that also holds data, once the cluster is up. This requires MongoDB 8.0
+or newer (the underlying `transitionFromDedicatedConfigServer` command is new
+in 8.0) and is only supported for the `sharded` topology. `start` waits until
+the transition has completed, and `ls --json` reports `configShard: true` for
+such clusters:
 
 ```sh
 $ npx mongodb-runner start -t sharded --shards 1 --configShard
