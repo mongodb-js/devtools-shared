@@ -160,6 +160,13 @@ export type ShardedOptions = {
   mongosArgs?: string[][];
   /** Number of shards to create or explicit shard configurations. */
   shards?: number | Partial<MongoClusterOptions>[];
+  /**
+   * Turn the config server replica set into a config shard (a config server
+   * that also holds data) once the cluster is up, by running
+   * `transitionFromDedicatedConfigServer` through mongos. Requires MongoDB
+   * 5.0 or newer. Only meaningful for the `sharded` topology.
+   */
+  configShard?: boolean;
 };
 
 /** A replica set member of a shard, with its pre-allocated port. */
@@ -264,6 +271,8 @@ export interface SerializedClusterProperties {
   dockerComposeProject?: ReturnType<DockerComposeProject['serialize']>;
   defaultConnectionOptions: Partial<MongoClientOptions>;
   users: MongoDBUserDoc[];
+  /** True when the config server replica set is also a data-bearing shard. */
+  configShard?: boolean;
   options?: MongoClusterOptions;
 }
 
@@ -493,6 +502,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private defaultConnectionOptions: Partial<MongoClientOptions> = {};
   private users: MongoDBUserDoc[] = [];
   private originalOptions?: MongoClusterOptions;
+  /** True when the config server replica set is also a data-bearing shard. */
+  private configShard = false;
 
   private constructor() {
     super();
@@ -536,6 +547,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       dockerComposeProject: this.dockerComposeProject?.serialize(),
       defaultConnectionOptions: jsonClone(this.defaultConnectionOptions ?? {}),
       users: jsonClone(this.users),
+      configShard: this.configShard || undefined,
       options: this.originalOptions
         ? jsonClone(this.originalOptions)
         : undefined,
@@ -557,6 +569,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     cluster.replSetName = serialized.replSetName;
     cluster.defaultConnectionOptions = serialized.defaultConnectionOptions;
     cluster.users = serialized.users;
+    cluster.configShard = serialized.configShard ?? false;
     cluster.servers = await safePromiseAll(
       serialized.servers.map((srv) => MongoServer.deserialize(srv)),
     );
@@ -728,6 +741,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
     shardContext: { index: number; isConfigServer: boolean },
   ): Promise<MongoCluster> {
     if (options.topology === 'standalone') {
+      if (options.configShard) {
+        throw new Error('configShard requires the sharded topology');
+      }
       if (disaggregatedStorage) {
         // Pre-allocate the port so the storage configuration can reference it.
         let port = getPortArg(options.args);
@@ -764,6 +780,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }),
       );
     } else if (options.topology === 'replset') {
+      if (options.configShard) {
+        throw new Error('configShard requires the sharded topology');
+      }
       const { rsMembers, replSetName } = processRSMembers(options);
       if (disaggregatedStorage) {
         // Pre-allocate member ports so the storage configuration (which
@@ -888,6 +907,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               topology: 'replset',
               requireApiVersion: undefined,
               users: isConfigServer ? undefined : options.users,
+              configShard: undefined,
             },
             {
               disaggregatedStorage,
@@ -928,6 +948,39 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           });
         }
         debug('added shards');
+        if (options.configShard) {
+          debug('transitioning the config server to a config shard');
+          try {
+            await client.db('admin').command({
+              transitionFromDedicatedConfigServer: 1,
+            });
+          } catch (err) {
+            throw new Error(
+              `Failed to turn the config server into a config shard (requires MongoDB 5.0 or newer): ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+            );
+          }
+          // The command returns before the transition has finished; wait
+          // until the config server shows up as a shard so that the
+          // cluster is fully usable when start() returns.
+          const deadline = Date.now() + 60_000;
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { shards: currentShards } = await client
+              .db('admin')
+              .command({ listShards: 1 });
+            if (currentShards.some((s: any) => s._id === 'config')) break;
+            if (Date.now() > deadline) {
+              throw new Error(
+                'Timed out waiting for transitionFromDedicatedConfigServer to complete',
+              );
+            }
+            await sleep(1000);
+          }
+          cluster.configShard = true;
+          debug('config server transitioned to a config shard');
+        }
       });
     }
 
