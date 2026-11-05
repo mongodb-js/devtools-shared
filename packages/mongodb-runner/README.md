@@ -121,8 +121,17 @@ it can be captured and parsed without whitespace splitting:
 
 ```sh
 $ npx mongodb-runner start -t replset --json
-{"id":"2b56a4d3-...","connectionString":"mongodb://localhost:27017,localhost:27018/?replicaSet=repl0"}
+{"id":"2b56a4d3-...","connectionString":"mongodb://localhost:27017,localhost:27018/?replicaSet=repl0","topology":"replset","replSetName":"repl0","servers":[...],"shards":[]}
 ```
+
+The result includes the serialized cluster data, the same fields that
+`ls --json` reports for this id (`topology`, `servers`, `shards`, and related
+fields), so no separate `ls` invocation is needed to learn each server's host,
+port, and role. Unlike `ls --json`, it does not include `filepath`, since the
+metadata file location is only meaningful later. As with `ls --json`,
+credentials in the serialized cluster fields are redacted. The
+connection-string fields may still contain authentication credentials, so
+treat the output as sensitive.
 
 For OIDC clusters the result also contains `oidcIssuer` and
 `connectionStringWithOidc` (the connection string with
