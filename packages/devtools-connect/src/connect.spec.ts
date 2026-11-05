@@ -420,6 +420,41 @@ describe('devtools connect', function () {
       ); // but we still always set verbatim to false
     });
 
+    it('does not modify the options it was called with', async function () {
+      const uri = 'mongodb://localhost:27017/?authMechanism=MONGODB-OIDC';
+      const mClient = stubConstructor(FakeMongoClient);
+      const mClientType = sinon.stub().returns(mClient);
+      mClient.connect.onFirstCall().resolves(mClient);
+      const oidcCallback = sinon.stub();
+      const clientOptions = {
+        ...defaultOpts,
+        useSystemCA: false,
+        authMechanismProperties: { ALLOWED_HOSTS: ['*.example.com'] },
+        parentState: {
+          oidcPlugin: {
+            logger: new EventEmitter(),
+            mongoClientOptions: {
+              authMechanismProperties: { OIDC_HUMAN_CALLBACK: oidcCallback },
+            },
+          },
+        } as any,
+      };
+      const keysBefore = Object.keys(clientOptions).sort();
+
+      await connectMongoClient(uri, clientOptions, bus, mClientType as any);
+
+      expect(
+        mClientType.getCalls()[0].args[1].authMechanismProperties,
+      ).to.deep.equal({
+        ALLOWED_HOSTS: ['*.example.com'],
+        OIDC_HUMAN_CALLBACK: oidcCallback,
+      });
+      expect(Object.keys(clientOptions).sort()).to.deep.equal(keysBefore);
+      expect(clientOptions.authMechanismProperties).to.deep.equal({
+        ALLOWED_HOSTS: ['*.example.com'],
+      });
+    });
+
     describe('retryable TLS errors', function () {
       it('retries TLS errors without system CA integration enabled -- MongoClient error', async function () {
         const uri = 'localhost:27017';
