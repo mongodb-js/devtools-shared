@@ -1000,12 +1000,19 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         const needsCredentials =
           mongos.keyFileContents !== undefined || mongos.isAuth;
         if (!needsCredentials) {
-          await mongos.withClient(runTransition);
+          await mongos.withClient(runTransition, { timeoutMS: 60_000 });
         } else {
           // Creating the temporary user closes the localhost exception,
           // and it does not reopen once the user is dropped again, so the
           // user is kept until the cluster's own users have been created
           // (see addAuthIfNeeded / dropTransitionUserIfNeeded).
+          if (!options.users?.length) {
+            throw new Error(
+              'configShard requires at least one user to be configured on clusters that enforce authentication: ' +
+                'the temporary user created for the transition closes the localhost exception, ' +
+                'and dropping it again would leave the cluster with no users and no way to authenticate',
+            );
+          }
           cluster.transitionUser = {
             username: `runner-config-shard-${uuid()}`,
             password: uuid(),
@@ -1023,6 +1030,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           try {
             await mongos.withClient(runTransition, {
               auth: { username, password },
+              timeoutMS: 60_000,
             });
           } catch (err) {
             // Best effort: remove the temporary user again on failure so

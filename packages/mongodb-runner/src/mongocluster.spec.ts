@@ -405,6 +405,29 @@ describe('MongoCluster', function () {
     ).to.deep.equal(['testuser']);
   });
 
+  it('rejects configShard with authentication but no configured users', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileConfigShardNoUsers');
+    await fs.writeFile(keyFile, 'csauthsecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        shards: 1,
+        secondaries: 0,
+        args: ['--keyFile', keyFile],
+        configShard: true,
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'configShard requires at least one user',
+    );
+  });
+
   it('rejects configShard for non-sharded topologies', async function () {
     let err: unknown;
     try {
