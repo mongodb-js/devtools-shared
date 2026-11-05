@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: mongodb-js/devtools-shared/actions/setup-bot-token@main # main
+      - uses: mongodb-js/devtools-shared/actions/setup-bot-token@1e8ecf30ba80283d021a34765a73e8f03aa71d05 # main
         id: app-token
         with:
           app-id: ${{ vars.DEVTOOLS_BOT_APP_ID }}
