@@ -368,6 +368,43 @@ describe('MongoCluster', function () {
     ).to.be.true;
   });
 
+  it('can start a sharded cluster with a config shard and keyfile auth', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileConfigShard');
+    await fs.writeFile(keyFile, 'csauthsecret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: 0,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+      args: ['--keyFile', keyFile],
+      configShard: true,
+    });
+    const listShards = await cluster.withClient((client) =>
+      client.db('admin').command({ listShards: 1 }),
+    );
+    expect(
+      listShards.shards.map((s: any) => s._id),
+      'the config server should be listed as a shard',
+    ).to.include('config');
+
+    // The temporary user created for the transition must have been removed.
+    const usersInfo = await cluster.withClient((client) =>
+      client.db('admin').command({ usersInfo: 1 }),
+    );
+    expect(
+      usersInfo.users.map((u: any) => u.user),
+      'the temporary transition user should be gone',
+    ).to.deep.equal(['testuser']);
+  });
+
   it('rejects configShard for non-sharded topologies', async function () {
     let err: unknown;
     try {

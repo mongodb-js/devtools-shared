@@ -39,7 +39,7 @@ import type { MongoClientOptions } from 'mongodb';
     .option('configShard', {
       type: 'boolean',
       describe:
-        'for `start` with the sharded topology: turn the config server into a config shard (requires MongoDB 5.0+)',
+        'for `start` with the sharded topology: turn the config server into a config shard (requires MongoDB 8.0+)',
     })
     .option('version', {
       type: 'string',
