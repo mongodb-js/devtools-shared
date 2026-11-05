@@ -154,6 +154,10 @@ export class HTTPServerProxyTestSetup {
       },
       (client) => {
         client
+          .on('error', () => {
+            // Clients may drop abruptly (e.g. a destroyed socket resets the
+            // connection); an unhandled 'error' here would crash the test run.
+          })
           .on('authentication', (ctx) => {
             if (ctx.method === 'none' && !this.authHandler) return ctx.accept();
             if (
