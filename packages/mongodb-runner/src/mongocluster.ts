@@ -338,6 +338,34 @@ function removePortArg([...args]: string[]): string[] {
   return args;
 }
 
+/**
+ * Return the member that should be treated as the initial primary: the one
+ * with the highest priority. On a tie, a member with an unset priority
+ * outranks one with an explicitly set priority (and earlier members outrank
+ * later ones otherwise).
+ *
+ * Preferring an unset priority matters because replSetInitiate defaults the
+ * initial primary's unset priority to 1: without this rule, for
+ * `rsMembers: [{ priority: 0 }, {}]` the explicitly-zero member would win the
+ * tie, every member would end up with priority 0, and the server would reject
+ * the replica set configuration for having no electable member.
+ */
+export function findPrimary(
+  members: RSMemberOptions[],
+): RSMemberOptions | undefined {
+  return members.find((m) =>
+    members.every((m2) => {
+      const priority = m.priority ?? 0;
+      const otherPriority = m2.priority ?? 0;
+      return (
+        priority > otherPriority ||
+        (priority === otherPriority &&
+          (m.priority === undefined || m2.priority !== undefined))
+      );
+    }),
+  );
+}
+
 function processRSMembers(options: MongoClusterOptions): {
   rsMembers: RSMemberOptions[];
   replSetName: string;
@@ -361,9 +389,7 @@ function processRSMembers(options: MongoClusterOptions): {
   const secondaryArgs = [...removePortArg(args), '--port', '0'];
 
   if (rsMembers) {
-    const primary = rsMembers.find((m) =>
-      rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
-    );
+    const primary = findPrimary(rsMembers);
     return {
       rsMembers: rsMembers.map((m) => ({
         ...m,
@@ -781,10 +807,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         secondaries: rsMembers.filter((m) => !m.arbiterOnly).length - 1,
         arbiters: rsMembers.filter((m) => m.arbiterOnly).length,
       });
-      const primaryIndex = rsMembers.findIndex((m) =>
-        rsMembers.every((m2) => m.priority ?? 0 >= (m2.priority ?? 0)),
-      );
-      assert.notStrictEqual(primaryIndex, -1);
+      const primaryMember = findPrimary(rsMembers);
+      assert(primaryMember, 'no primary member found');
 
       const nodes = await safePromiseAll(
         rsMembers.map(async (member) => {
@@ -800,7 +824,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
         }),
       );
       cluster.servers.push(...nodes.map(([srv]) => srv));
-      const primary = cluster.servers[primaryIndex];
+      const primaryEntry = nodes.find(([, member]) => member === primaryMember);
+      assert(primaryEntry, 'no started server for the primary member');
+      const primary = primaryEntry[0];
 
       await primary.withClient(async (client) => {
         // With DSC, the replica set config is provided to
@@ -816,7 +842,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
                 _id: i,
                 host: srv.hostport,
                 arbiterOnly: member.arbiterOnly ?? false,
-                priority: member.priority ?? (i === primaryIndex ? 1 : 0),
+                priority: member.priority ?? (member === primaryMember ? 1 : 0),
                 tags: member.tags || {},
               };
             }),
