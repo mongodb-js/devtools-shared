@@ -41,7 +41,9 @@ updates:
       - javascript
 
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /actions/setup-bot-token
     schedule:
       interval: monthly
     groups:
