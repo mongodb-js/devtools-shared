@@ -44,7 +44,7 @@ export async function start(
 
   cluster.unref();
 
-  return { cluster, id };
+  return { cluster, id, serialized, connectionString };
 }
 
 export async function* instances(argv: {

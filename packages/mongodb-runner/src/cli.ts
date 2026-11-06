@@ -166,7 +166,7 @@ import type { MongoClientOptions } from 'mongodb';
         console.error(`  ${serviceName}: ${addr}`);
       }
     }
-    const { cluster, id } = await utilities.start(
+    const { cluster, id, serialized, connectionString } = await utilities.start(
       { ...argv, disaggregatedStorage },
       args,
     );
@@ -195,8 +195,13 @@ import type { MongoClientOptions } from 'mongodb';
     );
     if (argv.json) {
       const result = {
+        // Same serialized cluster fields that `ls --json` reports for this
+        // id, read back from the exact data written to the metadata file, so
+        // callers do not need a separate `ls` invocation to learn the cluster
+        // topology. Explicit keys below win in case of future name clashes.
+        ...redactSerializedCluster(serialized),
         id,
-        connectionString: cluster.connectionString,
+        connectionString,
         ...(cluster.oidcIssuer
           ? {
               oidcIssuer: cluster.oidcIssuer,

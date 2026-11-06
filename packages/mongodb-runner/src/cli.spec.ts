@@ -218,6 +218,13 @@ describe('cli', function () {
     const parsed = JSON.parse(stdout) as {
       id: string;
       connectionString: string;
+      topology: string;
+      servers: Array<{
+        host: string;
+        port: number;
+        dbPath: string;
+        isMongos: boolean;
+      }>;
     };
 
     expect(stdout.trim(), 'JSON output should be a single line').to.not.contain(
@@ -228,6 +235,22 @@ describe('cli', function () {
       parsed.connectionString,
       'result should carry the connection string',
     ).to.match(/^mongodb:\/\//);
+    expect(parsed.topology, 'result should carry the topology').to.equal(
+      'standalone',
+    );
+    expect(parsed.servers, 'result should carry the full server list')
+      .to.be.an('array')
+      .with.lengthOf(1);
+    expect(parsed.servers[0].port, 'server entry should carry a port').to.be.a(
+      'number',
+    );
+    expect(parsed.servers[0].host, 'server entry should carry a host').to.be.a(
+      'string',
+    );
+    expect(
+      parsed.servers[0].dbPath,
+      'server entry should carry a dbPath',
+    ).to.be.a('string');
 
     const client = new MongoClient(parsed.connectionString);
     const result = await client.db('admin').command({ ping: 1 });
@@ -266,6 +289,18 @@ describe('cli', function () {
       entry.connectionString,
       'listed connection string should match the one start reported',
     ).to.equal(started.connectionString);
+    expect(
+      entry.topology,
+      'listed topology should match the one start reported',
+    ).to.equal(started.topology);
+    expect(
+      entry.servers,
+      'listed servers should match the ones start reported',
+    ).to.deep.equal(started.servers);
+    expect(
+      entry.shards,
+      'listed shards should match the ones start reported',
+    ).to.deep.equal(started.shards);
 
     await runCli(['stop', '--all']);
     await runCli(['prune']);
@@ -287,6 +322,116 @@ describe('cli', function () {
 
     const stdout = await runCli(['ls', '--runnerDir', missingDir]);
     expect(stdout.trim()).to.equal('');
+  });
+
+  it('emits the full sharded topology for start with --json', async function () {
+    this.timeout(300_000);
+    const startStdout = await runCli([
+      'start',
+      '--topology',
+      'sharded',
+      '--shards',
+      '2',
+      '--json',
+    ]);
+    const started = JSON.parse(startStdout) as {
+      id: string;
+      topology: string;
+      servers: Array<{ isMongos: boolean }>;
+      shards: Array<{ servers: Array<{ isConfigSvr: boolean }> }>;
+    };
+
+    expect(started.topology).to.equal('sharded');
+    expect(started.servers, 'top-level servers should include the mongos')
+      .to.be.an('array')
+      .with.lengthOf(1);
+    expect(
+      started.servers[0].isMongos,
+      'the top-level server should be a mongos',
+    ).to.be.true;
+    expect(
+      started.shards,
+      'the config server cluster and both shards should be reported',
+    )
+      .to.be.an('array')
+      .with.lengthOf(3);
+    expect(
+      started.shards[0].servers.every((s: any) => s.isConfigSvr),
+      'the first entry should be the config server cluster',
+    ).to.be.true;
+    expect(
+      started.shards.slice(1).every((shard: any) => shard.servers.length > 0),
+      'each shard should report its own server list',
+    ).to.be.true;
+    expect(
+      started.shards
+        .slice(1)
+        .every((shard: any) => shard.servers.every((s: any) => !s.isConfigSvr)),
+      'the remaining entries should be shard servers',
+    ).to.be.true;
+
+    const lsStdout = await runCli(['ls', '--json']);
+    const entry = JSON.parse(lsStdout).find((e: any) => e.id === started.id);
+    expect(
+      entry.shards,
+      'listed shards should match the ones start reported',
+    ).to.deep.equal(started.shards);
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
+
+  it('redacts credentials in start --json output', async function () {
+    const runnerDir = path.join(tmpDir, 'runner-redaction');
+    const keyFile = path.join(tmpDir, 'redaction-keyfile');
+    const keyFileContents = 'redactionkeyfilesecret';
+    await fs.writeFile(keyFile, keyFileContents, { mode: 0o600 });
+    const configFile = path.join(tmpDir, 'redaction-config.json');
+    await fs.writeFile(
+      configFile,
+      JSON.stringify({
+        topology: 'replset',
+        runnerDir,
+        args: ['--keyFile', keyFile],
+        rsMembers: [{ priority: 1 }, { priority: 1 }, { priority: 1 }],
+        users: [
+          {
+            username: 'redactionUser',
+            password: 'redaction-password',
+            roles: ['root'],
+          },
+        ],
+      }),
+    );
+
+    const stdout = await runCli(['start', '--config', configFile, '--json']);
+
+    // The connection string intentionally embeds the user's credentials (the
+    // same string `ls --json` reports), so only the serialized cluster data
+    // is checked for redaction here.
+    const parsed = JSON.parse(stdout);
+    const serializedJson = JSON.stringify({
+      ...parsed,
+      connectionString: undefined,
+    });
+    expect(
+      serializedJson,
+      'the user password must not leak into the serialized data',
+    ).to.not.contain('redaction-password');
+    expect(
+      serializedJson,
+      'the keyfile contents must not leak into the serialized data',
+    ).to.not.contain(keyFileContents);
+    expect(
+      serializedJson,
+      'redacted keyfile fields must not appear',
+    ).to.not.contain('keyFileContents');
+    expect(
+      parsed.users?.[0],
+      'users should still be reported, without the password',
+    ).to.deep.equal({ username: 'redactionUser', roles: ['root'] });
+
+    await runCli(['stop', '--all', '--runnerDir', runnerDir]);
   });
 
   it('rejects a --slsDir with no path', async function () {
