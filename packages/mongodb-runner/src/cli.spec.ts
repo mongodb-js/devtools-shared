@@ -280,6 +280,15 @@ describe('cli', function () {
     expect(JSON.parse(stdout)).to.deep.equal([]);
   });
 
+  it('treats a missing --runnerDir as nothing to stop or list', async function () {
+    const missingDir = path.join(tmpDir, 'runner-dir-that-does-not-exist');
+
+    await runCli(['stop', '--all', '--runnerDir', missingDir]);
+
+    const stdout = await runCli(['ls', '--runnerDir', missingDir]);
+    expect(stdout.trim()).to.equal('');
+  });
+
   it('rejects a --slsDir with no path', async function () {
     const stderr = await runCliExpectingFailure(['start', '--slsDir']);
     expect(stderr, 'the error should say a path is required').to.include(
