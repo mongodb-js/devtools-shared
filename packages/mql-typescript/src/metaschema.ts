@@ -304,11 +304,13 @@ export const Operator = z
             .object({
               name: z.string(),
               link: z.string().url().regex(new RegExp('^https://')).optional(),
-              pipeline: z.array(z.record(z.any())),
+              pipeline: z.array(z.record(z.string(), z.any())),
               schema: z
                 .union([
                   z.record(
+                    z.string(),
                     z.record(
+                      z.string(),
                       z
                         .object({
                           types: z.array(
@@ -344,13 +346,16 @@ export const Operator = z
                               z
                                 .object({
                                   bsonType: z.literal('Array'),
-                                  types: z.array(z.record(z.any())),
+                                  types: z.array(z.record(z.string(), z.any())),
                                 })
                                 .strict(),
                               z
                                 .object({
                                   bsonType: z.literal('Document'),
-                                  fields: z.record(z.record(z.any())),
+                                  fields: z.record(
+                                    z.string(),
+                                    z.record(z.string(), z.any()),
+                                  ),
                                 })
                                 .strict(),
                             ]),
@@ -368,12 +373,14 @@ export const Operator = z
             .object({
               name: z.string(),
               link: z.string().url().regex(new RegExp('^https://')).optional(),
-              filter: z.record(z.any()),
-              update: z.record(z.any()),
+              filter: z.record(z.string(), z.any()),
+              update: z.record(z.string(), z.any()),
               schema: z
                 .union([
                   z.record(
+                    z.string(),
                     z.record(
+                      z.string(),
                       z
                         .object({
                           types: z.array(
@@ -409,13 +416,16 @@ export const Operator = z
                               z
                                 .object({
                                   bsonType: z.literal('Array'),
-                                  types: z.array(z.record(z.any())),
+                                  types: z.array(z.record(z.string(), z.any())),
                                 })
                                 .strict(),
                               z
                                 .object({
                                   bsonType: z.literal('Document'),
-                                  fields: z.record(z.record(z.any())),
+                                  fields: z.record(
+                                    z.string(),
+                                    z.record(z.string(), z.any()),
+                                  ),
                                 })
                                 .strict(),
                             ]),

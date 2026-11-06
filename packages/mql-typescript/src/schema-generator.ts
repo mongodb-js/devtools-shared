@@ -1,10 +1,11 @@
 import path from 'path';
+import type { z } from 'zod';
 import type { YamlFiles } from './generator';
 import { GeneratorBase } from './generator';
 import { Operator } from './metaschema';
 import { capitalize } from './utils';
 
-type ArgumentT = NonNullable<typeof Operator._type.arguments>[number];
+type ArgumentT = NonNullable<z.infer<typeof Operator>['arguments']>[number];
 
 type TypeRef = ArgumentT['type'][number];
 
@@ -391,7 +392,7 @@ export class SchemaGenerator extends GeneratorBase {
    * This is explicitly handling the case of $slice where an argument in the middle of the array is optional.
    * This is not allowed by typescript, so we need to convert the array into a union of tuples.
    */
-  private emitArrayWithOptionals(parsed: typeof Operator._type): boolean {
+  private emitArrayWithOptionals(parsed: z.infer<typeof Operator>): boolean {
     if (!parsed.arguments) {
       return false;
     }
