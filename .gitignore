@@ -30,3 +30,4 @@ mongodb-csfle
 .esm-wrapper.mjs
 packages/mongodb-ts-autocomplete/src/types/autocomplete-types.ts
 triage-*.jsonl
+triage-results
