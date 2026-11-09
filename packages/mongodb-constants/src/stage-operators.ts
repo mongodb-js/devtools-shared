@@ -1342,21 +1342,17 @@ const STAGE_OPERATORS = [
     comment: `/**
  * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)
  * path: The field to search. (Required)
- * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
  * index: Name of the Atlas Search index to use. (Required)
  * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
  * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
- * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
  */
 `,
     snippet: `{
   queryVector: [\${1:dimension1}, \${2:dimension2}, ...],
   path: \${3:string},
-  numCandidates: \${4:numCandidates},
-  index: \${5:string},
-  limit: \${6:limit},
-  filter: {\${7:expression}},
-  exact: \${8:boolean}
+  index: \${4:string},
+  limit: \${5:limit},
+  filter: {\${6:expression}}
 }`,
   },
 ] as const;
@@ -1381,12 +1377,10 @@ const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
  * queryVector: Array of numbers of BSON types \`int\` or \`double\` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. Use this option if you're bringing your own vectors.
 
  * path: The field to search. (Required)
- * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (\`limit\`) to increase accuracy. (Required)
  * index: Name of the Atlas Search index to use. (Required)
  * limit: Number (of type \`int\` only) of documents to return in the results. (Required)
  * model: Specify a model, compatible with the one used during index creation, to perform embedding generation of the \`query\` string. If nothing is specified the same model used during index creation is used. Available only if using Automated Embedding. 
  * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)
- * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)
  */
 `,
   snippet: `{
@@ -1394,11 +1388,9 @@ const VECTOR_SEARCH_AUTO_EMBED_STAGE = {
   // model: \${2:string},
   // queryVector: [\${3:dimension1}, \${4:dimension2}, ...],
   path: \${5:string},
-  numCandidates: \${6:numCandidates},
-  index: \${7:string},
-  limit: \${8:limit},
-  filter: {\${9:expression}},
-  exact: \${10:boolean}
+  index: \${6:string},
+  limit: \${7:limit},
+  filter: {\${8:expression}}
 }`,
 };
 
