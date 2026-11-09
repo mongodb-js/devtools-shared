@@ -1,6 +1,6 @@
 {
   "name": "mongodb-cloud-info",
-  "version": "2.3.22",
+  "version": "2.3.23",
   "description": "Get cloud information based on hostname",
   "author": {
     "name": "MongoDB Inc",
@@ -57,7 +57,7 @@
     "ipaddr.js": "^2.5.0"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.14",
+    "@mongodb-js/eslint-config-devtools": "^0.11.15",
     "@mongodb-js/mocha-config-devtools": "^3.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@mongodb-js/tsconfig-devtools": "^1.1.5",

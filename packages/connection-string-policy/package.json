@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -52,7 +52,7 @@
     "reformat": "npm run prettier -- --write ."
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.14",
+    "@mongodb-js/eslint-config-devtools": "^0.11.15",
     "@mongodb-js/mocha-config-devtools": "^3.0.0",
     "@mongodb-js/prettier-config-devtools": "^1.0.6",
     "@mongodb-js/tsconfig-devtools": "^1.1.5",
@@ -70,7 +70,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@mongodb-js/mongodb-build-info": "^1.9.19",
+    "@mongodb-js/mongodb-build-info": "^1.9.20",
     "mongodb-connection-string-url": "^7.0.2"
   },
   "peerDependencies": {
