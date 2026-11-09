@@ -1,0 +1,13 @@
+package-lock.json
+dist/
+.nyc_output
+tmp-*/
+test/
+coverage/
+.eslintrc
+.jsfmtrc
+.travis.yml
+.DS_Store
+.dist/
+.build/
+npm-debug.log
