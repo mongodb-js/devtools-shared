@@ -5,10 +5,10 @@
   "license": "SSPL",
   "main": "index.json",
   "peerDependencies": {
-    "prettier": "^3.8.1"
+    "prettier": "^3.9.10"
   },
   "devDependencies": {
-    "prettier": "^3.8.1"
+    "prettier": "^3.9.10"
   },
   "scripts": {
     "check": "npm run lint",

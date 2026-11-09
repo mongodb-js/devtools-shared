@@ -81,7 +81,7 @@
     "mongodb6": "npm:mongodb@^6.9.0",
     "nyc": "^18.0.0",
     "os-dns-native": "^2.1.2",
-    "prettier": "^3.8.1",
+    "prettier": "^3.9.10",
     "resolve-mongodb-srv": "^1.1.7",
     "ts-node": "^10.9.2",
     "ts-sinon": "^2.0.1",
