@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "12.8.17",
+  "version": "12.8.18",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/devtools-shared.git"
@@ -71,7 +71,7 @@
     "reservoir": "^0.1.2"
   },
   "optionalDependencies": {
-    "@mongodb-js/mongodb-ns": "^3.2.10",
+    "@mongodb-js/mongodb-ns": "^3.2.11",
     "bson": "^4.6.3 || ^5 || ^6.10.3 || ^7.3.2",
     "cli-table": "^0.3.4",
     "js-yaml": "^5.2.2",
@@ -82,11 +82,11 @@
     "yargs": "^18.2.0"
   },
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.15",
-    "@mongodb-js/mocha-config-devtools": "^3.0.0",
-    "@mongodb-js/mongodb-runner": "^8.4.9",
-    "@mongodb-js/prettier-config-devtools": "^1.0.6",
-    "@mongodb-js/tsconfig-devtools": "^1.1.5",
+    "@mongodb-js/eslint-config-devtools": "^0.11.16",
+    "@mongodb-js/mocha-config-devtools": "^3.0.1",
+    "@mongodb-js/mongodb-runner": "^8.4.10",
+    "@mongodb-js/prettier-config-devtools": "^1.0.7",
+    "@mongodb-js/tsconfig-devtools": "^1.1.6",
     "@types/chai": "^4.2.21",
     "@types/json-schema": "^7.0.15",
     "@types/mocha": "^9.1.1",
