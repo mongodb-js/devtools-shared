@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/mocha-config-devtools",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Shared mocha mocha configuration for Devtools packages",
   "license": "SSPL",
   "main": "index.js",
@@ -22,8 +22,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@mongodb-js/prettier-config-devtools": "^1.0.6",
-    "prettier": "^3.8.1"
+    "@mongodb-js/prettier-config-devtools": "^1.0.7",
+    "prettier": "^3.9.10"
   },
   "dependencies": {
     "@types/sinon-chai": "^3.2.12",

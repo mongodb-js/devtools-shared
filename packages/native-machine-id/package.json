@@ -1,6 +1,6 @@
 {
   "name": "@mongodb-js/native-machine-id",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Native retrieval of a unique desktop machine ID without admin privileges or child processes. Faster and more reliable alternative to node-machine-id.",
   "publishConfig": {
     "access": "public"
@@ -56,10 +56,10 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@mongodb-js/eslint-config-devtools": "^0.11.15",
-    "@mongodb-js/mocha-config-devtools": "^3.0.0",
-    "@mongodb-js/prettier-config-devtools": "^1.0.6",
-    "@mongodb-js/tsconfig-devtools": "^1.1.5",
+    "@mongodb-js/eslint-config-devtools": "^0.11.16",
+    "@mongodb-js/mocha-config-devtools": "^3.0.1",
+    "@mongodb-js/prettier-config-devtools": "^1.0.7",
+    "@mongodb-js/tsconfig-devtools": "^1.1.6",
     "@types/mocha": "^9.1.1",
     "@types/node": "^26.6.6",
     "depcheck": "^1.4.7",
@@ -67,7 +67,7 @@
     "gen-esm-wrapper": "^1.1.3",
     "mocha": "^12.0.3",
     "node-machine-id": "^1.1.12",
-    "prettier": "^3.8.1",
+    "prettier": "^3.9.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
