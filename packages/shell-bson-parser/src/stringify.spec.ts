@@ -7,6 +7,26 @@ const { toJSString } = stringifyModule;
 
 describe('stringify', function () {
   describe('toJSString', function () {
+    it('round-trips a plain object that has its own _bsontype field', function () {
+      const doc = {
+        field: { _bsontype: 'Timestamp', high: 'a', low: 'b' },
+        other: { _bsontype: 'Binary', sub_type: 'c' },
+      };
+      const str = toJSString(doc);
+      assert.ok(str);
+      assert.deepStrictEqual(parse(str), doc);
+    });
+
+    it('serializes a BSON value that has a non-enumerable own _bsontype', function () {
+      // bson 4 defines _bsontype this way on Timestamp
+      const ts = new bson.Timestamp({ t: 1, i: 2 });
+      Object.defineProperty(ts, '_bsontype', { value: 'Timestamp' });
+      assert.strictEqual(
+        toJSString({ ts }, 0),
+        '{ts:Timestamp({ t: 1, i: 2 })}',
+      );
+    });
+
     it('should default to two spaces', function () {
       assert.equal(
         toJSString({ a: { $exists: true } }),
