@@ -38,7 +38,7 @@ function getTypeDescriptorForValue(value: BSONValue) {
   const t = detectType(value);
   const _bsontype =
     t === 'Object' &&
-    !Object.prototype.hasOwnProperty.call(value, '_bsontype') &&
+    !Object.prototype.propertyIsEnumerable.call(value, '_bsontype') &&
     value._bsontype;
   return {
     type: _bsontype || t,
