@@ -306,6 +306,39 @@ describe('cli', function () {
     await runCli(['prune']);
   });
 
+  it('starts a config shard cluster and reports it in ls --json', async function () {
+    this.timeout(300_000);
+    const startStdout = await runCli([
+      'start',
+      '--topology',
+      'sharded',
+      '--shards',
+      '1',
+      '--configShard',
+      '--json',
+    ]);
+    const started = JSON.parse(startStdout) as {
+      id: string;
+      connectionString: string;
+    };
+
+    const client = new MongoClient(started.connectionString);
+    const listShards = await client.db('admin').command({ listShards: 1 });
+    await client.close();
+    expect(
+      listShards.shards.map((s: any) => s._id),
+      'the config server should be a shard of the cluster',
+    ).to.include('config');
+
+    const lsStdout = await runCli(['ls', '--json']);
+    const entry = JSON.parse(lsStdout).find((e: any) => e.id === started.id);
+    expect(entry.configShard, 'ls --json should report the config shard').to.be
+      .true;
+
+    await runCli(['stop', '--all']);
+    await runCli(['prune']);
+  });
+
   it('emits an empty JSON array for ls --json with no instances', async function () {
     const emptyDir = path.join(tmpDir, 'empty-runner');
     await fs.mkdir(emptyDir, { recursive: true });

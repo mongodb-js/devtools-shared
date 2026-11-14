@@ -131,12 +131,26 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   // Whether this server was started with --auth. Its metadata bookkeeping is
   // best-effort because the runner may not have credentials it can use.
   public isAuth = false;
-  private keyFileContents?: string;
+  private _keyFileContents?: string;
   private defaultConnectionOptions?: Partial<MongoClientOptions>;
   private commandline: string[] = [];
 
   get id(): string {
     return this.uuid;
+  }
+
+  /**
+   * The contents of the keyfile this server was started with, if any. Can be
+   * used to authenticate as the internal `__system` user (whose password is
+   * the keyfile contents) for administrative commands that the localhost
+   * exception does not permit.
+   */
+  get keyFileContents(): string | undefined {
+    return this._keyFileContents;
+  }
+
+  set keyFileContents(contents: string | undefined) {
+    this._keyFileContents = contents;
   }
 
   private constructor() {

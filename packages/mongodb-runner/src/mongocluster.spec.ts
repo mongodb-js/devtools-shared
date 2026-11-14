@@ -340,6 +340,111 @@ describe('MongoCluster', function () {
     expect(cluster.connectionString).to.include('localhost');
   });
 
+  it('can start a sharded cluster with a config shard', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: twoIfNotWindowsCI,
+      configShard: true,
+    });
+    const listShards = await cluster.withClient((client) =>
+      client.db('admin').command({ listShards: 1 }),
+    );
+    const shardIds = listShards.shards.map((s: any) => s._id);
+    expect(
+      shardIds,
+      'the config server should be listed as a shard',
+    ).to.include('config');
+    expect(shardIds).to.have.lengthOf(2);
+
+    const serialized = cluster.serialize();
+    expect(serialized.configShard).to.be.true;
+    const roundTripped = await MongoCluster.deserialize(serialized);
+    expect(
+      roundTripped.serialize().configShard,
+      'the config shard flag should survive a serialize round trip',
+    ).to.be.true;
+  });
+
+  it('can start a sharded cluster with a config shard and keyfile auth', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileConfigShard');
+    await fs.writeFile(keyFile, 'csauthsecret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: 0,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+      args: ['--keyFile', keyFile],
+      configShard: true,
+    });
+    const listShards = await cluster.withClient((client) =>
+      client.db('admin').command({ listShards: 1 }),
+    );
+    expect(
+      listShards.shards.map((s: any) => s._id),
+      'the config server should be listed as a shard',
+    ).to.include('config');
+
+    // The temporary user created for the transition must have been removed.
+    const usersInfo = await cluster.withClient((client) =>
+      client.db('admin').command({ usersInfo: 1 }),
+    );
+    expect(
+      usersInfo.users.map((u: any) => u.user),
+      'the temporary transition user should be gone',
+    ).to.deep.equal(['testuser']);
+  });
+
+  it('rejects configShard with authentication but no configured users', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileConfigShardNoUsers');
+    await fs.writeFile(keyFile, 'csauthsecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        shards: 1,
+        secondaries: 0,
+        args: ['--keyFile', keyFile],
+        configShard: true,
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'configShard requires at least one user',
+    );
+  });
+
+  it('rejects configShard for non-sharded topologies', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        topology: 'replset',
+        tmpDir,
+        configShard: true,
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'configShard requires the sharded topology',
+    );
+  });
+
   it('can use localhost as the host for a sharded cluster', async function () {
     cluster = await MongoCluster.start({
       host: 'localhost',
