@@ -225,15 +225,32 @@ const defaultSchemaParseOptions: AllSchemaParseOptions = {
   storedValuesLengthLimit: 10000,
 };
 
+const BSON_VERSION_SYMBOL = Symbol.for('@@mdb.bson.version');
+
+function getBSONTypeTag(value: unknown): SchemaBSONType | undefined {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+  const tag = (value as { _bsontype?: unknown })._bsontype;
+  if (typeof tag !== 'string') {
+    return undefined;
+  }
+  const isBSONValue =
+    BSON_VERSION_SYMBOL in value ||
+    !Object.getOwnPropertyDescriptor(value, '_bsontype')?.enumerable;
+  return isBSONValue ? (tag as SchemaBSONType) : undefined;
+}
+
 /**
  * Extracts a Javascript string from a BSON type to compute unique values.
  */
 function extractStringValueFromBSON(value: any): string {
-  if (value?._bsontype) {
-    if (['Decimal128', 'Long'].includes(value._bsontype)) {
+  const tag = getBSONTypeTag(value);
+  if (tag) {
+    if (['Decimal128', 'Long'].includes(tag)) {
       return value.toString();
     }
-    if (['Double', 'Int32'].includes(value._bsontype)) {
+    if (['Double', 'Int32'].includes(tag)) {
       return String(value.value);
     }
   }
@@ -271,10 +288,10 @@ function fieldComparator(
  * Returns the type of value as a string. BSON type aware. Replaces `Object`
  * with `Document` to avoid naming conflicts with javascript Objects.
  */
-function getBSONType(value: any): SchemaBSONType {
-  const bsonType = value?._bsontype
-    ? value._bsontype
-    : Object.prototype.toString.call(value).replace(/^\[object (\w+)\]$/, '$1');
+function getBSONType(value: unknown): SchemaBSONType {
+  const bsonType =
+    getBSONTypeTag(value) ??
+    Object.prototype.toString.call(value).replace(/^\[object (\w+)\]$/, '$1');
   if (bsonType === 'Object') {
     // In the resulting schema we rename `Object` to `Document`.
     return 'Document';
@@ -282,7 +299,7 @@ function getBSONType(value: any): SchemaBSONType {
   if (bsonType === 'Code' && (value as Code).scope) {
     return 'CodeWScope';
   }
-  return bsonType;
+  return bsonType as SchemaBSONType;
 }
 
 function isNullType(type: SchemaAnalysisType): type is SchemaAnalysisNullType {
