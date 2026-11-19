@@ -528,8 +528,8 @@ async function buildSLSDisaggregatedStorageOptions(
             'schedulerservice.v1.SchedulerService/GetLogServers',
             { cells: [SLS_CELL1, SLS_CELL2, SLS_CELL3] },
           );
-          const serverIds = res.server_ids ?? res.serverIds ?? [];
-          if (!serverIds.length) {
+          const logServerIds = res.log_server_ids ?? res.logServerIds ?? [];
+          if (!logServerIds.length) {
             throw new Error('SLS GetLogServers returned no servers');
           }
           try {
@@ -538,7 +538,7 @@ async function buildSLSDisaggregatedStorageOptions(
               'schedulerservice.v1.ControlPlaneService/StartLog',
               {
                 log_id: logId,
-                server_ids: serverIds,
+                log_server_ids: logServerIds,
                 ancestry: { ancestors: [] },
               },
             );

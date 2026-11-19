@@ -320,5 +320,196 @@ describe('sls', function () {
         'port should be free once beforeComposeUp has released it',
       ).to.equal(true);
     });
+
+    describe('setupShard', function () {
+      let dockerArgsLog: string;
+      let getLogServersResponseFile: string;
+      let origPath: string | undefined;
+
+      before(function () {
+        // The fake `docker` executable is a shell script.
+        if (process.platform === 'win32') this.skip();
+      });
+
+      beforeEach(async function () {
+        dockerArgsLog = path.join(tmpDir, 'docker-args.log');
+        getLogServersResponseFile = path.join(tmpDir, 'get-log-servers.json');
+        // Fake `docker` that records each invocation's arguments (one per
+        // line) and answers the grpcurl calls setupShard makes through
+        // `docker exec <testdriver> /grpcurl ...`.
+        await fs.writeFile(
+          path.join(tmpDir, 'docker'),
+          `#!/bin/sh
+for arg in "$@"; do
+  printf '%s\\n' "$arg" >> '${dockerArgsLog}'
+done
+case "$*" in
+  *SchedulerService/GetLogServers*)
+    cat '${getLogServersResponseFile}'
+    ;;
+  *ControlPlaneService/StartLog*)
+    echo '{}'
+    ;;
+  *)
+    echo "fake docker: unexpected invocation: $*" >&2
+    exit 1
+    ;;
+esac
+`,
+          { mode: 0o755 },
+        );
+        origPath = process.env.PATH;
+        process.env.PATH = `${tmpDir}:${origPath ?? ''}`;
+      });
+
+      afterEach(function () {
+        process.env.PATH = origPath;
+      });
+
+      async function setGetLogServersResponse(response: unknown) {
+        await fs.writeFile(getLogServersResponseFile, JSON.stringify(response));
+      }
+
+      async function readDockerArgs(): Promise<string[]> {
+        return (await fs.readFile(dockerArgsLog, 'utf8'))
+          .split('\n')
+          .filter((line) => line !== '');
+      }
+
+      // grpcurl invocations have the fixed shape `... -d <payload> <address>
+      // <method>`, so the payload sits two lines above the method line; the
+      // neighboring lines are asserted to pin that shape down.
+      function grpcurlPayload(
+        lines: string[],
+        method: string,
+      ): Record<string, unknown> {
+        const methodIndex = lines.indexOf(method);
+        expect(
+          methodIndex,
+          `a grpcurl call to ${method} should have been recorded`,
+        ).to.not.equal(-1);
+        expect(
+          lines[methodIndex - 1],
+          'the grpcurl target address should precede the method name',
+        ).to.equal('crs-cell1-0:27996');
+        expect(
+          lines[methodIndex - 3],
+          'the recorded payload should follow the -d flag',
+        ).to.equal('-d');
+        return JSON.parse(lines[methodIndex - 2]) as Record<string, unknown>;
+      }
+
+      async function startLogPayload(): Promise<Record<string, unknown>> {
+        return grpcurlPayload(
+          await readDockerArgs(),
+          'schedulerservice.v1.ControlPlaneService/StartLog',
+        );
+      }
+
+      it('sends log_server_ids to StartLog, not the legacy server_ids', async function () {
+        await setGetLogServersResponse({
+          server_ids: [
+            { uri: 'http://local.sls.mmscloudteam.com:30101/', cell: 'cell1' },
+            { uri: 'http://local.sls.mmscloudteam.com:30102/', cell: 'cell2' },
+          ],
+          log_server_ids: [
+            '01M7K7RM9J6S8Y5CR6WA449PQS',
+            '01M7K7RM9J6S8Y5CR6WA449PQT',
+          ],
+        });
+        const options = await createSLSDisaggregatedStorageOptions({
+          composeFile,
+          imageTag: 'test-tag',
+        });
+        try {
+          await options.setupShard?.({
+            index: 0,
+            isConfigServer: false,
+            members: [],
+          });
+        } finally {
+          await options.beforeComposeUp?.();
+        }
+
+        expect(
+          await startLogPayload(),
+          'StartLog should receive the log_server_ids values and no legacy server_ids',
+        ).to.deep.equal({
+          log_id: 1,
+          log_server_ids: [
+            '01M7K7RM9J6S8Y5CR6WA449PQS',
+            '01M7K7RM9J6S8Y5CR6WA449PQT',
+          ],
+          ancestry: { ancestors: [] },
+        });
+      });
+
+      it('accepts the logServerIds spelling of the GetLogServers response', async function () {
+        await setGetLogServersResponse({
+          serverIds: [
+            { uri: 'http://local.sls.mmscloudteam.com:30103/', cell: 'cell3' },
+          ],
+          logServerIds: [
+            '01M7K7RM9J6S8Y5CR6WA449PQU',
+            '01M7K7RM9J6S8Y5CR6WA449PQV',
+          ],
+        });
+        const options = await createSLSDisaggregatedStorageOptions({
+          composeFile,
+          imageTag: 'test-tag',
+        });
+        try {
+          await options.setupShard?.({
+            index: 0,
+            isConfigServer: false,
+            members: [],
+          });
+        } finally {
+          await options.beforeComposeUp?.();
+        }
+
+        expect(
+          await startLogPayload(),
+          'the logServerIds spelling should flow through to log_server_ids',
+        ).to.deep.equal({
+          log_id: 1,
+          log_server_ids: [
+            '01M7K7RM9J6S8Y5CR6WA449PQU',
+            '01M7K7RM9J6S8Y5CR6WA449PQV',
+          ],
+          ancestry: { ancestors: [] },
+        });
+      });
+
+      it('rejects a response that only has the legacy server_ids', async function () {
+        await setGetLogServersResponse({
+          server_ids: [
+            { uri: 'http://local.sls.mmscloudteam.com:30101/', cell: 'cell1' },
+          ],
+        });
+        const options = await createSLSDisaggregatedStorageOptions({
+          composeFile,
+          imageTag: 'test-tag',
+          setupMaxRetries: 0,
+        });
+        const err = await options
+          .setupShard?.({ index: 0, isConfigServer: false, members: [] })
+          .catch((e: Error) => e);
+        await options.beforeComposeUp?.();
+
+        expect(
+          err,
+          'setupShard should reject when the response has no log_server_ids',
+        ).to.be.an('error');
+        expect(
+          (err as Error).message,
+          'a response without log_server_ids must be rejected instead of falling back to server_ids',
+        ).to.equal('SLS GetLogServers returned no servers');
+        expect(
+          await readDockerArgs(),
+          'StartLog must not be invoked when no log_server_ids are available',
+        ).to.not.include('schedulerservice.v1.ControlPlaneService/StartLog');
+      });
+    });
   });
 });
