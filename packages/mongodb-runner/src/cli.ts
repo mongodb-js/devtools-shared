@@ -36,6 +36,11 @@ import type { MongoClientOptions } from 'mongodb';
       }, // Can also be an array when coming from the config file
       describe: 'number of shards for sharded clusters',
     })
+    .option('configShard', {
+      type: 'boolean',
+      describe:
+        'for `start` with the sharded topology: turn the config server into a config shard (requires MongoDB 8.0+)',
+    })
     .option('version', {
       type: 'string',
       describe: 'MongoDB server version to use',
