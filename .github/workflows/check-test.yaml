@@ -20,7 +20,7 @@ jobs:
   check-and-test:
     name: Check and Test
 
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     strategy:
       matrix:
@@ -141,6 +141,7 @@ jobs:
         shell: bash
 
       - name: Run Tests
+        timeout-minutes: 35
         run: |
           scopes=$(node .github/scripts/compute-test-group.mjs "${{ matrix.group }}" "${TOTAL_GROUPS}")
           echo "Testing group ${{ matrix.group }}/${TOTAL_GROUPS} with: ${scopes}"
