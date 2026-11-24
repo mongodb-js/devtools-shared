@@ -43,6 +43,11 @@ Options:
       --configShard  for `start` with the sharded topology: turn the
                      config server into a config shard (requires MongoDB
                      8.0+)                                            [boolean]
+      --createKeyFile, --create-keyfile  run the cluster with keyfile
+                                         authentication: generate a keyfile and
+                                         pass it to every member (cannot be
+                                         combined with the mongod --keyFile
+                                         argument)                     [boolean]
       --version      MongoDB server version to use                      [string]
       --logDir       Directory to store server log files in             [string]
       --binDir       Directory containing mongod/mongos binaries        [string]
@@ -131,6 +136,38 @@ report `configShard: true` for such clusters:
 ```sh
 $ npx mongodb-runner start -t sharded --shards 1 --configShard
 ```
+
+## Authentication
+
+Pass `--createKeyFile` (also accepted in the `--create-keyfile` spelling, or
+`createKeyFile: true` in config files and programmatic options) to run the
+cluster with keyfile authentication: the runner generates a keyfile (a
+random secret, written with owner-only permissions into the tmpDir, where
+it also stays after the cluster is stopped) and passes `--keyFile` to every
+cluster member. A keyfile itself
+enforces authentication on all topologies. Users configured through the
+`users` option are created through the localhost exception, and the first
+user's credentials are embedded in the cluster's connection string:
+
+```sh
+$ npx mongodb-runner start -t sharded --createKeyFile
+```
+
+For replica sets and sharded clusters this is the only workable auth mode:
+mongod refuses to start a replica set member with `--auth` but no keyfile,
+and mongos has no `--auth` option at all. Passing `--auth` to such a cluster
+is therefore rejected up front with a pointer to `--createKeyFile`; on
+standalone clusters `--auth` keeps working as before. With
+`--createKeyFile`, a bare `--auth` is dropped on sharded clusters, where
+mongos would reject it and the keyfile already implies it.
+
+Bring your own keyfile with `--keyFile <path>` (after `--`) to control its
+contents; the cluster then uses that keyfile as-is. Do not also pass
+`--createKeyFile` — the two are mutually exclusive — and on sharded
+clusters omit any bare `--auth`, since mongos does not accept it.
+`--createKeyFile` also cannot be combined with `--clusterAuthMode` (which
+configures cluster authentication differently), and it is unavailable in
+docker mode, where the server processes cannot see host-side file paths.
 
 ## Machine-readable output
 

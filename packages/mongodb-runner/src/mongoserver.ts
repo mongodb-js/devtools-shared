@@ -93,7 +93,9 @@ export interface MongoServerEvents {
   mongoLog: [LogEntry];
 }
 
-function getKeyFileOption(args?: string[] | undefined): string | undefined {
+export function getKeyFileOption(
+  args?: string[] | undefined,
+): string | undefined {
   if (!args) return undefined;
   const splitArgIndex = args.indexOf('--keyFile');
   if (splitArgIndex !== -1) {

@@ -471,6 +471,28 @@ describe('cli', function () {
     await runCli(['stop', '--all', '--runnerDir', runnerDir]);
   });
 
+  it('accepts the --create-keyfile alias spelling', async function () {
+    const keyFile = path.join(tmpDir, 'cli-alias-keyfile');
+    await fs.writeFile(keyFile, 'clialiassecret', { mode: 0o600 });
+    const stderr = await runCliExpectingFailure([
+      'start',
+      '--topology',
+      'replset',
+      '--create-keyfile',
+      '--tmpDir',
+      tmpDir,
+      '--runnerDir',
+      path.join(tmpDir, 'cli-alias-runner'),
+      '--',
+      '--keyFile',
+      keyFile,
+    ]);
+    expect(
+      stderr,
+      'the alias spelling must set createKeyFile, so the supplied --keyFile is rejected',
+    ).to.include('createKeyFile cannot be combined with --keyFile');
+  });
+
   it('rejects a --slsDir with no path', async function () {
     const stderr = await runCliExpectingFailure(['start', '--slsDir']);
     expect(stderr, 'the error should say a path is required').to.include(

@@ -13,6 +13,7 @@ import createDebug from 'debug';
 import sinon from 'sinon';
 import childProcess from 'child_process';
 import type { LogEntry } from './mongologreader';
+import { MongoClient, MongoServerError } from 'mongodb';
 import type { MongoClientOptions } from 'mongodb';
 import { eventually } from './util';
 
@@ -1111,6 +1112,512 @@ describe('MongoCluster', function () {
     expect(cluster.connectionString).to.include('testuser:testpass@');
     cluster = await MongoCluster.deserialize(cluster.serialize());
     expect(cluster.connectionString).to.include('testuser:testpass@');
+  });
+
+  it('can start an authenticated replica set with createKeyFile', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'replset',
+      tmpDir,
+      secondaries: 1,
+      createKeyFile: true,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+    });
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+
+    const serialized = cluster.serialize();
+    for (const server of serialized.servers) {
+      expect(
+        server.commandline,
+        'every replica set member must have received the generated keyfile',
+      ).to.contain('--keyFile');
+    }
+    expect(
+      new Set(
+        serialized.servers.map(
+          (srv) => srv.commandline?.[srv.commandline.indexOf('--keyFile') + 1],
+        ),
+      ).size,
+      'all replica set members must share the generated keyfile',
+    ).to.equal(1);
+    expect(
+      serialized.servers[0].keyFileContents,
+      'the generated keyfile contents must be non-empty base64',
+    ).to.match(/^[A-Za-z0-9+/=]+$/);
+
+    // The keyfile must have enabled authorization: with a user existing, the
+    // localhost exception is closed and writes without credentials fail.
+    const unauthClient = new MongoClient(
+      cluster.connectionString.replace(/^mongodb:\/\/[^@]*@/, 'mongodb://'),
+      SHORT_TIMEOUTS,
+    );
+    try {
+      let err: unknown;
+      try {
+        await unauthClient.db('test').collection('test').insertOne({});
+      } catch (e) {
+        err = e;
+      }
+      expect(
+        err,
+        'unauthenticated writes should be rejected on the authenticated replica set',
+      ).to.be.instanceOf(MongoServerError);
+      expect((err as MongoServerError).codeName).to.equal('Unauthorized');
+    } finally {
+      await unauthClient.close(true);
+    }
+
+    // Authenticated writes keep working after a serialize/deserialize round trip.
+    cluster = await MongoCluster.deserialize(serialized);
+    await cluster.withClient(async (client) => {
+      await client.db('test').collection('test').insertOne({ foo: 42 });
+    });
+  });
+
+  it('can start an authenticated sharded cluster with createKeyFile, dropping --auth', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: 0,
+      createKeyFile: true,
+      args: ['--auth'],
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+    });
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    await cluster.withClient(async (client) => {
+      const hello = await client.db('admin').command({ hello: 1 });
+      expect(
+        hello.msg,
+        'the cluster should be reachable through mongos',
+      ).to.equal('isdbgrid');
+      await client.db('test').collection('test').insertOne({ foo: 42 });
+    });
+
+    const serialized = cluster.serialize();
+    const allServers = [
+      ...serialized.servers,
+      ...serialized.shards.flatMap((shard) => shard.servers),
+    ];
+    for (const server of allServers) {
+      expect(
+        server.commandline,
+        'every server must have received the generated keyfile',
+      ).to.contain('--keyFile');
+      expect(
+        server.commandline,
+        'no server should have received the --auth switch',
+      ).to.not.contain('--auth');
+    }
+    expect(
+      new Set(
+        allServers.map(
+          (srv) => srv.commandline?.[srv.commandline.indexOf('--keyFile') + 1],
+        ),
+      ).size,
+      'mongos and every shard member must share the generated keyfile',
+    ).to.equal(1);
+
+    // Authorization is enforced through mongos as well.
+    const unauthClient = new MongoClient(
+      cluster.connectionString.replace(/^mongodb:\/\/[^@]*@/, 'mongodb://'),
+      SHORT_TIMEOUTS,
+    );
+    try {
+      let err: unknown;
+      try {
+        await unauthClient.db('test').collection('test').insertOne({});
+      } catch (e) {
+        err = e;
+      }
+      expect(
+        err,
+        'unauthenticated writes should be rejected through mongos',
+      ).to.be.instanceOf(MongoServerError);
+      expect((err as MongoServerError).codeName).to.equal('Unauthorized');
+    } finally {
+      await unauthClient.close(true);
+    }
+  });
+
+  it('drops a bare --auth from per-mongos args on sharded clusters with createKeyFile', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'sharded',
+      tmpDir,
+      shards: 1,
+      secondaries: 0,
+      createKeyFile: true,
+      mongosArgs: [['--auth']],
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+    });
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    await cluster.withClient(async (client) => {
+      const hello = await client.db('admin').command({ hello: 1 });
+      expect(
+        hello.msg,
+        'the cluster should be reachable through mongos',
+      ).to.equal('isdbgrid');
+    });
+    const serialized = cluster.serialize();
+    for (const server of [
+      ...serialized.servers,
+      ...serialized.shards.flatMap((shard) => shard.servers),
+    ]) {
+      expect(
+        server.commandline,
+        'no server should have received the --auth switch',
+      ).to.not.contain('--auth');
+      expect(
+        server.commandline,
+        'every server must have received the generated keyfile',
+      ).to.contain('--keyFile');
+    }
+  });
+
+  it('rejects createKeyFile combined with --keyFile', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileOwnSharded');
+    await fs.writeFile(keyFile, 'ownkeyfilesecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        shards: 1,
+        secondaries: 0,
+        createKeyFile: true,
+        args: ['--auth', '--keyFile', keyFile],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile cannot be combined with --keyFile',
+    );
+  });
+
+  it('rejects createKeyFile combined with --keyFile in per-shard args', async function () {
+    const keyFile = path.join(tmpDir, 'keyFilePerShard');
+    await fs.writeFile(keyFile, 'pershardsecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        createKeyFile: true,
+        shards: [{ args: ['--keyFile', keyFile] }],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile cannot be combined with --keyFile',
+    );
+  });
+
+  it('rejects createKeyFile combined with --keyFile in per-shard member args', async function () {
+    const keyFile = path.join(tmpDir, 'keyFilePerShardMember');
+    await fs.writeFile(keyFile, 'pershardmembersecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        createKeyFile: true,
+        shards: [{ rsMembers: [{ args: ['--keyFile', keyFile] }] }],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile cannot be combined with --keyFile',
+    );
+  });
+
+  it('can start an authenticated standalone cluster with createKeyFile', async function () {
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'standalone',
+      tmpDir,
+      createKeyFile: true,
+      users: [
+        {
+          username: 'testuser',
+          password: 'testpass',
+          roles: ['root'],
+        },
+      ],
+    });
+    expect(cluster.connectionString).to.include('testuser:testpass@');
+    await cluster.withClient(async (client) => {
+      await client.db('test').collection('test').insertOne({ foo: 42 });
+    });
+    expect(
+      cluster.serialize().servers[0].commandline,
+      'the standalone server must have received the generated keyfile',
+    ).to.contain('--keyFile');
+
+    // The keyfile enforces authorization: with a user existing, writes
+    // without credentials fail.
+    const unauthClient = new MongoClient(
+      cluster.connectionString.replace(/^mongodb:\/\/[^@]*@/, 'mongodb://'),
+      SHORT_TIMEOUTS,
+    );
+    try {
+      let err: unknown;
+      try {
+        await unauthClient.db('test').collection('test').insertOne({});
+      } catch (e) {
+        err = e;
+      }
+      expect(
+        err,
+        'unauthenticated writes should be rejected on the authenticated standalone server',
+      ).to.be.instanceOf(MongoServerError);
+      expect((err as MongoServerError).codeName).to.equal('Unauthorized');
+    } finally {
+      await unauthClient.close(true);
+    }
+  });
+
+  it('passes --auth and a supplied --keyFile through untouched on a replica set', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileReplsetNoFlag');
+    await fs.writeFile(keyFile, 'replsetnoflagsecret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'replset',
+      tmpDir,
+      secondaries: 0,
+      args: ['--auth', '--keyFile', keyFile],
+    });
+    const commandline = cluster.serialize().servers[0].commandline ?? [];
+    expect(
+      commandline,
+      'without createKeyFile, --auth and --keyFile must pass through as-is',
+    ).to.contain('--auth');
+    expect(commandline).to.contain(keyFile);
+  });
+
+  it('rejects --auth without createKeyFile on a replica set', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        secondaries: 0,
+        args: ['--auth'],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      '--auth cannot start this cluster',
+    );
+    expect((err as Error).message).to.include('--createKeyFile');
+  });
+
+  it('rejects --auth on sharded clusters without createKeyFile, even with a keyfile', async function () {
+    const keyFile = path.join(tmpDir, 'keyFileShardedNoFlag');
+    await fs.writeFile(keyFile, 'shardednoflagsecret', { mode: 0o400 });
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'sharded',
+        tmpDir,
+        shards: 1,
+        secondaries: 0,
+        args: ['--auth', '--keyFile', keyFile],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      '--auth cannot start this cluster',
+    );
+    expect((err as Error).message).to.include(
+      'Remove --auth; --keyFile already enables authorization',
+    );
+  });
+
+  it('does not reject --auth with a server config file, which may supply the keyfile', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        secondaries: 0,
+        args: ['--auth', '--config', path.join(tmpDir, 'nonexistent.yaml')],
+      });
+    } catch (e) {
+      err = e;
+    }
+    // The server (not the runner) rejects the missing config file here.
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.not.include(
+      '--auth cannot start this cluster',
+    );
+  });
+
+  it('does not reject --auth with --clusterAuthMode x509, which needs no keyfile', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        secondaries: 0,
+        args: ['--auth', '--clusterAuthMode', 'x509'],
+      });
+    } catch (e) {
+      err = e;
+    }
+    // x509 internal auth is valid without a keyfile; the server itself
+    // rejects this start only for the missing TLS configuration.
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.not.include(
+      '--auth cannot start this cluster',
+    );
+  });
+
+  it('does not reject --auth with --clusterAuthMode in member args', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        secondaries: 0,
+        args: ['--auth'],
+        rsMembers: [{ args: ['--clusterAuthMode', 'x509'] }],
+      });
+    } catch (e) {
+      err = e;
+    }
+    // The per-member auth mode is merged into the server args, so the
+    // runner's --auth rejection must not fire; the server itself rejects
+    // this start only for the missing TLS configuration.
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.not.include(
+      '--auth cannot start this cluster',
+    );
+  });
+
+  it('passes --auth with per-member --keyFile through untouched on a replica set', async function () {
+    const keyFile = path.join(tmpDir, 'keyFilePerMember');
+    await fs.writeFile(keyFile, 'permembersecret', { mode: 0o400 });
+    cluster = await MongoCluster.start({
+      version: '8.x',
+      topology: 'replset',
+      tmpDir,
+      args: ['--auth'],
+      rsMembers: [{ args: ['--keyFile', keyFile] }],
+    });
+    const commandline = cluster.serialize().servers[0].commandline ?? [];
+    expect(
+      commandline,
+      'the member args must be merged with the main args as-is',
+    ).to.contain('--auth');
+    expect(commandline).to.contain(keyFile);
+  });
+
+  it('releases reserved storage ports when createKeyFile is rejected', async function () {
+    let released = false;
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        secondaries: 0,
+        createKeyFile: true,
+        args: ['--clusterAuthMode', 'x509'],
+        disaggregatedStorage: {
+          composeFile: '/nonexistent/docker-compose.yml',
+          config: 'unused',
+          beforeComposeUp: () => {
+            released = true;
+          },
+        },
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile conflicts with --clusterAuthMode',
+    );
+    expect(
+      released,
+      'the reserved storage ports must be released on the failed start',
+    ).to.be.true;
+  });
+
+  it('rejects createKeyFile combined with --clusterAuthMode', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        createKeyFile: true,
+        args: ['--clusterAuthMode', 'x509'],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile conflicts with --clusterAuthMode',
+    );
+  });
+
+  it('rejects createKeyFile in docker mode', async function () {
+    let err: unknown;
+    try {
+      await MongoCluster.start({
+        version: '8.x',
+        topology: 'replset',
+        tmpDir,
+        docker: 'mongo:8.0',
+        createKeyFile: true,
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err, 'start should have failed').to.be.instanceOf(Error);
+    expect((err as Error).message).to.include(
+      'createKeyFile is not available in docker mode',
+    );
   });
 
   it('can support requireApiVersion', async function () {
