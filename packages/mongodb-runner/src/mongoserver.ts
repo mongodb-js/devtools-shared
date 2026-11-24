@@ -41,6 +41,8 @@ export interface MongoServerOptions {
   logDir?: string;
   /** Arguments to pass to the MongoDB binary. May or may not contain --port */
   args?: string[];
+  /** Maximum time in milliseconds to wait for a server's listener line (default: 120_000). */
+  startTimeoutMS?: number;
   /** Docker image or options to run the MongoDB binary in a container. */
   docker?: string | string[];
   /** The host address of the servers (default: '127.0.0.1') */
@@ -101,6 +103,98 @@ function getKeyFileOption(args?: string[] | undefined): string | undefined {
   }
   const arg = args.find((a) => a.startsWith('--keyFile='));
   return arg?.split('=')[1];
+}
+
+function findLogDivertingArg(args?: string[]): string | undefined {
+  if (!args) return undefined;
+  for (const arg of args) {
+    if (arg === '--syslog') return '--syslog';
+    if (arg === '--logpath' || arg.startsWith('--logpath=')) return '--logpath';
+  }
+  return undefined;
+}
+
+/** Throws if the server's log would bypass the output the runner reads for its listener line. */
+function rejectLogDivertingArgs(args?: string[]): void {
+  const divertingArg = findLogDivertingArg(args);
+  if (divertingArg) {
+    throw new Error(
+      `mongodb-runner cannot track server startup when ${divertingArg} is set; ` +
+        "use the runner's logDir option instead",
+    );
+  }
+}
+
+const MONGOS_PORT_RETRY_LIMIT = 1000;
+
+// How long a stream end without a listener line waits for the 'exit' event.
+const EXIT_EVENT_GRACE_MS = 100;
+
+/**
+ * Races listener detection against process exit and a startup timeout. Exit
+ * errors carry `errorLogEntries` for the mongos retry loop.
+ */
+function watchServerStartup(
+  proc: ChildProcess,
+  portPromise: Promise<{ port: number }>,
+  opts: {
+    binary: string;
+    pid?: number;
+    startTimeoutMS: number;
+    errorLogEntries: LogEntry[];
+    logFile?: string;
+  },
+): Promise<{ port: number }> {
+  const suffix = opts.logFile ? `; see ${opts.logFile}` : '';
+  const makeExitError = (code: number | null, signal: NodeJS.Signals | null) =>
+    Object.assign(
+      new Error(
+        `${opts.binary} (pid ${opts.pid ?? 'unknown'}) exited before reporting its listener ` +
+          `(exit code ${String(code)}, signal ${String(signal)})${suffix}`,
+      ),
+      { errorLogEntries: opts.errorLogEntries },
+    );
+  let timer: NodeJS.Timeout | undefined;
+  let onExit: (code: number | null, signal: NodeJS.Signals | null) => void;
+  const exitPromise = new Promise<never>((_, reject) => {
+    onExit = (code, signal) => reject(makeExitError(code, signal));
+    proc.once('exit', onExit);
+  });
+  // The pipe's EOF is observed before the process is reaped, so wait up to
+  // EXIT_EVENT_GRACE_MS for 'exit' before falling back to the no-port error.
+  const portOrExitPromise = portPromise.then(async ({ port }) => {
+    if (port !== -1) return { port };
+    await Promise.race([
+      exitPromise.then(() => true),
+      new Promise<false>((resolve) => {
+        const graceTimer = setTimeout(
+          () => resolve(false),
+          EXIT_EVENT_GRACE_MS,
+        );
+        graceTimer.unref();
+      }),
+    ]);
+    return { port };
+  });
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `${opts.binary} (pid ${opts.pid ?? 'unknown'}) did not report its listener within ` +
+              `${opts.startTimeoutMS}ms${suffix}`,
+          ),
+        ),
+      opts.startTimeoutMS,
+    );
+    timer.unref();
+  });
+  return Promise.race([portOrExitPromise, exitPromise, timeoutPromise]).finally(
+    () => {
+      clearTimeout(timer);
+      proc.removeListener('exit', onExit);
+    },
+  );
 }
 
 function isUnauthorizedError(err: unknown): boolean {
@@ -230,15 +324,15 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   }
 
   static async start({ ...options }: MongoServerOptions): Promise<MongoServer> {
+    rejectLogDivertingArgs(options.args);
     if (options.binary === 'mongos' && !hasPortArg(options.args)) {
-      // SERVER-78384: mongos before 7.1.0 does not understand `--port 0` ...
-      // Just pick a random port in [1024, 49152), try to listen, and continue until
-      // we find a free one.
+      // SERVER-78384: mongos before 7.1.0 does not understand `--port 0`, so
+      // pick a random port in [1025, 49151) and retry on listener-setup failure.
       const minPort = 1025;
       const maxPort = 49151;
       let port = Math.floor(Math.random() * (maxPort - minPort) + minPort);
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
+      let lastError: unknown;
+      for (let attempts = 0; attempts < MONGOS_PORT_RETRY_LIMIT; attempts++) {
         try {
           debug('Trying to spawn mongos on port', port);
           return await this._start({
@@ -246,18 +340,19 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
             args: [...(options.args ?? []), '--port', String(port)],
           });
         } catch (err) {
-          if (
-            ((err as any).errorLogEntries as LogEntry[]).some(
-              isFailureToSetupListener,
-            )
-          ) {
-            if (port === maxPort) port = minPort;
-            else port++;
+          lastError = err;
+          const logEntries: LogEntry[] = (err as any).errorLogEntries ?? [];
+          if (logEntries.some(isFailureToSetupListener)) {
+            port = port === maxPort ? minPort : port + 1;
             continue;
           }
           throw err;
         }
       }
+      throw new Error(
+        `mongos could not find a free port after ${MONGOS_PORT_RETRY_LIMIT} attempts; ` +
+          `last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+      );
     }
     return await this._start(options);
   }
@@ -265,6 +360,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   static async _start({
     ...options
   }: MongoServerOptions): Promise<MongoServer> {
+    rejectLogDivertingArgs(options.args);
     const srv = new MongoServer();
     srv.defaultConnectionOptions = { ...options.internalClientOptions };
     srv.isArbiter = !!options.isArbiter;
@@ -331,20 +427,22 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
     srv.commandline = commandline;
+    const startTimeoutMS = options.startTimeoutMS ?? 120_000;
+    let outFile: string | undefined;
+    let proc: ChildProcess;
     let stdout: Readable;
     if (options.logDir) {
       // The server writes straight to the file rather than through a pipe to
       // this process, so it keeps logging after we exit (`start` exits once the
       // cluster is up). We follow the file to see the startup output instead.
       await fs.mkdir(options.logDir, { recursive: true });
-      const outFile = path.join(
+      outFile = path.join(
         options.logDir,
         `${options.binary}-${srv.uuid}-${new Date()
           .toISOString()
           .replace(/[^-_a-zA-Z0-9.]/g, '')}.log`,
       );
       const handle = await fs.open(outFile, 'a');
-      let proc: ChildProcess;
       try {
         proc = spawn(executable, args, {
           stdio: ['inherit', handle.fd, handle.fd],
@@ -360,19 +458,19 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       srv.logTail = tailFileUntilExit(outFile, proc);
       stdout = srv.logTail;
     } else {
-      const proc = spawn(executable, args, {
+      const pipedProc = spawn(executable, args, {
         stdio: ['inherit', 'pipe', 'pipe'],
         cwd: options.tmpDir,
         detached: options.detached ?? true,
       });
+      proc = pipedProc;
       await once(proc, 'spawn');
       srv.childProcess = proc;
       srv.pid = proc.pid;
-      stdout = proc.stdout;
-      stdout.setEncoding('utf8');
-      proc.stderr.setEncoding('utf8');
-      proc.stderr.on('data', (chunk) => debug('server stderr', chunk));
-      proc.stderr.resume();
+      stdout = pipedProc.stdout;
+      pipedProc.stderr.setEncoding('utf8');
+      pipedProc.stderr.on('data', (chunk) => debug('server stderr', chunk));
+      pipedProc.stderr.resume();
       stdout.resume();
     }
 
@@ -400,7 +498,17 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
           /* ignore error */
         },
       );
-      const { port } = await filterLogStreamForPort(logEntryStream);
+      const { port } = await watchServerStartup(
+        proc,
+        filterLogStreamForPort(logEntryStream),
+        {
+          binary: options.binary,
+          pid: srv.pid,
+          startTimeoutMS,
+          errorLogEntries,
+          logFile: outFile,
+        },
+      );
       debug('server listening on port', port);
       if (port === -1) {
         // This likely means that stdout ended before we could get a path/port
@@ -427,7 +535,10 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       // as part of the cluster's startup process when authenticating,
       // enforced by its `assertAllServersHaveInsertedLocalMetadata()` check.
       if (!keyFilePath) {
-        const buildInfoError = await srv._populateBuildInfo('insert-new');
+        // Bounded by startTimeoutMS so an unresponsive server cannot stall the start.
+        const buildInfoError = await srv._populateBuildInfo('insert-new', {
+          timeoutMS: startTimeoutMS,
+        });
         if (buildInfoError) {
           debug('failed to get buildInfo', buildInfoError);
         }

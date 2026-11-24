@@ -481,6 +481,33 @@ describe('MongoCluster', function () {
     });
   });
 
+  it('fails a sharded start quickly when a mongos passes --logpath', async function () {
+    // DRIVERS-3748: a --logpath mongos writes nothing to the stream the runner
+    // reads, so safePromiseAll waits forever; the timeout bounds that regression.
+    this.timeout(60_000);
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-logdiv-cluster-'),
+    );
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'sharded',
+          tmpDir,
+          shards: 1,
+          mongosArgs: [[], ['--logpath', path.join(tmpDir, 'mongos.log')]],
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(/--logpath/);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   context('TLS', function () {
     it('can spawn a 8.x standalone mongod with TLS enabled and get build info (automatically added client key)', async function () {
       cluster = await MongoCluster.start({

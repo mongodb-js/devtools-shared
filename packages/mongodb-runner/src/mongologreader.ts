@@ -103,10 +103,13 @@ function getPortFromLogEntry(logEntry: LogEntry): number {
     return +(match.groups?.port ?? '0');
   }
   if (isFailureToSetupListener(logEntry)) {
-    throw new Error(
-      `Failed to setup listener (${logEntry.message} ${JSON.stringify(
-        logEntry.attr,
-      )})`,
+    throw Object.assign(
+      new Error(
+        `Failed to setup listener (${logEntry.message} ${JSON.stringify(
+          logEntry.attr,
+        )})`,
+      ),
+      { errorLogEntries: [logEntry] },
     );
   }
   return -1;

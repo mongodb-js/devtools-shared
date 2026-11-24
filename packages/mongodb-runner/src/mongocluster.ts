@@ -250,6 +250,7 @@ export type MongoClusterOptions = Pick<
   | 'internalClientOptions'
   | 'host'
   | 'detached'
+  | 'startTimeoutMS'
 > &
   CommonOptions &
   RSOptions &
