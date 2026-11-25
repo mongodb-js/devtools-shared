@@ -3,6 +3,9 @@ import { MongoServer } from './mongoserver';
 import { MongoServerError } from 'mongodb';
 import type { MongoClient } from 'mongodb';
 import sinon from 'sinon';
+import * as tailFile from './tail-file';
+import type { FileTailStream } from './tail-file';
+import { PassThrough } from 'stream';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -263,6 +266,10 @@ describe('MongoServer', function () {
     }
   });
 
+  const LISTENER_LINE =
+    '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"I","c":"NETWORK","ctx":"listener",' +
+    '"id":23016,"msg":"waiting for connections","attr":{"port":47119}}';
+
   it('rejects a server that exits after reporting its listener', async function () {
     if (process.platform === 'win32') this.skip();
     const tmpDir = await fs.mkdtemp(
@@ -270,17 +277,23 @@ describe('MongoServer', function () {
     );
     const binDir = path.join(tmpDir, 'bin');
     await fs.mkdir(binDir);
-    await fs.mkdir(path.join(tmpDir, 'logs'));
-    // The logDir tail delivers the listener line on its next poll (25ms),
-    // after the exit event, so the exit must win the startup race.
-    const LISTENER_LINE =
-      '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"I","c":"NETWORK","ctx":"listener",' +
-      '"id":23016,"msg":"waiting for connections","attr":{"port":47119}}';
-    await writeFakeServer(
-      binDir,
-      'fake-mongod',
-      `echo '${LISTENER_LINE}'; exit 7`,
-    );
+    await writeFakeServer(binDir, 'fake-mongod', 'exit 7');
+    // The real tail reads the file immediately, so a listener line can land
+    // before the exit event; gate delivery on that event so the test
+    // reliably exercises an already-exited server.
+    const tailStub = sinon
+      .stub(tailFile, 'tailFileUntilExit')
+      .callsFake((_outFile, proc) => {
+        const stream = Object.assign(new PassThrough({ encoding: 'utf8' }), {
+          ref: () => {},
+          unref: () => {},
+        }) as unknown as FileTailStream;
+        proc.once('exit', () => {
+          stream.write(LISTENER_LINE);
+          stream.end();
+        });
+        return stream;
+      });
     try {
       let rejection: unknown;
       try {
@@ -298,6 +311,57 @@ describe('MongoServer', function () {
         /fake-mongod .*exited before reporting its listener/,
       );
     } finally {
+      tailStub.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not extend a caller timeoutMS shorter than the startup bound', async function () {
+    if (process.platform === 'win32') this.skip();
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-client-timeout-'),
+    );
+    const binDir = path.join(tmpDir, 'bin');
+    await fs.mkdir(binDir);
+    await writeFakeServer(
+      binDir,
+      'fake-mongod',
+      `echo '${LISTENER_LINE}'; exec sleep 300`,
+    );
+    // Capture the client options the startup metadata and buildInfo
+    // operations receive.
+    let captured: Partial<MongoClientOptions> | undefined;
+    const captureWithClient = async (
+      fn: (client: MongoClient) => Promise<unknown>,
+      clientOpts?: MongoClientOptions,
+    ): Promise<unknown> => {
+      captured = clientOpts;
+      const commandStub = sinon.stub().resolves({});
+      const runnerColl = {
+        findOne: sinon.stub().resolves(null),
+        insertOne: sinon.stub().resolves(),
+      };
+      const fakeClient = {
+        db: sinon
+          .stub()
+          .returns({ command: commandStub, collection: () => runnerColl }),
+      } as unknown as MongoClient;
+      return await fn(fakeClient);
+    };
+    sinon
+      .stub(MongoServer.prototype, 'withClient')
+      .callsFake(captureWithClient);
+    try {
+      const srv = await MongoServer.start({
+        binary: 'fake-mongod',
+        binDir,
+        tmpDir,
+        internalClientOptions: { timeoutMS: 1000 },
+      });
+      expect(captured?.timeoutMS).to.equal(1000);
+      await srv.close();
+    } finally {
+      sinon.restore();
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });
