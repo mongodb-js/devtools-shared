@@ -6,6 +6,7 @@ import {
   type RSMemberOptions,
   type SerializedClusterProperties,
 } from './mongocluster';
+import { MongoServer } from './mongoserver';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -237,9 +238,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'standalone',
       tmpDir,
-      args: ['--port', '50079'],
+      args: ['--port', '20079'],
     });
-    expect(cluster.connectionString).to.include(`:50079`);
+    expect(cluster.connectionString).to.include(`:20079`);
   });
 
   it('can spawn a 8.x replset', async function () {
@@ -261,9 +262,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'replset',
       tmpDir,
-      args: ['--port', '50080'],
+      args: ['--port', '20080'],
     });
-    expect(cluster.connectionString).to.include(`:50080`);
+    expect(cluster.connectionString).to.include(`:20080`);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -275,9 +276,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'replset',
       tmpDir,
-      args: ['--port=50081'],
+      args: ['--port=20081'],
     });
-    expect(cluster.connectionString).to.include(`:50081`);
+    expect(cluster.connectionString).to.include(`:20081`);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -479,6 +480,109 @@ describe('MongoCluster', function () {
       expect(shards).to.have.lengthOf(1);
       expect(shards[0].host).to.include('localhost');
     });
+  });
+
+  it('fails a sharded start quickly when a mongos passes --logpath', async function () {
+    // DRIVERS-3748: a --logpath mongos writes nothing to the stream the runner
+    // reads, so safePromiseAll waits forever; the timeout bounds that regression.
+    this.timeout(60_000);
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-logdiv-cluster-'),
+    );
+    // The start rejects, so its failure cleanup must close the started mongos.
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'sharded',
+          tmpDir,
+          shards: 1,
+          mongosArgs: [[], ['--logpath', path.join(tmpDir, 'mongos.log')]],
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(/--logpath/);
+      const closedMongoses = closeSpy
+        .getCalls()
+        .filter((call) => (call.thisValue as MongoServer).isMongos);
+      expect(closedMongoses).to.have.lengthOf(1);
+    } finally {
+      sinon.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('closes started members when a sibling member fails to start', async function () {
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-member-leak-'),
+    );
+    const realStart = MongoServer.start.bind(MongoServer);
+    let calls = 0;
+    sinon.stub(MongoServer, 'start').callsFake(async (options) => {
+      if (++calls > 1) {
+        throw new Error('member start failed');
+      }
+      return await realStart(options);
+    });
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'replset',
+          tmpDir,
+          secondaries: 1,
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.include('member start failed');
+      const closedMongods = closeSpy
+        .getCalls()
+        .filter((call) => !(call.thisValue as MongoServer).isMongos);
+      expect(closedMongods).to.have.lengthOf(1);
+    } finally {
+      sinon.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('closes started shards when a sibling shard fails to start', async function () {
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-shard-leak-'),
+    );
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'sharded',
+          tmpDir,
+          shards: [{}, { args: ['--logpath', path.join(tmpDir, 'shard.log')] }],
+          mongosArgs: [],
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(/--logpath/);
+      // The surviving config server replset has three members, all of which
+      // must be closed.
+      const closedMongods = closeSpy
+        .getCalls()
+        .filter((call) => !(call.thisValue as MongoServer).isMongos);
+      expect(closedMongods).to.have.lengthOf(3);
+    } finally {
+      sinon.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
   });
 
   context('TLS', function () {
@@ -1028,9 +1132,9 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
-      mongosArgs: [['--port', '50082']],
+      mongosArgs: [['--port', '20082']],
     });
-    expect(cluster.connectionString).to.include(`:50082`);
+    expect(cluster.connectionString).to.include(`:20082`);
   });
 
   it('can spawn a sharded cluster with a pre-specified port for mongos (--port=x)', async function () {
@@ -1039,9 +1143,9 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
-      mongosArgs: [['--port=50083']],
+      mongosArgs: [['--port=20083']],
     });
-    expect(cluster.connectionString).to.include(`:50083`);
+    expect(cluster.connectionString).to.include(`:20083`);
   });
 
   it('can add authentication options and verify them after serialization', async function () {

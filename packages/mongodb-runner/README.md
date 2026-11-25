@@ -75,6 +75,10 @@ try {
 }
 ```
 
+`startTimeoutMS`: maximum time in milliseconds to wait for a server to report
+its listener during startup (default 120000). A server that exits first fails
+the start immediately.
+
 ## Environment variables
 
 Any CLI option can also be set through a `MONGODB_RUNNER_`-prefixed environment

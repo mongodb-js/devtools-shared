@@ -85,7 +85,9 @@ describe('ServerLogsChecker', function () {
     let cluster: MongoCluster;
 
     beforeEach(async function () {
-      this.timeout(180_000); // Extra time for server binary download
+      // A cold weekly binary cache makes the download take minutes (the
+      // runner suite uses the same bound).
+      this.timeout(1_000_000);
       cluster = await MongoCluster.start({
         topology: 'replset',
         secondaries: 0,

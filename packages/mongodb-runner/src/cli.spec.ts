@@ -123,7 +123,11 @@ describe('cli', function () {
         '--setParameter',
         'nonexistentParam=1',
       ]);
-      expect(stderr, `attempt ${i}`).to.include('Server failed to start');
+      // The exit error names the exited process. The old no-port message
+      // ('Server failed to start') remains for servers that never exit.
+      expect(stderr, `attempt ${i}`).to.include(
+        'exited before reporting its listener',
+      );
     }
   });
 

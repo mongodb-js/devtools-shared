@@ -250,6 +250,7 @@ export type MongoClusterOptions = Pick<
   | 'internalClientOptions'
   | 'host'
   | 'detached'
+  | 'startTimeoutMS'
 > &
   CommonOptions &
   RSOptions &
@@ -838,18 +839,21 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
       const nodes = await safePromiseAll(
         rsMembers.map(async (member) => {
-          return [
-            await MongoServer.start({
-              ...options,
-              args: member.args,
-              isArbiter: member.arbiterOnly ?? false,
-              binary: 'mongod',
-            }),
-            member,
-          ] as const;
+          const srv = await MongoServer.start({
+            ...options,
+            args: member.args,
+            isArbiter: member.arbiterOnly ?? false,
+            binary: 'mongod',
+          });
+          // Register here so the _start catch, which closes only registered
+          // servers, also closes this process if a sibling start fails.
+          cluster.servers.push(srv);
+          return [srv, member] as const;
         }),
       );
-      cluster.servers.push(...nodes.map(([srv]) => srv));
+      // The registrations above are in completion order for failure cleanup,
+      // so restore rsMembers order once every start succeeds.
+      cluster.servers = nodes.map(([srv]) => srv);
       const primaryEntry = nodes.find(([, member]) => member === primaryMember);
       assert(primaryEntry, 'no started server for the primary member');
       const primary = primaryEntry[0];
@@ -921,6 +925,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               shardContext: { index: i, isConfigServer },
             },
           );
+          // Register here so the _start catch, which closes only registered
+          // children, also closes this cluster if a sibling start fails.
+          cluster.shards.push(shardCluster);
           return [shardCluster, isConfigServer] as const;
         }),
       );
@@ -928,12 +935,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const shardsvrs = allShards
         .filter(([, isConfig]) => !isConfig)
         .map(([shard]) => shard);
-      cluster.shards.push(configsvr, ...shardsvrs);
+      // The registrations above are in completion order for failure cleanup,
+      // so restore configsvr-first order once every start succeeds.
+      cluster.shards = [configsvr, ...shardsvrs];
 
       const mongosServers: MongoServer[] = await safePromiseAll(
         mongosArgs.map(async (args) => {
           debug('starting mongos');
-          return await MongoServer.start({
+          const mongos = await MongoServer.start({
             ...options,
             binary: 'mongos',
             args: [
@@ -942,9 +951,15 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               `${configsvr.replSetName!}/${configsvr.hostport}`,
             ],
           });
+          // Register here so the _start catch, which closes only registered
+          // servers, also closes this process if a sibling start fails.
+          cluster.servers.push(mongos);
+          return mongos;
         }),
       );
-      cluster.servers.push(...mongosServers);
+      // The registrations above are in completion order for failure cleanup,
+      // so restore mongosArgs order once every start succeeds.
+      cluster.servers = mongosServers;
       const mongos = mongosServers[0];
       await mongos.withClient(async (client) => {
         for (const shard of shardsvrs) {
