@@ -108,8 +108,14 @@ function getKeyFileOption(args?: string[] | undefined): string | undefined {
 function findLogDivertingArg(args?: string[]): string | undefined {
   if (!args) return undefined;
   for (const arg of args) {
-    if (arg === '--syslog') return '--syslog';
-    if (arg === '--logpath' || arg.startsWith('--logpath=')) return '--logpath';
+    // MongoDB parses long options with one or two leading dashes; three
+    // dashes are an unrecognized option that mongod exits on, which the
+    // exit diagnostics report.
+    const option = arg.startsWith('--') ? arg.slice(1) : arg;
+    if (option === '-syslog') return '--syslog';
+    if (option === '-logpath' || option.startsWith('-logpath=')) {
+      return '--logpath';
+    }
   }
   return undefined;
 }

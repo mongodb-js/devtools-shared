@@ -238,9 +238,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'standalone',
       tmpDir,
-      args: ['--port', '50079'],
+      args: ['--port', '20079'],
     });
-    expect(cluster.connectionString).to.include(`:50079`);
+    expect(cluster.connectionString).to.include(`:20079`);
   });
 
   it('can spawn a 8.x replset', async function () {
@@ -262,9 +262,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'replset',
       tmpDir,
-      args: ['--port', '50080'],
+      args: ['--port', '20080'],
     });
-    expect(cluster.connectionString).to.include(`:50080`);
+    expect(cluster.connectionString).to.include(`:20080`);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -276,9 +276,9 @@ describe('MongoCluster', function () {
       version: '8.x',
       topology: 'replset',
       tmpDir,
-      args: ['--port=50081'],
+      args: ['--port=20081'],
     });
-    expect(cluster.connectionString).to.include(`:50081`);
+    expect(cluster.connectionString).to.include(`:20081`);
     const hello = await cluster.withClient(async (client) => {
       return await client.db('admin').command({ hello: 1 });
     });
@@ -1132,9 +1132,9 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
-      mongosArgs: [['--port', '50082']],
+      mongosArgs: [['--port', '20082']],
     });
-    expect(cluster.connectionString).to.include(`:50082`);
+    expect(cluster.connectionString).to.include(`:20082`);
   });
 
   it('can spawn a sharded cluster with a pre-specified port for mongos (--port=x)', async function () {
@@ -1143,9 +1143,9 @@ describe('MongoCluster', function () {
       topology: 'sharded',
       tmpDir,
       secondaries: 0,
-      mongosArgs: [['--port=50083']],
+      mongosArgs: [['--port=20083']],
     });
-    expect(cluster.connectionString).to.include(`:50083`);
+    expect(cluster.connectionString).to.include(`:20083`);
   });
 
   it('can add authentication options and verify them after serialization', async function () {

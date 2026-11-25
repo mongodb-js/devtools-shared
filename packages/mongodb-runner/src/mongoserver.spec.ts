@@ -189,10 +189,14 @@ describe('MongoServer', function () {
     await fs.mkdir(binDir);
     await writeFakeServer(binDir, 'fake-mongod', 'exec sleep 300');
     try {
+      // MongoDB parses long options with one or two leading dashes.
       for (const args of [
         ['--logpath', path.join(tmpDir, 'server.log')],
         [`--logpath=${path.join(tmpDir, 'server.log')}`],
         ['--syslog'],
+        ['-logpath', path.join(tmpDir, 'server.log')],
+        [`-logpath=${path.join(tmpDir, 'server.log')}`],
+        ['-syslog'],
       ]) {
         let rejection: unknown;
         try {
