@@ -934,7 +934,7 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const mongosServers: MongoServer[] = await safePromiseAll(
         mongosArgs.map(async (args) => {
           debug('starting mongos');
-          return await MongoServer.start({
+          const mongos = await MongoServer.start({
             ...options,
             binary: 'mongos',
             args: [
@@ -943,9 +943,12 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               `${configsvr.replSetName!}/${configsvr.hostport}`,
             ],
           });
+          // Register here so the _start catch, which closes only registered
+          // servers, also closes this process if a sibling start fails.
+          cluster.servers.push(mongos);
+          return mongos;
         }),
       );
-      cluster.servers.push(...mongosServers);
       const mongos = mongosServers[0];
       await mongos.withClient(async (client) => {
         for (const shard of shardsvrs) {

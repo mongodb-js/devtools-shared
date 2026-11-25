@@ -130,6 +130,10 @@ const MONGOS_PORT_RETRY_LIMIT = 1000;
 // How long a stream end without a listener line waits for the 'exit' event.
 const EXIT_EVENT_GRACE_MS = 100;
 
+// How long an exit waits for the log reader to deliver lines written just
+// before the exit.
+const EXIT_DRAIN_MS = 250;
+
 /**
  * Races listener detection against process exit and a startup timeout. Exit
  * errors carry `errorLogEntries` for the mongos retry loop.
@@ -143,23 +147,39 @@ function watchServerStartup(
     startTimeoutMS: number;
     errorLogEntries: LogEntry[];
     logFile?: string;
+    logStreamEnded: Promise<void>;
   },
 ): Promise<{ port: number }> {
   const suffix = opts.logFile ? `; see ${opts.logFile}` : '';
-  const makeExitError = (code: number | null, signal: NodeJS.Signals | null) =>
-    Object.assign(
+  const makeExitError = (
+    code: number | null,
+    signal: NodeJS.Signals | null,
+  ) => {
+    const formattedErrors = opts.errorLogEntries
+      .map((entry) => `${entry.message} ${JSON.stringify(entry.attr)}`)
+      .join(', ');
+    return Object.assign(
       new Error(
         `${opts.binary} (pid ${opts.pid ?? 'unknown'}) exited before reporting its listener ` +
-          `(exit code ${String(code)}, signal ${String(signal)})${suffix}`,
+          `(exit code ${String(code)}, signal ${String(signal)})${suffix}` +
+          (formattedErrors ? `: ${formattedErrors}` : ''),
       ),
       { errorLogEntries: opts.errorLogEntries },
     );
+  };
   let timer: NodeJS.Timeout | undefined;
   let onExit: (code: number | null, signal: NodeJS.Signals | null) => void;
   const exitPromise = new Promise<never>((_, reject) => {
-    onExit = (code, signal) => reject(makeExitError(code, signal));
+    onExit = (code, signal) => {
+      void Promise.race([opts.logStreamEnded, sleep(EXIT_DRAIN_MS)]).then(() =>
+        reject(makeExitError(code, signal)),
+      );
+    };
     proc.once('exit', onExit);
   });
+  // A drained exit rejection can arrive after the race settled on the port
+  // or timeout promise, so consume it to prevent an unhandled rejection.
+  exitPromise.catch(() => undefined);
   // The pipe's EOF is observed before the process is reaped, so wait up to
   // EXIT_EVENT_GRACE_MS for 'exit' before falling back to the no-port error.
   const portOrExitPromise = portPromise.then(async ({ port }) => {
@@ -477,6 +497,9 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     const errorLogEntries: LogEntry[] = [];
     try {
       const logEntryStream = Readable.from(createLogEntryIterator(stdout));
+      const logStreamEnded = new Promise<void>((resolve) =>
+        logEntryStream.once('end', () => resolve()),
+      );
       logEntryStream.on('data', (entry: LogEntry) => {
         srv.emit('mongoLog', entry);
         if (!srv.closing && ['E', 'F'].includes(entry.severity)) {
@@ -507,6 +530,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
           startTimeoutMS,
           errorLogEntries,
           logFile: outFile,
+          logStreamEnded,
         },
       );
       debug('server listening on port', port);

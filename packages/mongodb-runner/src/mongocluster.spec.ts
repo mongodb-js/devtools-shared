@@ -6,6 +6,7 @@ import {
   type RSMemberOptions,
   type SerializedClusterProperties,
 } from './mongocluster';
+import { MongoServer } from './mongoserver';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -488,6 +489,8 @@ describe('MongoCluster', function () {
     const tmpDir = await fs.mkdtemp(
       path.join(os.tmpdir(), 'runner-logdiv-cluster-'),
     );
+    // The start rejects, so its failure cleanup must close the started mongos.
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
     try {
       let rejection: unknown;
       try {
@@ -503,7 +506,12 @@ describe('MongoCluster', function () {
         rejection = err;
       }
       expect(String(rejection)).to.match(/--logpath/);
+      const closedMongoses = closeSpy
+        .getCalls()
+        .filter((call) => (call.thisValue as MongoServer).isMongos);
+      expect(closedMongoses).to.have.lengthOf(1);
     } finally {
+      sinon.restore();
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });

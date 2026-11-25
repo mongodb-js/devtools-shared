@@ -231,6 +231,74 @@ describe('MongoServer', function () {
     }
   });
 
+  it('includes the errors the server logged before exiting in the exit error', async function () {
+    if (process.platform === 'win32') this.skip();
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-exit-diag-'),
+    );
+    const binDir = path.join(tmpDir, 'bin');
+    await fs.mkdir(binDir);
+    const ERROR_LINE =
+      '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"E","c":"CONTROL","ctx":"initandlisten",' +
+      '"id":20322,"msg":"Failed to parse configuration"}';
+    await writeFakeServer(
+      binDir,
+      'fake-mongod',
+      `echo '${ERROR_LINE}'; exit 3`,
+    );
+    try {
+      let rejection: unknown;
+      try {
+        await MongoServer.start({ binary: 'fake-mongod', binDir, tmpDir });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(
+        /fake-mongod .*exited before reporting its listener/,
+      );
+      expect(String(rejection)).to.include('Failed to parse configuration');
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('drains the server log after exit so a bind failure still retries', async function () {
+    this.timeout(180_000);
+    if (process.platform === 'win32') this.skip();
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'runner-drain-'));
+    const binDir = path.join(tmpDir, 'bin');
+    await fs.mkdir(binDir);
+    await fs.mkdir(path.join(tmpDir, 'logs'));
+    // The exit happens before the logDir tail's next poll (25ms), so the
+    // bind failure is still undelivered when the exit is observed.
+    await writeFakeServer(
+      binDir,
+      'mongos',
+      `echo '${BIND_FAILURE_LINE}'; exit 48`,
+    );
+    try {
+      let rejection: unknown;
+      try {
+        await MongoServer.start({
+          binary: 'mongos',
+          binDir,
+          tmpDir,
+          logDir: path.join(tmpDir, 'logs'),
+          startTimeoutMS: 10_000,
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(
+        /could not find a free port after 1000 attempts/,
+      );
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('fails after startTimeoutMS when the server never reports its listener', async function () {
     if (process.platform === 'win32') this.skip();
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'runner-stall-'));
