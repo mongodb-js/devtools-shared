@@ -176,6 +176,12 @@ function watchServerStartup(
       );
     };
     proc.once('exit', onExit);
+    // 'exit' does not replay: a child that exited while _start was wiring
+    // the log reader would otherwise lose its exit diagnosis to the
+    // generic no-port error.
+    if (proc.exitCode !== null || proc.signalCode !== null) {
+      onExit(proc.exitCode, proc.signalCode);
+    }
   });
   // A drained exit rejection can arrive after the race settled on the port
   // or timeout promise, so consume it to prevent an unhandled rejection.
@@ -183,7 +189,14 @@ function watchServerStartup(
   // The pipe's EOF is observed before the process is reaped, so wait up to
   // EXIT_EVENT_GRACE_MS for 'exit' before falling back to the no-port error.
   const portOrExitPromise = portPromise.then(async ({ port }) => {
-    if (port !== -1) return { port };
+    if (port !== -1) {
+      // The log reader can deliver a listener line after the process
+      // exited; a server that exited is not started.
+      if (proc.exitCode !== null || proc.signalCode !== null) {
+        await exitPromise;
+      }
+      return { port };
+    }
     await Promise.race([
       exitPromise.then(() => true),
       new Promise<false>((resolve) => {

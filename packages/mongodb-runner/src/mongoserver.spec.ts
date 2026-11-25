@@ -263,6 +263,45 @@ describe('MongoServer', function () {
     }
   });
 
+  it('rejects a server that exits after reporting its listener', async function () {
+    if (process.platform === 'win32') this.skip();
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-exit-listen-'),
+    );
+    const binDir = path.join(tmpDir, 'bin');
+    await fs.mkdir(binDir);
+    await fs.mkdir(path.join(tmpDir, 'logs'));
+    // The logDir tail delivers the listener line on its next poll (25ms),
+    // after the exit event, so the exit must win the startup race.
+    const LISTENER_LINE =
+      '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"I","c":"NETWORK","ctx":"listener",' +
+      '"id":23016,"msg":"waiting for connections","attr":{"port":47119}}';
+    await writeFakeServer(
+      binDir,
+      'fake-mongod',
+      `echo '${LISTENER_LINE}'; exit 7`,
+    );
+    try {
+      let rejection: unknown;
+      try {
+        await MongoServer.start({
+          binary: 'fake-mongod',
+          binDir,
+          tmpDir,
+          logDir: path.join(tmpDir, 'logs'),
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(
+        /fake-mongod .*exited before reporting its listener/,
+      );
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('drains the server log after exit so a bind failure still retries', async function () {
     this.timeout(180_000);
     if (process.platform === 'win32') this.skip();

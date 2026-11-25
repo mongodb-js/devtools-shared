@@ -949,6 +949,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           return mongos;
         }),
       );
+      // Registered above in completion order for failure cleanup; restore
+      // mongosArgs order now that every start succeeded.
+      cluster.servers = mongosServers;
       const mongos = mongosServers[0];
       await mongos.withClient(async (client) => {
         for (const shard of shardsvrs) {
