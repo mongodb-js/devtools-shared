@@ -354,9 +354,14 @@ describe('MongoServer', function () {
         binary: 'fake-mongod',
         binDir,
         tmpDir,
+        startTimeoutMS: 5000,
         internalClientOptions: { timeoutMS: 1000 },
       });
       expect(captured?.timeoutMS).to.equal(1000);
+      // MongoClient.connect ignores timeoutMS, so the driver's
+      // connect-phase timeouts are capped by the startup bound too.
+      expect(captured?.serverSelectionTimeoutMS).to.equal(5000);
+      expect(captured?.connectTimeoutMS).to.equal(5000);
       await srv.close();
     } finally {
       sinon.restore();

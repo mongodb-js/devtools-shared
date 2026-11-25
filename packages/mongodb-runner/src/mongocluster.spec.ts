@@ -516,6 +516,75 @@ describe('MongoCluster', function () {
     }
   });
 
+  it('closes started members when a sibling member fails to start', async function () {
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-member-leak-'),
+    );
+    const realStart = MongoServer.start.bind(MongoServer);
+    let calls = 0;
+    sinon.stub(MongoServer, 'start').callsFake(async (options) => {
+      if (++calls > 1) {
+        throw new Error('member start failed');
+      }
+      return await realStart(options);
+    });
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'replset',
+          tmpDir,
+          secondaries: 1,
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.include('member start failed');
+      const closedMongods = closeSpy
+        .getCalls()
+        .filter((call) => !(call.thisValue as MongoServer).isMongos);
+      expect(closedMongods).to.have.lengthOf(1);
+    } finally {
+      sinon.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('closes started shards when a sibling shard fails to start', async function () {
+    const tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'runner-shard-leak-'),
+    );
+    const closeSpy = sinon.spy(MongoServer.prototype, 'close');
+    try {
+      let rejection: unknown;
+      try {
+        await MongoCluster.start({
+          version: '8.x',
+          topology: 'sharded',
+          tmpDir,
+          shards: [{}, { args: ['--logpath', path.join(tmpDir, 'shard.log')] }],
+          mongosArgs: [],
+        });
+        rejection = 'start resolved';
+      } catch (err) {
+        rejection = err;
+      }
+      expect(String(rejection)).to.match(/--logpath/);
+      // The surviving config server replset has three members, all of which
+      // must be closed.
+      const closedMongods = closeSpy
+        .getCalls()
+        .filter((call) => !(call.thisValue as MongoServer).isMongos);
+      expect(closedMongods).to.have.lengthOf(3);
+    } finally {
+      sinon.restore();
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   context('TLS', function () {
     it('can spawn a 8.x standalone mongod with TLS enabled and get build info (automatically added client key)', async function () {
       cluster = await MongoCluster.start({

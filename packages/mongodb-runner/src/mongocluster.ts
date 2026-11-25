@@ -839,18 +839,21 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
       const nodes = await safePromiseAll(
         rsMembers.map(async (member) => {
-          return [
-            await MongoServer.start({
-              ...options,
-              args: member.args,
-              isArbiter: member.arbiterOnly ?? false,
-              binary: 'mongod',
-            }),
-            member,
-          ] as const;
+          const srv = await MongoServer.start({
+            ...options,
+            args: member.args,
+            isArbiter: member.arbiterOnly ?? false,
+            binary: 'mongod',
+          });
+          // Register here so the _start catch, which closes only registered
+          // servers, also closes this process if a sibling start fails.
+          cluster.servers.push(srv);
+          return [srv, member] as const;
         }),
       );
-      cluster.servers.push(...nodes.map(([srv]) => srv));
+      // The registrations above are in completion order for failure cleanup,
+      // so restore rsMembers order once every start succeeds.
+      cluster.servers = nodes.map(([srv]) => srv);
       const primaryEntry = nodes.find(([, member]) => member === primaryMember);
       assert(primaryEntry, 'no started server for the primary member');
       const primary = primaryEntry[0];
@@ -922,6 +925,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
               shardContext: { index: i, isConfigServer },
             },
           );
+          // Register here so the _start catch, which closes only registered
+          // children, also closes this cluster if a sibling start fails.
+          cluster.shards.push(shardCluster);
           return [shardCluster, isConfigServer] as const;
         }),
       );
@@ -929,7 +935,9 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
       const shardsvrs = allShards
         .filter(([, isConfig]) => !isConfig)
         .map(([shard]) => shard);
-      cluster.shards.push(configsvr, ...shardsvrs);
+      // The registrations above are in completion order for failure cleanup,
+      // so restore configsvr-first order once every start succeeds.
+      cluster.shards = [configsvr, ...shardsvrs];
 
       const mongosServers: MongoServer[] = await safePromiseAll(
         mongosArgs.map(async (args) => {
@@ -949,8 +957,8 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
           return mongos;
         }),
       );
-      // Registered above in completion order for failure cleanup; restore
-      // mongosArgs order now that every start succeeded.
+      // The registrations above are in completion order for failure cleanup,
+      // so restore mongosArgs order once every start succeeds.
       cluster.servers = mongosServers;
       const mongos = mongosServers[0];
       await mongos.withClient(async (client) => {

@@ -573,14 +573,25 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       // enforced by its `assertAllServersHaveInsertedLocalMetadata()` check.
       if (!keyFilePath) {
         // Bounded by startTimeoutMS so an unresponsive server cannot stall
-        // the start, but never longer than a nonzero timeout the caller
-        // configured for its own client.
-        const configuredTimeoutMS = options.internalClientOptions?.timeoutMS;
+        // the start, but a nonzero timeout from the caller's own client wins
+        // when shorter.
+        const configured = options.internalClientOptions ?? {};
         const buildInfoError = await srv._populateBuildInfo('insert-new', {
           timeoutMS:
-            configuredTimeoutMS && configuredTimeoutMS > 0
-              ? Math.min(configuredTimeoutMS, startTimeoutMS)
+            configured.timeoutMS && configured.timeoutMS > 0
+              ? Math.min(configured.timeoutMS, startTimeoutMS)
               : startTimeoutMS,
+          // MongoClient.connect ignores timeoutMS (the driver bounds
+          // selection retries and socket connects with these two instead),
+          // so cap them by the startup bound as well.
+          serverSelectionTimeoutMS: Math.min(
+            configured.serverSelectionTimeoutMS ?? startTimeoutMS,
+            startTimeoutMS,
+          ),
+          connectTimeoutMS: Math.min(
+            configured.connectTimeoutMS ?? startTimeoutMS,
+            startTimeoutMS,
+          ),
         });
         if (buildInfoError) {
           debug('failed to get buildInfo', buildInfoError);
