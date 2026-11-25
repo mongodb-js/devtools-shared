@@ -127,12 +127,49 @@ function rejectLogDivertingArgs(args?: string[]): void {
 
 const MONGOS_PORT_RETRY_LIMIT = 1000;
 
+const DEFAULT_START_TIMEOUT_MS = 120_000;
+
 // How long a stream end without a listener line waits for the 'exit' event.
 const EXIT_EVENT_GRACE_MS = 100;
 
 // How long an exit waits for the log reader to deliver lines written just
 // before the exit.
 const EXIT_DRAIN_MS = 250;
+
+/**
+ * A caller-configured timeout capped by startTimeoutMS, where a zero (no
+ * timeout in the driver) substitutes the bound.
+ */
+function capTimeout(
+  configured: number | undefined,
+  startTimeoutMS: number,
+): number {
+  return Math.min(
+    configured !== undefined && configured > 0 ? configured : startTimeoutMS,
+    startTimeoutMS,
+  );
+}
+
+/**
+ * Timeouts for the startup client that populates build info, each capped by
+ * startTimeoutMS and narrowed only by a positive caller value.
+ */
+function startupClientOptions(
+  configured: Partial<MongoClientOptions>,
+  startTimeoutMS: number,
+): Partial<MongoClientOptions> {
+  return {
+    timeoutMS: capTimeout(configured.timeoutMS, startTimeoutMS),
+    // MongoClient.connect ignores timeoutMS (the driver bounds selection
+    // retries and socket connects with these two instead), so cap them by
+    // the startup bound as well.
+    serverSelectionTimeoutMS: capTimeout(
+      configured.serverSelectionTimeoutMS,
+      startTimeoutMS,
+    ),
+    connectTimeoutMS: capTimeout(configured.connectTimeoutMS, startTimeoutMS),
+  };
+}
 
 /**
  * Races listener detection against process exit and a startup timeout. Exit
@@ -393,6 +430,8 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
   static async _start({
     ...options
   }: MongoServerOptions): Promise<MongoServer> {
+    // start() checks first for a clearer error, so this repeat only guards
+    // _start's other callers.
     rejectLogDivertingArgs(options.args);
     const srv = new MongoServer();
     srv.defaultConnectionOptions = { ...options.internalClientOptions };
@@ -460,7 +499,7 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
     debug('starting server', commandline);
     const [executable, ...args] = commandline;
     srv.commandline = commandline;
-    const startTimeoutMS = options.startTimeoutMS ?? 120_000;
+    const startTimeoutMS = options.startTimeoutMS ?? DEFAULT_START_TIMEOUT_MS;
     let outFile: string | undefined;
     let proc: ChildProcess;
     let stdout: Readable;
@@ -572,27 +611,13 @@ export class MongoServer extends EventEmitter<MongoServerEvents> {
       // as part of the cluster's startup process when authenticating,
       // enforced by its `assertAllServersHaveInsertedLocalMetadata()` check.
       if (!keyFilePath) {
-        // Bounded by startTimeoutMS so an unresponsive server cannot stall
-        // the start, but a nonzero timeout from the caller's own client wins
-        // when shorter.
-        const configured = options.internalClientOptions ?? {};
-        const buildInfoError = await srv._populateBuildInfo('insert-new', {
-          timeoutMS:
-            configured.timeoutMS && configured.timeoutMS > 0
-              ? Math.min(configured.timeoutMS, startTimeoutMS)
-              : startTimeoutMS,
-          // MongoClient.connect ignores timeoutMS (the driver bounds
-          // selection retries and socket connects with these two instead),
-          // so cap them by the startup bound as well.
-          serverSelectionTimeoutMS: Math.min(
-            configured.serverSelectionTimeoutMS ?? startTimeoutMS,
+        const buildInfoError = await srv._populateBuildInfo(
+          'insert-new',
+          startupClientOptions(
+            options.internalClientOptions ?? {},
             startTimeoutMS,
           ),
-          connectTimeoutMS: Math.min(
-            configured.connectTimeoutMS ?? startTimeoutMS,
-            startTimeoutMS,
-          ),
-        });
+        );
         if (buildInfoError) {
           debug('failed to get buildInfo', buildInfoError);
         }

@@ -123,7 +123,7 @@ describe('cli', function () {
         '--setParameter',
         'nonexistentParam=1',
       ]);
-      // The watchdog names the exited process; the old no-port message
+      // The exit error names the exited process. The old no-port message
       // ('Server failed to start') remains for servers that never exit.
       expect(stderr, `attempt ${i}`).to.include(
         'exited before reporting its listener',

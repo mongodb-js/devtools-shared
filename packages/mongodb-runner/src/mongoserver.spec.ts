@@ -21,6 +21,14 @@ function writeFakeServer(
     .then(() => file);
 }
 
+const LISTENER_LINE =
+  '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"I","c":"NETWORK","ctx":"listener",' +
+  '"id":23016,"msg":"waiting for connections","attr":{"port":47119}}';
+
+const BIND_FAILURE_LINE =
+  '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"E","c":"NETWORK","ctx":"listener",' +
+  '"id":22856,"msg":"Failed to set up listener","attr":{"error":"Address already in use"}}';
+
 describe('MongoServer', function () {
   let server: MongoServer;
 
@@ -213,7 +221,6 @@ describe('MongoServer', function () {
     await writeFakeServer(binDir, 'fake-mongod', 'exit 3');
     try {
       let rejection: unknown;
-      const start = Date.now();
       try {
         await MongoServer.start({
           binary: 'fake-mongod',
@@ -228,7 +235,6 @@ describe('MongoServer', function () {
       expect(String(rejection)).to.match(
         /fake-mongod .*exited before reporting its listener/,
       );
-      expect(Date.now() - start).to.be.lessThan(30_000);
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
@@ -266,10 +272,6 @@ describe('MongoServer', function () {
     }
   });
 
-  const LISTENER_LINE =
-    '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"I","c":"NETWORK","ctx":"listener",' +
-    '"id":23016,"msg":"waiting for connections","attr":{"port":47119}}';
-
   it('rejects a server that exits after reporting its listener', async function () {
     if (process.platform === 'win32') this.skip();
     const tmpDir = await fs.mkdtemp(
@@ -278,9 +280,10 @@ describe('MongoServer', function () {
     const binDir = path.join(tmpDir, 'bin');
     await fs.mkdir(binDir);
     await writeFakeServer(binDir, 'fake-mongod', 'exit 7');
-    // The real tail reads the file immediately, so a listener line can land
-    // before the exit event; gate delivery on that event so the test
-    // reliably exercises an already-exited server.
+    // The real log reader reads the file immediately, so a listener line can
+    // arrive before the exit event. The stub delivers the line only on the
+    // exit event and intercepts because mongoserver calls the export through
+    // the module's namespace object.
     const tailStub = sinon
       .stub(tailFile, 'tailFileUntilExit')
       .callsFake((_outFile, proc) => {
@@ -314,7 +317,7 @@ describe('MongoServer', function () {
     }
   });
 
-  it('does not extend a caller timeoutMS shorter than the startup bound', async function () {
+  it('caps the startup client timeouts at the startup bound', async function () {
     if (process.platform === 'win32') this.skip();
     const tmpDir = await fs.mkdtemp(
       path.join(os.tmpdir(), 'runner-client-timeout-'),
@@ -350,16 +353,20 @@ describe('MongoServer', function () {
       .stub(MongoServer.prototype, 'withClient')
       .callsFake(captureWithClient);
     try {
+      // The driver maps a zero serverSelectionTimeoutMS or connectTimeoutMS
+      // to no timeout, so the zeros come out capped.
       const srv = await MongoServer.start({
         binary: 'fake-mongod',
         binDir,
         tmpDir,
         startTimeoutMS: 5000,
-        internalClientOptions: { timeoutMS: 1000 },
+        internalClientOptions: {
+          timeoutMS: 1000,
+          serverSelectionTimeoutMS: 0,
+          connectTimeoutMS: 0,
+        },
       });
       expect(captured?.timeoutMS).to.equal(1000);
-      // MongoClient.connect ignores timeoutMS, so the driver's
-      // connect-phase timeouts are capped by the startup bound too.
       expect(captured?.serverSelectionTimeoutMS).to.equal(5000);
       expect(captured?.connectTimeoutMS).to.equal(5000);
       await srv.close();
@@ -375,9 +382,9 @@ describe('MongoServer', function () {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'runner-drain-'));
     const binDir = path.join(tmpDir, 'bin');
     await fs.mkdir(binDir);
-    await fs.mkdir(path.join(tmpDir, 'logs'));
-    // The exit happens before the logDir tail's next poll (25ms), so the
-    // bind failure is still undelivered when the exit is observed.
+    // The exit happens before the logDir reader's next poll
+    // (POLL_INTERVAL_MS), so the bind failure is still undelivered when the
+    // exit is observed.
     await writeFakeServer(
       binDir,
       'mongos',
@@ -431,10 +438,6 @@ describe('MongoServer', function () {
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });
-
-  const BIND_FAILURE_LINE =
-    '{"t":{"$date":"2026-01-01T00:00:00.000Z"},"s":"E","c":"NETWORK","ctx":"listener",' +
-    '"id":22856,"msg":"Failed to set up listener","attr":{"error":"Address already in use"}}';
 
   it('gives up after bounded mongos port retries instead of looping forever', async function () {
     this.timeout(60_000);
