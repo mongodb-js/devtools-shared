@@ -249,12 +249,14 @@ export class OIDCMockProvider {
             const metadata = this.retrieveFromStorage(refresh_token) as
               TokenMetadata | undefined;
             if (!metadata) throw new Error('Invalid or expired refresh_token');
-            const { access_token, id_token, expires_in } =
+            const { access_token, id_token, expires_in, skipRefreshToken } =
               await this.issueToken(metadata);
             result = {
               access_token,
               id_token,
-              refresh_token: await this.storeForSingleRetrieval(metadata),
+              refresh_token: skipRefreshToken
+                ? undefined
+                : await this.storeForSingleRetrieval(metadata),
               token_type: 'Bearer',
               expires_in,
             };
