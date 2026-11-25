@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { MongoServer } from './mongoserver';
 import { MongoServerError } from 'mongodb';
-import type { MongoClient } from 'mongodb';
+import type { MongoClient, MongoClientOptions } from 'mongodb';
 import sinon from 'sinon';
 import * as tailFile from './tail-file';
 import type { FileTailStream } from './tail-file';
@@ -284,15 +284,13 @@ describe('MongoServer', function () {
     const tailStub = sinon
       .stub(tailFile, 'tailFileUntilExit')
       .callsFake((_outFile, proc) => {
-        const stream = Object.assign(new PassThrough({ encoding: 'utf8' }), {
-          ref: () => {},
-          unref: () => {},
-        }) as unknown as FileTailStream;
+        const stream = new PassThrough({ encoding: 'utf8' });
+        Object.assign(stream, { ref: () => {}, unref: () => {} });
         proc.once('exit', () => {
           stream.write(LISTENER_LINE);
           stream.end();
         });
-        return stream;
+        return stream as unknown as FileTailStream;
       });
     try {
       let rejection: unknown;
