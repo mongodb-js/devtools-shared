@@ -233,10 +233,36 @@ export class OIDCMockProvider {
           break;
         }
         case '/token': {
-          // Provide a token after successful Auth Code Flow/Device Auth Flow
-          const { code, code_verifier, device_code } = Object.fromEntries(
-            url.searchParams,
-          );
+          // Provide a token after successful Auth Code Flow/Device Auth Flow,
+          // or refresh an existing token set.
+          const {
+            grant_type,
+            code,
+            code_verifier,
+            device_code,
+            refresh_token,
+          } = Object.fromEntries(url.searchParams);
+
+          if (grant_type === 'refresh_token') {
+            if (!refresh_token) throw new Error('Missing refresh_token');
+            // Refresh tokens are single-use; rotate them on every use.
+            const metadata = this.retrieveFromStorage(refresh_token) as
+              TokenMetadata | undefined;
+            if (!metadata) throw new Error('Invalid or expired refresh_token');
+            const { access_token, id_token, expires_in, skipRefreshToken } =
+              await this.issueToken(metadata);
+            result = {
+              access_token,
+              id_token,
+              refresh_token: skipRefreshToken
+                ? undefined
+                : await this.storeForSingleRetrieval(metadata),
+              token_type: 'Bearer',
+              expires_in,
+            };
+            break;
+          }
+
           const {
             client_id,
             scope,
@@ -287,8 +313,9 @@ export class OIDCMockProvider {
             refresh_token: skipRefreshToken
               ? undefined
               : await this.storeForSingleRetrieval({
-                  id_token,
-                  access_token,
+                  client_id,
+                  scope,
+                  nonce,
                 }),
             token_type: 'Bearer',
             expires_in,
