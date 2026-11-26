@@ -41,6 +41,15 @@ import type { MongoClientOptions } from 'mongodb';
       describe:
         'for `start` with the sharded topology: turn the config server into a config shard (requires MongoDB 8.0+)',
     })
+    .option('createKeyFile', {
+      type: 'boolean',
+      // The all-lowercase kebab spelling is accepted as an alias so that it
+      // cannot silently no-op (yargs would otherwise map it to a different,
+      // unused key and start the cluster without the requested auth).
+      alias: 'create-keyfile',
+      describe:
+        'run the cluster with keyfile authentication: generate a keyfile and pass it to every member (cannot be combined with the mongod --keyFile argument)',
+    })
     .option('version', {
       type: 'string',
       describe: 'MongoDB server version to use',
@@ -267,7 +276,12 @@ import type { MongoClientOptions } from 'mongodb';
 
   await ({ start, stop, exec, ls, prune }[command] ?? unknown)();
 })().catch((err) => {
-  process.nextTick(() => {
+  // setImmediate rather than process.nextTick: a nextTick callback
+  // scheduled from a promise continuation that runs after the last macrotask
+  // (e.g. an fs operation) is skipped entirely when the event loop turns out
+  // to be empty, and the process exits 0 without reporting the error. A
+  // scheduled immediate keeps the loop alive, so the throw always happens.
+  setImmediate(() => {
     throw err;
   });
 });

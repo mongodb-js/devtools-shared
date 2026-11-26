@@ -3,7 +3,10 @@ import type {
   MongoServerOptions,
   SerializedServerProperties,
 } from './mongoserver';
-import { MongoServer } from './mongoserver';
+import { getKeyFileOption, MongoServer } from './mongoserver';
+import { promises as fs } from 'fs';
+import { randomBytes } from 'crypto';
+import path from 'path';
 import { ConnectionString } from 'mongodb-connection-string-url';
 import type { DownloadOptions } from '@mongodb-js/mongodb-downloader';
 import { downloadMongoDb } from '@mongodb-js/mongodb-downloader';
@@ -116,6 +119,15 @@ export interface CommonOptions {
    * User accounts to create after starting the cluster.
    */
   users?: MongoDBUserDoc[];
+
+  /**
+   * Run the cluster with keyfile authentication: a keyfile is generated and
+   * given to every mongod and mongos process, which enables authentication
+   * on all topologies (a keyfile implies `--auth`). Cannot be combined with
+   * a `--keyFile` argument or `--clusterAuthMode`, and not available in
+   * docker mode.
+   */
+  createKeyFile?: boolean;
 
   /**
    * Whether to automatically add an additional TLS client certificate key file
@@ -492,6 +504,170 @@ function processShardOptions(options: MongoClusterOptions): {
   };
 }
 
+/** Remove the bare `--auth` switch from an argument list. */
+function removeAuthArg(args: string[]): string[] {
+  return args.filter((arg) => arg !== '--auth');
+}
+
+/**
+ * All argument lists that apply to the cluster's server processes: the main
+ * args plus the per-shard, per-shard-member, per-replset-member, and
+ * per-mongos lists, which are merged into the main args before the servers
+ * start. Checks that reason about whether a configuration can start must
+ * consider all of them: a `--keyFile` or `--clusterAuthMode` in any
+ * member's args is as binding as one in the main args. They deliberately
+ * err towards "configured": a setting found anywhere exempts a cluster
+ * from the runner's own rejections, leaving genuinely broken mixes to the
+ * servers' own startup errors.
+ */
+function nodeArgLists(options: MongoClusterOptions): string[][] {
+  const shards = typeof options.shards === 'object' ? options.shards : [];
+  const shardMemberArgs = shards.flatMap((shard) =>
+    (shard.rsMembers ?? []).map((member) => member.args),
+  );
+  return [
+    options.args,
+    ...shards.map((shard) => shard.args),
+    ...shardMemberArgs,
+    ...(options.rsMembers?.map((member) => member.args) ?? []),
+    ...(options.mongosArgs ?? []),
+  ].filter((argList): argList is string[] => argList !== undefined);
+}
+
+/** True if `--keyFile` is set in any of the cluster's node argument lists. */
+function hasKeyFileArg(options: MongoClusterOptions): boolean {
+  return nodeArgLists(options).some(
+    (argList) => getKeyFileOption(argList) !== undefined,
+  );
+}
+
+/** True if `--clusterAuthMode` is set in any node argument list. */
+function hasClusterAuthModeArg(options: MongoClusterOptions): boolean {
+  return nodeArgLists(options).some(
+    (argList) =>
+      argList.includes('--clusterAuthMode') ||
+      argList.some((arg) => arg.startsWith('--clusterAuthMode=')),
+  );
+}
+
+/**
+ * True if any node argument list points its server at a config file. Such a
+ * file can supply options the runner cannot see (e.g. `security.keyFile`),
+ * so whether a configuration can start has to be left to the server itself.
+ */
+function hasConfigFileArg(options: MongoClusterOptions): boolean {
+  return nodeArgLists(options).some(
+    (argList) =>
+      argList.includes('--config') ||
+      argList.includes('-f') ||
+      argList.some((arg) => arg.startsWith('--config=')),
+  );
+}
+
+/**
+ * With `createKeyFile`, the runner sets up keyfile authentication for the
+ * cluster: it generates a keyfile and appends `--keyFile` to the args, from
+ * where it propagates to all mongod and mongos processes (a keyfile itself
+ * enables authorization). This is the only workable auth mode for replica
+ * sets and sharded clusters anyway: mongod refuses to start a replica set
+ * member with `--auth` but no keyfile ("security.keyFile is required when
+ * authorization is enabled with replica sets"), and mongos has no `--auth`
+ * option at all — so for sharded clusters the bare `--auth` switch is
+ * dropped, since mongos would reject it and the keyfile already implies it.
+ * The option errors out instead when a `--keyFile` or `--clusterAuthMode`
+ * is already configured for any cluster node, or in docker mode, where the
+ * server processes cannot see host-side file paths.
+ *
+ * Without the option, args pass through untouched, except that `--auth`
+ * configurations which cannot start at all (see above) are rejected up front
+ * with advice on how to run the cluster with authentication instead, rather
+ * than failing later with the servers' generic startup errors.
+ *
+ * Only called for top-level clusters: shard sub-clusters inherit the keyfile
+ * through the merged parent args and must not generate their own, which the
+ * rest of the cluster would not share.
+ */
+async function handleKeyFileOptions(
+  options: MongoClusterOptions,
+): Promise<Partial<MongoClusterOptions>> {
+  const { createKeyFile, topology, tmpDir, docker } = options;
+  const args = [...(options.args ?? [])];
+  if (!createKeyFile) {
+    // In docker mode the servers' own errors are left alone: a keyfile
+    // there has to be supplied through a volume, so the advice differs.
+    // Keyfiles, auth modes, or config files configured anywhere in the
+    // node args (e.g. per replset member) may make `--auth` valid, so the
+    // server decides in those cases.
+    if (
+      !docker &&
+      topology !== 'standalone' &&
+      args.includes('--auth') &&
+      (topology === 'sharded' ||
+        (!hasConfigFileArg(options) &&
+          !hasKeyFileArg(options) &&
+          !hasClusterAuthModeArg(options)))
+    ) {
+      throw new Error(
+        topology === 'sharded' && hasKeyFileArg(options)
+          ? '--auth cannot start this cluster: mongos has no --auth option. ' +
+              'Remove --auth; --keyFile already enables authorization.'
+          : '--auth cannot start this cluster: mongod refuses to start a ' +
+              'replica set member with --auth but no keyfile, and mongos has ' +
+              'no --auth option at all. Pass --createKeyFile, or supply ' +
+              '--keyFile yourself.',
+      );
+    }
+    return {};
+  }
+  if (docker) {
+    throw new Error(
+      'createKeyFile is not available in docker mode: the server processes ' +
+        'cannot see host-side file paths, so they cannot share a generated ' +
+        'keyfile. Supply --keyFile yourself through a docker volume instead.',
+    );
+  }
+  if (hasKeyFileArg(options)) {
+    throw new Error(
+      'createKeyFile cannot be combined with --keyFile: a keyfile is ' +
+        'already configured for the cluster. Remove --keyFile to have one ' +
+        'generated, or remove --createKeyFile to use the configured one.',
+    );
+  }
+  if (hasClusterAuthModeArg(options)) {
+    throw new Error(
+      'createKeyFile conflicts with --clusterAuthMode: cluster authentication ' +
+        'is configured explicitly, so no keyfile is generated. Remove ' +
+        '--clusterAuthMode, or remove --createKeyFile and supply --keyFile ' +
+        'yourself.',
+    );
+  }
+  // mongod accepts keys of 6-1024 characters from the base64 charset and,
+  // on non-Windows platforms, rejects keyfiles readable by group or other.
+  // The path is resolved because server processes run with the tmpDir as
+  // their working directory and would resolve a relative keyfile path
+  // against that instead of the runner's own working directory.
+  const keyFilePath = path.resolve(tmpDir, `keyfile-${uuid()}`);
+  await fs.mkdir(path.dirname(keyFilePath), { recursive: true });
+  await fs.writeFile(keyFilePath, randomBytes(64).toString('base64'), {
+    mode: 0o600,
+  });
+  debug('generated keyfile for cluster', { keyFilePath });
+  return {
+    args: [
+      ...(topology === 'sharded' ? removeAuthArg(args) : args),
+      '--keyFile',
+      keyFilePath,
+    ],
+    // mongos has no --auth option, so the bare switch is removed from the
+    // per-mongos args as well; per-node args for mongods can keep it, since
+    // mongod accepts --auth alongside a keyfile.
+    mongosArgs:
+      topology === 'sharded'
+        ? options.mongosArgs?.map(removeAuthArg)
+        : options.mongosArgs,
+  };
+}
+
 export class MongoCluster extends EventEmitter<MongoClusterEvents> {
   private topology: MongoClusterOptions['topology'] = 'standalone';
   private replSetName?: string;
@@ -648,6 +824,14 @@ export class MongoCluster extends EventEmitter<MongoClusterEvents> {
 
     const cluster = new MongoCluster();
     try {
+      if (!parentClusterContext) {
+        // Only the top-level cluster decides on keyfile generation: shard
+        // sub-clusters inherit the generated keyfile through the merged
+        // parent args. This runs inside the try block so that a keyfile
+        // rejection reaches the cleanup below, e.g. releasing host ports
+        // reserved for the storage backend.
+        options = { ...options, ...(await handleKeyFileOptions(options)) };
+      }
       options = { ...options, ...(await handleTLSClientKeyOptions(options)) };
 
       cluster.originalOptions = options;
