@@ -13,7 +13,7 @@
     "email": "compass@mongodb.com"
   },
   "homepage": "https://github.com/mongodb-js/devtools-shared",
-  "version": "8.6.1",
+  "version": "8.7.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mongodb-js/devtools-shared.git"
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@mongodb-js/mongodb-downloader": "^3.0.7",
-    "@mongodb-js/oidc-mock-provider": "^0.13.22",
+    "@mongodb-js/oidc-mock-provider": "^0.14.0",
     "@mongodb-js/saslprep": "^1.6.3",
     "@peculiar/x509": "^2.1.0",
     "debug": "^4.4.0",
